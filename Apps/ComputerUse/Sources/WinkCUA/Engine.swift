@@ -285,6 +285,8 @@ final class Engine {
         defer { treeOptions = saved }
         let started = Date()
         let (snap, window) = walk(s)
+        // Reading the window: the cursor stays put, so watchers learn where the window is instead.
+        SessionEvents.shared.focus(window: snap.windowFrame.map { CGPoint(x: $0.midX, y: $0.midY) }, app: s)
         var text = render(s, snap, window: window, full: args.bool("full") ?? false)
         var image: Data?
         if args.bool("screenshot") ?? true {
@@ -331,6 +333,7 @@ final class Engine {
     }
 
     private func showCursor(_ point: CGPoint, _ s: AppSession, _ effect: GhostCursor.Effect) {
+        SessionEvents.shared.focus(cursor: point, app: s)
         let window = s.windowID
         DispatchQueue.main.async { MainActor.assumeIsolated { GhostCursor.shared.move(to: point, aboveWindow: window, effect: effect) } }
     }

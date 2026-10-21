@@ -80,6 +80,7 @@ final class MCPServer {
 
     func run() {
         engine.capturer.prewarm()
+        SessionEvents.shared.endOnTermination()
         while let line = readLine(strippingNewline: true) {
             guard !line.isEmpty, let data = line.data(using: .utf8),
                   let msg = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { continue }
@@ -108,11 +109,14 @@ final class MCPServer {
                 send(["jsonrpc": "2.0", "id": id, "error": ["code": -32601, "message": "method not found: \(method)"]])
             }
         }
+        SessionEvents.shared.end(reason: "exit")
         exit(0)
     }
 
     func callTool(_ name: String, _ args: [String: Any]) -> [String: Any] {
         let output: ToolOutput
+        if name != "list_apps" { SessionEvents.shared.toolStarted(name, app: args["app"].map { "\($0)" }) }
+        defer { if name != "list_apps" { SessionEvents.shared.toolFinished() } }
         do {
             switch name {
             case "list_apps": output = engine.listApps()

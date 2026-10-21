@@ -23,6 +23,7 @@ if arguments.first == "call" {
         }
         // Let a cursor animation finish before exiting.
         usleep(UInt32((Double(ProcessInfo.processInfo.environment["WINK_CUA_LINGER"] ?? "0") ?? 0) * 1_000_000))
+        SessionEvents.shared.end(reason: "exit")
         exit((result["isError"] as? Bool) == true ? 1 : 0)
     }
 } else {

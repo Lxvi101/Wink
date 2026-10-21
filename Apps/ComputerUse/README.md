@@ -16,6 +16,16 @@ cd Apps/ComputerUse
 claude mcp add wink-cua -- ~/.local/bin/wink-cua
 ```
 
+The easiest way is XNotch's **Computer Use** extension: it bundles a notarized `wink-cua` and adds it to
+Claude Code, Codex, Cursor, Antigravity, VS Code, Claude Desktop, Windsurf and Gemini CLI with one
+click, or takes it out of them all again.
+
+To cut a notarized universal build (`dist/wink-cua-<version>-macos-universal.zip`):
+
+```bash
+NOTARY_PROFILE=<notarytool profile> ./scripts/release.sh
+```
+
 Grant **Accessibility** and **Screen Recording** to the app that launches the server (your terminal,
 Claude Code, Codex, …). The process must run in an unlocked GUI session.
 
@@ -69,6 +79,22 @@ design, not the system cursor, and it never moves the user's real pointer.
 - It fades out after about 2.6 s idle. The animation never delays the action, because input is
   dispatched immediately and the effect plays when the pointer arrives.
 - `WINK_CUA_CURSOR=0` disables it.
+
+## Session events
+
+`wink-cua` tells other apps when an agent starts and stops driving the Mac, so a companion can show
+it. XNotch's Computer Use extension uses them to open the notch's eyes and keep them roughly on the
+agent cursor. They are distributed notifications with plist user info:
+
+| Notification | User info |
+| --- | --- |
+| `dev.wink.cua.session.start` | `session`, `pid`, `client` (the launching process: `claude`, `codex`, …), `app` |
+| `dev.wink.cua.session.action` | `session`, `pid`, `tool`, `app`, `bundleID`, `x`/`y` when the cursor moves, `windowX`/`windowY` when a window is read |
+| `dev.wink.cua.session.end` | `session`, `pid`, `reason` (`idle` or `exit`) |
+
+Points are AppKit screen coordinates (origin at the bottom left of the main display). A session starts
+with the first tool call and ends `WINK_CUA_SESSION_IDLE` seconds (default 20) after the last one, or
+when the server exits. `WINK_CUA_EVENTS=0` turns the events off.
 
 ## Performance
 
