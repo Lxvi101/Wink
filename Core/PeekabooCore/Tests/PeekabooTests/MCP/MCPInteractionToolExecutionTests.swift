@@ -876,7 +876,8 @@ extension MCPToolExecutionTests {
                 variant: true,
             ]))
 
-            #expect(response.isError)
+            // Dispatched-but-unverified clicks succeed; the canonical metadata still demands observation.
+            #expect(!response.isError)
             let call = try #require(await MainActor.run { automation.targetedClickCalls.first })
             #expect(call.clickType == clickType)
             #expect(call.targetWindowID == window.windowID)

@@ -610,8 +610,14 @@ struct MCPDesktopActionOutcomeProjectionTests {
             #expect(response.isError)
             try MCPToolTestHelpers.expectCanonicalOutcomeMetadata(elementOutcome, in: response)
         }
-        for response in otherResponses {
-            #expect(response.isError)
+        for (index, response) in otherResponses.enumerated() {
+            // Click accepts a dispatched-but-unverified outcome as success (still projecting the canonical
+            // observe-before-retry metadata); the other tools keep requiring confirmation.
+            if index == 0, outcome.state == .dispatchedUnverified {
+                #expect(!response.isError)
+            } else {
+                #expect(response.isError)
+            }
             try MCPToolTestHelpers.expectCanonicalOutcomeMetadata(outcome, in: response)
         }
     }

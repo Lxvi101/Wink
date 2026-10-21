@@ -167,7 +167,10 @@ public struct ClickTool: MCPTool {
             }
             actionTargetIdentity = actionResult.targetIdentity
             let outcome = actionResult.outcome
-            if request.modifiers.isEmpty {
+            // A dispatched-but-unverified press (e.g. AXPress, which never reads back) is a successful
+            // delivery, not a failure: the response still carries state/retry_safety/escalation metadata,
+            // so clients observe before retrying instead of treating every accessibility click as an error.
+            if request.modifiers.isEmpty, outcome.map({ $0.state != .dispatchedUnverified }) ?? true {
                 try DesktopActionFailure.requireConfirmedIfReported(
                     outcome,
                     operation: "Click")
