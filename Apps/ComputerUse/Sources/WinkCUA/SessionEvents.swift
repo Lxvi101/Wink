@@ -8,6 +8,7 @@ import Darwin
 ///     dev.wink.cua.session.start   session, pid, client?, app?
 ///     dev.wink.cua.session.action  session, pid, tool, app?, bundleID?, x?, y?, windowX?, windowY?
 ///     dev.wink.cua.session.end     session, pid, reason ("idle" | "exit")
+///     dev.wink.cua.permission.needed  permission ("accessibility" | "screenRecording"), pid, client?, app?
 ///
 /// Points are in AppKit screen coordinates (origin at the bottom left of the primary display). `x`/`y`
 /// is where the agent cursor is heading, sent only when it moves; `windowX`/`windowY` is the middle of
@@ -20,12 +21,14 @@ final class SessionEvents: @unchecked Sendable {
     static let startName = Notification.Name("dev.wink.cua.session.start")
     static let actionName = Notification.Name("dev.wink.cua.session.action")
     static let endName = Notification.Name("dev.wink.cua.session.end")
+    static let permissionName = Notification.Name("dev.wink.cua.permission.needed")
 
     private let enabled = ProcessInfo.processInfo.environment["WINK_CUA_EVENTS"] != "0"
     private let idleTimeout = max(1, Double(ProcessInfo.processInfo.environment["WINK_CUA_SESSION_IDLE"] ?? "") ?? 20)
     private let pid = Int(getpid())
     /// The process that launched the server: "claude", "codex", …
-    private lazy var client: String? = Self.processName(getppid())
+    private lazy var client: String? = Self.processName(
+        ProcessInfo.processInfo.environment["WINK_CUA_CLIENT_PID"].flatMap { pid_t($0) } ?? getppid())
     private let queue = DispatchQueue(label: "wink-cua.session-events")
     private var session: String?
     private var tool = ""
@@ -79,6 +82,23 @@ final class SessionEvents: @unchecked Sendable {
             post(Self.actionName, info)
         }
     }
+
+    /// A tool needed a permission Wink doesn't have, so a companion can walk the user through it.
+    /// At most once a minute per permission.
+    func permissionNeeded(_ permission: String) {
+        guard enabled else { return }
+        queue.sync {
+            let now = Date()
+            if let last = lastPermissionPost[permission], now.timeIntervalSince(last) < 60 { return }
+            lastPermissionPost[permission] = now
+            var info: [String: Any] = ["permission": permission, "pid": pid]
+            if let client { info["client"] = client }
+            if Bundle.main.bundlePath.hasSuffix(".app") { info["app"] = Bundle.main.bundlePath }
+            post(Self.permissionName, info)
+        }
+    }
+
+    private var lastPermissionPost: [String: Date] = [:]
 
     /// Ends the session now; call before the process exits.
     func end(reason: String) {

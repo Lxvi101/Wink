@@ -3,10 +3,14 @@ import AppKit
 // wink-cua: a lean, Sky-style computer-use MCP server.
 //   wink-cua            serve MCP over stdio (default)
 //   wink-cua call <tool> '<json args>'   run one tool and print the result (debugging/benchmarks)
+//   wink-cua permissions [request accessibility|screen-recording]   Wink's own grants, as JSON
 
+Responsibility.disclaimIfNeeded()
 let arguments = CommandLine.arguments.dropFirst()
 
-if arguments.first == "call" {
+if arguments.first == "permissions" {
+    exit(Permissions.run(Array(arguments.dropFirst())))
+} else if arguments.first == "call" {
     let rest = Array(arguments.dropFirst())
     guard let tool = rest.first else {
         FileHandle.standardError.write("usage: wink-cua call <tool> '<json>'\n".data(using: .utf8)!)

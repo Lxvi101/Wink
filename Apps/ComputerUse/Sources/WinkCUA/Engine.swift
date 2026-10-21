@@ -104,6 +104,7 @@ final class Engine {
     }
 
     private func session(for query: String, launch: Bool = true) throws -> AppSession {
+        try Self.requireAccessibility()
         let running = try resolve(query, launch: launch)
         if let existing = sessions[running.processIdentifier] { return existing }
         let created = AppSession(app: running)
@@ -117,6 +118,19 @@ final class Engine {
             throw ToolError("call get_app_state for '\(s.name)' first; element indices come from it.")
         }
         return s
+    }
+
+    /// Without Accessibility every tree comes back empty: say so instead, and ask a companion to help.
+    static func requireAccessibility() throws {
+        guard !AXIsProcessTrusted() else { return }
+        SessionEvents.shared.permissionNeeded("accessibility")
+        throw ToolError(Self.permissionAdvice("Accessibility"))
+    }
+
+    static func permissionAdvice(_ permission: String) -> String {
+        "Wink doesn't have \(permission) permission yet, so it can't see or use apps. Ask the user to allow it: "
+            + "XNotch → Settings → Computer Use shows how, or System Settings → Privacy & Security → \(permission) "
+            + "→ switch on Wink. Then retry; if it still fails, restart this MCP server."
     }
 
     // MARK: list_apps
@@ -142,7 +156,8 @@ final class Engine {
         var text = "Running apps (\(lines.count)). Any installed app can also be named in get_app_state; it is launched in the background.\n"
         text += lines.joined(separator: "\n")
         if !AXIsProcessTrusted() {
-            text += "\n\nWARNING: Accessibility permission is not granted to this process (or its host terminal)."
+            SessionEvents.shared.permissionNeeded("accessibility")
+            text += "\n\nWARNING: " + Self.permissionAdvice("Accessibility")
         }
         return ToolOutput(text: text)
     }
@@ -261,7 +276,11 @@ final class Engine {
             s.shotScale = shot.scale
             return (shot.jpeg, "\nScreenshot: \(shot.pixelWidth)x\(shot.pixelHeight)px of the window (x/y arguments use these pixels).")
         } catch {
-            return (nil, "\nScreenshot: unavailable (\(error)). Screen Recording permission may be missing.")
+            let denied = (error as NSError).code == -3801 || !CGPreflightScreenCaptureAccess()
+            guard denied else { return (nil, "\nScreenshot: unavailable (\(error)).") }
+            SessionEvents.shared.permissionNeeded("screenRecording")
+            return (nil, "\nScreenshot: unavailable. " + Self.permissionAdvice("Screen Recording")
+                + " The accessibility tree above still works without it.")
         }
     }
 

@@ -16,18 +16,36 @@ cd Apps/ComputerUse
 claude mcp add wink-cua -- ~/.local/bin/wink-cua
 ```
 
-The easiest way is XNotch's **Computer Use** extension: it bundles a notarized `wink-cua` and adds it to
-Claude Code, Codex, Cursor, Antigravity, VS Code, Claude Desktop, Windsurf and Gemini CLI with one
-click, or takes it out of them all again.
+The easiest way is XNotch's **Computer Use** extension. It bundles a notarized `Wink.app`, adds its
+server to Claude Code, Codex, Cursor, Antigravity, VS Code, Claude Desktop, Windsurf and Gemini CLI
+with one click (or takes it out of them all again), and walks you through Wink's permissions.
 
-To cut a notarized universal build (`dist/wink-cua-<version>-macos-universal.zip`):
+To cut a notarized, stapled universal `Wink.app` (and `dist/Wink-<version>-macos-universal.zip`):
 
 ```bash
 NOTARY_PROFILE=<notarytool profile> ./scripts/release.sh
 ```
 
-Grant **Accessibility** and **Screen Recording** to the app that launches the server (your terminal,
-Claude Code, Codex, …). The process must run in an unlocked GUI session.
+## Permissions
+
+Wink asks for **Accessibility** and **Screen Recording** once, for itself. macOS normally charges a
+command-line tool's permissions to whichever app launched it, so every client (Terminal, Cursor, Claude
+Desktop, …) would need its own grant. Instead `wink-cua` disclaims its launcher: it re-launches itself
+as responsible for its own privacy decisions, with stdio passed straight through. Inside `Wink.app`
+(bundle id `dev.wink.cua`) the grants belong to Wink and survive updates. `WINK_CUA_DISCLAIM=0` turns
+this off, so the launching app's grants apply again.
+
+- `wink-cua permissions` prints Wink's grants as JSON. `wink-cua permissions request accessibility` or
+  `… request screen-recording` shows macOS's prompt.
+- When a tool needs a permission Wink lacks, the tool says so and `wink-cua` posts
+  `dev.wink.cua.permission.needed`. XNotch's Computer Use extension answers it by opening System
+  Settings with its guide and Wink's icon to drag in.
+- macOS may apply a new Screen Recording grant only to servers started after it. Restart the MCP
+  server (in Claude Code, `/mcp`) if screenshots still fail.
+
+Built from source and run outside `Wink.app`, the server has no bundle to hold its grants, so allow
+Accessibility and Screen Recording for the app that launches it, or run it with `WINK_CUA_DISCLAIM=0`.
+The process must run in an unlocked GUI session.
 
 ## Agent loop
 
@@ -91,6 +109,7 @@ agent cursor. They are distributed notifications with plist user info:
 | `dev.wink.cua.session.start` | `session`, `pid`, `client` (the launching process: `claude`, `codex`, …), `app` |
 | `dev.wink.cua.session.action` | `session`, `pid`, `tool`, `app`, `bundleID`, `x`/`y` when the cursor moves, `windowX`/`windowY` when a window is read |
 | `dev.wink.cua.session.end` | `session`, `pid`, `reason` (`idle` or `exit`) |
+| `dev.wink.cua.permission.needed` | `permission` (`accessibility` or `screenRecording`), `pid`, `client`, `app` (the `Wink.app` path) |
 
 Points are AppKit screen coordinates (origin at the bottom left of the main display). A session starts
 with the first tool call and ends `WINK_CUA_SESSION_IDLE` seconds (default 20) after the last one, or

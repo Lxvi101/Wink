@@ -94,7 +94,7 @@ final class MCPServer {
                 reply(id, [
                     "protocolVersion": version,
                     "capabilities": ["tools": ["listChanged": false]],
-                    "serverInfo": ["name": "wink-cua", "version": "0.1.0"],
+                    "serverInfo": ["name": "wink-cua", "version": "0.2.0"],
                     "instructions": Self.instructions,
                 ])
             case "ping":
