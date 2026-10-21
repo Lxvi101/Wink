@@ -6,6 +6,11 @@ Peekaboo is a macOS CLI and menu-bar app for screen capture, accessibility inspe
 
 ![Peekaboo banner](assets/peekaboo.png)
 
+> **This fork adds [`peekaboo-cua`](Apps/ComputerUse/README.md)**, a lean, Sky-style computer-use MCP server.
+> It works in the background, shows an animated agent cursor, keeps element indices stable, and returns
+> the settled UI diff from every action. A Calculator click takes about 13 ms to dispatch and about 235 ms
+> including the settled UI state. Install it with `Apps/ComputerUse/scripts/install.sh`.
+
 ## Install
 
 The released CLI and app require macOS 15 or later.
