@@ -1,9 +1,9 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.serialized, .tags(.permissions))
 struct PermissionCommandTests {
     @Test
@@ -24,7 +24,7 @@ struct PermissionCommandTests {
         let screenCapture = StubScreenCaptureService(permissionGranted: false)
 
         let services = await MainActor.run {
-            TestServicesFactory.makePeekabooServices(
+            TestServicesFactory.makeWinkServices(
                 automation: automation,
                 screenCapture: screenCapture
             )
@@ -68,7 +68,7 @@ struct PermissionCommandTests {
         let screenCapture = StubScreenCaptureService(permissionGranted: true)
 
         let services = await MainActor.run {
-            TestServicesFactory.makePeekabooServices(
+            TestServicesFactory.makeWinkServices(
                 automation: automation,
                 screenCapture: screenCapture
             )
@@ -84,7 +84,7 @@ struct PermissionCommandTests {
     @Test
     func `permissions status JSON includes event synthesizing`() async throws {
         let services = await MainActor.run {
-            TestServicesFactory.makePeekabooServices()
+            TestServicesFactory.makeWinkServices()
         }
 
         let result = try await InProcessCommandRunner.run([
@@ -106,7 +106,7 @@ struct PermissionCommandTests {
     @Test
     func `permissions can request event synthesizing in JSON mode`() async throws {
         let services = await MainActor.run {
-            TestServicesFactory.makePeekabooServices()
+            TestServicesFactory.makeWinkServices()
         }
 
         let result = try await InProcessCommandRunner.run([
@@ -134,7 +134,7 @@ private struct PermissionRequestResultForTest: Codable {
     let granted: Bool?
 }
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 extension PermissionCommandTests {
     fileprivate static func balancedJSON(in text: Substring) -> String? {
         var curly = 0

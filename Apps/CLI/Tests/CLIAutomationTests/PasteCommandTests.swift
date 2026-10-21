@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKitTestSupport
+import WinkAutomationKitTestSupport
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe), .serialized)
 struct PasteCommandTests {
@@ -17,7 +17,7 @@ struct PasteCommandTests {
             data: Data("current".utf8),
             textPreview: "current"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: clipboard,
             automation: automation
         )
@@ -42,7 +42,7 @@ struct PasteCommandTests {
             data: Data("sensitive".utf8),
             textPreview: "sensitive"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: clipboard,
             automation: automation
         )
@@ -69,7 +69,7 @@ struct PasteCommandTests {
             name: "TextEdit"
         )
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             automation: automation
         )
@@ -134,7 +134,7 @@ struct PasteCommandTests {
             textPreview: "prior"
         )
         let applications = StubApplicationService(applications: [app])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation
@@ -197,7 +197,7 @@ struct PasteCommandTests {
             delivery: .init(mechanism: .processTargetedEvents, mode: .background),
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             automation: automation
         )
@@ -242,7 +242,7 @@ struct PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             clipboard: clipboard,
             automation: automation
@@ -288,7 +288,7 @@ struct PasteCommandTests {
         )
         clipboard.current = priorClipboard
         let applications = StubApplicationService(applications: [app])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation
@@ -338,7 +338,7 @@ struct PasteCommandTests {
             textPreview: "prior"
         )
         clipboard.restoreError = ClipboardServiceError.writeFailed("simulated restore failure")
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             clipboard: clipboard,
             automation: automation
@@ -391,7 +391,7 @@ struct PasteCommandTests {
                 "--restore-delay", "0",
                 "--no-remote",
             ],
-            services: TestServicesFactory.makePeekabooServices(
+            services: TestServicesFactory.makeWinkServices(
                 applications: StubApplicationService(applications: [app]),
                 clipboard: plainClipboard,
                 automation: StubAutomationService()
@@ -414,7 +414,7 @@ struct PasteCommandTests {
         )
         let automation = StubAutomationService()
         let clipboard = StubClipboardService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             clipboard: clipboard,
             automation: automation
@@ -450,7 +450,7 @@ struct PasteCommandTests {
     func `Paste fails before mutating clipboard when explicit app target is missing`() async throws {
         let automation = StubAutomationService()
         let clipboard = StubClipboardService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: []),
             clipboard: clipboard,
             automation: automation
@@ -459,7 +459,7 @@ struct PasteCommandTests {
         let result = try await InProcessCommandRunner.run(
             [
                 "paste",
-                "--app", "NoSuchPeekabooApp",
+                "--app", "NoSuchWinkApp",
                 "--text", "smoke",
                 "--json",
                 "--no-remote",
@@ -603,7 +603,7 @@ struct PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [ServiceApplicationInfo(
                 processIdentifier: pid,
                 processStartIdentity: 71,

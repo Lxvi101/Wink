@@ -1,19 +1,19 @@
 ---
-summary: 'Reference for Peekaboo daemon lifecycle, routing, sockets, and migration.'
+summary: 'Reference for Wink daemon lifecycle, routing, sockets, and migration.'
 read_when:
   - 'debugging reusable daemon startup, status, migration, or idle exit'
   - 'understanding CLI, GUI Bridge, and MCP runtime ownership'
 ---
 
-# Peekaboo daemon
+# Wink daemon
 
-Peekaboo's reusable daemon keeps automation services, snapshots, window tracking, and browser MCP state warm across
-separate CLI invocations. It runs from the same `peekaboo` binary and is managed with:
+Wink's reusable daemon keeps automation services, snapshots, window tracking, and browser MCP state warm across
+separate CLI invocations. It runs from the same `wink` binary and is managed with:
 
 ```bash
-peekaboo daemon start
-peekaboo daemon status
-peekaboo daemon stop
+wink daemon start
+wink daemon status
+wink daemon stop
 ```
 
 ## Runtime ownership
@@ -22,12 +22,12 @@ Each long-lived host has one distinct role and socket:
 
 | Runtime | Socket | Lifecycle |
 | --- | --- | --- |
-| Reusable CLI daemon | `~/Library/Application Support/Peekaboo/daemon.sock` | Auto-started with idle exit, or manual until stopped. |
-| Peekaboo.app Bridge | `~/Library/Application Support/Peekaboo/bridge.sock` | Owned by the GUI app and its TCC grants. |
+| Reusable CLI daemon | `~/Library/Application Support/Wink/daemon.sock` | Auto-started with idle exit, or manual until stopped. |
+| Wink.app Bridge | `~/Library/Application Support/Wink/bridge.sock` | Owned by the GUI app and its TCC grants. |
 | MCP server | stdio | Owned by the MCP client; no Bridge listener or published socket. |
 
 Commands outside the exact-build preference below prefer the reusable daemon when it is healthy. If it is unavailable,
-they use a healthy Peekaboo.app host with the required capability before auto-starting a daemon. If no remote host is
+they use a healthy Wink.app host with the required capability before auto-starting a daemon. If no remote host is
 usable, the command falls back to process-local services when that operation permits it.
 
 A command carrying a concrete `ps1_` snapshot reference bypasses that preference order. It uses the unique
@@ -37,14 +37,14 @@ only caller-local state. See [Bridge snapshot authority](bridge-host.md#snapshot
 
 Implicit commands that require screen capture, inspect the AX tree, use browser MCP, or consume/invalidate snapshot
 state first prefer the current CLI build's deterministic `daemon-<build>.sock`. They may auto-start that exact-build
-daemon before considering an otherwise healthy Peekaboo.app host, because protocol compatibility alone does not make
+daemon before considering an otherwise healthy Wink.app host, because protocol compatibility alone does not make
 build-sensitive in-memory state interchangeable. This preference does not apply to explicit Bridge paths, custom
 daemon paths, application inventory or launch, or local-only execution.
 
 An on-demand daemon reporting missing Screen Recording, Accessibility, or Event Synthesizing grants held by the
-running Peekaboo.app host ranks after that app during implicit routing, unless the daemon also holds a grant the app
+running Wink.app host ranks after that app during implicit routing, unless the daemon also holds a grant the app
 reports missing; unreported permissions keep the existing order. Snapshot-owned actions and lifecycle commands
-requiring a surviving daemon are unaffected. Before auto-start, the same comparison uses the caller's non-interactive permission preflights to skip launching a weaker daemon when a capable Peekaboo.app host would win; unknown permissions retain the existing launch policy.
+requiring a surviving daemon are unaffected. Before auto-start, the same comparison uses the caller's non-interactive permission preflights to skip launching a weaker daemon when a capable Wink.app host would win; unknown permissions retain the existing launch policy.
 
 Exact-build preference keeps snapshot producers and invalidators on the same binary generation when possible, but is
 not an affinity requirement: when the GUI is selected, its snapshot watermark is caught up before execution and the
@@ -56,19 +56,19 @@ host and warns when another daemon also exists; explicit daemon start safely pro
 manual mode. After executable upgrades, implicit routing rediscovers compatible same-user fallback sockets and validates
 their daemon identity before reuse. Explicit Bridge paths and custom daemon paths do not scan sibling sockets.
 
-Explicit `--bridge-socket` or `PEEKABOO_BRIDGE_SOCKET` selects only that Bridge path and disables daemon auto-start.
-`PEEKABOO_DAEMON_SOCKET` changes the reusable daemon path without becoming an explicit Bridge override.
-`--no-remote` or `PEEKABOO_NO_REMOTE` forces local execution.
+Explicit `--bridge-socket` or `WINK_BRIDGE_SOCKET` selects only that Bridge path and disables daemon auto-start.
+`WINK_DAEMON_SOCKET` changes the reusable daemon path without becoming an explicit Bridge override.
+`--no-remote` or `WINK_NO_REMOTE` forces local execution.
 
 ## Lifecycle modes
 
 - **Auto**: launched on demand by a CLI command; exits after inactivity (default 300 seconds).
-- **Manual**: launched by `peekaboo daemon start`; remains running until `peekaboo daemon stop`.
+- **Manual**: launched by `wink daemon start`; remains running until `wink daemon stop`.
 
-`PEEKABOO_DAEMON_IDLE_TIMEOUT_SECONDS` changes the auto idle timeout. Accepted requests count as activity, and shutdown
+`WINK_DAEMON_IDLE_TIMEOUT_SECONDS` changes the auto idle timeout. Accepted requests count as activity, and shutdown
 waits for accepted connections and operational services to drain.
 
-Standalone `mcp` daemon mode is intentionally unavailable. `peekaboo mcp` owns its stdio lifecycle and uses only
+Standalone `mcp` daemon mode is intentionally unavailable. `wink mcp` owns its stdio lifecycle and uses only
 process-local support such as window tracking.
 
 ## Socket ownership
@@ -83,9 +83,9 @@ host.
 
 ## Legacy migration
 
-Older daemons may still occupy Peekaboo.app's `bridge.sock`. Current daemon control detects the host kind before acting:
+Older daemons may still occupy Wink.app's `bridge.sock`. Current daemon control detects the host kind before acting:
 
-- Peekaboo.app is never mistaken for a daemon.
+- Wink.app is never mistaken for a daemon.
 - Auto and manual daemons that advertise conditional stop migrate to `daemon.sock` while preserving lifecycle mode,
   polling interval, and idle timeout.
 - Migration defers while requests are active.
@@ -93,7 +93,7 @@ Older daemons may still occupy Peekaboo.app's `bridge.sock`. Current daemon cont
 
 ## Status
 
-`peekaboo daemon status --json` reports:
+`wink daemon status --json` reports:
 
 - PID, start time, lifecycle mode, and socket path
 - Bridge protocol version, host kind, and advertised operations
@@ -117,19 +117,19 @@ checks, retries read-only observations, and reports an unresolved probe failure 
 ### Unsigned developer builds
 
 Prefer the [notarized tap or npm CLI](install.md#homebrew-recommended). For a source build (including Homebrew core's
-`peekaboo` formula), explicitly opt in before starting or connecting to your own daemon:
+`wink` formula), explicitly opt in before starting or connecting to your own daemon:
 
 ```bash
-export PEEKABOO_ALLOW_UNSIGNED_DAEMON=1
-peekaboo daemon start
-peekaboo daemon status
+export WINK_ALLOW_UNSIGNED_DAEMON=1
+wink daemon start
+wink daemon status
 ```
 
 The variable applies only when the current process is not release-signed. It lets an unsigned CLI trust only an
 on-demand daemon with the same effective UID and exact same live kernel CDHash (the same executable bytes), and
 lets that daemon admit only matching clients. Auto-start and `daemon start` propagate the variable. Restart an
 existing daemon to apply the opt-in policy on the host as well. Different builds and GUI Bridge hosts still
-require release signing. Release-signed CLIs, daemons, and Peekaboo.app ignore this variable completely.
+require release signing. Release-signed CLIs, daemons, and Wink.app ignore this variable completely.
 
 `bridge status` and `daemon status` label accepted connections `unsigned same-binary developer opt-in`; JSON includes
 `trustMode: "unsignedSameBinaryDeveloperOptIn"`. This is developer trust, not release-signature or source-provenance
@@ -141,10 +141,10 @@ still fail the command. Release-signed clients retain their existing routing and
 
 Explicit `daemon start` and `daemon run` still start daemons without the variable; unsuccessful authenticated
 readiness checks retain the unsigned-build installation hint. Explicit `daemon status`, `daemon stop`,
-`--bridge-socket`, and `PEEKABOO_BRIDGE_SOCKET` retain authentication failures instead of silently falling back.
+`--bridge-socket`, and `WINK_BRIDGE_SOCKET` retain authentication failures instead of silently falling back.
 
 Ad-hoc source builds lack the hardened runtime: injected code can run inside the same binary and therefore share its
 CDHash. Enable this only on machines you control. Prefer the notarized install for normal use.
 
-See [`peekaboo daemon`](commands/daemon.md) for command flags and [Bridge host](bridge-host.md) for transport and
+See [`wink daemon`](commands/daemon.md) for command flags and [Bridge host](bridge-host.md) for transport and
 security details.

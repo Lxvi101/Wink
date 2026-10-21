@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Peekaboo GUI Test Runner
+# Wink GUI Test Runner
 # This script runs the Swift Testing tests with various configurations
 
 set -e
 
-echo "🧪 Peekaboo GUI Test Runner"
+echo "🧪 Wink GUI Test Runner"
 echo "=========================="
 
 # Colors for output
@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 
 # Check if we're in the right directory
 if [ ! -f "Package.swift" ]; then
-    echo -e "${RED}Error: Package.swift not found. Please run from the Peekaboo GUI directory.${NC}"
+    echo -e "${RED}Error: Package.swift not found. Please run from the Wink GUI directory.${NC}"
     exit 1
 fi
 
@@ -72,7 +72,7 @@ if command -v xcrun &> /dev/null && [ "$GENERATE_COVERAGE" = "1" ]; then
     echo -e "${YELLOW}Generating coverage report...${NC}"
     swift test --enable-code-coverage
     xcrun llvm-cov report \
-        .build/debug/PeekabooPackageTests.xctest/Contents/MacOS/PeekabooPackageTests \
+        .build/debug/WinkPackageTests.xctest/Contents/MacOS/WinkPackageTests \
         -instr-profile=.build/debug/codecov/default.profdata \
         -ignore-filename-regex=".build|Tests"
 fi

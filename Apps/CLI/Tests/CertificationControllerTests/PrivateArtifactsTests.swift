@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller private artifacts")
 struct PrivateArtifactsTests {

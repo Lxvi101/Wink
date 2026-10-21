@@ -14,7 +14,7 @@ BASE_DELAY_SECONDS="${CODESIGN_TIMESTAMP_RETRY_DELAY_SECONDS:-5}"
   exit 2
 }
 
-output_file="$(mktemp "${TMPDIR:-/tmp}/peekaboo-codesign.XXXXXX")"
+output_file="$(mktemp "${TMPDIR:-/tmp}/wink-codesign.XXXXXX")"
 trap 'rm -f "$output_file"' EXIT
 
 attempt=1

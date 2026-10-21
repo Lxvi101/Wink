@@ -7,19 +7,19 @@ read_when:
 
 # Capture Engine Selection
 
-Peekaboo supports two capture backends:
+Wink supports two capture backends:
 - **modern**: bounded ScreenCaptureKit `SCScreenshotManager` calls
 - **classic**: CoreGraphics or an isolated system screenshot helper (no in-process SCK)
 
 ## How selection works
 - Default: **auto** (classic/CoreGraphics first, then modern ScreenCaptureKit if allowed).
 - Environment:
-  - `PEEKABOO_CAPTURE_ENGINE=auto|modern|sckit|classic|cg` (preferred)
-  - Back-compat: `PEEKABOO_USE_MODERN_CAPTURE=true|false|modern-only|legacy`
+  - `WINK_CAPTURE_ENGINE=auto|modern|sckit|classic|cg` (preferred)
+  - Back-compat: `WINK_USE_MODERN_CAPTURE=true|false|modern-only|legacy`
 - CLI flags (select the backend for this invocation):
-  - `peekaboo capture live --capture-engine auto|modern|sckit|classic|cg`
-  - `peekaboo see --no-elements --capture-engine ...`
-  - `peekaboo see --capture-engine ...`
+  - `wink capture live --capture-engine auto|modern|sckit|classic|cg`
+  - `wink see --no-elements --capture-engine ...`
+  - `wink see --capture-engine ...`
 
 `see --capture-engine` selects the backend on the same Bridge host that normal runtime routing chooses; it does not
 silently move capture or TCC ownership into the CLI process. If no compatible Bridge host is available, the command
@@ -27,9 +27,9 @@ fails before caller-local capture. Add `--no-remote` only when caller-local exec
 is known to own Screen Recording in the active Aqua session.
 
 `capture live` and `capture action` preserve their caller-local behavior for `--capture-engine` and nonempty
-`PEEKABOO_CAPTURE_ENGINE` overrides when no explicit socket is selected. This includes `auto` and aliases; the caller
+`WINK_CAPTURE_ENGINE` overrides when no explicit socket is selected. This includes `auto` and aliases; the caller
 still needs capture permissions and obeys the existing ScreenCaptureKit ownership checks. Adding `--bridge-socket`
-or a nonempty `PEEKABOO_BRIDGE_SOCKET` opts that choice into pixel-only desktop observation on the exact selected host.
+or a nonempty `WINK_BRIDGE_SOCKET` opts that choice into pixel-only desktop observation on the exact selected host.
 Frames travel inline under the existing content-digest verification and response-size bound, without intermediate
 observation files, snapshots, AX traversal, or OCR. The live sampler still owns its session-wide target-identity/bounds
 checks, cadence, scaling, and output files.
@@ -53,11 +53,11 @@ inside the individual request and never become a reusable daemon's inherited pro
 
 ## ScreenCaptureKit process ownership
 
-Peekaboo has observed a second Peekaboo process's ScreenCaptureKit screenshot request hanging after its daemon used
-SCK, even when no capture was in flight. Peekaboo therefore gives the first process that explicitly preclaims caller-local modern
+Wink has observed a second Wink process's ScreenCaptureKit screenshot request hanging after its daemon used
+SCK, even when no capture was in flight. Wink therefore gives the first process that explicitly preclaims caller-local modern
 capture or enters a real SCK API a per-user, process-lifetime owner lease. Later remote `modern` requests prefer the
 compatible Bridge host whose PID, process generation, and signed build match that lease.
-Every claim scans and refuses owner-unaware live Peekaboo processes, including those discovered after the current generation
+Every claim scans and refuses owner-unaware live Wink processes, including those discovered after the current generation
 acquired the canonical lease.
 
 Current hosts advertise implemented ownership enforcement separately from their observed preparation readiness.
@@ -79,10 +79,10 @@ of action metadata, including for ordinary `see --json` preflight failures. Its 
 A blocked SCK entry does not imply that an earlier desktop mutation was absent or safe to repeat; any existing action
 outcome and retry-safety receipt remain authoritative.
 
-`--no-remote --capture-engine modern` explicitly requests caller-local ownership. If another Peekaboo process owns
+`--no-remote --capture-engine modern` explicitly requests caller-local ownership. If another Wink process owns
 SCK, the command refuses before constructing local capture services or calling the framework. Retry without
 `--no-remote` to use a compatible host for that exact owner generation, or explicitly request
-`--capture-engine classic` on a host that proves the classic contract. Peekaboo never silently changes an explicit `modern` request to classic. Explicit classic
+`--capture-engine classic` on a host that proves the classic contract. Wink never silently changes an explicit `modern` request to classic. Explicit classic
 does not probe or claim in-process ScreenCaptureKit. Because the CoreGraphics permission preflight is not authoritative
 for rebuilt CLI binaries, a false preflight must be corroborated by readable protected metadata from a foreign visible
 WindowServer window before classic dispatches; otherwise it refuses before a wallpaper-only capture can be accepted.
@@ -95,15 +95,15 @@ an in-flight 3–5 second framework callback. Bounded calls cap that exposure an
 leaving a stream active for the service lifetime.
 
 An explicit `--bridge-socket` is authoritative and never reroutes. For `modern`, that socket must be served by the exact
-owner PID/process generation and signed build; otherwise Peekaboo refuses before dispatch and tells the caller to change
+owner PID/process generation and signed build; otherwise Wink refuses before dispatch and tells the caller to change
 or remove the explicit socket. Classic remains a process-isolated, in-process-SCK-free recovery path.
 
 New CLI and app processes publish a private PID/process-generation/build receipt and retain its file lock for their
-lifetime. Before every SCK leaf, Peekaboo scans exact same-user Peekaboo CLI and app entry points. CLI preflight checks
-Peekaboo daemon/app sockets and an explicitly selected Bridge host. Claude, OpenClaw, Zoom, OBS, and other applications
-are independent ScreenCaptureKit clients: their presence never requires a Peekaboo capability marker or Bridge socket
+lifetime. Before every SCK leaf, Wink scans exact same-user Wink CLI and app entry points. CLI preflight checks
+Wink daemon/app sockets and an explicitly selected Bridge host. Claude, OpenClaw, Zoom, OBS, and other applications
+are independent ScreenCaptureKit clients: their presence never requires a Wink capability marker or Bridge socket
 and does not block capture. Permission, timeout, and stream errors from the selected capture backend still propagate.
-A matching live Peekaboo host without a valid current receipt blocks SCK because its coordination cannot be
+A matching live Wink host without a valid current receipt blocks SCK because its coordination cannot be
 proven, including a renamed official binary or long-running `agent`/`capture live` process. This observation does not
 establish whether that process has used SCK or which build first implemented ownership. Unlocked stale receipts
 are safely removed from a dedicated private marker directory; repeated scans reuse PID, process-generation, executable,
@@ -122,7 +122,7 @@ reporting; a missing query bit never excuses inheritance. The runtime introducti
 has not been established, and no macOS 27 runtime was tested. Builds using older compiler/SDK combinations that omit
 `O_CLOFORK` retain close-on-exec only: there is no implemented atfork cleanup or pre-exec fork-safety guarantee.
 
-Long-running Agent and MCP modes remain available for non-capture tools when they discover a pre-lease Bridge. Peekaboo
+Long-running Agent and MCP modes remain available for non-capture tools when they discover a pre-lease Bridge. Wink
 keeps that runtime local and records a process-lifetime SCK blocker instead of failing startup or routing capture to the
 old host. A later SCK leaf refuses before framework dispatch. The blocker is intentionally irreversible for that Agent
 or MCP process: after every old host is updated or stopped, restart the long-running process before retrying SCK. This
@@ -139,16 +139,16 @@ Aliases:
 
 ## Current policy (August 2026)
 - Default: `auto` = try CGWindowList/CoreGraphics first, fallback to ScreenCaptureKit if CG fails.
-- Window `auto` capture may use the bounded `/usr/sbin/screencapture` helper only after a terminal, fallback-safe private lookup failure. Cancellation, timeout, or a quarantined ScreenCaptureKit call is never crossed with another capture backend; Peekaboo refuses until that exact framework call completes. The helper is terminated and reaped on its own timeout. `modern` remains strict and never silently changes engines.
-- You can force SC-only via env `PEEKABOO_DISABLE_CGWINDOWLIST=1`.
-- You can force classic/CG via `--capture-engine classic|cg` or `PEEKABOO_CAPTURE_ENGINE=classic`.
+- Window `auto` capture may use the bounded `/usr/sbin/screencapture` helper only after a terminal, fallback-safe private lookup failure. Cancellation, timeout, or a quarantined ScreenCaptureKit call is never crossed with another capture backend; Wink refuses until that exact framework call completes. The helper is terminated and reaped on its own timeout. `modern` remains strict and never silently changes engines.
+- You can force SC-only via env `WINK_DISABLE_CGWINDOWLIST=1`.
+- You can force classic/CG via `--capture-engine classic|cg` or `WINK_CAPTURE_ENGINE=classic`.
 
 ## Logging & telemetry
 - ScreenCaptureService logs which engine was attempted and when fallback occurs.
 - Exact-window ScreenCaptureKit observations include `window_plan_cache=miss|hit|rebuilt` and a process-local
   `window_plan_cache_generation` in the `capture.window` observation span. The Bridge host identity identifies the owning
   process; the plan generation is meaningful only inside that exact owner process.
-- Consider adding env `PEEKABOO_DISABLE_CGWINDOWLIST` if you want to dogfood pure SC.
+- Consider adding env `WINK_DISABLE_CGWINDOWLIST` if you want to dogfood pure SC.
 
 ## Exact-window warm plans
 
@@ -157,7 +157,7 @@ The modern exact-`window_id` path retains at most 32 screenshot plans for two se
 and immutable receipt/topology/scale evidence. It contains no `SCStream`, captured pixels, or cached result metadata.
 The process owner is rechecked at every ScreenCaptureKit leaf even on a cache hit.
 
-Before and after capture, Peekaboo validates the exact window owner generation, bounds, layer, visibility, sharing
+Before and after capture, Wink validates the exact window owner generation, bounds, layer, visibility, sharing
 state, active-display logical and physical topology, rotation, mirroring, and scale. Known drift evicts and rebuilds
 once. Unavailable evidence bypasses the cache for one fresh capture. Cancellation, timeout, permission, and quarantine
 failures are evicted and returned unchanged; they never trigger an internal cache retry or backend fallback.

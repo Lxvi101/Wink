@@ -14,11 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  peekaboo-core:
-    name: PeekabooCore build & tests
+  wink-core:
+    name: WinkCore build & tests
     runs-on: xcode-27
     env:
-      PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
+      WINK_INCLUDE_AUTOMATION_TESTS: "false"
       RUN_AUTOMATION_TESTS: "false"
       RUN_LOCAL_TESTS: "false"
     steps:
@@ -79,32 +79,32 @@ jobs:
       - name: Verify Swift runtime-library contracts
         run: bash scripts/test-swift-runtime-libraries.sh
 
-      - name: Compute SwiftPM cache key (PeekabooCore)
+      - name: Compute SwiftPM cache key (WinkCore)
         id: cache-key-core
         env:
           CACHE_PREFIX: ${{ runner.os }}-spm-core-
         run: |
           set -euo pipefail
-          if [ -f Core/PeekabooCore/Package.resolved ]; then
-            HASH=$(shasum Core/PeekabooCore/Package.resolved | awk '{print $1}')
+          if [ -f Core/WinkCore/Package.resolved ]; then
+            HASH=$(shasum Core/WinkCore/Package.resolved | awk '{print $1}')
           else
             echo "Package.resolved missing, falling back to commit SHA"
             HASH=${GITHUB_SHA}
           fi
           echo "key=${CACHE_PREFIX}${HASH}" >> "$GITHUB_OUTPUT"
 
-      - name: Cache SwiftPM (PeekabooCore)
+      - name: Cache SwiftPM (WinkCore)
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.swiftpm
             ~/.cache/org.swift.swiftpm
-            Core/PeekabooCore/.build
+            Core/WinkCore/.build
           key: ${{ steps.cache-key-core.outputs.key }}
           restore-keys: |
             ${{ runner.os }}-spm-core-
 
-      - name: Clean SwiftPM trait state (PeekabooCore)
+      - name: Clean SwiftPM trait state (WinkCore)
         run: |
           set -euo pipefail
           # SwiftPM caches evaluated manifests in an sqlite DB. We've seen this get stale across
@@ -122,11 +122,11 @@ jobs:
           if [ -d ~/.cache/org.swift.swiftpm ]; then
             find ~/.cache/org.swift.swiftpm -type d -name .swiftpm -prune -print -exec rm -rf {} + || true
           fi
-          if [ -d Core/PeekabooCore/.swiftpm ]; then
-            find Core/PeekabooCore/.swiftpm -type f -name traits.json -print -delete || true
+          if [ -d Core/WinkCore/.swiftpm ]; then
+            find Core/WinkCore/.swiftpm -type f -name traits.json -print -delete || true
           fi
-          if [ -d Core/PeekabooCore/.build/checkouts ]; then
-            find Core/PeekabooCore/.build/checkouts -type d -name .swiftpm -prune -print -exec rm -rf {} + || true
+          if [ -d Core/WinkCore/.build/checkouts ]; then
+            find Core/WinkCore/.build/checkouts -type d -name .swiftpm -prune -print -exec rm -rf {} + || true
           fi
 
       - name: Show Xcode version
@@ -136,37 +136,37 @@ jobs:
         run: swift --version
 
       - name: Run foreground hotkey release contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_READ: "false"
           RUN_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
           RUN_LOCAL_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/foreground-hotkey-release.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 4 \
-            --filter '^PeekabooAutomationKitTests[.](HotkeyServiceForegroundReleaseTests|ForegroundKeyboardEventPairTests)/' \
+            --filter '^WinkAutomationKitTests[.](HotkeyServiceForegroundReleaseTests|ForegroundKeyboardEventPairTests)/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite HotkeyServiceForegroundReleaseTests passed after ' "$test_log"
           grep -Fq 'Suite ForegroundKeyboardEventPairTests passed after ' "$test_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run capture PNG custody and transformation contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/capture-png-custody.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            --filter '^PeekabooAutomationKitTests[.](WatchCapturePNGTests|LegacyCapturedRasterTests|CaptureArtifactImageProcessingTests|ScreenCaptureImageScalerTests|WatchCaptureCadenceSchedulingTests)/' \
+            --filter '^WinkAutomationKitTests[.](WatchCapturePNGTests|LegacyCapturedRasterTests|CaptureArtifactImageProcessingTests|ScreenCaptureImageScalerTests|WatchCaptureCadenceSchedulingTests)/' \
             2>&1 | tee "$test_log"
           for suite in WatchCapturePNGTests LegacyCapturedRasterTests CaptureArtifactImageProcessingTests ScreenCaptureImageScalerTests WatchCaptureCadenceSchedulingTests; do
             grep -Fq "Suite $suite passed after " "$test_log"
@@ -174,21 +174,21 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run clipboard paste admission gate contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/clipboard-paste-admission-gate.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel \
-            --filter '^PeekabooAutomationKitTests\.ClipboardPasteTransactionGateTests/' \
+            --filter '^WinkAutomationKitTests\.ClipboardPasteTransactionGateTests/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite ClipboardPasteTransactionGateTests passed after ' "$test_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run mutation inventory, selector, and host window contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
           RUN_AUTOMATION_ACTIONS: "true"
         run: |
@@ -201,7 +201,7 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run application running-state contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/application-running-state.log"
@@ -210,17 +210,17 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run focus observation and accounting contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/focus-contracts.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel \
-            --filter '^PeekabooAutomationKitTests[.](FocusDispatchAccountingTests|FocusRaiseDispatchAccountingTests|FocusedElementReceiptResolverTests|ObservedFocusCorroborationTests|DetachedExactWindowFocusWindowTests|HotkeyServiceBackgroundPreparationTests)/' \
+            --filter '^WinkAutomationKitTests[.](FocusDispatchAccountingTests|FocusRaiseDispatchAccountingTests|FocusedElementReceiptResolverTests|ObservedFocusCorroborationTests|DetachedExactWindowFocusWindowTests|HotkeyServiceBackgroundPreparationTests)/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite FocusDispatchAccountingTests passed after ' "$test_log"
           grep -Fq 'Suite FocusRaiseDispatchAccountingTests passed after ' "$test_log"
@@ -231,7 +231,7 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run desktop operation lane lock contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/desktop-operation-lane-lock-contracts.log"
@@ -241,21 +241,21 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run SDK and background text route regressions
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_READ: "false"
           RUN_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
           RUN_LOCAL_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/text-route-eligibility.log"
-          filter='^PeekabooAutomationKitTests[.](TextInputRouteTests|TypeServiceForegroundPolicyTests|UIInputPolicyDefaultTests|BackgroundTextInputDeliveryTests|BackgroundTextRouteRefusalTests|BackgroundTextInputReceiverTests)/'
-          filter+='|^PeekabooAutomationKitTests[.]TypeServiceTargetResolutionTests/`(targeted printable characters preserve their exact Unicode payload|literal Unicode events discard inherited modifiers without changing text or destination)`\('
+          filter='^WinkAutomationKitTests[.](TextInputRouteTests|TypeServiceForegroundPolicyTests|UIInputPolicyDefaultTests|BackgroundTextInputDeliveryTests|BackgroundTextRouteRefusalTests|BackgroundTextInputReceiverTests)/'
+          filter+='|^WinkAutomationKitTests[.]TypeServiceTargetResolutionTests/`(targeted printable characters preserve their exact Unicode payload|literal Unicode events discard inherited modifiers without changing text or destination)`\('
           swift test --disable-xctest --enable-swift-testing --no-parallel \
             --filter "$filter" \
             2>&1 | tee "$test_log"
@@ -271,12 +271,12 @@ jobs:
           scroll_log="$RUNNER_TEMP/background-coordinate-scroll-ax.log"
           # These exact declarations still consult live app/AX state or an uncontrolled process identity.
           # Flags are not a sandbox. In particular, the mocked successful wheel route still reads a native AX role.
-          scroll_skip='^PeekabooAutomationKitTests[.]AutomationElementResolverTests/`(exact snapshot match disambiguates duplicate identifiers and frames without scanning the tail|exact snapshot match rejects a candidate from another process|foreign fuzzy candidate cannot shadow a valid target process candidate)`\(\)(/|$)'
-          scroll_skip+='|^PeekabooAutomationKitTests[.]ActionInputDriverTests/`(element action facade normalizes stale action driver failures|process scoped element mutations revalidate generation at the driver boundary|process scoped element action returns canonical outcome and target metadata|exact snapshot element mutations wait only for their process observation frame|text field action click focuses when press is unavailable|exact semantic focus reports retry unsafe when accepted setter cannot be confirmed)`\(\)(/|$)'
-          scroll_skip+='|^PeekabooAutomationKitTests[.]ScrollServiceTargetResolutionTests/`(foreground synthetic scroll reports exact emitted tick count|synthetic scroll treats explicit missing snapshot as authoritative|foreground OCR target refuses before pointer motion or scroll dispatch|background unresolved snapshot target refuses without synthetic fallback)`\(\)(/|$)'
-          scroll_skip+='|^PeekabooAutomationKitTests[.]ScrollServiceTargetResolutionTests/`unsupported AX container uses exact WebKit wheel route without global synthesis`\(role:coordinates:\)(/|$)'
+          scroll_skip='^WinkAutomationKitTests[.]AutomationElementResolverTests/`(exact snapshot match disambiguates duplicate identifiers and frames without scanning the tail|exact snapshot match rejects a candidate from another process|foreign fuzzy candidate cannot shadow a valid target process candidate)`\(\)(/|$)'
+          scroll_skip+='|^WinkAutomationKitTests[.]ActionInputDriverTests/`(element action facade normalizes stale action driver failures|process scoped element mutations revalidate generation at the driver boundary|process scoped element action returns canonical outcome and target metadata|exact snapshot element mutations wait only for their process observation frame|text field action click focuses when press is unavailable|exact semantic focus reports retry unsafe when accepted setter cannot be confirmed)`\(\)(/|$)'
+          scroll_skip+='|^WinkAutomationKitTests[.]ScrollServiceTargetResolutionTests/`(foreground synthetic scroll reports exact emitted tick count|synthetic scroll treats explicit missing snapshot as authoritative|foreground OCR target refuses before pointer motion or scroll dispatch|background unresolved snapshot target refuses without synthetic fallback)`\(\)(/|$)'
+          scroll_skip+='|^WinkAutomationKitTests[.]ScrollServiceTargetResolutionTests/`unsupported AX container uses exact WebKit wheel route without global synthesis`\(role:coordinates:\)(/|$)'
           swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            --filter '^PeekabooAutomationKitTests[.](AutomationElementResolverTests|ScrollServiceTargetResolutionTests|ActionInputDriverTests)/' \
+            --filter '^WinkAutomationKitTests[.](AutomationElementResolverTests|ScrollServiceTargetResolutionTests|ActionInputDriverTests)/' \
             --skip "$scroll_skip" 2>&1 | tee "$scroll_log"
           grep -Fq 'Suite AutomationElementResolverTests passed after ' "$scroll_log"
           grep -Fq 'Test "coordinate scroll selects the nearest ancestor without borrowing siblings or descendants" passed after ' "$scroll_log"
@@ -286,30 +286,30 @@ jobs:
           grep -Fq 'Suite ActionInputDriverTests passed after ' "$scroll_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$scroll_log"
 
-      - name: Build PeekabooCore
-        working-directory: Core/PeekabooCore
+      - name: Build WinkCore
+        working-directory: Core/WinkCore
         run: |
           swift build --configuration debug
 
       - name: Run MCP wire and background policy tests
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
-          swift test --no-parallel --filter 'PeekabooMCPServerTests|PeekabooMCPInitializationTests'
+          swift test --no-parallel --filter 'WinkMCPServerTests|WinkMCPInitializationTests'
           swift test --no-parallel --filter 'MCPToolArgumentValidationTests|MCPToolExecutionPolicyTests|MCPPolicyAwareCatalogTests|MCPBackgroundPolicyExecutionTests'
 
       - name: Run MCP action fixtures and outcome contract tests
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
           swift test --no-parallel --filter 'MCPToolExecutionTests|MCPToolErrorHandlingTests|MCPElementActionToolExecutionTests|MCPSeeExactWindowTests|ClickToolQueryWaitTests|InspectUIToolExecutionTests'
           swift test --no-parallel --filter 'MCPDesktopActionOutcomeProjectionTests|MCPCompositeActionOutcomeTests'
 
       - name: Run exact hotkey receipt regressions
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
           set -o pipefail
           test_log="$RUNNER_TEMP/hotkey-receipt-contracts.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel \
-            --filter '^PeekabooTests[.](HotkeySelectAllReceiptTests|MCPExactWindowKeyboardToolTests|TypeServiceAXFailureReceiptTests|TypingFinalReceiverBindingTests|MCPTypeTargetMetadataTests)/' \
+            --filter '^WinkTests[.](HotkeySelectAllReceiptTests|MCPExactWindowKeyboardToolTests|TypeServiceAXFailureReceiptTests|TypingFinalReceiverBindingTests|MCPTypeTargetMetadataTests)/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite HotkeySelectAllReceiptTests passed after ' "$test_log"
           grep -Fq 'Suite MCPExactWindowKeyboardToolTests passed after ' "$test_log"
@@ -319,15 +319,15 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run MCP paste admission timeout regressions
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/mcp-paste-admission-timeout.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel \
-            --filter '^PeekabooTests\.PasteToolTransactionGateTests/`(paste admission timeout preserves observations and releases the MCP reservation|admitted paste retains prior focus when its input lane times out)`\(explicitPayload:\)(/|$)' \
+            --filter '^WinkTests\.PasteToolTransactionGateTests/`(paste admission timeout preserves observations and releases the MCP reservation|admitted paste retains prior focus when its input lane times out)`\(explicitPayload:\)(/|$)' \
             2>&1 | tee "$test_log"
           grep -Eq 'Test "paste admission timeout preserves observations and releases the MCP reservation"( with 2 test cases)? passed after ' "$test_log"
           grep -Eq 'Test "admitted paste retains prior focus when its input lane times out"( with 2 test cases)? passed after ' "$test_log"
@@ -335,38 +335,38 @@ jobs:
           grep -Eq 'Test run with 2 tests( in 1 suite)? passed after ' "$test_log"
 
       - name: Run Bridge negotiation and cancellation contracts
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_READ: "false"
           RUN_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
           RUN_LOCAL_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
-          swift test --no-parallel --filter 'PeekabooBridgeClientHostTrustTests|CaptureDiagnosticWireCompatibilityTests|PeekabooBridgeCancellationTests'
+          swift test --no-parallel --filter 'WinkBridgeClientHostTrustTests|CaptureDiagnosticWireCompatibilityTests|WinkBridgeCancellationTests'
 
           scroll_log="$RUNNER_TEMP/background-coordinate-scroll-bridge.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            --filter '^PeekabooTests[.]PeekabooBridgeScrollReceiptTests/' 2>&1 | tee "$scroll_log"
-          grep -Fq 'Suite PeekabooBridgeScrollReceiptTests passed after ' "$scroll_log"
+            --filter '^WinkTests[.]WinkBridgeScrollReceiptTests/' 2>&1 | tee "$scroll_log"
+          grep -Fq 'Suite WinkBridgeScrollReceiptTests passed after ' "$scroll_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$scroll_log"
 
       - name: Run typed set-value and text-selection verification contracts
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
         run: |
           set -euo pipefail
           native_log="$RUNNER_TEMP/native-set-value-verification.log"
-          swift test --package-path ../PeekabooAutomationKit --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            --filter '^PeekabooAutomationKitTests[.](SetValueVerificationTests|TextSelectionRequestTests|TextSelectionMutationTests|AXMutationObservationReaderTests)/' \
+          swift test --package-path ../WinkAutomationKit --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
+            --filter '^WinkAutomationKitTests[.](SetValueVerificationTests|TextSelectionRequestTests|TextSelectionMutationTests|AXMutationObservationReaderTests)/' \
             2>&1 | tee "$native_log"
           grep -Fq 'Suite SetValueVerificationTests passed after ' "$native_log"
           grep -Fq 'Suite TextSelectionRequestTests passed after ' "$native_log"
@@ -375,69 +375,69 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$native_log"
           bridge_log="$RUNNER_TEMP/bridge-set-value-verification.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            --filter '^PeekabooBridgeTests[.](PeekabooBridgeSetValueVerificationTests|PeekabooBridgeSetValueVerificationWireTests|PeekabooBridgeTextSelectionTests)/|^PeekabooTests[.](PeekabooBridgeSetValueHostClientTests|PeekabooBridgeTextSelectionHostTests|MCPTextSelectionTests)/' \
+            --filter '^WinkBridgeTests[.](WinkBridgeSetValueVerificationTests|WinkBridgeSetValueVerificationWireTests|WinkBridgeTextSelectionTests)/|^WinkTests[.](WinkBridgeSetValueHostClientTests|WinkBridgeTextSelectionHostTests|MCPTextSelectionTests)/' \
             2>&1 | tee "$bridge_log"
-          grep -Fq 'Suite PeekabooBridgeSetValueVerificationTests passed after ' "$bridge_log"
-          grep -Fq 'Suite PeekabooBridgeSetValueVerificationWireTests passed after ' "$bridge_log"
-          grep -Fq 'Suite PeekabooBridgeSetValueHostClientTests passed after ' "$bridge_log"
-          grep -Fq 'Suite PeekabooBridgeTextSelectionTests passed after ' "$bridge_log"
-          grep -Fq 'Suite PeekabooBridgeTextSelectionHostTests passed after ' "$bridge_log"
+          grep -Fq 'Suite WinkBridgeSetValueVerificationTests passed after ' "$bridge_log"
+          grep -Fq 'Suite WinkBridgeSetValueVerificationWireTests passed after ' "$bridge_log"
+          grep -Fq 'Suite WinkBridgeSetValueHostClientTests passed after ' "$bridge_log"
+          grep -Fq 'Suite WinkBridgeTextSelectionTests passed after ' "$bridge_log"
+          grep -Fq 'Suite WinkBridgeTextSelectionHostTests passed after ' "$bridge_log"
           grep -Fq 'Suite MCPTextSelectionTests passed after ' "$bridge_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$bridge_log"
 
       - name: Run Bridge application running-state contracts
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/bridge-application-running-state.log"
-          swift test --no-parallel --filter PeekabooBridgeApplicationRunningStateTests 2>&1 | tee "$test_log"
-          grep -Fq 'Suite PeekabooBridgeApplicationRunningStateTests passed after ' "$test_log"
+          swift test --no-parallel --filter WinkBridgeApplicationRunningStateTests 2>&1 | tee "$test_log"
+          grep -Fq 'Suite WinkBridgeApplicationRunningStateTests passed after ' "$test_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run browser capability and guidance contracts
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
           swift test --no-parallel \
-            --filter 'BrowserToolTests|BrowserToolCapabilityIntegrationTests|RemoteBrowserMCPSessionTests|PeekabooServicesBrowserSessionProviderTests|AgentSystemPromptTests'
+            --filter 'BrowserToolTests|BrowserToolCapabilityIntegrationTests|RemoteBrowserMCPSessionTests|WinkServicesBrowserSessionProviderTests|AgentSystemPromptTests'
           swift test --no-parallel \
-            --filter 'BrowserMCPApplicationMetadataTests|BrowserMCPSessionManagerAuthorityValidationTests|BrowserMCPApprovalTransportTests|BrowserMCPConfigTests|BrowserMCPProviderConnectionTests|BrowserMCPSingleConnectionTests|BrowserMCPChannelEndpointResolverTests|BrowserMCPSessionManagerChannelRefusalTests|PeekabooBridgeBrowserRootEpochTests'
+            --filter 'BrowserMCPApplicationMetadataTests|BrowserMCPSessionManagerAuthorityValidationTests|BrowserMCPApprovalTransportTests|BrowserMCPConfigTests|BrowserMCPProviderConnectionTests|BrowserMCPSingleConnectionTests|BrowserMCPChannelEndpointResolverTests|BrowserMCPSessionManagerChannelRefusalTests|WinkBridgeBrowserRootEpochTests'
 
       - name: Run Foundation contracts
-        working-directory: Core/PeekabooFoundation
+        working-directory: Core/WinkFoundation
         run: swift test --no-parallel
 
       - name: Run focused Swift tests
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         run: |
-          swift test --no-parallel --filter 'PeekabooAIServiceImageFileSizeTests|PeekabooAIServiceImageMIMETests|MCPAnalyzeImageFileTests'
+          swift test --no-parallel --filter 'WinkAIServiceImageFileSizeTests|WinkAIServiceImageMIMETests|MCPAnalyzeImageFileTests'
           swift test --no-parallel --filter CredentialFileTests
           swift test --no-parallel --filter ConfigurationManagerConcurrencyTests
           swift test --no-parallel --filter ConfigurationAccessorsOAuthTests
           swift test --no-parallel --filter ScreenCaptureServiceFlowTests
           swift test --no-parallel --filter 'AgentRuntimeBoundaryRegressionTests|AgentDesktopContextPolicyTests'
           swift test --no-parallel --filter AgentSessionManagerStorageTests
-          swift test --no-parallel --filter PeekabooAgentServiceTests
-          swift test --no-parallel --filter PeekabooAgentSessionSafetyTests
-          swift test --no-parallel --filter PeekabooAgentStreamTerminalIntegrityTests
+          swift test --no-parallel --filter WinkAgentServiceTests
+          swift test --no-parallel --filter WinkAgentSessionSafetyTests
+          swift test --no-parallel --filter WinkAgentStreamTerminalIntegrityTests
 
       - name: Run Agent execution diagnostics contracts
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_READ: "false"
           RUN_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
           RUN_LOCAL_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/agent-partial-failure-diagnostics.log"
           swift test --disable-xctest --enable-swift-testing --no-parallel \
-            --filter '^PeekabooTests[.](PeekabooAgentStepLimitTests|AgentObservationProviderContextTests)/|^PeekabooAgentRuntimeTests[.](AgentExecutionTraceTests|AgentRecordedOutcomeNoticeTests|SnapshotInvalidationMetadataTests|AgentObservationProjectionTests)/' \
+            --filter '^WinkTests[.](WinkAgentStepLimitTests|AgentObservationProviderContextTests)/|^WinkAgentRuntimeTests[.](AgentExecutionTraceTests|AgentRecordedOutcomeNoticeTests|SnapshotInvalidationMetadataTests|AgentObservationProjectionTests)/' \
             2>&1 | tee "$test_log"
-          grep -Fq 'Suite PeekabooAgentStepLimitTests passed after ' "$test_log"
+          grep -Fq 'Suite WinkAgentStepLimitTests passed after ' "$test_log"
           grep -Fq 'Suite AgentExecutionTraceTests passed after ' "$test_log"
           grep -Fq 'Suite AgentRecordedOutcomeNoticeTests passed after ' "$test_log"
           grep -Fq 'Suite SnapshotInvalidationMetadataTests passed after ' "$test_log"
@@ -446,10 +446,10 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run targeted dialog metadata and deadline contracts
-        working-directory: Core/PeekabooAutomationKit
+        working-directory: Core/WinkAutomationKit
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
         run: |
           set -o pipefail
           test_log="$RUNNER_TEMP/dialog-metadata-contracts.log"
@@ -464,7 +464,7 @@ jobs:
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$test_log"
 
       - name: Run agent-surface contract tests
-        working-directory: Core/PeekabooCore
+        working-directory: Core/WinkCore
         # These guard the tables that silently rot: the curated `learn` copy, the
         # MCP snapshot-effect classification, and the agent tool descriptions.
         # The full Core suite is too slow for CI, so name the guards explicitly.
@@ -473,12 +473,12 @@ jobs:
           swift test --no-parallel --filter MCPToolSnapshotMutationTests
           swift test --no-parallel --filter AgentToolDescriptionTests
 
-  peekaboo-cli:
-    name: Peekaboo CLI build & tests
+  wink-cli:
+    name: Wink CLI build & tests
     runs-on: xcode-27
     env:
-      PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
-      PEEKABOO_SKIP_AUTOMATION: "1"
+      WINK_INCLUDE_AUTOMATION_TESTS: "false"
+      WINK_SKIP_AUTOMATION: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -552,14 +552,14 @@ jobs:
         working-directory: Apps/CLI
         run: |
           swift build --configuration debug
-          echo "PEEKABOO_CLI_BINARY=$(swift build --configuration debug --show-bin-path)/peekaboo" >> "$GITHUB_ENV"
+          echo "WINK_CLI_BINARY=$(swift build --configuration debug --show-bin-path)/wink" >> "$GITHUB_ENV"
 
       - name: Smoke test the built CLI and tool catalog
         run: |
           set -euo pipefail
-          "$PEEKABOO_CLI_BINARY" --version
-          "$PEEKABOO_CLI_BINARY" tools --json > "$RUNNER_TEMP/peekaboo-tools.json"
-          python3 - "$RUNNER_TEMP/peekaboo-tools.json" <<'PY'
+          "$WINK_CLI_BINARY" --version
+          "$WINK_CLI_BINARY" tools --json > "$RUNNER_TEMP/wink-tools.json"
+          python3 - "$RUNNER_TEMP/wink-tools.json" <<'PY'
           import json
           import sys
           with open(sys.argv[1]) as source:
@@ -585,9 +585,9 @@ jobs:
               },
           }
           result = subprocess.run(
-              [os.environ["PEEKABOO_CLI_BINARY"], "mcp", "--no-remote"],
+              [os.environ["WINK_CLI_BINARY"], "mcp", "--no-remote"],
               input=json.dumps(request) + "\n", text=True, capture_output=True, timeout=30,
-              env={**os.environ, "PEEKABOO_ALLOW_TOOLS": "permissions"}, check=True)
+              env={**os.environ, "WINK_ALLOW_TOOLS": "permissions"}, check=True)
           response = json.loads(result.stdout)
           assert response["id"] == 0 and "error" not in response, response
           assert response["result"]["protocolVersion"] == "2025-06-18", response
@@ -597,14 +597,14 @@ jobs:
       - name: Run mocked interaction receipt regressions
         working-directory: Apps/CLI
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"
+          WINK_INCLUDE_AUTOMATION_TESTS: "true"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_RUN_INPUT_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_READ: "true"
           RUN_AUTOMATION_TESTS: "false"
           RUN_AUTOMATION_ACTIONS: "false"
           RUN_LOCAL_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -o pipefail
           test_log="$RUNNER_TEMP/interaction-receipt-contracts.log"
@@ -621,7 +621,7 @@ jobs:
           scroll_log="$RUNNER_TEMP/background-coordinate-scroll-cli.log"
           # Move once into the skip-automation compiler configuration used by the following CLI steps.
           RUN_AUTOMATION_READ=false swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2 \
-            -Xswiftc -DPEEKABOO_SKIP_AUTOMATION \
+            -Xswiftc -DWINK_SKIP_AUTOMATION \
             --filter '^CLIAutomationTests[.]ScrollCoordinateCommandTests/' 2>&1 | tee "$scroll_log"
           grep -Fq 'Suite ScrollCoordinateCommandTests passed after ' "$scroll_log"
           grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' "$scroll_log"
@@ -629,14 +629,14 @@ jobs:
       - name: Run CLI unit tests (skip automation)
         working-directory: Apps/CLI
         run: |
-          swift test --no-parallel -Xswiftc -DPEEKABOO_SKIP_AUTOMATION
+          swift test --no-parallel -Xswiftc -DWINK_SKIP_AUTOMATION
 
       - name: Run Agent JSON and outcome-notice contracts (skip automation)
         working-directory: Apps/CLI
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/agent-json-failure-contracts.log"
-          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DPEEKABOO_SKIP_AUTOMATION \
+          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DWINK_SKIP_AUTOMATION \
             --filter '^CoreCLITests[.](AgentCommandStepLimitTests|AgentCommandJSONOutputTests|AgentRecordedOutcomeOutputTests)/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite AgentCommandStepLimitTests passed after ' "$test_log"
@@ -647,13 +647,13 @@ jobs:
       - name: Run CLI paste admission timeout regression (skip automation)
         working-directory: Apps/CLI
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_INCLUDE_AUTOMATION_TESTS: "true"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/cli-paste-admission-timeout.log"
-          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DPEEKABOO_SKIP_AUTOMATION \
+          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DWINK_SKIP_AUTOMATION \
             --filter '^CLIAutomationTests\.PasteCommandTests/`Admission timeout preserves observations and a later clipboard paste recovers`\(binaryPayload:\)(/|$)' \
             2>&1 | tee "$test_log"
           grep -Eq 'Test "Admission timeout preserves observations and a later clipboard paste recovers"( with 2 test cases)? passed after ' "$test_log"
@@ -663,13 +663,13 @@ jobs:
       - name: Run paste observation invalidation contracts (skip automation)
         working-directory: Apps/CLI
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_INCLUDE_AUTOMATION_TESTS: "true"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           set -euo pipefail
           test_log="$RUNNER_TEMP/paste-observation-invalidation.log"
-          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DPEEKABOO_SKIP_AUTOMATION \
+          swift test --disable-xctest --enable-swift-testing --no-parallel -Xswiftc -DWINK_SKIP_AUTOMATION \
             --filter '^CLIAutomationTests\.PasteObservationInvalidationTests/' \
             2>&1 | tee "$test_log"
           grep -Fq 'Suite PasteObservationInvalidationTests passed after ' "$test_log"
@@ -678,17 +678,17 @@ jobs:
       - name: Run taskless agent resume regression (skip automation)
         working-directory: Apps/CLI
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"
+          WINK_INCLUDE_AUTOMATION_TESTS: "true"
         run: |
-          swift test --no-parallel -Xswiftc -DPEEKABOO_SKIP_AUTOMATION \
+          swift test --no-parallel -Xswiftc -DWINK_SKIP_AUTOMATION \
             --filter 'AgentCommandBasicTests|AgentCommandValidationIntegrationTests'
 
       - name: Run See configuration environment regressions
         working-directory: Apps/CLI
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"
-          PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_INCLUDE_AUTOMATION_TESTS: "true"
+          WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
         run: |
           python3 ../../scripts/test-see-config-environment.py
 
@@ -792,7 +792,7 @@ jobs:
           fi
 
   mac-apps:
-    name: Build macOS apps (Peekaboo + Inspector)
+    name: Build macOS apps (Wink + Inspector)
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -814,13 +814,13 @@ jobs:
       - name: Run Mac package tests (secretless hosted runner only)
         working-directory: Apps/Mac
         env:
-          PEEKABOO_CONFIG_DIR: ${{ runner.temp }}/peekaboo-mac-tests
-          PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"
-          PEEKABOO_RUN_LIVE_AGENT_TESTS: "0"
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"
+          PEEKABOO_CONFIG_DIR: ${{ runner.temp }}/wink-mac-tests
+          WINK_CONFIG_DISABLE_MIGRATION: "1"
+          WINK_RUN_LIVE_AGENT_TESTS: "0"
+          WINK_INCLUDE_AUTOMATION_TESTS: "false"
         run: swift test --no-parallel
 
-      - name: Build Peekaboo app (Xcode)
+      - name: Build Wink app (Xcode)
         working-directory: Apps
         run: |
           /usr/bin/env \
@@ -832,24 +832,24 @@ jobs:
             -u DYLD_IMAGE_SUFFIX \
             -u DYLD_VERSIONED_LIBRARY_PATH \
             -u DYLD_VERSIONED_FRAMEWORK_PATH \
-            xcodebuild -workspace Peekaboo.xcworkspace \
-            -scheme Peekaboo \
+            xcodebuild -workspace Wink.xcworkspace \
+            -scheme Wink \
             -configuration Debug \
             -sdk macosx \
             -disableAutomaticPackageResolution \
             -onlyUsePackageVersionsFromResolvedFile \
             -skipPackageUpdates \
             CODE_SIGNING_ALLOWED=NO \
-            -derivedDataPath /tmp/DerivedData-Peekaboo
+            -derivedDataPath /tmp/DerivedData-Wink
 
-      - name: Verify Peekaboo workspace package lock
+      - name: Verify Wink workspace package lock
         working-directory: Apps
         run: |
           set -euo pipefail
           test ! -e CLI/Package.resolved
           expected_revision="$(jq -er '.pins[] | select(.identity == "sparkle") | .state.revision' \
-            Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved)"
-          actual_revision="$(git -C /tmp/DerivedData-Peekaboo/SourcePackages/checkouts/Sparkle rev-parse HEAD)"
+            Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved)"
+          actual_revision="$(git -C /tmp/DerivedData-Wink/SourcePackages/checkouts/Sparkle rev-parse HEAD)"
           test "$actual_revision" = "$expected_revision"
 
       - name: Build Inspector app (Xcode)
@@ -864,7 +864,7 @@ jobs:
             -u DYLD_IMAGE_SUFFIX \
             -u DYLD_VERSIONED_LIBRARY_PATH \
             -u DYLD_VERSIONED_FRAMEWORK_PATH \
-            xcodebuild -workspace Peekaboo.xcworkspace \
+            xcodebuild -workspace Wink.xcworkspace \
             -scheme Inspector \
             -configuration Debug \
             -sdk macosx \
@@ -872,7 +872,7 @@ jobs:
             -onlyUsePackageVersionsFromResolvedFile \
             -skipPackageUpdates \
             CODE_SIGNING_ALLOWED=NO \
-            -derivedDataPath /tmp/DerivedData-Peekaboo
+            -derivedDataPath /tmp/DerivedData-Wink
 
   lint:
     name: SwiftLint (core + CLI)

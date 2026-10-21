@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Tests for CleanCommand
 @Suite(.tags(.safe))

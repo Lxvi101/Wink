@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller closed plan")
 struct ControllerPlanTests {
@@ -21,7 +21,7 @@ struct ControllerPlanTests {
             "desktopObservation",
         ])
         #expect(plan.slots.map { plan.marker(for: $0) } == plan.slots.map {
-            "peekaboo-certification-run:\(String(repeating: "9", count: 64)):slot:\($0.id)"
+            "wink-certification-run:\(String(repeating: "9", count: 64)):slot:\($0.id)"
         })
         #expect(plan.receiptURL.lastPathComponent == "controller-a-receipt.json")
         #expect(plan.mutationStartedURL.lastPathComponent == "mutation-started.json")
@@ -73,13 +73,13 @@ struct ControllerPlanTests {
             try CertificationControllerPlan.decode(JSONSerialization.data(withJSONObject: object))
         }
 
-        object["start_path"] = "/private/tmp/peekaboo-controller-artifacts/start.json"
+        object["start_path"] = "/private/tmp/wink-controller-artifacts/start.json"
         object["final_bounds_start_path"] = object["final_bounds_ready_path"]
         #expect(throws: CertificationControllerError.self) {
             try CertificationControllerPlan.decode(JSONSerialization.data(withJSONObject: object))
         }
 
-        object["final_bounds_start_path"] = "/private/tmp/peekaboo-controller-artifacts/final-bounds-start.json"
+        object["final_bounds_start_path"] = "/private/tmp/wink-controller-artifacts/final-bounds-start.json"
         var host = try #require(object["expected_host"] as? [String: Any])
         host["source_commit"] = String(repeating: "e", count: 40)
         object["expected_host"] = host
@@ -96,11 +96,11 @@ struct ControllerPlanTests {
       "controller_id": "controller-a",
       "target_id": "target-a",
       "client_instance_id": "019c0000-0000-4000-8000-000000000002",
-      "socket_path": "/private/tmp/peekaboo-certification.sock",
+      "socket_path": "/private/tmp/wink-certification.sock",
       "trusted_bridge_host_team_ids": ["FWJYW4S8P8"],
       "expected_controller_build": {
         "source_commit": "\(String(repeating: "c", count: 40))",
-        "executable_path": "/private/tmp/peekaboo-certification-controller",
+        "executable_path": "/private/tmp/wink-certification-controller",
         "executable_sha256": "\(String(repeating: "d", count: 64))",
         "team_id": "FWJYW4S8P8"
       },
@@ -121,12 +121,12 @@ struct ControllerPlanTests {
       },
       "type_text": "certification",
       "typing_delay_milliseconds": 20,
-      "artifacts_directory": "/private/tmp/peekaboo-controller-artifacts",
-      "ready_path": "/private/tmp/peekaboo-controller-artifacts/ready.json",
-      "start_path": "/private/tmp/peekaboo-controller-artifacts/start.json",
-      "final_bounds_ready_path": "/private/tmp/peekaboo-controller-artifacts/final-bounds-ready.json",
-      "final_bounds_start_path": "/private/tmp/peekaboo-controller-artifacts/final-bounds-start.json",
-      "release_path": "/private/tmp/peekaboo-controller-artifacts/release.json"
+      "artifacts_directory": "/private/tmp/wink-controller-artifacts",
+      "ready_path": "/private/tmp/wink-controller-artifacts/ready.json",
+      "start_path": "/private/tmp/wink-controller-artifacts/start.json",
+      "final_bounds_ready_path": "/private/tmp/wink-controller-artifacts/final-bounds-ready.json",
+      "final_bounds_start_path": "/private/tmp/wink-controller-artifacts/final-bounds-start.json",
+      "release_path": "/private/tmp/wink-controller-artifacts/release.json"
     }
     """.utf8)
 }

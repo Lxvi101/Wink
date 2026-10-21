@@ -3,7 +3,7 @@
   "algorithm": "sha256",
   "text_encoding": "utf-8",
   "canonical_json": {
-    "id": "peekaboo-canonical-json-v1",
+    "id": "wink-canonical-json-v1",
     "input": "parsed JSON containing only null, booleans, strings, finite lossless numbers, arrays, and plain objects",
     "object_key_order": "ascending ECMAScript default string order over UTF-16 code units",
     "arrays": "preserve input order",
@@ -11,7 +11,7 @@
     "serialization": "JSON.stringify with no replacer or indentation, UTF-8 encoded, with no trailing newline"
   },
   "domain_separation": {
-    "template": "peekaboo.multi-target-certification.<domain>.v2",
+    "template": "wink.multi-target-certification.<domain>.v2",
     "separator_hex": "00",
     "preimage": "UTF-8 template bytes followed by one NUL byte followed by canonical JSON bytes"
   },

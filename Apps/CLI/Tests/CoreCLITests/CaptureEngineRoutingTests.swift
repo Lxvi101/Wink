@@ -1,7 +1,7 @@
 import Commander
-import PeekabooAutomation
+import WinkAutomation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -33,7 +33,7 @@ struct CaptureEngineRoutingTests {
             environment: [:]
         )
         let ambientOptions = ambientBase.applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": "modern",
+            "WINK_CAPTURE_ENGINE": "modern",
         ])
 
         for options in [cliOptions, ambientOptions] {
@@ -123,7 +123,7 @@ struct CaptureEngineRoutingTests {
             environment: [:]
         )
         let options = base.applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": "cg",
+            "WINK_CAPTURE_ENGINE": "cg",
         ])
 
         #expect(options.ignoresCaptureEnginePreference)
@@ -131,7 +131,7 @@ struct CaptureEngineRoutingTests {
         #expect(options.preferRemote)
         #expect(RuntimeHostResolver.initialRoutingDecision(
             options: options,
-            environment: ["PEEKABOO_CAPTURE_ENGINE": "cg"],
+            environment: ["WINK_CAPTURE_ENGINE": "cg"],
             configurationInput: nil,
             knownSnapshotInvalidationRemoteSocketPaths: []
         ) == .remote)

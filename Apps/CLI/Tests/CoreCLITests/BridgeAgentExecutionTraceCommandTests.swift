@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite("Bridge Agent execution trace command", .serialized)
 struct BridgeAgentExecutionTraceCommandTests {
@@ -32,15 +32,15 @@ struct BridgeAgentExecutionTraceCommandTests {
     func `Parser binds required inputs repeatable trust and defaults`() throws {
         let command = try BridgeCommand.AgentExecutionTraceSubcommand.parse([
             "--task", "Inspect Safari without foreground activation",
-            "--run-root", "/private/tmp/peekaboo-run",
-            "--bridge-socket", "/private/tmp/peekaboo.sock",
+            "--run-root", "/private/tmp/wink-run",
+            "--bridge-socket", "/private/tmp/wink.sock",
             "--trusted-host-team-id", "FIRSTTEAM",
             "--trusted-host-team-id", "SECONDTEAM",
         ])
 
         #expect(command.task == "Inspect Safari without foreground activation")
-        #expect(command.runRoot == "/private/tmp/peekaboo-run")
-        #expect(command.bridgeSocket == "/private/tmp/peekaboo.sock")
+        #expect(command.runRoot == "/private/tmp/wink-run")
+        #expect(command.bridgeSocket == "/private/tmp/wink.sock")
         #expect(command.trustedHostTeamIDs == ["FIRSTTEAM", "SECONDTEAM"])
         #expect(command.maxSteps == 40)
         #expect(command.startTimeoutSeconds == 30)
@@ -104,20 +104,20 @@ struct BridgeAgentExecutionTraceCommandTests {
         command.runRoot = runRoot.path
         command.task = String(
             repeating: "x",
-            count: PeekabooBridgeAgentExecutionPolicy.maximumTaskBytes
+            count: WinkBridgeAgentExecutionPolicy.maximumTaskBytes
         )
 
         #expect(try command.validatedRequest().task.utf8.count ==
-            PeekabooBridgeAgentExecutionPolicy.maximumTaskBytes)
+            WinkBridgeAgentExecutionPolicy.maximumTaskBytes)
         command.task.append("x")
         #expect(throws: ValidationError.self) { try command.validatedRequest() }
 
         command.task = String(
             repeating: "é",
-            count: PeekabooBridgeAgentExecutionPolicy.maximumTaskBytes / 2
+            count: WinkBridgeAgentExecutionPolicy.maximumTaskBytes / 2
         )
         #expect(try command.validatedRequest().task.utf8.count ==
-            PeekabooBridgeAgentExecutionPolicy.maximumTaskBytes)
+            WinkBridgeAgentExecutionPolicy.maximumTaskBytes)
         command.task.append("é")
         #expect(throws: ValidationError.self) { try command.validatedRequest() }
     }

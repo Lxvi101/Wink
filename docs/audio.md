@@ -9,7 +9,7 @@ read_when:
 
 ## Overview
 
-The Peekaboo audio system is built on top of TachikomaAudio, a dedicated audio module that provides comprehensive audio processing capabilities including transcription, speech synthesis, and audio recording. This document describes the architecture and usage of audio functionality in Peekaboo.
+The Wink audio system is built on top of TachikomaAudio, a dedicated audio module that provides comprehensive audio processing capabilities including transcription, speech synthesis, and audio recording. This document describes the architecture and usage of audio functionality in Wink.
 
 ## Architecture
 
@@ -23,11 +23,11 @@ The audio system is organized into two main components:
    - Audio recording with AVFoundation
    - Type definitions and protocols
 
-2. **PeekabooCore AudioInputService**
-   - High-level service for Peekaboo applications
-   - Integration with PeekabooAIService
+2. **WinkCore AudioInputService**
+   - High-level service for Wink applications
+   - Integration with WinkAIService
    - UI state management (@Published properties)
-   - Error handling specific to Peekaboo
+   - Error handling specific to Wink
 
 ### Key Components
 
@@ -51,22 +51,22 @@ Located in `/Tachikoma/Sources/TachikomaAudio/`:
   - Convenient functions like `transcribe()`, `generateSpeech()`
   - Batch operations for processing multiple files
 
-#### PeekabooCore Integration
+#### WinkCore Integration
 
-Located in `/Core/PeekabooCore/Sources/PeekabooCore/Services/Audio/`:
+Located in `/Core/WinkCore/Sources/WinkCore/Services/Audio/`:
 
 - **AudioInputService.swift**
   - @MainActor service for UI integration
   - Delegates recording to TachikomaAudio.AudioRecorder
   - Provides @Published properties for SwiftUI binding
-  - Handles error conversion between TachikomaAudio and Peekaboo
+  - Handles error conversion between TachikomaAudio and Wink
 
 ## Usage
 
 ### Basic Audio Recording
 
 ```swift
-import PeekabooCore
+import WinkCore
 
 @MainActor
 class ViewModel: ObservableObject {
@@ -137,7 +137,7 @@ try result.audioData.write(to: outputURL)
 
 ### CLI Audio Files
 
-`peekaboo agent --audio-file ~/Desktop/request.m4a "summarize this"` expands home-directory paths before transcription.
+`wink agent --audio-file ~/Desktop/request.m4a "summarize this"` expands home-directory paths before transcription.
 
 ### Audio Recording with TachikomaAudio
 
@@ -211,7 +211,7 @@ Audio providers require API keys set as environment variables:
 
 ## Error Handling
 
-### AudioInputError (PeekabooCore)
+### AudioInputError (WinkCore)
 
 ```swift
 public enum AudioInputError: LocalizedError {
@@ -259,24 +259,24 @@ Add to your app's Info.plist:
 ### Unit Tests
 
 Audio functionality is tested in:
-- `/Core/PeekabooCore/Tests/PeekabooTests/AudioInputServiceTests.swift`
+- `/Core/WinkCore/Tests/WinkTests/AudioInputServiceTests.swift`
 - `/Tachikoma/Tests/TachikomaTests/Audio/` (if present)
 
 ### Test Resources
 
 A test WAV file is provided at:
-- `/Core/PeekabooCore/Tests/PeekabooTests/Resources/test_audio.wav`
+- `/Core/WinkCore/Tests/WinkTests/Resources/test_audio.wav`
 
 This file was generated using macOS's `say` command:
 ```bash
-say -o test_audio.wav --data-format=LEI16@22050 "Hello world, this is a test audio file for Peekaboo"
+say -o test_audio.wav --data-format=LEI16@22050 "Hello world, this is a test audio file for Wink"
 ```
 
 ## Migration Notes
 
 ### From Direct OpenAI API to TachikomaAudio
 
-The audio system was refactored from using direct OpenAI API calls in PeekabooAIService to using the comprehensive TachikomaAudio module. This provides:
+The audio system was refactored from using direct OpenAI API calls in WinkAIService to using the comprehensive TachikomaAudio module. This provides:
 
 1. **Better separation of concerns**: Audio functionality is isolated in its own module
 2. **Multiple provider support**: Easy to switch between OpenAI, Groq, Deepgram, etc.
@@ -285,7 +285,7 @@ The audio system was refactored from using direct OpenAI API calls in PeekabooAI
 
 ### Breaking Changes
 
-- `PeekabooAIService.transcribeAudio()` now uses TachikomaAudio internally
+- `WinkAIService.transcribeAudio()` now uses TachikomaAudio internally
 - Direct AVAudioEngine usage in AudioInputService replaced with AudioRecorder
 - Import statements changed from `import Tachikoma` to `import TachikomaAudio` for audio functionality
 

@@ -1,13 +1,13 @@
 ---
-summary: 'Integration guides for running Peekaboo from other tools and automation environments.'
+summary: 'Integration guides for running Wink from other tools and automation environments.'
 read_when:
-  - 'calling Peekaboo from Node.js, OpenClaw, or subprocess contexts'
+  - 'calling Wink from Node.js, OpenClaw, or subprocess contexts'
   - 'debugging integration permission or routing failures'
 ---
 
-# Peekaboo Integrations
+# Wink Integrations
 
-Integration guides for using Peekaboo with other tools and frameworks.
+Integration guides for using Wink with other tools and frameworks.
 
 ## Available Guides
 

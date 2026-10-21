@@ -1,42 +1,42 @@
 ---
-title: Migrating to Peekaboo 4
+title: Migrating to Wink 4
 summary: 'Complete old-to-new mapping for every command, flag, and tool removed or renamed in the v4 CLI redesign.'
-description: What changes in the upcoming Peekaboo 4 release and what to use instead — commands, flags, MCP tools, JSON output.
+description: What changes in the upcoming Wink 4 release and what to use instead — commands, flags, MCP tools, JSON output.
 read_when:
-  - 'updating scripts, agents, or docs that used a Peekaboo 3 command or flag'
+  - 'updating scripts, agents, or docs that used a Wink 3 command or flag'
   - 'encountering an unknown-command or unknown-option error after upgrading'
 ---
 
-# Migrating to Peekaboo 4
+# Migrating to Wink 4
 
-Peekaboo 4 is not published yet; this guide describes the current source-tree contract
-for the upcoming release. Peekaboo 4 assumes your automation runs in a shell: anything
+Wink 4 is not published yet; this guide describes the current source-tree contract
+for the upcoming release. Wink 4 assumes your automation runs in a shell: anything
 a stock macOS tool already does well was removed, every operation has exactly one
 spelling, and familiar grammars (xdotool chords, coreutils-style durations) replace
 bespoke ones. Full rationale: `docs/v4-cli-plan.md`.
 
 ## Removed commands
 
-| Peekaboo 3 | Peekaboo 4 |
+| Wink 3 | Wink 4 |
 |---|---|
-| `peekaboo sleep 500` | `/bin/sleep 0.5` — or better, `peekaboo verify` to wait for an actual condition |
-| `peekaboo open <target>` | `/usr/bin/open`, or `peekaboo app launch <app> --open <url-or-file> --wait-ready` |
-| `peekaboo run script.peekaboo.json` | a shell script chaining `peekaboo` commands (the JSON step format is gone) |
-| `peekaboo list apps\|windows\|screens\|menubar\|permissions` | `app list`, `window list`, `screen list`, `menubar list`, `permissions` |
-| `peekaboo image …` | `see` (`--no-elements` for screenshot-only speed; `--format`, `--retina`, `--region`, `--mode multi` moved over) |
-| `peekaboo inspect-ui …` | `see --tree [--no-screenshot] [--depth N]` |
-| `peekaboo hotkey --keys cmd,c` | `press cmd+c --foreground`, or `press cmd+c --snapshot <fresh-exact-snapshot>` for receipt-pinned background delivery |
-| `peekaboo swipe --from-coords a --to-coords b` | `drag --from x1,y1 --to x2,y2` (`--from`/`--to` accept element IDs or coordinates) |
-| `peekaboo perform-action AXPress --on B7` | `action AXPress --on B7` |
-| `peekaboo commander` | removed (internal diagnostics) |
-| `peekaboo agent permission …` | `permissions …` |
-| `peekaboo capture watch …` | `capture live …` |
-| `peekaboo menu click-extra <item>` | `menubar click <item> --foreground` |
-| `peekaboo menu list-all` | `menu list` for application menus plus `menubar list` for status items |
+| `wink sleep 500` | `/bin/sleep 0.5` — or better, `wink verify` to wait for an actual condition |
+| `wink open <target>` | `/usr/bin/open`, or `wink app launch <app> --open <url-or-file> --wait-ready` |
+| `wink run script.wink.json` | a shell script chaining `wink` commands (the JSON step format is gone) |
+| `wink list apps\|windows\|screens\|menubar\|permissions` | `app list`, `window list`, `screen list`, `menubar list`, `permissions` |
+| `wink image …` | `see` (`--no-elements` for screenshot-only speed; `--format`, `--retina`, `--region`, `--mode multi` moved over) |
+| `wink inspect-ui …` | `see --tree [--no-screenshot] [--depth N]` |
+| `wink hotkey --keys cmd,c` | `press cmd+c --foreground`, or `press cmd+c --snapshot <fresh-exact-snapshot>` for receipt-pinned background delivery |
+| `wink swipe --from-coords a --to-coords b` | `drag --from x1,y1 --to x2,y2` (`--from`/`--to` accept element IDs or coordinates) |
+| `wink perform-action AXPress --on B7` | `action AXPress --on B7` |
+| `wink commander` | removed (internal diagnostics) |
+| `wink agent permission …` | `permissions …` |
+| `wink capture watch …` | `capture live …` |
+| `wink menu click-extra <item>` | `menubar click <item> --foreground` |
+| `wink menu list-all` | `menu list` for application menus plus `menubar list` for status items |
 
 ## Restructured commands
 
-| Peekaboo 3 | Peekaboo 4 |
+| Wink 3 | Wink 4 |
 |---|---|
 | `clipboard --action <verb>` / `clipboard -a <verb>` / positional actions | `clipboard get\|set\|clear\|save\|restore` |
 | `clipboard load <path>` | `clipboard set --file-path <path>` |
@@ -58,7 +58,7 @@ bespoke ones. Full rationale: `docs/v4-cli-plan.md`.
 
 ## Renamed and removed flags
 
-| Peekaboo 3 | Peekaboo 4 |
+| Wink 3 | Wink 4 |
 |---|---|
 | `--app-target` | `--app` |
 | `--autoclean-minutes` | `--autoclean` |
@@ -75,7 +75,7 @@ bespoke ones. Full rationale: `docs/v4-cli-plan.md`.
 | `--id <el>` (click/move) | `--on <el>` |
 | `--idle-timeout-seconds` | `--idle-timeout` |
 | `--image-path` | `--file-path` |
-| `--keys` | positional xdotool chord syntax, for example `peekaboo press cmd+c --foreground` |
+| `--keys` | positional xdotool chord syntax, for example `wink press cmd+c --foreground` |
 | `--label` | positional query text or `--on` |
 | `--max-depth` | `--depth` |
 | `--poll-interval-ms` | `--poll-interval` |
@@ -120,5 +120,5 @@ Overlays were redesigned around three feedback categories: an agent cursor with 
 motion and subtle click pulses, an input HUD, and thin-border capture indicators. All
 targeted background input stays overlay-free even when the target window is visible or
 frontmost; only untargeted or explicitly foreground input may show the cursor or HUD.
-Peekaboo.app keeps a visualizer master switch and playback controls around the three
+Wink.app keeps a visualizer master switch and playback controls around the three
 category switches; those categories are not the entire settings surface.

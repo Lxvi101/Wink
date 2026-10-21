@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Security
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification retained code identity")
 struct CodeIdentityRunnerTests {
@@ -208,7 +208,7 @@ struct CodeIdentityRunnerTests {
             kSecCodeInfoMainExecutable as String: URL(fileURLWithPath: executablePath),
             kSecCodeInfoUnique as String: Data(repeating: 0xBB, count: 20),
             kSecCodeInfoTeamIdentifier as String: self.teamID,
-            kSecCodeInfoPList as String: ["PeekabooSourceCommit": self.sourceCommit],
+            kSecCodeInfoPList as String: ["WinkSourceCommit": self.sourceCommit],
         ]
     }
 }

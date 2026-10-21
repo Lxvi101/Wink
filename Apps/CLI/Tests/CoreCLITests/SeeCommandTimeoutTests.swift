@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 struct SeeCommandTimeoutTests {
@@ -26,7 +26,7 @@ struct SeeCommandTimeoutTests {
         command.fresh = true
         command.runtime = Self.runtime(tracker: tracker, snapshots: snapshots, automation: automation)
         let snapshotID = try await snapshots.createSnapshot()
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await command.performCaptureWithDetection(snapshotID: snapshotID, observationTimeoutSeconds: 1)
         }
         #expect(automation.lastWindowContext?.requiresFreshAccessibilityTree == true)
@@ -269,14 +269,14 @@ struct SeeCommandTimeoutTests {
 
     @Test
     func `nested timeout errors pass through unchanged`() async {
-        let error = await #expect(throws: PeekabooError.self) {
+        let error = await #expect(throws: WinkError.self) {
             try await SeeCommand.withWallClockTimeout(seconds: 5) {
-                throw PeekabooError.timeout("nested capture timeout")
+                throw WinkError.timeout("nested capture timeout")
             }
         }
 
         guard case let .timeout(reason) = error else {
-            Issue.record("Expected nested PeekabooError.timeout")
+            Issue.record("Expected nested WinkError.timeout")
             return
         }
         #expect(reason == "nested capture timeout")
@@ -286,7 +286,7 @@ struct SeeCommandTimeoutTests {
     @MainActor
     func `timed out mutation keeps barrier until ignored cancellation work finishes`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-local-timeout-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-local-timeout-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let gate = IgnoredCancellationWorkGate()
@@ -302,7 +302,7 @@ struct SeeCommandTimeoutTests {
             }
         }
         await gate.waitUntilStarted()
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await operation.value
         }
 
@@ -318,7 +318,7 @@ struct SeeCommandTimeoutTests {
     @MainActor
     func `see timeout retains the command barrier until ignored cancellation work finishes`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-see-timeout-lease-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-see-timeout-lease-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -369,7 +369,7 @@ struct SeeCommandTimeoutTests {
     }
 
     private static func temporaryRoot() -> URL {
-        FileManager.default.temporaryDirectory.appendingPathComponent("peekaboo-read-only-see-\(UUID())")
+        FileManager.default.temporaryDirectory.appendingPathComponent("wink-read-only-see-\(UUID())")
     }
 
     @MainActor

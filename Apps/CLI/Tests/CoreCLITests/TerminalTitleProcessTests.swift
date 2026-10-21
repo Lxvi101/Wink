@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct TerminalTitleProcessTests {
@@ -32,7 +32,7 @@ struct TerminalTitleProcessTests {
     func `updateTerminalTitle reaps a wedged vt on PATH`() throws {
         let fileManager = FileManager.default
         let scratch = fileManager.temporaryDirectory
-            .appendingPathComponent("peekaboo-vt-title-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-vt-title-\(UUID().uuidString)", isDirectory: true)
         let bin = scratch.appendingPathComponent("bin", isDirectory: true)
         try fileManager.createDirectory(at: bin, withIntermediateDirectories: true)
         defer { try? fileManager.removeItem(at: scratch) }
@@ -41,7 +41,7 @@ struct TerminalTitleProcessTests {
         let vt = bin.appendingPathComponent("vt")
         let script = """
         #!/bin/sh
-        printf '%s\\n' "$$" > "$PEEKABOO_VT_PID_FILE"
+        printf '%s\\n' "$$" > "$WINK_VT_PID_FILE"
         trap '' TERM
         exec /bin/sleep 30
         """
@@ -49,9 +49,9 @@ struct TerminalTitleProcessTests {
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: vt.path)
 
         let previousPath = getenv("PATH").map { String(cString: $0) }
-        let previousPidFile = getenv("PEEKABOO_VT_PID_FILE").map { String(cString: $0) }
+        let previousPidFile = getenv("WINK_VT_PID_FILE").map { String(cString: $0) }
         setenv("PATH", "\(bin.path):\(previousPath ?? "/usr/bin:/bin")", 1)
-        setenv("PEEKABOO_VT_PID_FILE", pidFile.path, 1)
+        setenv("WINK_VT_PID_FILE", pidFile.path, 1)
         defer {
             if let previousPath {
                 setenv("PATH", previousPath, 1)
@@ -59,13 +59,13 @@ struct TerminalTitleProcessTests {
                 unsetenv("PATH")
             }
             if let previousPidFile {
-                setenv("PEEKABOO_VT_PID_FILE", previousPidFile, 1)
+                setenv("WINK_VT_PID_FILE", previousPidFile, 1)
             } else {
-                unsetenv("PEEKABOO_VT_PID_FILE")
+                unsetenv("WINK_VT_PID_FILE")
             }
         }
 
-        updateTerminalTitle("peekaboo-vt-title-timeout")
+        updateTerminalTitle("wink-vt-title-timeout")
 
         let pidText = try String(contentsOf: pidFile, encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines)

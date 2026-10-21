@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ActionOutcomePresentationTests {
     private struct Payload: Codable {

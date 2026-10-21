@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -16,7 +16,7 @@ struct CLIActionResultConsumerTests {
         let original = ServiceApplicationInfo(
             processIdentifier: 41,
             processStartIdentity: originalGeneration,
-            bundleIdentifier: "dev.peekaboo.fixture",
+            bundleIdentifier: "dev.wink.fixture",
             name: "Fixture"
         )
         let applications = OutcomeStubApplicationService(applications: [original])
@@ -26,13 +26,13 @@ struct CLIActionResultConsumerTests {
             bundleIdentifier: original.bundleIdentifier,
             name: original.name
         )
-        applications.launchResults["dev.peekaboo.fixture"] = ServiceApplicationInfo(
+        applications.launchResults["dev.wink.fixture"] = ServiceApplicationInfo(
             processIdentifier: 43,
             processStartIdentity: relaunchGeneration,
             bundleIdentifier: original.bundleIdentifier,
             name: original.name
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let launch = try await InProcessCommandRunner.run(
             ["app", "launch", "Fixture", "--foreground", "--json", "--no-remote"],
@@ -62,12 +62,12 @@ struct CLIActionResultConsumerTests {
             ServiceApplicationInfo(
                 processIdentifier: 41,
                 processStartIdentity: firstGeneration,
-                bundleIdentifier: "dev.peekaboo.first",
+                bundleIdentifier: "dev.wink.first",
                 name: "First",
                 activationPolicy: .regular
             ),
         ])
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let single = try await InProcessCommandRunner.run(
             [
@@ -86,7 +86,7 @@ struct CLIActionResultConsumerTests {
             ServiceApplicationInfo(
                 processIdentifier: 42,
                 processStartIdentity: secondGeneration,
-                bundleIdentifier: "dev.peekaboo.second",
+                bundleIdentifier: "dev.wink.second",
                 name: "Second",
                 activationPolicy: .regular
             ),
@@ -114,7 +114,7 @@ struct CLIActionResultConsumerTests {
             ServiceApplicationInfo(
                 processIdentifier: 41,
                 processStartIdentity: generation,
-                bundleIdentifier: "dev.peekaboo.fixture",
+                bundleIdentifier: "dev.wink.fixture",
                 name: "Fixture",
                 activationPolicy: .regular
             ),
@@ -127,7 +127,7 @@ struct CLIActionResultConsumerTests {
                 unitCount: .one
             )
         )]
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             [
@@ -155,7 +155,7 @@ struct CLIActionResultConsumerTests {
         let app = ServiceApplicationInfo(
             processIdentifier: 42,
             processStartIdentity: 77,
-            bundleIdentifier: "dev.peekaboo.fixture",
+            bundleIdentifier: "dev.wink.fixture",
             name: "Fixture"
         )
         let applications = OutcomeStubApplicationService(applications: [app])
@@ -234,18 +234,18 @@ struct CLIActionResultConsumerTests {
         let first = ServiceApplicationInfo(
             processIdentifier: 41,
             processStartIdentity: 4100,
-            bundleIdentifier: "dev.peekaboo.first",
+            bundleIdentifier: "dev.wink.first",
             name: "First"
         )
         let second = ServiceApplicationInfo(
             processIdentifier: 42,
             processStartIdentity: 4200,
-            bundleIdentifier: "dev.peekaboo.second",
+            bundleIdentifier: "dev.wink.second",
             name: "Second"
         )
         let applications = OutcomeStubApplicationService(applications: [first, second])
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             _ = try await ApplicationServiceBridge.activateApplication(
                 applications: applications,
                 request: .init(identifier: "PID:41", expectedIdentity: second.processIdentity)
@@ -264,7 +264,7 @@ struct CLIActionResultConsumerTests {
             unitCount: .one
         )
         automation.actionOutcome = outcome
-        let services = TestServicesFactory.makePeekabooServices(automation: automation)
+        let services = TestServicesFactory.makeWinkServices(automation: automation)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "switch", "--cycle", "--foreground", "--json", "--no-remote"],
@@ -284,11 +284,11 @@ struct CLIActionResultConsumerTests {
         let applications = OutcomeStubApplicationService(applications: [
             ServiceApplicationInfo(
                 processIdentifier: 42,
-                bundleIdentifier: "dev.peekaboo.fixture",
+                bundleIdentifier: "dev.wink.fixture",
                 name: "Fixture"
             ),
         ])
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "switch", "--to", "Fixture", "--foreground", "--json", "--no-remote"],
@@ -306,13 +306,13 @@ struct CLIActionResultConsumerTests {
             ServiceApplicationInfo(
                 processIdentifier: 40,
                 processStartIdentity: 400,
-                bundleIdentifier: "dev.peekaboo.other",
+                bundleIdentifier: "dev.wink.other",
                 name: "Other"
             ),
             ServiceApplicationInfo(
                 processIdentifier: 42,
                 processStartIdentity: generation,
-                bundleIdentifier: "dev.peekaboo.fixture",
+                bundleIdentifier: "dev.wink.fixture",
                 name: "Fixture"
             ),
         ])
@@ -322,7 +322,7 @@ struct CLIActionResultConsumerTests {
             evidence: .deliveryAccepted,
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "switch", "--to", "Fixture", "--verify", "--foreground", "--json", "--no-remote"],
@@ -349,7 +349,7 @@ struct CLIActionResultConsumerTests {
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
         menu.actionOutcome = outcome
         menu.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -375,7 +375,7 @@ struct CLIActionResultConsumerTests {
     func `menu click refuses a fuzzy application selector before dispatch`() async throws {
         let fixture = Self.menuFixture()
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -398,7 +398,7 @@ struct CLIActionResultConsumerTests {
         applications.inventoryCompleteness = .partial
         applications.inventoryWarnings = ["Fixture application metadata was incomplete."]
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             menu: menu
         )
@@ -437,11 +437,11 @@ struct CLIActionResultConsumerTests {
         menu.actionOutcome = outcome
         menu.actionTargetIdentity = try Self.processTarget()
         menu.menuBarItems = [MenuBarItemInfo(title: "Wi-Fi", index: 0)]
-        menu.menuBarClickResult = PeekabooCore.ClickResult(
+        menu.menuBarClickResult = WinkCore.ClickResult(
             elementDescription: "Wi-Fi",
             location: CGPoint(x: 100, y: 10)
         )
-        let services = TestServicesFactory.makePeekabooServices(menu: menu)
+        let services = TestServicesFactory.makeWinkServices(menu: menu)
 
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json", "--no-remote"],
@@ -470,11 +470,11 @@ struct CLIActionResultConsumerTests {
         menu.actionOutcome = outcome
         menu.actionTargetIdentity = try Self.windowTarget()
         menu.menuBarItems = [MenuBarItemInfo(title: "Wi-Fi", index: 0)]
-        menu.menuBarClickResult = PeekabooCore.ClickResult(
+        menu.menuBarClickResult = WinkCore.ClickResult(
             elementDescription: "Wi-Fi",
             location: CGPoint(x: 100, y: 10)
         )
-        let services = TestServicesFactory.makePeekabooServices(menu: menu)
+        let services = TestServicesFactory.makeWinkServices(menu: menu)
 
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "--index", "0", "--foreground", "--json", "--no-remote"],
@@ -498,7 +498,7 @@ struct CLIActionResultConsumerTests {
             items: [DockItem(index: 0, title: "Fixture", itemType: .application)]
         )
         dock.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(dock: dock)
+        let services = TestServicesFactory.makeWinkServices(dock: dock)
         let cases: [(command: [String], outcome: DesktopActionOutcome, expectsTarget: Bool)] = [
             (
                 ["dock", "launch", "Fixture", "--foreground", "--json", "--no-remote"],
@@ -570,7 +570,7 @@ struct CLIActionResultConsumerTests {
         dock.actionOutcome = Self.dockLaunchOutcome
         dock.actionTargetIdentity = try Self.processTarget()
         dock.removeItemsAfterLaunch = true
-        let services = TestServicesFactory.makePeekabooServices(dock: dock)
+        let services = TestServicesFactory.makeWinkServices(dock: dock)
 
         let result = try await InProcessCommandRunner.run(
             ["dock", "launch", "Fixture", "--foreground", "--json", "--no-remote"],
@@ -593,7 +593,7 @@ struct CLIActionResultConsumerTests {
         ])
         dock.actionOutcome = Self.dockLaunchOutcome
         dock.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: []),
             dock: dock
         )
@@ -616,7 +616,7 @@ extension CLIActionResultConsumerTests {
         let fixture = Self.menuFixture()
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
         menu.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -668,7 +668,7 @@ extension CLIActionResultConsumerTests {
             unitCount: DesktopActionOutcome.DispatchUnitCount(2)
         )
         dock.actionOutcome = outcome
-        let services = TestServicesFactory.makePeekabooServices(dock: dock)
+        let services = TestServicesFactory.makeWinkServices(dock: dock)
 
         let result = try await InProcessCommandRunner.run(
             ["dock", "hide", "--foreground", "--json", "--no-remote"],
@@ -694,7 +694,7 @@ extension CLIActionResultConsumerTests {
             evidence: .deliveryAccepted,
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -725,7 +725,7 @@ extension CLIActionResultConsumerTests {
             evidence: .deliveryAccepted,
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -878,7 +878,7 @@ extension CLIActionResultConsumerTests {
         menu.actionOutcome = outcome
         menu.actionTargetIdentity = try Self.processTarget()
         menu.actionCompleted = { applications.applications = [] }
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             menu: menu
         )
@@ -1039,7 +1039,7 @@ extension CLIActionResultConsumerTests {
             unitCount: .one
         )
         menu.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -1083,7 +1083,7 @@ extension CLIActionResultConsumerTests {
         ).attributed(to: receipt)
         let dock = OutcomeStubDockService()
         dock.actionError = failure
-        let services = TestServicesFactory.makePeekabooServices(dock: dock)
+        let services = TestServicesFactory.makeWinkServices(dock: dock)
 
         let result = try await InProcessCommandRunner.run(
             ["dock", "hide", "--foreground", "--json", "--no-remote"],
@@ -1259,7 +1259,7 @@ extension CLIActionResultConsumerTests {
         let fixture = Self.menuFixture()
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
         let windows = OutcomeStubWindowService(windowsByApp: [:])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             windows: windows,
             menu: menu
@@ -1288,7 +1288,7 @@ extension CLIActionResultConsumerTests {
         let replacement = ServiceApplicationInfo(
             processIdentifier: 84,
             processStartIdentity: 84000,
-            bundleIdentifier: "dev.peekaboo.replacement",
+            bundleIdentifier: "dev.wink.replacement",
             name: fixture.application.name
         )
         let replacementMenus = MenuStructure(
@@ -1310,7 +1310,7 @@ extension CLIActionResultConsumerTests {
         menu.actionTargetIdentity = try DesktopTargetIdentity(
             processIdentity: #require(fixture.application.processIdentity)
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             menu: menu
         )
@@ -1348,7 +1348,7 @@ extension CLIActionResultConsumerTests {
             unitCount: .one
         )
         menu.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: OutcomeStubWindowService(windowsByApp: [:]),
             menu: menu
@@ -1379,7 +1379,7 @@ extension CLIActionResultConsumerTests {
         let applications = OutcomeStubApplicationService(applications: [replacement])
         applications.applicationInventorySequence = [.complete([fixture.application])]
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: OutcomeStubWindowService(windowsByApp: [:]),
             menu: menu
@@ -1448,7 +1448,7 @@ extension CLIActionResultConsumerTests {
         // The service-backed route keeps exact focus inside the fixture, not the native desktop singleton.
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(
+            base: TestServicesFactory.makeWinkServices(
                 applications: StubApplicationService(applications: [fixture.application]),
                 windows: windows,
                 menu: menu
@@ -1495,7 +1495,7 @@ extension CLIActionResultConsumerTests {
         )
         let windows = OutcomeStubWindowService(windowsByApp: ["Replacement": [replacementWindow]])
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             windows: windows,
             menu: menu
@@ -1534,7 +1534,7 @@ extension CLIActionResultConsumerTests {
         let pinnedIdentifier = "PID:\(fixture.application.processIdentifier)"
         let windows = OutcomeStubWindowService(windowsByApp: [pinnedIdentifier: [replacementWindow]])
         let menu = OutcomeStubMenuService(menusByApp: [fixture.application.name: fixture.structure])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [fixture.application]),
             windows: windows,
             menu: menu

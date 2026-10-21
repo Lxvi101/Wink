@@ -1,11 +1,11 @@
 ---
-summary: 'Target UI elements via peekaboo click'
+summary: 'Target UI elements via wink click'
 read_when:
   - 'building deterministic element interactions after running `see`'
   - 'debugging focus/snapshot issues for click automation'
 ---
 
-# `peekaboo click`
+# `wink click`
 
 `click` is the primary interaction command. It accepts exactly one of an element ID, fuzzy text query, or literal coordinate target and then drives `AutomationServiceBridge.click`. Contradictory or whitespace-only target shapes fail before lookup, focus, or mutation. Background delivery is the default so target apps do not need to become frontmost; pass `--foreground` for focused foreground mouse behavior.
 
@@ -17,7 +17,7 @@ Cancellation observed before an Accessibility press stops that press before disp
 | Flag | Description |
 | --- | --- |
 | `[query]` | Optional positional text query (case-insensitive substring match). |
-| `--on <id>` | Target an opaque Peekaboo element ID copied exactly from current `see` or MCP `inspect_ui` output. |
+| `--on <id>` | Target an opaque Wink element ID copied exactly from current `see` or MCP `inspect_ui` output. |
 | `--at x,y` | Logical click coordinates. Background clicks are relative to the explicit snapshot's window, including when no target flags are supplied. Foreground clicks are relative to a selected target window, or global when no target window is selected. |
 | `--global` | Treat `--at` as global screen coordinates in either delivery mode. Background clicks still require an exact-window snapshot and a point inside that window. |
 | `--snapshot <id>` | Reuse a prior snapshot. A concrete ID must be `ps1_` plus 32 lowercase ASCII hexadecimal digits; element/query clicks otherwise default to the latest snapshot. Background coordinate clicks require an explicit reference from a fresh exact-window `see`. |
@@ -34,7 +34,7 @@ Cancellation observed before an Accessibility press stops that press before disp
 
 The process that performs `see` generates a 128-bit random `ps1_` reference and reserves it before storing the
 snapshot contents. Stores cannot mint an unreserved reference. When `click --snapshot` receives a concrete reference,
-Peekaboo asks the local process and authenticated live Bridge candidates who owns it, requires exactly one owner, and
+Wink asks the local process and authenticated live Bridge candidates who owns it, requires exactly one owner, and
 routes there before considering the usual daemon/app preferences. A stopped producer, no owner, or multiple claimants
 is a pre-dispatch refusal rather than permission to guess.
 
@@ -49,8 +49,8 @@ The independent targeted-value capability permits the verified `AXFocused` write
 without it, the client does not request that fallback, while ordinary `AXPress` delivery remains available.
 
 ## Delivery modes
-- **Background** is the default when Peekaboo can resolve a target process from target flags or snapshot metadata. Single clicks prefer accessibility actions and never activate or focus the app: element/query clicks invoke the matching AX action on the cached element; coordinate clicks hit-test the AX element at the point (`AXUIElementCopyElementAtPosition`), then press the actionable hit, descendant, or ancestor. Pressability is checked with the Accessibility actions API, so SwiftUI buttons that expose no action attribute are still pressed.
-- Background right-, double-, middle-, and triple-clicks can use native PID/window-routed CGEvents. Middle-click emits one `otherMouseDown`/`otherMouseUp` center-button pair; triple-click emits three left-button pairs with click states 1, 2, and 3. Each sequence starts with a target-window pointer primer, so canonical outcomes report three dispatched units for middle-click and seven for triple-click. Every event carries screen and window-local coordinates, exact PID/window routing fields, and a process-generation receipt revalidated before every event. The route never warps the physical cursor, activates an app, or falls back to desktop-global injection. Because macOS does not acknowledge application-level handling of these events, JSON reports `verified: false` and `effect: "unverifiable"` after a complete dispatch. Missing, moved, wrong-layer, out-of-bounds, wrong-owner, or generation-changed targets are refused. If the route changes after mouse-down, Peekaboo noncancellably releases mouse-up only to the original live process generation before reporting the click effect as indeterminate; a recycled PID is never targeted for cleanup.
+- **Background** is the default when Wink can resolve a target process from target flags or snapshot metadata. Single clicks prefer accessibility actions and never activate or focus the app: element/query clicks invoke the matching AX action on the cached element; coordinate clicks hit-test the AX element at the point (`AXUIElementCopyElementAtPosition`), then press the actionable hit, descendant, or ancestor. Pressability is checked with the Accessibility actions API, so SwiftUI buttons that expose no action attribute are still pressed.
+- Background right-, double-, middle-, and triple-clicks can use native PID/window-routed CGEvents. Middle-click emits one `otherMouseDown`/`otherMouseUp` center-button pair; triple-click emits three left-button pairs with click states 1, 2, and 3. Each sequence starts with a target-window pointer primer, so canonical outcomes report three dispatched units for middle-click and seven for triple-click. Every event carries screen and window-local coordinates, exact PID/window routing fields, and a process-generation receipt revalidated before every event. The route never warps the physical cursor, activates an app, or falls back to desktop-global injection. Because macOS does not acknowledge application-level handling of these events, JSON reports `verified: false` and `effect: "unverifiable"` after a complete dispatch. Missing, moved, wrong-layer, out-of-bounds, wrong-owner, or generation-changed targets are refused. If the route changes after mouse-down, Wink noncancellably releases mouse-up only to the original live process generation before reporting the click effect as indeterminate; a recycled PID is never targeted for cleanup.
 - Cancellation before routed dispatch remains an ordinary cancellation. Once any routed click event has been emitted, cancellation returns a retry-unsafe indeterminate error with the known emitted-unit count; observe the target before deciding whether to retry.
 - Background clicks fail with an actionable error instead of guessing. A single left click with no pressable AX element and any routed pointer click without an exact provable window fail before unsafe fallback and suggest `--foreground` where appropriate.
 - Background `--app` selectors must exactly match an application name or bundle ID; `--pid` remains the most explicit process selector. Fuzzy text is still supported for the element query itself, but a partial application name is refused before click dispatch.
@@ -63,8 +63,8 @@ without it, the client does not request that fallback, while ordinary `AXPress` 
 - Background element and query clicks preserve capture-attested exact-window identity through dispatch and report the window in `target_identity`, `target_receipt`, and `data.targetWindowId`, without requiring redundant window selectors. Process-scoped authority stays process-scoped; descriptive window hints alone never become exact-window authority. Contradictory or incomplete exact-window receipts are refused before input.
 - For ordinary implicit-snapshot single/right/double clicks, a host advertising only process-pinned clicks retains that legacy route and returns a truthful process receipt. Route selection happens before dispatch, never as a retry after a failed exact-window call. Explicit window selectors, coordinates, and middle/triple variants still require exact-window support and refuse rather than downgrade.
 - **Foreground** (`--foreground`) focuses the target first (via `ensureFocused`, hopping Spaces if needed) and then synthesizes a real mouse click at the resolved screen point — element and query targets are resolved to their adjusted center and clicked with genuine mouse events, so double, triple, right, and middle semantics match hardware clicks. If the target app is still not frontmost after the focus step, the command fails rather than clicking into whichever app is in front.
-- Modifier-click (`--modifiers ... --foreground`) is one atomic shared-desktop operation. Peekaboo preflights the snapshot's exact process generation, window ID, bounds, and point before focusing; posts one prebuilt modifier-bearing HID mouse sequence without changing shared keyboard state; waits until its mouse-up sequence reaches the session; then restores the prior cursor only if it still owns the click position and restores prior focus only if its target remains frontmost. Newer user or application state wins those compare-and-swap checks and is reported as `preserved_newer_state` instead of being overwritten. Control/right contextual clicks are refused because restoring the prior foreground would dismiss their result.
-- Long press (`--long-press --foreground`) uses the foreground path and emits a stationary mouse-down/1.2-second hold/mouse-up sequence. Peekaboo rejects the gesture before focus or pointer dispatch when `--foreground` is absent. It does not synthesize drag or micro-move events, because those can cancel native long-press recognizers.
+- Modifier-click (`--modifiers ... --foreground`) is one atomic shared-desktop operation. Wink preflights the snapshot's exact process generation, window ID, bounds, and point before focusing; posts one prebuilt modifier-bearing HID mouse sequence without changing shared keyboard state; waits until its mouse-up sequence reaches the session; then restores the prior cursor only if it still owns the click position and restores prior focus only if its target remains frontmost. Newer user or application state wins those compare-and-swap checks and is reported as `preserved_newer_state` instead of being overwritten. Control/right contextual clicks are refused because restoring the prior foreground would dismiss their result.
+- Long press (`--long-press --foreground`) uses the foreground path and emits a stationary mouse-down/1.2-second hold/mouse-up sequence. Wink rejects the gesture before focus or pointer dispatch when `--foreground` is absent. It does not synthesize drag or micro-move events, because those can cancel native long-press recognizers.
 - Background coordinate clicks require `--snapshot` from a fresh exact-window `see`. The captured PID, window ID, process generation, and bounds are matched against any `--app`/`--pid`/window selector and revalidated immediately before dispatch. PID-only/app-only coordinates, empty snapshots, same-ID replacement windows, and moved bounds are refused before mutation. Without a capture reference, use explicit `--foreground` global coordinates.
 - An AXPress-backed coordinate click through Bridge retains its signed exact-window result and one Accessibility-action unit. Accepted AXPress delivery remains `dispatched_unverified` and retry-unsafe; inspect fresh UI state before deciding what to do next.
 - Background coordinate single-clicks can also focus a writable text field or select a writable row through Accessibility values. These paths preserve the caller's value-delivery policy through positional fallback and refuse before the setter when values are disallowed. Allowed delivery retains its signed exact-window result and one Accessibility-value unit; accepted dispatch remains unverified and must be followed by fresh observation.
@@ -76,8 +76,8 @@ without it, the client does not request that fallback, while ordinary `AXPress` 
 - Result application labels reuse the application/window and snapshot metadata already bound for dispatch. Point diagnostics are prepared before dispatch and retained for output; formatting does not refetch snapshots, enumerate, or re-resolve applications after clicking. Missing names use the bound PID, window ID, or `Unknown`, and never borrow an unrelated frontmost app. Presentation does not change the canonical action outcome or target receipt.
 - Validation requires exactly one targeting strategy (`[query]`, `--on`, or `--at`) and parses coordinate strings into doubles. Target-relative coordinate clicks fail if the point is outside the resolved window.
 - When no `--snapshot` is provided, element/query clicks may use the most recent snapshot. Foreground global coordinates remain snapshot-free. Background coordinates never infer ownership at dispatch time: they resolve through the explicit capture snapshot and pass its exact receipt through the automation/Bridge boundary.
-- A result with `requires_fresh_observation: true`, or a host that cannot return a canonical outcome, consumes that snapshot for mutation. Reusing its ID for another click, action, value change, or targeted scroll returns `SNAPSHOT_STALE` before dispatch; run `peekaboo see` and use the new ID. Read-only inspection of the old snapshot remains available for diagnostics.
-- Background element/query clicks re-resolve cached elements in the target process and exact snapshot window, then invoke their AX action; when the element cannot be re-resolved, the adjusted snapshot point is hit-tested and the AX element found there is pressed. Mismatched process/window selectors and unverifiable window snapshots are rejected. Run `peekaboo see` first when you need fresh element IDs or target metadata.
+- A result with `requires_fresh_observation: true`, or a host that cannot return a canonical outcome, consumes that snapshot for mutation. Reusing its ID for another click, action, value change, or targeted scroll returns `SNAPSHOT_STALE` before dispatch; run `wink see` and use the new ID. Read-only inspection of the old snapshot remains available for diagnostics.
+- Background element/query clicks re-resolve cached elements in the target process and exact snapshot window, then invoke their AX action; when the element cannot be re-resolved, the adjusted snapshot point is hit-tested and the AX element found there is pressed. Mismatched process/window selectors and unverifiable window snapshots are rejected. Run `wink see` first when you need fresh element IDs or target metadata.
 - Foreground element-based clicks call `AutomationServiceBridge.waitForElement` with the supplied timeout so you don’t have to insert manual sleeps. Helpful hints are printed when timeouts expire.
 - `--foreground` enforces focus just before the click by `ensureFocused`; it will hop Spaces if necessary unless you pass `--no-auto-focus`. The element's screen point is then clicked with real synthetic mouse events, and the command verifies the target app is frontmost before dispatching so the click cannot land in another app.
 - Background AX clicks require Accessibility permission; routed background right/double/middle/triple clicks also require Event Synthesizing permission. Protocol 1.30 plus the `statelessClickVariants` host capability is required before middle/triple payloads are encoded, so protocol 1.29 and capability-missing hosts are refused before dispatch. Exact-window pinning rejects vanished/reused windows and points outside current bounds before native dispatch.
@@ -86,52 +86,52 @@ without it, the client does not request that fallback, while ordinary `AXPress` 
 ## Examples
 ```bash
 # Click the "Send" button using an ID copied from current `see` output
-peekaboo click --on "$ELEMENT_ID"
+wink click --on "$ELEMENT_ID"
 
 # Fuzzy search + extra wait for a slow dialog using foreground delivery
-peekaboo click "Allow" --foreground --wait-for 8s --space-switch
+wink click "Allow" --foreground --wait-for 8s --space-switch
 
 # Resolve one exact window and capture a fresh coordinate reference
-peekaboo window list --app Safari --json
-peekaboo see --window-id "$WINDOW_ID" --no-elements --json
+wink window list --app Safari --json
+wink see --window-id "$WINDOW_ID" --no-elements --json
 
 # Issue a background right-click in that exact window without moving the cursor
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --right
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --right
 
 # Issue exact-window background middle and triple clicks without moving the cursor
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --middle
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --triple
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --middle
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 --triple
 
 # Trigger a SwiftUI long-press gesture
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 640,420 --long-press --foreground
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 640,420 --long-press --foreground
 
-# Command-shift-click one captured element, then restore only state Peekaboo still owns
-peekaboo click --on "$ELEMENT_ID" --snapshot "$SNAPSHOT_ID" --foreground --modifiers cmd,shift
+# Command-shift-click one captured element, then restore only state Wink still owns
+wink click --on "$ELEMENT_ID" --snapshot "$SNAPSHOT_ID" --foreground --modifiers cmd,shift
 
 # Click 20,40 inside the freshly captured window
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 20,40
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 20,40
 
 # Force global screen coordinates while still focusing a target first
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 1024,88 --global --foreground
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 1024,88 --global --foreground
 
 # Click captured Safari coordinates without activating Safari
-peekaboo see --window-id "$WINDOW_ID" --no-elements --json
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180
+wink see --window-id "$WINDOW_ID" --no-elements --json
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180
 
 # Browser fallback when web content has no actionable accessibility descendants
-peekaboo screen list --json
-peekaboo window list --app "Google Chrome" --json
-peekaboo see --window-id "$WINDOW_ID" --no-elements --json
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 \
+wink screen list --json
+wink window list --app "Google Chrome" --json
+wink see --window-id "$WINDOW_ID" --no-elements --json
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180 \
   --foreground --input-strategy synthOnly
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
-- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see` (or omit `--snapshot` to use the most recent one). Cleaned/expired snapshots cannot be reused.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
+- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `wink see` (or omit `--snapshot` to use the most recent one). Cleaned/expired snapshots cannot be reused.
 - If an explicit socket or local-only run reports that it does not own the snapshot, repeat `see` on that same host or
-  remove the routing override and let Peekaboo find the unique live producer. It will not silently cross an explicit
+  remove the routing override and let Wink find the unique live producer. It will not silently cross an explicit
   host boundary.
 - If you see `SNAPSHOT_STALE` after an unverified or indeterminate action, do not replay the old snapshot. Observe again and use the new snapshot ID.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

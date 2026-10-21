@@ -94,16 +94,16 @@ while [[ $# -gt 0 ]]; do
             echo "  -p, --private        Show private data (requires passwordless sudo)"
             echo "  --all                Show all logs without tail limit"
             echo "  --json               Output in JSON format"
-            echo "  --subsystem NAME     Filter by subsystem (default: all Peekaboo subsystems)"
+            echo "  --subsystem NAME     Filter by subsystem (default: all Wink subsystems)"
             echo "  -h, --help           Show this help"
             echo ""
-            echo "Peekaboo subsystems:"
-            echo "  boo.peekaboo.core       - Core services"
-            echo "  boo.peekaboo.cli        - CLI tool"
-            echo "  boo.peekaboo.inspector  - Inspector app"
-            echo "  boo.peekaboo.playground - Playground app"
-            echo "  boo.peekaboo.app        - Mac app"
-            echo "  boo.peekaboo            - Mac app components"
+            echo "Wink subsystems:"
+            echo "  boo.wink.core       - Core services"
+            echo "  boo.wink.cli        - CLI tool"
+            echo "  boo.wink.inspector  - Inspector app"
+            echo "  boo.wink.playground - Playground app"
+            echo "  boo.wink.app        - Mac app"
+            echo "  boo.wink            - Mac app components"
             exit 0
             ;;
         *)
@@ -125,13 +125,13 @@ predicate_literal() {
     PREDICATE_LITERAL="${PREDICATE_LITERAL//\"/\\\"}"
 }
 
-# Build predicate - either specific subsystem or all Peekaboo subsystems
+# Build predicate - either specific subsystem or all Wink subsystems
 if [[ -n "$SUBSYSTEM" ]]; then
     predicate_literal "$SUBSYSTEM"
     PREDICATE="subsystem == \"$PREDICATE_LITERAL\""
 else
-    # Match all Peekaboo-related subsystems
-    PREDICATE="(subsystem == \"boo.peekaboo.core\" OR subsystem == \"boo.peekaboo.inspector\" OR subsystem == \"boo.peekaboo.playground\" OR subsystem == \"boo.peekaboo.app\" OR subsystem == \"boo.peekaboo\" OR subsystem == \"boo.peekaboo.axorcist\" OR subsystem == \"boo.peekaboo.cli\")"
+    # Match all Wink-related subsystems
+    PREDICATE="(subsystem == \"boo.wink.core\" OR subsystem == \"boo.wink.inspector\" OR subsystem == \"boo.wink.playground\" OR subsystem == \"boo.wink.app\" OR subsystem == \"boo.wink\" OR subsystem == \"boo.wink.axorcist\" OR subsystem == \"boo.wink.cli\")"
 fi
 
 if [[ -n "$CATEGORY" ]]; then

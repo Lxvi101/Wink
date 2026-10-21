@@ -1,20 +1,20 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Testing
-@testable import PeekabooBridge
-@testable import PeekabooCLI
+@testable import WinkBridge
+@testable import WinkCLI
 
 struct DaemonLaunchPolicyTests {
     @Test
     func `daemon launch reserves the single ScreenCaptureKit publication boundary`() {
         #expect(
-            PeekabooBridgeServer.defaultScreenCaptureKitOwnershipPreparationTimeoutSeconds >=
+            WinkBridgeServer.defaultScreenCaptureKitOwnershipPreparationTimeoutSeconds >=
                 ScreenCaptureKitOwnerLease.defaultProcessCapabilityPreparationTimeoutSeconds + 1
         )
         #expect(
             DaemonLaunchPolicy.defaultLaunchTimeoutSeconds >=
-                PeekabooBridgeServer.defaultScreenCaptureKitOwnershipPreparationTimeoutSeconds + 1
+                WinkBridgeServer.defaultScreenCaptureKitOwnershipPreparationTimeoutSeconds + 1
         )
         #expect(DaemonLaunchPolicy.defaultLaunchTimeoutSeconds < 12)
     }
@@ -42,10 +42,10 @@ struct DaemonLaunchPolicyTests {
 
     @Test
     func `daemon executable resolution prefers the canonical bundle executable`() {
-        let bundleExecutable = URL(fileURLWithPath: "/opt/peekaboo/bin/peekaboo")
+        let bundleExecutable = URL(fileURLWithPath: "/opt/wink/bin/wink")
         let resolved = DaemonLaunchPolicy.daemonExecutableURL(
             bundleExecutableURL: bundleExecutable,
-            arguments: ["peekaboo"],
+            arguments: ["wink"],
             environment: ["PATH": "/usr/bin"]
         )
 
@@ -55,16 +55,16 @@ struct DaemonLaunchPolicyTests {
     @Test
     func `daemon executable resolution searches PATH for a bare argv zero`() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-daemon-path-\(UUID().uuidString)")
+            .appendingPathComponent("wink-daemon-path-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let executable = directory.appendingPathComponent("peekaboo")
+        let executable = directory.appendingPathComponent("wink")
         #expect(FileManager.default.createFile(atPath: executable.path, contents: Data()))
         #expect(chmod(executable.path, S_IRUSR | S_IWUSR | S_IXUSR) == 0)
 
         let resolved = DaemonLaunchPolicy.daemonExecutableURL(
             bundleExecutableURL: nil,
-            arguments: ["peekaboo"],
+            arguments: ["wink"],
             environment: ["PATH": directory.path],
             currentDirectoryURL: FileManager.default.temporaryDirectory
         )
@@ -74,11 +74,11 @@ struct DaemonLaunchPolicyTests {
 
     @Test
     func `daemon launch reports a process launch failure`() async {
-        let executable = URL(fileURLWithPath: "/tmp/missing-peekaboo-\(UUID().uuidString)")
+        let executable = URL(fileURLWithPath: "/tmp/missing-wink-\(UUID().uuidString)")
 
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-missing-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-missing-\(UUID().uuidString).sock",
                 arguments: [],
                 timeout: 0.2,
                 executableURL: executable,
@@ -103,7 +103,7 @@ struct DaemonLaunchPolicyTests {
 
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-exit-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-exit-\(UUID().uuidString).sock",
                 arguments: [],
                 timeout: 1,
                 executableURL: executable,
@@ -130,7 +130,7 @@ struct DaemonLaunchPolicyTests {
 
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-timeout-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-timeout-\(UUID().uuidString).sock",
                 arguments: ["-f", "/dev/null"],
                 timeout: 0.05,
                 executableURL: executable,
@@ -155,11 +155,11 @@ struct DaemonLaunchPolicyTests {
         }
     }
 
-    @Test(arguments: [PeekabooBridgeErrorCode.unauthorizedClient, .operationNotSupported])
+    @Test(arguments: [WinkBridgeErrorCode.unauthorizedClient, .operationNotSupported])
     func `readiness surfaces permanent probe failure and cleans up owned child`(
-        code: PeekabooBridgeErrorCode
+        code: WinkBridgeErrorCode
     ) async throws {
-        var expected = PeekabooBridgeErrorEnvelope(code: code, message: "synthetic trust or protocol failure")
+        var expected = WinkBridgeErrorEnvelope(code: code, message: "synthetic trust or protocol failure")
         expected.isLocalHostAuthenticationFailure = code == .unauthorizedClient
         var probeCallCount = 0
         let pidURL = FileManager.default.temporaryDirectory.appendingPathComponent("pb-probe-\(UUID()).pid")
@@ -170,7 +170,7 @@ struct DaemonLaunchPolicyTests {
         // Use the normal startup budget for PID publication; the contract here is one permanent probe failure.
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-readiness-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-readiness-\(UUID().uuidString).sock",
                 arguments: ["-c", "\(Self.writePIDCommand(to: pidURL)); exec /usr/bin/tail -f /dev/null"],
                 executableURL: URL(fileURLWithPath: "/bin/sh"),
                 logHandle: .nullDevice,
@@ -181,7 +181,7 @@ struct DaemonLaunchPolicyTests {
                 }
             )
             Issue.record("Expected the original probe error")
-        } catch let error as PeekabooBridgeErrorEnvelope {
+        } catch let error as WinkBridgeErrorEnvelope {
             #expect(error.code == expected.code)
             #expect(error.message == expected.message)
             #expect(error.isLocalHostAuthenticationFailure == expected.isLocalHostAuthenticationFailure)
@@ -197,7 +197,7 @@ struct DaemonLaunchPolicyTests {
         var observedTransientFailure = false
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-readiness-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-readiness-\(UUID().uuidString).sock",
                 arguments: ["-f", "/dev/null"],
                 timeout: 2,
                 executableURL: URL(fileURLWithPath: "/usr/bin/tail"),
@@ -225,19 +225,19 @@ struct DaemonLaunchPolicyTests {
     @Test(arguments: [false, true])
     func `on demand daemon launch removes request scoped capture engine environment`(delayStartup: Bool) async throws {
         let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-daemon-engine-env-\(UUID().uuidString).txt")
+            .appendingPathComponent("wink-daemon-engine-env-\(UUID().uuidString).txt")
         defer { try? FileManager.default.removeItem(at: outputURL) }
         // Exercise startup beyond the former 200 ms readiness assumption.
         let startup = delayStartup ? "/bin/sleep 0.3; " : ""
-        let command = startup + "printf '%s' \"${PEEKABOO_CAPTURE_ENGINE-unset}\" > \(outputURL.path)"
+        let command = startup + "printf '%s' \"${WINK_CAPTURE_ENGINE-unset}\" > \(outputURL.path)"
         let environment = DaemonLaunchPolicy.onDemandDaemonEnvironment([
             "PATH": "/usr/bin:/bin",
-            "PEEKABOO_CAPTURE_ENGINE": "modern",
+            "WINK_CAPTURE_ENGINE": "modern",
         ])
 
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-engine-env-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-engine-env-\(UUID().uuidString).sock",
                 arguments: ["-c", command],
                 executableURL: URL(fileURLWithPath: "/bin/sh"),
                 logHandle: .nullDevice,
@@ -257,7 +257,7 @@ struct DaemonLaunchPolicyTests {
 
     @Test(.timeLimit(.minutes(1)))
     func `daemon timeout bounds termination for a TERM ignoring child`() async throws {
-        let pidURL = URL(fileURLWithPath: "/tmp/peekaboo-daemon-term-\(UUID().uuidString).pid")
+        let pidURL = URL(fileURLWithPath: "/tmp/wink-daemon-term-\(UUID().uuidString).pid")
         var childPID: pid_t?
         defer {
             if let childPID, kill(childPID, 0) == 0 {
@@ -271,7 +271,7 @@ struct DaemonLaunchPolicyTests {
         let startedAt = clock.now
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-term-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-term-\(UUID().uuidString).sock",
                 arguments: ["-c", "trap '' TERM; \(Self.writePIDCommand(to: pidURL)); exec /bin/sleep 30"],
                 // Give the child one scheduler slice to install its TERM trap and publish the PID.
                 // A 50 ms readiness deadline can expire before a loaded hosted runner schedules it.
@@ -299,7 +299,7 @@ struct DaemonLaunchPolicyTests {
 
     @Test
     func `canceling daemon launch terminates and reaps the child`() async throws {
-        let pidURL = URL(fileURLWithPath: "/tmp/peekaboo-daemon-cancel-\(UUID().uuidString).pid")
+        let pidURL = URL(fileURLWithPath: "/tmp/wink-daemon-cancel-\(UUID().uuidString).pid")
         var childPID: pid_t?
         defer {
             if let childPID, kill(childPID, 0) == 0 {
@@ -311,7 +311,7 @@ struct DaemonLaunchPolicyTests {
 
         let launchTask = Task {
             try await DaemonLaunchPolicy.launchDaemon(
-                socketPath: "/tmp/peekaboo-daemon-cancel-\(UUID().uuidString).sock",
+                socketPath: "/tmp/wink-daemon-cancel-\(UUID().uuidString).sock",
                 arguments: ["-c", "\(Self.writePIDCommand(to: pidURL)); exec /bin/sleep 30"],
                 timeout: 10,
                 executableURL: URL(fileURLWithPath: "/bin/sh"),
@@ -348,15 +348,15 @@ extension DaemonLaunchPolicyTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let output = directory.appendingPathComponent("environment")
         var environment = ["PATH": "/usr/bin:/bin"]
-        environment["PEEKABOO_ALLOW_UNSIGNED_DAEMON"] = optIn
+        environment["WINK_ALLOW_UNSIGNED_DAEMON"] = optIn
         let sanitized = DaemonLaunchPolicy.onDemandDaemonEnvironment(environment)
-        #expect(sanitized["PEEKABOO_ALLOW_UNSIGNED_DAEMON"] == optIn)
+        #expect(sanitized["WINK_ALLOW_UNSIGNED_DAEMON"] == optIn)
         do {
             _ = try await DaemonLaunchPolicy.launchDaemon(
                 socketPath: directory.appendingPathComponent("d.sock").path,
                 arguments: [
                     "-c",
-                    "printf '%s' \"${PEEKABOO_ALLOW_UNSIGNED_DAEMON-unset}\" > \"$1\"",
+                    "printf '%s' \"${WINK_ALLOW_UNSIGNED_DAEMON-unset}\" > \"$1\"",
                     "sh",
                     output.path
                 ],

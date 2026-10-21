@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 struct SeeCommandTests {
@@ -12,7 +12,7 @@ struct SeeCommandTests {
     @MainActor
     func `pixel publication rejects an artifact replaced after capture verification`() throws {
         let artifactURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-see-publication-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-see-publication-\(UUID().uuidString).png")
         defer { try? FileManager.default.removeItem(at: artifactURL) }
         let verifiedData = Data("verified-pixels".utf8)
         let replacement = Data("replaced-pixels".utf8)
@@ -509,7 +509,7 @@ struct SeeCommandRuntimeTests {
             let watermarkStore = DesktopMutationWatermarkStore(directoryURL: tempDir)
             let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: watermarkStore)
             let windowsByApp = [fixture.applicationInfo.name: [fixture.windowInfo]]
-            let services = TestServicesFactory.makePeekabooServices(
+            let services = TestServicesFactory.makeWinkServices(
                 applications: StubApplicationService(
                     applications: [fixture.applicationInfo],
                     windowsByApp: windowsByApp
@@ -686,7 +686,7 @@ struct SeeCommandRuntimeTests {
                 applicationInfo: fixture.applicationInfo,
                 windowInfo: fixture.windowInfo
             )
-            context.snapshots.invalidationError = PeekabooError.operationError(
+            context.snapshots.invalidationError = WinkError.operationError(
                 message: "invalidation unavailable"
             )
             defer { try? FileManager.default.removeItem(at: outputURL) }
@@ -1084,7 +1084,7 @@ struct SeeCommandRuntimeTests {
             )
             let outputURL = FileManager.default
                 .temporaryDirectory
-                .appendingPathComponent("peekaboo-see-screen-json.png")
+                .appendingPathComponent("wink-see-screen-json.png")
             defer { try? FileManager.default.removeItem(at: outputURL) }
 
             let result = try await InProcessCommandRunner.run(
@@ -1135,7 +1135,7 @@ struct SeeCommandRuntimeTests {
 
 private struct SeeConfigEnvironment: Equatable {
     private static let names = [
-        "PEEKABOO_CONFIG_DIR", "PEEKABOO_CONFIG_NONINTERACTIVE", "PEEKABOO_CONFIG_DISABLE_MIGRATION",
+        "PEEKABOO_CONFIG_DIR", "WINK_CONFIG_NONINTERACTIVE", "WINK_CONFIG_DISABLE_MIGRATION",
     ]
 
     let values: [String?]
@@ -1454,7 +1454,7 @@ extension SeeCommandRuntimeTests {
         )
         let outputURL = FileManager.default
             .temporaryDirectory
-            .appendingPathComponent("peekaboo-see-runtime.png")
+            .appendingPathComponent("wink-see-runtime.png")
         return (context, outputURL)
     }
 

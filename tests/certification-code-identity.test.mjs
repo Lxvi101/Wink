@@ -80,7 +80,7 @@ function inspectionHarness({
   const xml = reportedSourceCommit === null
     ? '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict></dict></plist>'
     : `<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0"><dict><key>PeekabooSourceCommit</key><string>${reportedSourceCommit}</string></dict></plist>`;
+<plist version="1.0"><dict><key>WinkSourceCommit</key><string>${reportedSourceCommit}</string></dict></plist>`;
   let active = null;
   const runner = (executable, args, options = {}) => {
     calls.push([executable, args]);
@@ -106,7 +106,7 @@ function inspectionHarness({
     }
     if (executable === '/usr/bin/otool') return { status: 0, stdout: xml, stderr: '' };
     if (executable === '/usr/bin/plutil') {
-      const value = reportedSourceCommit === null ? {} : { PeekabooSourceCommit: reportedSourceCommit };
+      const value = reportedSourceCommit === null ? {} : { WinkSourceCommit: reportedSourceCommit };
       return { status: 0, stdout: JSON.stringify(value), stderr: '' };
     }
     if (args[0] === '--version') {
@@ -170,7 +170,7 @@ function inspectionHarness({
 }
 
 async function stagedInspector(t, harness = inspectionHarness()) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-code-identity-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-code-identity-test-'));
   const source = path.join(root, 'controller');
   fs.writeFileSync(source, '#!/bin/sh\nexit 0\n', { mode: 0o700 });
   const stage = await stageCodeIdentityInspector(source, [TEAM_ID], SOURCE_COMMIT, harness);
@@ -231,7 +231,7 @@ test('native inspector drains stdout after exit before parsing its envelope', as
 
 test('PID attestation runs only the retained stage across source swap and restore', async (t) => {
   const stage = await stagedInspector(t);
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-pid-attestation-test-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-pid-attestation-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const planPath = path.join(directory, 'plan.json');
   const outputPath = path.join(directory, 'response.json');
@@ -276,7 +276,7 @@ test('PID attestation runs only the retained stage across source swap and restor
 
 test('PID attestation rejects a staged child envelope for another receipt', async (t) => {
   const stage = await stagedInspector(t);
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-pid-envelope-test-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-pid-envelope-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const planPath = path.join(directory, 'plan.json');
   const outputPath = path.join(directory, 'response.json');
@@ -301,7 +301,7 @@ test('PID attestation rejects a staged child envelope for another receipt', asyn
 
 test('PID attestation rejects a forged live attester at the staged pathname', async (t) => {
   const stage = await stagedInspector(t);
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-pid-forged-test-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-pid-forged-test-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const planPath = path.join(directory, 'plan.json');
   const outputPath = path.join(directory, 'response.json');
@@ -328,7 +328,7 @@ test('PID attestation rejects a forged live attester at the staged pathname', as
 
 test('PID attestation installs its error handler before rejecting an invalid spawn', async (t) => {
   const stage = await stagedInspector(t);
-  const plan = pidAttestationPlan(t, 'peekaboo-pid-spawn-error-', 'c'.repeat(64));
+  const plan = pidAttestationPlan(t, 'wink-pid-spawn-error-', 'c'.repeat(64));
   const child = new EventEmitter();
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
@@ -359,7 +359,7 @@ test('PID attestation rejects missing and mismatched live source provenance', as
   for (const [index, reportedSourceCommit] of [null, 'c'.repeat(40)].entries()) {
     const plan = pidAttestationPlan(
       t,
-      `peekaboo-pid-source-${index}-`,
+      `wink-pid-source-${index}-`,
       String(index + 1).repeat(64),
     );
     const harness = inspectionHarness({ reportedSourceCommit });
@@ -375,9 +375,9 @@ test('PID attestation rejects missing and mismatched live source provenance', as
 });
 
 test('first-party contract is derived from separate verify and display calls on one staged copy', (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-validator-source-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-validator-source-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const source = path.join(root, 'peekaboo');
+  const source = path.join(root, 'wink');
   fs.writeFileSync(source, '#!/bin/sh\nexit 0\n', { mode: 0o700 });
   const calls = [];
   const harness = inspectionHarness({ calls });
@@ -395,7 +395,7 @@ test('first-party contract is derived from separate verify and display calls on 
   assert.ok(codesignCalls[1][1].includes('--display'));
   assert.ok(!codesignCalls[1][1].includes('--verify'));
   assert.equal(codesignCalls[0][1].at(-1), codesignCalls[1][1].at(-1));
-  assert.match(codesignCalls[0][1].at(-1), /peekaboo-validator\./);
+  assert.match(codesignCalls[0][1].at(-1), /wink-validator\./);
 });
 
 test('native code-identity receipt schemas are closed at the root', async (t) => {
@@ -448,9 +448,9 @@ test('native inspector rejects a forged live child even when its receipt claims 
 
 test('native inspector rejects an ancestor-swapped live executable path', async (t) => {
   const stage = await stagedInspector(t);
-  const replacementRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-swapped-ancestor-'));
+  const replacementRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-swapped-ancestor-'));
   t.after(() => fs.rmSync(replacementRoot, { recursive: true, force: true }));
-  const replacement = path.join(replacementRoot, 'peekaboo-certification-controller');
+  const replacement = path.join(replacementRoot, 'wink-certification-controller');
   fs.copyFileSync(stage.executable, replacement);
   const harness = inspectionHarness({ liveExecutable: replacement });
   await assert.rejects(inspectWithFinalizer({
@@ -564,7 +564,7 @@ for (const [name, inspect] of [
 
 function sourceStampRunner(calls, nodeArchitecture) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<plist version="1.0"><dict><key>PeekabooSourceCommit</key><string>${SOURCE_COMMIT}</string></dict></plist>`;
+<plist version="1.0"><dict><key>WinkSourceCommit</key><string>${SOURCE_COMMIT}</string></dict></plist>`;
   return (executable, args, options) => {
     calls.push([executable, args, options?.input]);
     if (executable === '/usr/bin/otool') {
@@ -576,7 +576,7 @@ function sourceStampRunner(calls, nodeArchitecture) {
     }
     if (executable === '/usr/bin/plutil') {
       assert.equal(options.input, xml);
-      return { status: 0, stdout: JSON.stringify({ PeekabooSourceCommit: SOURCE_COMMIT }), stderr: '' };
+      return { status: 0, stdout: JSON.stringify({ WinkSourceCommit: SOURCE_COMMIT }), stderr: '' };
     }
     throw new Error(`unexpected executable: ${executable}`);
   };
@@ -599,7 +599,7 @@ for (const [name, readSourceCommit] of [
 }
 
 test('production otool path extracts a stamped native Mach-O fixture', (t) => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-info-plist-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-info-plist-'));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const source = path.join(directory, 'main.c');
   const plist = path.join(directory, 'Info.plist');
@@ -607,7 +607,7 @@ test('production otool path extracts a stamped native Mach-O fixture', (t) => {
   fs.writeFileSync(source, 'int main(void) { return 0; }\n');
   fs.writeFileSync(plist, `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>PeekabooSourceCommit</key><string>${SOURCE_COMMIT}</string></dict></plist>\n`);
+<plist version="1.0"><dict><key>WinkSourceCommit</key><string>${SOURCE_COMMIT}</string></dict></plist>\n`);
   const compilation = spawnSync('/usr/bin/xcrun', [
     'clang', source, `-Wl,-sectcreate,__TEXT,__info_plist,${plist}`, '-o', executable,
   ], { encoding: 'utf8' });

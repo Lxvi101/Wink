@@ -1,8 +1,8 @@
 import Commander
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ExplicitSnapshotPublicationRuntimeTests {
     @Test
@@ -31,35 +31,35 @@ struct ExplicitSnapshotPublicationRuntimeTests {
             ),
             commandType: SeeCommand.self
         )
-        let operations: [PeekabooBridgeOperation] = [.captureScreen, .desktopObservation]
+        let operations: [WinkBridgeOperation] = [.captureScreen, .desktopObservation]
         let oldHost = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 25),
             hostKind: .gui,
             build: "4.1.0",
             supportedOperations: operations,
             enabledOperations: operations,
-            hostCapabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership]
+            hostCapabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership]
         )
         let publicationOnlyHost = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.explicitSnapshotPublicationVersion,
+            negotiatedVersion: WinkBridgeConstants.explicitSnapshotPublicationVersion,
             hostKind: .gui,
             build: "current",
             supportedOperations: operations,
             enabledOperations: operations,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.explicitSnapshotPublication,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.explicitSnapshotPublication,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
         let currentHost = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "current",
             supportedOperations: operations,
             enabledOperations: operations,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.explicitSnapshotPublication,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.explicitSnapshotPublication,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         ).withProducerBoundSnapshotFixture()
         let unattestedHost = BridgeTestFixtures.handshake(

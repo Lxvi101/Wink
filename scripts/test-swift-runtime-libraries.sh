@@ -17,7 +17,7 @@ unset MAC_RELEASE_CODESIGN_IDENTITY MAC_RELEASE_CODESIGN_TEAM_ID SIGN_IDENTITY
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 bash "$ROOT_DIR/scripts/test-swift-runtime-slice-rpaths.sh"
-TEST_DIR=$(mktemp -d /tmp/peekaboo-swift-runtime-test.XXXXXX)
+TEST_DIR=$(mktemp -d /tmp/wink-swift-runtime-test.XXXXXX)
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 EXPORTS_TOOL="$ROOT_DIR/scripts/swift-runtime-exports.py"

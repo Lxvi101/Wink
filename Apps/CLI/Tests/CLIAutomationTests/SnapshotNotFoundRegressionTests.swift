@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe, .regression))
 struct SnapshotNotFoundRegressionTests {

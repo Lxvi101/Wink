@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build the Peekaboo Swift CLI as a standalone binary
+# Build the Wink Swift CLI as a standalone binary
 # This script builds the CLI independently of the Node.js MCP server
 
 set -e
@@ -25,7 +25,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}Building Peekaboo Swift CLI...${NC}"
+echo -e "${BLUE}Building Wink Swift CLI...${NC}"
 
 # Change to the CLI directory
 cd "$(dirname "$0")/../Apps/CLI"
@@ -35,7 +35,7 @@ echo -e "${BLUE}Building release version...${NC}"
 python3 ../../scripts/setup-swift-workspace.py run -- swift build -c release 2>&1 | pipe_build_output
 
 # Get the build output path
-BUILD_PATH=".build/release/peekaboo"
+BUILD_PATH=".build/release/wink"
 
 if [ -f "$BUILD_PATH" ]; then
     ../../scripts/strip-toolchain-rpaths.sh "$BUILD_PATH"
@@ -54,12 +54,12 @@ if [ -f "$BUILD_PATH" ]; then
     # Optionally copy to a more convenient location
     if [ "$1" == "--install" ]; then
         echo -e "\n${BLUE}Installing to /usr/local/bin...${NC}"
-        sudo install -m 755 "$BUILD_PATH" /usr/local/bin/peekaboo
+        sudo install -m 755 "$BUILD_PATH" /usr/local/bin/wink
         for library in "$(dirname "$BUILD_PATH")"/libswiftCompatibility*.dylib; do
             [ -f "$library" ] || continue
             sudo install -m 755 "$library" /usr/local/bin/
         done
-        echo -e "${GREEN}✅ Installed to /usr/local/bin/peekaboo${NC}"
+        echo -e "${GREEN}✅ Installed to /usr/local/bin/wink${NC}"
     else
         echo -e "\n${BLUE}To install system-wide, run:${NC}"
         echo "  $0 --install"

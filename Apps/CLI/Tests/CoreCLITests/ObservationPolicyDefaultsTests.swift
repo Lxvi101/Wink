@@ -1,9 +1,9 @@
 import Commander
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.fast))
 @MainActor
@@ -52,7 +52,7 @@ struct ObservationPolicyDefaultsTests {
         var command = try SeeCommand.parse(["--menubar"])
         command.runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: true, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
         let target = DesktopActionTargetReceipt(
             processIdentifier: 321,
@@ -85,7 +85,7 @@ struct ObservationPolicyDefaultsTests {
         var command = try SeeCommand.parse(["--web-focus"])
         command.runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: true, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
 
         let projected = command.failurePreservingConditionalTimeout(
@@ -116,7 +116,7 @@ struct ObservationPolicyDefaultsTests {
         var command = try SeeCommand.parse(["--capture-engine", "auto"])
         command.runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
-            services: PeekabooServices(),
+            services: WinkServices(),
             captureEngineSafetyOverride: .legacy
         )
 

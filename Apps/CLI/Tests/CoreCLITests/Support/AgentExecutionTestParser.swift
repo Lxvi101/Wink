@@ -1,5 +1,5 @@
 import Commander
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension AgentCommand {
     static func parse(_ arguments: [String]) throws -> AgentCommand {

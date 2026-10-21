@@ -1,9 +1,9 @@
-// Drives peekaboo-cua over MCP stdio: 7 + 8 = on Calculator, with timings.
-// usage: node scripts/bench-calculator.mjs [path/to/peekaboo-cua] [trials]
+// Drives wink-cua over MCP stdio: 7 + 8 = on Calculator, with timings.
+// usage: node scripts/bench-calculator.mjs [path/to/wink-cua] [trials]
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
-const bin = process.argv[2] ?? new URL('../.build/release/peekaboo-cua', import.meta.url).pathname;
+const bin = process.argv[2] ?? new URL('../.build/release/wink-cua', import.meta.url).pathname;
 const trials = Number(process.argv[3] ?? 3);
 const child = spawn(bin, [], { stdio: ['pipe', 'pipe', 'inherit'] });
 const rl = createInterface({ input: child.stdout });

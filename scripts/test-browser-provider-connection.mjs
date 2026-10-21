@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { devtoolsFixture } from '../tests/fixtures/devtools-websocket.mjs';
 
-const swift = readFileSync(new URL('../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift', import.meta.url), 'utf8');
+const swift = readFileSync(new URL('../Core/WinkCore/Sources/WinkAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift', import.meta.url), 'utf8');
 const bootstrap = swift.match(/static let source = #"""\n([\s\S]*?)\n    """#/)[1].replace(/^    /gm, '');
 process.env.PATH = fileURLToPath(new URL('../node_modules/.bin', import.meta.url)) + delimiter + process.env.PATH;
 await import('data:text/javascript,' + encodeURIComponent(bootstrap.split('process.argv =')[0]));
@@ -27,7 +27,7 @@ async function createServer(endpoint) {
 }
 try {
   server = await createServer(fixture.endpoint);
-  const tool = server.server._registeredTools.peekaboo_browser_connect;
+  const tool = server.server._registeredTools.wink_browser_connect;
   assert.ok(tool, 'the provider must register the owner connection verifier');
   const result = await tool.handler({});
   assert.deepEqual(JSON.parse(result.content[0].text), {
@@ -51,7 +51,7 @@ try {
 const refusal = await devtoolsFixture({ refuse: true });
 try {
   server = await createServer(refusal.endpoint);
-  const tool = server.server._registeredTools.peekaboo_browser_connect;
+  const tool = server.server._registeredTools.wink_browser_connect;
   const rejected = await tool.handler({});
   assert.equal(rejected.isError, true);
   assert.match(rejected.content[0].text, /403/);
@@ -65,7 +65,7 @@ const destination = await devtoolsFixture();
 const redirect = await devtoolsFixture({ redirectURL: destination.endpoint });
 try {
   server = await createServer(redirect.endpoint);
-  const result = await server.server._registeredTools.peekaboo_browser_connect.handler({});
+  const result = await server.server._registeredTools.wink_browser_connect.handler({});
   assert.equal(result.isError, true, 'a redirect must not be mistaken for the original browser identity');
   assert.equal(redirect.attaches, 1);
   assert.equal(destination.attaches, 0, 'never attach to a redirected browser');
@@ -106,17 +106,17 @@ async function request(method, params) {
 }
 try {
   const initialized = await request('initialize', {
-    protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'peekaboo-contract', version: '1.0.0' },
+    protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'wink-contract', version: '1.0.0' },
   });
   assert.equal(initialized.serverInfo.version, '1.10.1');
   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
   const catalog = await request('tools/list', {});
-  assert.ok(catalog.tools.some(tool => tool.name === 'peekaboo_browser_connect'));
+  assert.ok(catalog.tools.some(tool => tool.name === 'wink_browser_connect'));
   assert.ok(catalog.tools.some(tool => tool.name === 'take_snapshot' && tool.inputSchema.required.includes('pageId')));
-  const result = await request('tools/call', { name: 'peekaboo_browser_connect', arguments: {} });
+  const result = await request('tools/call', { name: 'wink_browser_connect', arguments: {} });
   assert.equal(result.isError, undefined);
   assert.equal(JSON.parse(result.content[0].text).webSocketDebuggerUrl, stdioFixture.endpoint);
-  assert.deepEqual(await request('tools/call', { name: 'peekaboo_browser_connect', arguments: {} }), result);
+  assert.deepEqual(await request('tools/call', { name: 'wink_browser_connect', arguments: {} }), result);
   assert.equal(stdioFixture.attaches, 1, 'the full launcher must retain one provider connection');
   assert.equal(stdioFixture.requests, 0);
 } finally {

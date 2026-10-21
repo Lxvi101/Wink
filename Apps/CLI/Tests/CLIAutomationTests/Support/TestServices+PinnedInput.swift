@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
-@testable import PeekabooCLI
+import WinkCore
+import WinkFoundation
+@testable import WinkCLI
 
 @MainActor
 extension StubAutomationService {

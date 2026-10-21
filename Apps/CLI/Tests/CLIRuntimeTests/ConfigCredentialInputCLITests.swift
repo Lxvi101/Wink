@@ -3,7 +3,7 @@ import Dispatch
 import Foundation
 import Subprocess
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 #if canImport(System)
 import System
 #else
@@ -18,9 +18,9 @@ struct ConfigCredentialInputCLITests {
         let directory = try self.makeTemporaryConfigDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
-                "config", "credential", "set", "PEEKABOO_PIPE_TEST_KEY",
+                "config", "credential", "set", "WINK_PIPE_TEST_KEY",
                 "--credential-stdin", "--no-input", "--json", "--no-remote",
             ],
             environment: self.environment(for: directory),
@@ -35,7 +35,7 @@ struct ConfigCredentialInputCLITests {
             contentsOf: directory.appendingPathComponent("credentials"),
             encoding: .utf8
         )
-        #expect(stored.contains("PEEKABOO_PIPE_TEST_KEY=\(fixture)"))
+        #expect(stored.contains("WINK_PIPE_TEST_KEY=\(fixture)"))
     }
 
     @Test
@@ -44,7 +44,7 @@ struct ConfigCredentialInputCLITests {
         let directory = try self.makeTemporaryConfigDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "config", "provider", "add", "fixture-provider",
                 "--type", "openai",
@@ -77,9 +77,9 @@ struct ConfigCredentialInputCLITests {
         let directory = try self.makeTemporaryConfigDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
-                "config", "credential", "set", "PEEKABOO_EMPTY_TEST_KEY",
+                "config", "credential", "set", "WINK_EMPTY_TEST_KEY",
                 "--no-input", "--json", "--no-remote",
             ],
             environment: self.environment(for: directory),
@@ -102,9 +102,9 @@ struct ConfigCredentialInputCLITests {
 
         let output = Pipe()
         let process = Process()
-        process.executableURL = try TestChildProcess.peekabooBinaryURL()
+        process.executableURL = try TestChildProcess.winkBinaryURL()
         process.arguments = [
-            "config", "credential", "set", "PEEKABOO_EOF_TEST_KEY",
+            "config", "credential", "set", "WINK_EOF_TEST_KEY",
             "--json", "--no-remote",
         ]
         process.environment = ProcessInfo.processInfo.environment.merging(
@@ -136,7 +136,7 @@ struct ConfigCredentialInputCLITests {
     func `explicit stdin with no input never prompts on a TTY`() async throws {
         let result = try await self.runTTYCredentialCommand(
             arguments: [
-                "config", "credential", "set", "PEEKABOO_TTY_NO_INPUT_TEST_KEY",
+                "config", "credential", "set", "WINK_TTY_NO_INPUT_TEST_KEY",
                 "--credential-stdin", "--no-input", "--json", "--no-remote",
             ],
             action: .waitForExit
@@ -154,7 +154,7 @@ struct ConfigCredentialInputCLITests {
         let fixture = "fixture-secret-normal-tty"
         let result = try await self.runTTYCredentialCommand(
             arguments: [
-                "config", "credential", "set", "PEEKABOO_TTY_NORMAL_TEST_KEY",
+                "config", "credential", "set", "WINK_TTY_NORMAL_TEST_KEY",
                 "--no-remote",
             ],
             action: .submit(fixture + "\n")
@@ -172,7 +172,7 @@ struct ConfigCredentialInputCLITests {
     func `TTY descriptor without a controlling terminal fails without stdin fallback`() async throws {
         let result = try await self.runTTYCredentialCommand(
             arguments: [
-                "config", "credential", "set", "PEEKABOO_DETACHED_TTY_TEST_KEY",
+                "config", "credential", "set", "WINK_DETACHED_TTY_TEST_KEY",
                 "--json", "--no-remote",
             ],
             action: .waitForExit,
@@ -191,7 +191,7 @@ struct ConfigCredentialInputCLITests {
     func `background process group fails before prompting or changing echo`() async throws {
         let result = try await self.runTTYCredentialCommand(
             arguments: [
-                "config", "credential", "set", "PEEKABOO_BACKGROUND_TTY_TEST_KEY",
+                "config", "credential", "set", "WINK_BACKGROUND_TTY_TEST_KEY",
                 "--json", "--no-remote",
             ],
             action: .waitForExit,
@@ -211,7 +211,7 @@ struct ConfigCredentialInputCLITests {
         for signalNumber in [SIGINT, SIGTERM, SIGQUIT, SIGHUP, SIGPIPE] {
             let result = try await self.runTTYCredentialCommand(
                 arguments: [
-                    "config", "credential", "set", "PEEKABOO_TTY_SIGNAL_TEST_KEY",
+                    "config", "credential", "set", "WINK_TTY_SIGNAL_TEST_KEY",
                     "--no-remote",
                 ],
                 action: .terminate(signalNumber),
@@ -230,7 +230,7 @@ struct ConfigCredentialInputCLITests {
     func `ignored SIGPIPE restores echo and reports interrupted input`() async throws {
         let result = try await self.runTTYCredentialCommand(
             arguments: [
-                "config", "credential", "set", "PEEKABOO_TTY_SIGPIPE_TEST_KEY",
+                "config", "credential", "set", "WINK_TTY_SIGPIPE_TEST_KEY",
                 "--no-remote",
             ],
             action: .forwardAndSubmit(signalNumber: SIGPIPE, input: "unused\n"),
@@ -251,7 +251,7 @@ struct ConfigCredentialInputCLITests {
             let fixture = "fixture-secret-stop-\(signalNumber)"
             let result = try await self.runTTYCredentialCommand(
                 arguments: [
-                    "config", "credential", "set", "PEEKABOO_TTY_STOP_TEST_KEY",
+                    "config", "credential", "set", "WINK_TTY_STOP_TEST_KEY",
                     "--no-remote",
                 ],
                 action: .stopAndContinue(signalNumber: signalNumber, input: fixture + "\n"),
@@ -280,9 +280,9 @@ struct ConfigCredentialInputCLITests {
         let output = Pipe()
         let error = Pipe()
         let process = Process()
-        process.executableURL = try TestChildProcess.peekabooBinaryURL()
+        process.executableURL = try TestChildProcess.winkBinaryURL()
         process.arguments = [
-            "config", "credential", "set", "PEEKABOO_PROCESS_TEST_KEY",
+            "config", "credential", "set", "WINK_PROCESS_TEST_KEY",
             "--credential-stdin", "--no-input", "--no-remote",
         ]
         process.environment = ProcessInfo.processInfo.environment.merging(
@@ -340,7 +340,7 @@ struct ConfigCredentialInputCLITests {
         let input = Pipe()
         let output = Pipe()
         let process = Process()
-        process.executableURL = try TestChildProcess.peekabooBinaryURL()
+        process.executableURL = try TestChildProcess.winkBinaryURL()
         process.arguments = [
             "config", "provider", "add", "invalid provider id",
             "--type", "openai",
@@ -391,9 +391,9 @@ struct ConfigCredentialInputCLITests {
 
         let output = Pipe()
         let process = Process()
-        process.executableURL = try TestChildProcess.peekabooBinaryURL()
+        process.executableURL = try TestChildProcess.winkBinaryURL()
         process.arguments = [
-            "config", "credential", "set", "PEEKABOO_FIFO_TEST_KEY",
+            "config", "credential", "set", "WINK_FIFO_TEST_KEY",
             "--credential-file", fifo.path,
             "--no-input",
             "--json",
@@ -428,7 +428,7 @@ struct ConfigCredentialInputCLITests {
 
     private func makeTemporaryConfigDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-cli-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-credential-cli-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
     }
@@ -436,9 +436,9 @@ struct ConfigCredentialInputCLITests {
     private func environment(for directory: URL) -> [String: String] {
         [
             "PEEKABOO_CONFIG_DIR": directory.path,
-            "PEEKABOO_CONFIG_NONINTERACTIVE": "1",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION": "1",
-            "PEEKABOO_NO_REMOTE": "1",
+            "WINK_CONFIG_NONINTERACTIVE": "1",
+            "WINK_CONFIG_DISABLE_MIGRATION": "1",
+            "WINK_NO_REMOTE": "1",
         ]
     }
 }
@@ -531,18 +531,18 @@ extension ConfigCredentialInputCLITests {
         guard tcsetattr(secondaryFD, TCSANOW, &initial) == 0 else {
             throw TTYError.openFailed
         }
-        let peekabooBinary = try TestChildProcess.peekabooBinaryURL()
+        let winkBinary = try TestChildProcess.winkBinaryURL()
         let executablePath: String
         let processArguments: [String]
         switch launchDisposition {
         case .defaultSignals:
-            executablePath = peekabooBinary.path
+            executablePath = winkBinary.path
             processArguments = arguments
         case .ignoreSIGPIPE:
             executablePath = "/bin/sh"
             processArguments = [
                 "-c", "trap '' 13; exec \"$@\"",
-                "peekaboo-signal-wrapper", peekabooBinary.path,
+                "wink-signal-wrapper", winkBinary.path,
             ] + arguments
         }
         var childEnvironment = ProcessInfo.processInfo.environment.merging(
@@ -551,9 +551,9 @@ extension ConfigCredentialInputCLITests {
         )
         childEnvironment["SWIFT_BACKTRACE"] = "enable=no"
         if topology == .detached {
-            childEnvironment["PEEKABOO_TEST_DETACHED_TTY"] = "1"
+            childEnvironment["WINK_TEST_DETACHED_TTY"] = "1"
         } else if topology == .background {
-            childEnvironment["PEEKABOO_TEST_BACKGROUND_TTY"] = "1"
+            childEnvironment["WINK_TEST_BACKGROUND_TTY"] = "1"
         }
         let supervisor = try self.ttyCredentialSupervisorURL()
         var environmentOverrides: [Environment.Key: String?] = [:]
@@ -726,7 +726,7 @@ extension ConfigCredentialInputCLITests {
 
     private func ttyCredentialSupervisorURL() throws -> URL {
         let output = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-tty-credential-supervisor-\(getpid())")
+            .appendingPathComponent("wink-tty-credential-supervisor-\(getpid())")
         if FileManager.default.isExecutableFile(atPath: output.path) {
             return output
         }
@@ -765,7 +765,7 @@ extension ConfigCredentialInputCLITests {
         output: inout Data,
         deadline: Date
     ) -> pid_t? {
-        let marker = "PEEKABOO_CHILD_PID="
+        let marker = "WINK_CHILD_PID="
         while Date() < deadline {
             self.drainTTY(fileDescriptor: fileDescriptor, into: &output)
             if let text = String(data: output, encoding: .utf8),
@@ -827,7 +827,7 @@ extension ConfigCredentialInputCLITests {
         output: inout Data,
         timeout: TimeInterval
     ) -> Int32? {
-        let marker = "PEEKABOO_CHILD_STOPPED=\(processIdentifier):"
+        let marker = "WINK_CHILD_STOPPED=\(processIdentifier):"
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             self.drainTTY(fileDescriptor: fileDescriptor, into: &output)

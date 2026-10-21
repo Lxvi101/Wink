@@ -1,6 +1,6 @@
 parent_config: .swiftlint-rules.yml
 
-# SwiftLint configuration for Peekaboo - Swift 6 compatible
+# SwiftLint configuration for Wink - Swift 6 compatible
 
 # Paths to include
 included:
@@ -25,4 +25,4 @@ excluded:
   - vendor
   - "*.playground"
   # Exclude specific files that should not be linted/formatted
-  - "Core/PeekabooCore/Sources/PeekabooCore/Extensions/NSArray+Extensions.swift"
+  - "Core/WinkCore/Sources/WinkCore/Extensions/NSArray+Extensions.swift"

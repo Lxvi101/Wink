@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct UtilityTests {
@@ -112,11 +112,11 @@ struct UtilityTests {
         func `Version has correct format`() {
             let version = Version.current
 
-            // Should be in format "Peekaboo X.Y.Z" or "Peekaboo X.Y.Z-prerelease"
-            #expect(version.hasPrefix("Peekaboo "))
+            // Should be in format "Wink X.Y.Z" or "Wink X.Y.Z-prerelease"
+            #expect(version.hasPrefix("Wink "))
 
-            // Extract version number after "Peekaboo "
-            let versionNumber = version.replacingOccurrences(of: "Peekaboo ", with: "")
+            // Extract version number after "Wink "
+            let versionNumber = version.replacingOccurrences(of: "Wink ", with: "")
 
             // Split by prerelease identifier first
             let versionParts = versionNumber.split(separator: "-", maxSplits: 1)
@@ -140,11 +140,11 @@ struct UtilityTests {
         func `Partial embedded metadata remains stable without runtime provenance`() {
             let values = VersionMetadata.resolve(infoDictionary: [
                 "CFBundleShortVersionString": "4.2.0",
-                "PeekabooVersionDisplayString": "Peekaboo 4.2.0-beta.1",
+                "WinkVersionDisplayString": "Wink 4.2.0-beta.1",
             ])
 
             #expect(values == VersionMetadata.Values(
-                current: "Peekaboo 4.2.0-beta.1",
+                current: "Wink 4.2.0-beta.1",
                 gitCommit: "unknown",
                 sourceCommit: "unknown",
                 gitCommitDate: "unknown",
@@ -157,16 +157,16 @@ struct UtilityTests {
         func `Complete embedded metadata is preserved`() {
             let values = VersionMetadata.resolve(infoDictionary: [
                 "CFBundleShortVersionString": "4.2.0",
-                "PeekabooVersionDisplayString": "Peekaboo 4.2.0",
-                "PeekabooGitCommit": "abc1234-dirty",
-                "PeekabooSourceCommit": "0123456789abcdef0123456789abcdef01234567",
-                "PeekabooGitCommitDate": "2026-08-10 12:34:56 -0700",
-                "PeekabooGitBranch": "release/4.2.0",
-                "PeekabooBuildDate": "2026-08-10T19:35:00Z",
+                "WinkVersionDisplayString": "Wink 4.2.0",
+                "WinkGitCommit": "abc1234-dirty",
+                "WinkSourceCommit": "0123456789abcdef0123456789abcdef01234567",
+                "WinkGitCommitDate": "2026-08-10 12:34:56 -0700",
+                "WinkGitBranch": "release/4.2.0",
+                "WinkBuildDate": "2026-08-10T19:35:00Z",
             ])
 
             #expect(values == VersionMetadata.Values(
-                current: "Peekaboo 4.2.0",
+                current: "Wink 4.2.0",
                 gitCommit: "abc1234-dirty",
                 sourceCommit: "0123456789abcdef0123456789abcdef01234567",
                 gitCommitDate: "2026-08-10 12:34:56 -0700",
@@ -178,7 +178,7 @@ struct UtilityTests {
         @Test
         func `Missing or malformed embedded versions use a deterministic fallback`() {
             let expected = VersionMetadata.Values(
-                current: "Peekaboo 0.0.0",
+                current: "Wink 0.0.0",
                 gitCommit: "unknown",
                 sourceCommit: "unknown",
                 gitCommitDate: "unknown",
@@ -198,7 +198,7 @@ struct UtilityTests {
         func `Malformed embedded source commits stay unknown`(_ sourceCommit: String) {
             let values = VersionMetadata.resolve(infoDictionary: [
                 "CFBundleShortVersionString": "4.2.0",
-                "PeekabooSourceCommit": sourceCommit,
+                "WinkSourceCommit": sourceCommit,
             ])
 
             #expect(values.sourceCommit == "unknown")
@@ -263,7 +263,7 @@ struct UtilityTests {
         @Test
         func `Parses disabled build staleness setting`() {
             let config = """
-            [peekaboo]
+            [wink]
                 check-build-staleness = false
             """
 
@@ -275,7 +275,7 @@ struct UtilityTests {
             let config = """
             [core]
                 repositoryformatversion = 0
-            [peekaboo]
+            [wink]
                 check-build-staleness = true
             """
 
@@ -285,12 +285,12 @@ struct UtilityTests {
         @Test
         func `Environment override avoids git config lookup`() {
             let enabled = isBuildStalenessCheckEnabled(
-                environment: ["PEEKABOO_CHECK_BUILD_STALENESS": "true"],
+                environment: ["WINK_CHECK_BUILD_STALENESS": "true"],
                 currentDirectory: "/tmp/does-not-exist",
                 gitConfigPaths: []
             )
             let disabled = isBuildStalenessCheckEnabled(
-                environment: ["PEEKABOO_CHECK_BUILD_STALENESS": "0"],
+                environment: ["WINK_CHECK_BUILD_STALENESS": "0"],
                 currentDirectory: "/tmp/does-not-exist",
                 gitConfigPaths: []
             )
@@ -309,11 +309,11 @@ struct UtilityTests {
             let globalConfig = directory.appendingPathComponent("global")
             let localConfig = directory.appendingPathComponent("local")
             try """
-            [peekaboo]
+            [wink]
                 check-build-staleness = true
             """.write(to: globalConfig, atomically: true, encoding: .utf8)
             try """
-            [peekaboo]
+            [wink]
                 check-build-staleness = false
             """.write(to: localConfig, atomically: true, encoding: .utf8)
 

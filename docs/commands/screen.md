@@ -1,22 +1,22 @@
 ---
-summary: 'Enumerate connected displays via peekaboo screen list'
+summary: 'Enumerate connected displays via wink screen list'
 read_when:
   - 'mapping global coordinates across Retina or multi-display layouts'
   - 'choosing a display before browser coordinate automation'
 ---
 
-# `peekaboo screen`
+# `wink screen`
 
-`screen list` reports every connected display with its stable display ID, global logical bounds, visible work-area bounds, scale factor, and primary state. Bare `peekaboo screen` defaults to `screen list`.
+`screen list` reports every connected display with its stable display ID, global logical bounds, visible work-area bounds, scale factor, and primary state. Bare `wink screen` defaults to `screen list`.
 
 ## Examples
 
 ```bash
 # Human-readable display inventory
-peekaboo screen list
+wink screen list
 
 # Coordinate-mapping fields for automation
-peekaboo screen list --json \
+wink screen list --json \
   | jq '.data.screens[] | {id: .displayID, bounds, visibleBounds, scale: .scaleFactor, main: .isPrimary}'
 ```
 
@@ -29,10 +29,10 @@ area differs from the full display. `window maximize` targets the greatest-overl
 can constrain its window, so still verify the actual result rather than treating this inventory as proof of a resize.
 
 For browser pages whose accessibility tree contains no actionable web descendants, pair this inventory with
-`peekaboo window list --app <browser> --json`, capture the selected exact window with
-`peekaboo see --window-id <id> --no-elements --json`, then use the fresh receipt:
+`wink window list --app <browser> --json`, capture the selected exact window with
+`wink see --window-id <id> --no-elements --json`, then use the fresh receipt:
 
 ```bash
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at x,y \
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at x,y \
   --foreground --input-strategy synthOnly
 ```

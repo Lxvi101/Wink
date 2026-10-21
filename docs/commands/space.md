@@ -1,13 +1,13 @@
 ---
-summary: 'Manage macOS Spaces via peekaboo space'
+summary: 'Manage macOS Spaces via wink space'
 read_when:
   - 'switching desktops or moving windows for multi-space automation'
   - 'needing JSON snapshots of every Space and its windows'
 ---
 
-# `peekaboo space`
+# `wink space`
 
-`space` wraps Peekaboo’s SpaceManagementService (private macOS APIs) to list Spaces, switch among them, and move windows. It’s best-effort—Apple may change these APIs—but it gives agents a reliable hook into Mission Control style workflows.
+`space` wraps Wink’s SpaceManagementService (private macOS APIs) to list Spaces, switch among them, and move windows. It’s best-effort—Apple may change these APIs—but it gives agents a reliable hook into Mission Control style workflows.
 
 ## Subcommands
 | Name | Purpose | Key options |
@@ -28,17 +28,17 @@ read_when:
 ## Examples
 ```bash
 # Show every Space plus its assigned windows
-peekaboo space list --detailed
+wink space list --detailed
 
 # Move the frontmost Safari window to Space 3 and follow it
-peekaboo space move-window --app Safari --to 3 --follow --foreground
-peekaboo space move-window --window-id 4242 --to-current
+wink space move-window --app Safari --to 3 --follow --foreground
+wink space move-window --window-id 4242 --to-current
 
 # Switch back to Space 1
-peekaboo space switch --to 1 --foreground
+wink space switch --to 1 --foreground
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

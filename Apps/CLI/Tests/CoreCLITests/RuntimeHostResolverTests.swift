@@ -1,9 +1,9 @@
 import Commander
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -19,17 +19,17 @@ struct RuntimeHostResolverTests {
         let enabled = flags & 16 != 0
         var capabilities: [String] = []
         if capability {
-            capabilities.append(PeekabooBridgeHostCapability.clipboardGuardedExactWindowHotkeys)
+            capabilities.append(WinkBridgeHostCapability.clipboardGuardedExactWindowHotkeys)
         }
         if receipts {
-            capabilities.append(PeekabooBridgeHostCapability.attestedOperationReceipts)
+            capabilities.append(WinkBridgeHostCapability.attestedOperationReceipts)
         }
-        var operations: [PeekabooBridgeOperation] = supported ? [.exactWindowTargetedHotkey] : []
-        var enabledOperations: [PeekabooBridgeOperation] = enabled && supported ? [.exactWindowTargetedHotkey] : []
+        var operations: [WinkBridgeOperation] = supported ? [.exactWindowTargetedHotkey] : []
+        var enabledOperations: [WinkBridgeOperation] = enabled && supported ? [.exactWindowTargetedHotkey] : []
         if elementActions {
             operations.append(.performAction)
             enabledOperations.append(.performAction)
-            capabilities.append(PeekabooBridgeHostCapability.processGenerationBoundElementMutations)
+            capabilities.append(WinkBridgeHostCapability.processGenerationBoundElementMutations)
         }
         let handshake = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: current ? 40 : 39),
@@ -38,7 +38,7 @@ struct RuntimeHostResolverTests {
             hostCapabilities: capabilities
         )
         let services = RuntimeHostResolver.remoteServices(
-            client: PeekabooBridgeClient(socketPath: "/tmp/unused-guarded-paste-factory.sock"),
+            client: WinkBridgeClient(socketPath: "/tmp/unused-guarded-paste-factory.sock"),
             handshake: handshake,
             options: CommandRuntimeOptions()
         )
@@ -108,7 +108,7 @@ struct RuntimeHostResolverTests {
 
     @Test
     func `Non-explicit local click retains known snapshot invalidation endpoints`() throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": "cg"]
+        let environment = ["WINK_CAPTURE_ENGINE": "cg"]
         let baseOptions = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: ClickCommand.self
@@ -174,7 +174,7 @@ struct RuntimeHostResolverTests {
         )
         let environmentDecision = RuntimeHostResolver.initialRoutingDecision(
             options: defaultClick,
-            environment: ["PEEKABOO_NO_REMOTE": "1", "PEEKABOO_INPUT_STRATEGY": "actionFirst"],
+            environment: ["WINK_NO_REMOTE": "1", "WINK_INPUT_STRATEGY": "actionFirst"],
             configurationInput: nil,
             knownSnapshotInvalidationRemoteSocketPaths: knownPaths
         )
@@ -187,7 +187,7 @@ struct RuntimeHostResolverTests {
         ))
         #expect(!RuntimeHostResolver.shouldResolveKnownRemoteEndpoints(
             options: defaultClick,
-            environment: ["PEEKABOO_NO_REMOTE": "1"],
+            environment: ["WINK_NO_REMOTE": "1"],
             configurationInput: nil
         ))
         #expect(cliDecision == .local(snapshotInvalidationRemoteSocketPaths: []))
@@ -218,7 +218,7 @@ struct RuntimeHostResolverTests {
 
     @Test
     func `Historical diagnostics use runtime candidate validation`() async {
-        let socketPath = "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock"
+        let socketPath = "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock"
         let candidate = RuntimeHostResolver.ImplicitRemoteCandidate(
             socketPath: socketPath,
             requireReusableDaemon: true,
@@ -226,23 +226,23 @@ struct RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: true
         )
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen]
         )
         let currentOperationNames = [
-            PeekabooBridgeOperation.daemonStatus.rawValue,
-            PeekabooBridgeOperation.daemonStop.rawValue,
-            PeekabooBridgeOperation.launchApplicationWithOptions.rawValue,
-            PeekabooBridgeOperation.relaunchApplicationWithOptions.rawValue,
-            PeekabooBridgeOperation.invalidateImplicitLatestSnapshot.rawValue,
+            WinkBridgeOperation.daemonStatus.rawValue,
+            WinkBridgeOperation.daemonStop.rawValue,
+            WinkBridgeOperation.launchApplicationWithOptions.rawValue,
+            WinkBridgeOperation.relaunchApplicationWithOptions.rawValue,
+            WinkBridgeOperation.invalidateImplicitLatestSnapshot.rawValue,
         ]
-        let status = PeekabooDaemonStatus(
+        let status = WinkDaemonStatus(
             running: true,
             pid: 4242,
             mode: .manual,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: socketPath,
                 hostKind: .onDemand,
                 allowedOperations: [.daemonStatus, .daemonStop],
@@ -259,11 +259,11 @@ struct RuntimeHostResolverTests {
         )
         #expect(selected?.reusableDaemonStatus?.pid == 4242)
 
-        let staleStatus = PeekabooDaemonStatus(
+        let staleStatus = WinkDaemonStatus(
             running: true,
             pid: 4242,
             mode: .manual,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: socketPath,
                 hostKind: .onDemand,
                 allowedOperations: [.daemonStatus, .daemonStop]
@@ -290,7 +290,7 @@ struct RuntimeHostResolverTests {
         var options = CommandRuntimeOptions()
         options.requiresPostEventPermission = true
         let accessibilityOnly = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -302,7 +302,7 @@ struct RuntimeHostResolverTests {
             enabledOperations: [.captureScreen, .targetedClick]
         )
         let postEventCapable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -343,14 +343,14 @@ struct RuntimeHostResolverTests {
         let oldHandshake = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 34),
             supportedOperations: [.desktopObservation],
-            hostCapabilities: [PeekabooBridgeHostCapability.attestedOperationReceipts]
+            hostCapabilities: [WinkBridgeHostCapability.attestedOperationReceipts]
         )
         let currentHandshake = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 34),
             supportedOperations: [.desktopObservation, .ownsSnapshot],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.producerBoundSnapshotReferences,
             ]
         )
         var options = CommandRuntimeOptions()
@@ -360,8 +360,8 @@ struct RuntimeHostResolverTests {
 
         let resolution = try await RuntimeHostResolver.resolveRemoteServices(
             candidates: [oldCandidate, currentCandidate],
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.snapshot-selection-tests",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.snapshot-selection-tests",
                 teamIdentifier: nil,
                 processIdentifier: 42
             ),
@@ -392,18 +392,18 @@ struct RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let capabilities = [
-            PeekabooBridgeHostCapability.attestedOperationReceipts,
-            PeekabooBridgeHostCapability.setValueResultTargetBinding,
-            PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+            WinkBridgeHostCapability.attestedOperationReceipts,
+            WinkBridgeHostCapability.setValueResultTargetBinding,
+            WinkBridgeHostCapability.processGenerationBoundElementMutations,
         ]
         let disabledHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             supportedOperations: [.setValue, .performAction],
             enabledOperations: [.setValue],
             hostCapabilities: capabilities
         )
         let eligibleHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             supportedOperations: [.setValue, .performAction],
             enabledOperations: [.setValue, .performAction],
             hostCapabilities: capabilities
@@ -414,8 +414,8 @@ struct RuntimeHostResolverTests {
 
         let resolution = try await RuntimeHostResolver.resolveRemoteServices(
             candidates: [disabledCandidate, eligibleCandidate],
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.element-action-selection-tests",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.element-action-selection-tests",
                 teamIdentifier: nil,
                 processIdentifier: 42
             ),
@@ -446,18 +446,18 @@ struct RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let capabilities = [
-            PeekabooBridgeHostCapability.attestedOperationReceipts,
-            PeekabooBridgeHostCapability.setValueResultTargetBinding,
-            PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+            WinkBridgeHostCapability.attestedOperationReceipts,
+            WinkBridgeHostCapability.setValueResultTargetBinding,
+            WinkBridgeHostCapability.processGenerationBoundElementMutations,
         ]
         let setValueHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             supportedOperations: [.setValue],
             enabledOperations: [.setValue],
             hostCapabilities: capabilities
         )
         let fallbackHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             supportedOperations: [.setValue, .performAction],
             enabledOperations: [.setValue, .performAction],
             hostCapabilities: capabilities
@@ -468,8 +468,8 @@ struct RuntimeHostResolverTests {
 
         let resolution = try await RuntimeHostResolver.resolveRemoteServices(
             candidates: [setValueCandidate, fallbackCandidate],
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.set-value-selection-tests",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.set-value-selection-tests",
                 teamIdentifier: nil,
                 processIdentifier: 42
             ),
@@ -498,12 +498,12 @@ struct RuntimeHostResolverTests {
         options.requiresPostEventPermission = true
         options.requiresLongPressClick = true
 
-        func handshake(minor: Int, supportsClick: Bool = true) -> PeekabooBridgeHandshakeResponse {
-            let operations: [PeekabooBridgeOperation] = supportsClick
+        func handshake(minor: Int, supportsClick: Bool = true) -> WinkBridgeHandshakeResponse {
+            let operations: [WinkBridgeOperation] = supportsClick
                 ? [.captureScreen, .click, .targetedClick]
                 : [.captureScreen, .targetedClick]
             return BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: minor),
+                negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: minor),
                 hostKind: .gui,
                 build: nil,
                 supportedOperations: operations,
@@ -541,15 +541,15 @@ struct RuntimeHostResolverTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .listWindows,
             .moveWindow,
             .invalidateImplicitLatestSnapshot,
         ]
-        func handshake(minor: Int) -> PeekabooBridgeHandshakeResponse {
+        func handshake(minor: Int) -> WinkBridgeHandshakeResponse {
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: minor),
+                negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: minor),
                 hostKind: .gui,
                 build: nil,
                 supportedOperations: operations,
@@ -592,7 +592,7 @@ struct RuntimeHostResolverTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let required: [PeekabooBridgeOperation] = [
+        let required: [WinkBridgeOperation] = [
             .captureScreen,
             .listWindows,
             .restoreWindow,
@@ -603,9 +603,9 @@ struct RuntimeHostResolverTests {
             commandType: WindowCommand.RestoreSubcommand.self
         )
         func handshake(
-            supported: [PeekabooBridgeOperation],
-            enabled: [PeekabooBridgeOperation]
-        ) -> PeekabooBridgeHandshakeResponse {
+            supported: [WinkBridgeOperation],
+            enabled: [WinkBridgeOperation]
+        ) -> WinkBridgeHandshakeResponse {
             BridgeTestFixtures.handshake(
                 negotiatedVersion: .init(major: 1, minor: 18),
                 hostKind: .gui,
@@ -646,26 +646,26 @@ struct RuntimeHostResolverTests {
             requiredHostKind: .onDemand,
             requiresValidatedHistoricalDaemon: false
         )
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .quitApplication,
             .invalidateImplicitLatestSnapshot,
         ]
-        func handshake(minor: Int, enabledOperations: [PeekabooBridgeOperation]? = nil)
-        -> PeekabooBridgeHandshakeResponse {
+        func handshake(minor: Int, enabledOperations: [WinkBridgeOperation]? = nil)
+        -> WinkBridgeHandshakeResponse {
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: minor),
+                negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: minor),
                 hostKind: .onDemand,
                 build: nil,
                 supportedOperations: operations,
                 enabledOperations: enabledOperations ?? operations
             )
         }
-        let reusableStatus = PeekabooDaemonStatus(
+        let reusableStatus = WinkDaemonStatus(
             running: true,
             pid: 4242,
             mode: .manual,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: candidate.socketPath,
                 hostKind: .onDemand,
                 allowedOperations: operations
@@ -724,7 +724,7 @@ struct RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let unpermissioned = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "stale-debug",
             supportedOperations: [.captureScreen, .listApplications],
@@ -735,7 +735,7 @@ struct RuntimeHostResolverTests {
                 postEvent: false
             ),
             enabledOperations: [.captureScreen, .listApplications],
-            permissionTags: [PeekabooBridgeOperation.captureScreen.rawValue: [.screenRecording]]
+            permissionTags: [WinkBridgeOperation.captureScreen.rawValue: [.screenRecording]]
         )
 
         #expect(await RuntimeHostResolver.validateRemoteCandidate(
@@ -761,7 +761,7 @@ struct RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let noScreenRecording = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .launchApplicationWithOptions, .listApplications],
@@ -772,7 +772,7 @@ struct RuntimeHostResolverTests {
                 postEvent: true
             ),
             enabledOperations: [.captureScreen, .launchApplicationWithOptions, .listApplications],
-            permissionTags: [PeekabooBridgeOperation.captureScreen.rawValue: [.screenRecording]]
+            permissionTags: [WinkBridgeOperation.captureScreen.rawValue: [.screenRecording]]
         )
 
         var launchOptions = CommandRuntimeOptions()
@@ -813,7 +813,7 @@ extension RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let untagged = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen],
@@ -843,7 +843,7 @@ extension RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let unknownPermissions = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen]
@@ -864,9 +864,9 @@ extension RuntimeHostResolverTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let olderProtocol = PeekabooBridgeProtocolVersion(
-            major: PeekabooBridgeConstants.protocolVersion.major,
-            minor: PeekabooBridgeConstants.protocolVersion.minor - 1
+        let olderProtocol = WinkBridgeProtocolVersion(
+            major: WinkBridgeConstants.protocolVersion.major,
+            minor: WinkBridgeConstants.protocolVersion.minor - 1
         )
         let handshake = BridgeTestFixtures.handshake(
             negotiatedVersion: olderProtocol,
@@ -874,11 +874,11 @@ extension RuntimeHostResolverTests {
             build: "legacy",
             supportedOperations: [.captureScreen]
         )
-        let reusableStatus = PeekabooDaemonStatus(
+        let reusableStatus = WinkDaemonStatus(
             running: true,
             pid: 4242,
             mode: .manual,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: candidate.socketPath,
                 hostKind: .onDemand,
                 allowedOperations: [.daemonStatus]
@@ -889,7 +889,7 @@ extension RuntimeHostResolverTests {
             candidate,
             handshake: handshake,
             options: CommandRuntimeOptions(),
-            requiredProtocolVersion: PeekabooBridgeConstants.protocolVersion,
+            requiredProtocolVersion: WinkBridgeConstants.protocolVersion,
             fetchReusableDaemonStatus: { _ in reusableStatus }
         ) == nil)
         #expect(await RuntimeHostResolver.validateRemoteCandidate(
@@ -976,15 +976,15 @@ extension RuntimeHostResolverTests {
         options.requiresBrowserMCP = true
         let implicit = RuntimeHostResolver.implicitRemoteCandidates(
             options: options,
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             buildScopedDaemonSocketPath: "/tmp/daemon-current.sock"
         )
         #expect(!implicit.isEmpty)
         let allCandidatesRequireDaemon = implicit.allSatisfy(\.requireReusableDaemon)
         #expect(allCandidatesRequireDaemon)
-        #expect(!implicit.contains { $0.socketPath == PeekabooBridgeConstants.peekabooSocketPath })
+        #expect(!implicit.contains { $0.socketPath == WinkBridgeConstants.winkSocketPath })
 
-        options.bridgeSocketPath = PeekabooBridgeConstants.peekabooSocketPath
+        options.bridgeSocketPath = WinkBridgeConstants.winkSocketPath
         let explicit = try await RuntimeHostResolver.remoteCandidatePlan(options: options, environment: [:])
         #expect(explicit.candidates.count == 1)
         #expect(explicit.candidates.first?.socketPath == options.bridgeSocketPath)
@@ -1000,7 +1000,7 @@ extension RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let permissioned = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen],
@@ -1011,7 +1011,7 @@ extension RuntimeHostResolverTests {
                 postEvent: true
             ),
             enabledOperations: [.captureScreen],
-            permissionTags: [PeekabooBridgeOperation.captureScreen.rawValue: [.screenRecording]]
+            permissionTags: [WinkBridgeOperation.captureScreen.rawValue: [.screenRecording]]
         )
 
         #expect(await RuntimeHostResolver.validateRemoteCandidate(
@@ -1031,7 +1031,7 @@ extension RuntimeHostResolverTests {
         )
         // Holds Screen Recording but not Accessibility.
         let captureOnlyPermissions = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .inspectAccessibilityTree],
@@ -1043,8 +1043,8 @@ extension RuntimeHostResolverTests {
             ),
             enabledOperations: [.captureScreen],
             permissionTags: [
-                PeekabooBridgeOperation.captureScreen.rawValue: [.screenRecording],
-                PeekabooBridgeOperation.inspectAccessibilityTree.rawValue: [.accessibility],
+                WinkBridgeOperation.captureScreen.rawValue: [.screenRecording],
+                WinkBridgeOperation.inspectAccessibilityTree.rawValue: [.accessibility],
             ]
         )
 
@@ -1078,7 +1078,7 @@ extension RuntimeHostResolverTests {
             requiresValidatedHistoricalDaemon: false
         )
         let unpermissioned = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .requestPostEventPermission],
@@ -1088,7 +1088,7 @@ extension RuntimeHostResolverTests {
                 appleScript: false,
                 postEvent: false
             ),
-            permissionTags: [PeekabooBridgeOperation.captureScreen.rawValue: [.screenRecording]]
+            permissionTags: [WinkBridgeOperation.captureScreen.rawValue: [.screenRecording]]
         )
 
         var requestOptions = CommandRuntimeOptions()

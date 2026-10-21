@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkFoundation
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor

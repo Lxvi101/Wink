@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooAutomationKit
+@testable import WinkAutomationKit
 
 @Suite(.serialized)
 struct ScreenCaptureKitProcessCapabilityRuntimeTests {
@@ -14,7 +14,7 @@ struct ScreenCaptureKitProcessCapabilityRuntimeTests {
         let socketPath = directory.appendingPathComponent("bridge.sock").path
 
         let process = Process()
-        process.executableURL = try TestChildProcess.peekabooBinaryURL()
+        process.executableURL = try TestChildProcess.winkBinaryURL()
         process.arguments = [
             "daemon", "run",
             "--mode", "manual",
@@ -62,7 +62,7 @@ struct ScreenCaptureKitProcessCapabilityRuntimeTests {
                     "Invalid UTF-8 stderr (base64): \(errorData.base64EncodedString())")
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 let suffix = details.isEmpty ? "" : ": \(details)"
-                throw RuntimeError("Peekaboo marker fixture exited before registration\(suffix)")
+                throw RuntimeError("Wink marker fixture exited before registration\(suffix)")
             }
             if let identity = SystemIdentityResolver.processStartIdentity(process.processIdentifier) {
                 let marker = ScreenCaptureKitOwnerLease.processCapabilityMarkerURL(
@@ -77,7 +77,7 @@ struct ScreenCaptureKitProcessCapabilityRuntimeTests {
             }
             try await clock.sleep(for: .milliseconds(10))
         }
-        throw RuntimeError("Peekaboo marker fixture did not publish its process capability and Bridge readiness")
+        throw RuntimeError("Wink marker fixture did not publish its process capability and Bridge readiness")
     }
 
     @discardableResult

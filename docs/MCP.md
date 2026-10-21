@@ -1,25 +1,25 @@
 ---
-summary: 'Review Model Context Protocol (MCP) in Peekaboo guidance'
+summary: 'Review Model Context Protocol (MCP) in Wink guidance'
 read_when:
-  - 'planning work related to model context protocol (mcp) in peekaboo'
+  - 'planning work related to model context protocol (mcp) in wink'
   - 'debugging or extending features described here'
 ---
 
-# Model Context Protocol (MCP) in Peekaboo
+# Model Context Protocol (MCP) in Wink
 
-This document explains how Peekaboo exposes its automation tools as an MCP server and how to install it in MCP clients.
+This document explains how Wink exposes its automation tools as an MCP server and how to install it in MCP clients.
 
 ## Overview
 
-Peekaboo runs as an MCP server over stdio, exposing its native tools (image, see, click, etc.) to external MCP clients such as Codex, Claude Code, or Cursor.
-Peekaboo no longer hosts or manages external MCP servers; configure your MCP client to launch `peekaboo mcp` directly.
+Wink runs as an MCP server over stdio, exposing its native tools (image, see, click, etc.) to external MCP clients such as Codex, Claude Code, or Cursor.
+Wink no longer hosts or manages external MCP servers; configure your MCP client to launch `wink mcp` directly.
 By default, the MCP process owns its lifecycle and keeps support services process-local. An explicit
 `--bridge-socket <path>` instead attaches MCP tools to that existing Bridge host and skips the embedded support daemon.
 In both modes, MCP never publishes `daemon.sock`, `bridge.sock`, or another Bridge listener itself.
-The explicit route also owns capture preflight for the server lifetime: Peekaboo reuses one authenticated client bound
+The explicit route also owns capture preflight for the server lifetime: Wink reuses one authenticated client bound
 to that listener's process generation and does not consult unrelated auxiliary Bridge sockets during caller routing.
 Startup verifies that the selected host advertises process ownership. The host then enforces the canonical
-ScreenCaptureKit lease at every real SCK leaf by rescanning all same-user potential Peekaboo processes, including
+ScreenCaptureKit lease at every real SCK leaf by rescanning all same-user potential Wink processes, including
 owner-unaware processes that started after acquisition. Caller-local MCP retains the broader legacy-socket scan because
 no external Bridge generation owns its capture path.
 
@@ -48,7 +48,7 @@ duplicate `server_status` view are not exposed. `menu` supports only application
 status items use the dedicated menubar surface. MCP retains `sleep` because an MCP client may not have shell access.
 
 Call `see` first and pass actionable element IDs through these tools when possible. Element-targeted calls preserve action-first routing; coordinate calls always use the synthetic path. OCR-only text is semantic evidence, not an element-action target.
-The same action tools are available to CLI users as `peekaboo set-value`, `peekaboo select-text`, and `peekaboo action`.
+The same action tools are available to CLI users as `wink set-value`, `wink select-text`, and `wink action`.
 `set_value` and `action` are exposed only when their resolved input strategy enables action invocation
 (`actionFirst` or `actionOnly`). They are hidden under `synthFirst` or `synthOnly`, because these operations do not
 have a synthetic-input equivalent.
@@ -58,8 +58,8 @@ Supported transports:
 - **stdio**: supported and default.
 - **http / sse**: recognized flags, but server transports are not implemented yet.
 
-Applications linking `PeekabooCore` can pass an MCP Swift SDK `Transport` to
-`PeekabooMCPServer.serve(transport:)`. The host owns connection setup and transport policy; `serve` waits for
+Applications linking `WinkCore` can pass an MCP Swift SDK `Transport` to
+`WinkMCPServer.serve(transport:)`. The host owns connection setup and transport policy; `serve` waits for
 the transport to complete, then disconnects the SDK session and releases its tool context. Startup failures also
 disconnect the session and release that context. Shutdown closes tool-call admission, cancels accepted calls, and
 waits for them to finish before releasing their context; cancelling the serving task uses the same cleanup path.
@@ -68,7 +68,7 @@ concurrent `serve` calls on the same instance are rejected before connecting a s
 return confirms cleanup; incomplete cleanup throws. This entry point does not add a built-in HTTP or SSE server.
 For an accepted `NetworkTransport` connection, disable SDK reconnection so a disconnected peer ends the session.
 
-Peekaboo validates numeric arguments before a tool or mutation lane runs. Fields published as `integer` accept exact
+Wink validates numeric arguments before a tool or mutation lane runs. Fields published as `integer` accept exact
 whole values (including whole-number JSON doubles and integer strings) but reject fractional, non-finite, and
 out-of-range values. Fields published as `number` must be finite. Rejections report `mutation_dispatched: false` and
 `retry_safe: true`; an invalid optional value is never treated as omitted or replaced by a default.
@@ -91,28 +91,28 @@ imposing the file-input size limit. The MCP tool's accepted extensions are uncha
 
 ## Install in MCP clients
 
-Most MCP clients can launch Peekaboo through either the npm package or a local binary.
+Most MCP clients can launch Wink through either the npm package or a local binary.
 
 Use npm when you want the published release:
 
 ```json
 {
   "mcpServers": {
-    "peekaboo": {
+    "wink": {
       "command": "npx",
-      "args": ["-y", "@steipete/peekaboo", "mcp"]
+      "args": ["-y", "wink", "mcp"]
     }
   }
 }
 ```
 
-Use a local binary when developing Peekaboo or testing a checkout:
+Use a local binary when developing Wink or testing a checkout:
 
 ```json
 {
   "mcpServers": {
-    "peekaboo": {
-      "command": "/path/to/peekaboo",
+    "wink": {
+      "command": "/path/to/wink",
       "args": ["mcp"]
     }
   }
@@ -124,11 +124,11 @@ If your client supports environment variables, add provider and logging settings
 ```json
 {
   "mcpServers": {
-    "peekaboo": {
+    "wink": {
       "command": "npx",
-      "args": ["-y", "@steipete/peekaboo", "mcp"],
+      "args": ["-y", "wink", "mcp"],
       "env": {
-        "PEEKABOO_AI_PROVIDERS": "openai/gpt-5.6,anthropic/claude-opus-5",
+        "WINK_AI_PROVIDERS": "openai/gpt-5.6,anthropic/claude-opus-5",
         "PEEKABOO_LOG_LEVEL": "info"
       }
     }
@@ -138,12 +138,12 @@ If your client supports environment variables, add provider and logging settings
 
 Common environment variables:
 
-- `PEEKABOO_AI_PROVIDERS`: comma-separated provider list.
+- `WINK_AI_PROVIDERS`: comma-separated provider list.
 - `PEEKABOO_LOG_LEVEL`: `debug`, `info`, `warn`, or `error`.
 - `OPENAI_API_KEY`: OpenAI API key for GPT models.
 - `ANTHROPIC_API_KEY`: Anthropic API key for Claude models.
 - `X_AI_API_KEY` or `XAI_API_KEY`: xAI API key for Grok models.
-- `PEEKABOO_OLLAMA_BASE_URL` / `OLLAMA_BASE_URL`: native Ollama server base. The Peekaboo-specific variable wins,
+- `PEEKABOO_OLLAMA_BASE_URL` / `OLLAMA_BASE_URL`: native Ollama server base. The Wink-specific variable wins,
   then the Ollama variable, config, and finally `http://localhost:11434`; do not append `/v1`.
 
 ## Verify client setup
@@ -151,29 +151,29 @@ Common environment variables:
 Run the server manually first:
 
 ```
-peekaboo mcp
+wink mcp
 ```
 
-Then restart your MCP client and ask it to list available tools or take a screenshot. Peekaboo should expose the same native tools that `peekaboo tools` reports.
+Then restart your MCP client and ask it to list available tools or take a screenshot. Wink should expose the same native tools that `wink tools` reports.
 
 ## CLI usage
 
 Show help:
 
 ```
-peekaboo mcp --help
+wink mcp --help
 ```
 
 Start the server (defaults to stdio):
 
 ```
-peekaboo mcp
+wink mcp
 ```
 
 Explicit transport:
 
 ```
-peekaboo mcp serve --transport stdio
+wink mcp serve --transport stdio
 ```
 
 ## Observation Targets
@@ -190,7 +190,7 @@ observation surface. Use `see` when element detection and snapshot IDs are requi
 `keys: ["cmd+c", "Return"]` for a chord sequence or `key: "c"` plus `modifiers: ["cmd"]` for one chord.
 
 The `see` tool accepts an exact CoreGraphics `window_id` by itself or with an `app_target` naming the owning
-application or PID. `inspect_ui` requires that application/PID owner hint. Peekaboo resolves and generation-pins the
+application or PID. `inspect_ui` requires that application/PID owner hint. Wink resolves and generation-pins the
 real owner before using the ID. Do not combine `window_id` with a window title or index suffix in `app_target`; choose
 one window selector so stale inputs cannot redirect work to a sibling window from the same process. `window_id` is a
 positive 32-bit integer; strings, fractional numbers, zero, negative values, and out-of-range values fail before
@@ -249,7 +249,7 @@ in those clients, and the observation's text summary is unchanged.
 
 Pass `include_elements: true` to `see` or `inspect_ui` to also receive the element table as data in
 `_meta.ui_elements`, together with `_meta.snapshot_id`. Each row uses the same type and field names as
-`ui_elements[]` in `peekaboo see --json` (`id`, semantic `role`, raw `ax_role`, `title`, `label`, `value`,
+`ui_elements[]` in `wink see --json` (`id`, semantic `role`, raw `ax_role`, `title`, `label`, `value`,
 `description`, `role_description`, `help`, `identifier`, `confidence`, `bounds` `{x, y, width, height}`,
 `is_actionable`, `is_enabled`, `is_selected`, `is_value_settable`, `keyboard_shortcut`, `selected_text_range`; absent values are omitted).
 `see` bounds follow the same presentation rules as the CLI, so ROI results are ROI-local; application-partial
@@ -284,7 +284,7 @@ The MCP `image` tool stores logical 1x captures by default. Pass `scale: "native
 
 ### Capture coordinate context
 
-The `image` and `see` tools include an additive, versioned `coordinate_context` object in response `_meta`. It describes how the delivered raster maps to Peekaboo's canonical top-left-origin global display coordinates, which are measured in logical points:
+The `image` and `see` tools include an additive, versioned `coordinate_context` object in response `_meta`. It describes how the delivered raster maps to Wink's canonical top-left-origin global display coordinates, which are measured in logical points:
 
 - `logical_bounds`: the capture rectangle in global logical points;
 - `delivered_image_size`: the actual raster dimensions returned to the client, after any `max_dimension` resize;
@@ -300,7 +300,7 @@ Consumers should check `version` before interpreting the object. Version `1` use
 ### Exact-window ROI
 
 MCP `see` accepts `roi: "x,y,width,height"` in top-left-origin, window-local logical points. ROI requires an exact
-`window_id` and must create a fresh snapshot, so omit `snapshot`. Peekaboo captures and inspects the generation-pinned
+`window_id` and must create a fresh snapshot, so omit `snapshot`. Wink captures and inspects the generation-pinned
 full window, then returns only the pixel-aligned crop. AX/OCR results are filtered to intersecting elements, and
 response element frames are clipped and translated into ROI-local logical coordinates. The stored snapshot retains
 global frames for element-ID actions.
@@ -323,7 +323,7 @@ protocol 1.34 `producerBoundSnapshotReferences` capability before creating or pu
 host cannot cause the result to be rebound locally.
 
 The `click` and `paste` tools publish flat object schemas without root-level `oneOf`, `allOf`, or `anyOf`, so MCP clients
-can forward them to providers such as Anthropic without schema rewriting. Peekaboo enforces cross-field constraints
+can forward them to providers such as Anthropic without schema rewriting. Wink enforces cross-field constraints
 at runtime before dispatch; the flat catalog does not relax target, receipt, or foreground-consent requirements.
 
 Snapshot-backed `click`, `action`, `set_value`, `select_text`, `scroll`, `type`, and `press` reserve mutation authority in the snapshot's
@@ -345,7 +345,7 @@ alias); either reference opts into capture-context and live-target validation ev
 The `double`, `triple`, `right`, and `middle` click booleans are mutually exclusive; conflicts are rejected before snapshot lookup or dispatch. Background right-, double-, middle-, and triple-clicks use exact PID/window-routed native events without activating the app or moving the physical cursor. Middle/triple require a fresh exact-window snapshot, Event Synthesizing permission, Bridge protocol 1.30, and the `statelessClickVariants` capability; older hosts are refused before the request is encoded. Every event revalidates the normal-layer window owner, process generation, bounds, and point. Since macOS provides no application-level acknowledgment for routed pointer events, successful dispatch responses include `verified: false` and `effect: "unverifiable"`; canonical metadata retains `click_type`, exact target identity/receipt, and three dispatched units for middle or seven for triple. An unprovable or changed route is refused rather than redirected through the desktop-global event tap.
 
 For `click.query`, `wait_for` is a maximum wait in milliseconds (default 5000, maximum 60000). If the current snapshot
-has no match, Peekaboo reads a fresh Accessibility tree for that exact window without taking screenshots or focusing
+has no match, Wink reads a fresh Accessibility tree for that exact window without taking screenshots or focusing
 it, and uses the matching observation's fresh element ID. The original window ID, owner process generation, and
 bounds stay pinned throughout; a changed target is refused, not adopted. Modifier-click keeps its original screenshot
 lease for coordinate authority and uses only the matched point from the fresh tree.
@@ -355,7 +355,7 @@ its normal completion and retry-safety semantics; `wait_for` does not cancel alr
 only the current snapshot. A missing `on` ID is snapshot-local and is reported immediately, never remapped to a
 later observation.
 
-`click.modifiers` accepts a nonempty unique array of `cmd`, `shift`, and `option`. It is deliberately foreground-only and requires `foreground: true` plus an explicit non-`latest` exact-window screenshot snapshot. Control and right contextual modifier-clicks are refused because restoring the prior foreground would dismiss their result. Bridge protocol 1.33 hosts must advertise `foregroundModifierClickSnapshotLease`; the host leaf then leases the snapshot and owns exact target preflight, one prebuilt modifier-bearing HID mouse sequence that never changes shared keyboard state, and compare-and-swap restoration as one global operation. Response metadata includes `modifiers`, `cursor_restoration`, and `focus_restoration`; restoration reports `preserved_newer_state` when concurrent user or application activity superseded Peekaboo's write.
+`click.modifiers` accepts a nonempty unique array of `cmd`, `shift`, and `option`. It is deliberately foreground-only and requires `foreground: true` plus an explicit non-`latest` exact-window screenshot snapshot. Control and right contextual modifier-clicks are refused because restoring the prior foreground would dismiss their result. Bridge protocol 1.33 hosts must advertise `foregroundModifierClickSnapshotLease`; the host leaf then leases the snapshot and owns exact target preflight, one prebuilt modifier-bearing HID mouse sequence that never changes shared keyboard state, and compare-and-swap restoration as one global operation. Response metadata includes `modifiers`, `cursor_restoration`, and `focus_restoration`; restoration reports `preserved_newer_state` when concurrent user or application activity superseded Wink's write.
 
 Default background-only MCP/Agent `type` requires an explicit fresh exact non-dialog snapshot receipt; an optional
 element ID must come from that snapshot. Snapshot typing cannot include competing app, PID, or window selectors;
@@ -393,7 +393,7 @@ The MCP `paste` tool also keeps window selectors exact in background mode. With 
 dispatch; it never degrades the request to process-only delivery that could reach a sibling window. Direct text
 revalidates the exact focused destination throughout typing and never touches the clipboard. If process-targeted or
 exact-window direct text fails or is cancelled after dispatch begins, a prefix may already have been inserted;
-Peekaboo returns `paste_outcome: "indeterminate"`, `partial_text_possible: true`, `retry_safe: false`,
+Wink returns `paste_outcome: "indeterminate"`, `partial_text_possible: true`, `retry_safe: false`,
 `clipboard_mutated: false`, and `requires_fresh_observation: true`, with `characters_typed: null` rather than guessing
 the delivered prefix length when the input receipt cannot provide one. When the receipt does contain an emitted-unit
 count, `characters_typed` reports that lower bound. Rich/binary and current-clipboard payloads require the same
@@ -451,12 +451,12 @@ Explicit foreground modifier-click with restoration reporting:
 
 ## Troubleshooting
 
-- Ensure Screen Recording + Accessibility permissions are granted (`peekaboo permissions status`).
+- Ensure Screen Recording + Accessibility permissions are granted (`wink permissions status`).
 - The `permissions` tool reads one complete snapshot from the selected execution host. Missing Screen Recording or
   Accessibility is a tool failure; missing Event Synthesizing remains a structured limitation for background keyboard
   and foreground synthetic pointer actions rather than a global failure.
-- If the MCP client cannot connect, confirm you are launching Peekaboo with `mcp` or `mcp serve` and that the client is using stdio transport.
+- If the MCP client cannot connect, confirm you are launching Wink with `mcp` or `mcp serve` and that the client is using stdio transport.
 - Use absolute binary paths for local checkouts.
-- Confirm the binary is executable (`chmod +x /path/to/peekaboo`).
+- Confirm the binary is executable (`chmod +x /path/to/wink`).
 - Set `PEEKABOO_LOG_LEVEL=debug` while diagnosing startup issues.
-- Check Peekaboo logs with `./scripts/pblog.sh -f` from a source checkout.
+- Check Wink logs with `./scripts/pblog.sh -f` from a source checkout.

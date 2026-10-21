@@ -1,14 +1,14 @@
 import Commander
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct AppCommandQuitValidationTests {
     private func makeRuntime() -> CommandRuntime {
         CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: true, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
     }
 

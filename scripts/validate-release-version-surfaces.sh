@@ -21,18 +21,18 @@ cli_plist="$ROOT_DIR/Apps/CLI/Sources/Resources/Info.plist"
 test_host_plist="$ROOT_DIR/Apps/CLI/TestHost/Info.plist"
 assert_value 'CLI CFBundleShortVersionString' "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$cli_plist")"
 assert_value 'CLI CFBundleVersion' "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$cli_plist")"
-display="$(/usr/libexec/PlistBuddy -c 'Print :PeekabooVersionDisplayString' "$cli_plist")"
-assert_value 'CLI display version' "${display#Peekaboo }"
+display="$(/usr/libexec/PlistBuddy -c 'Print :WinkVersionDisplayString' "$cli_plist")"
+assert_value 'CLI display version' "${display#Wink }"
 assert_value 'TestHost CFBundleShortVersionString' \
   "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$test_host_plist")"
 assert_value 'TestHost CFBundleVersion' "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$test_host_plist")"
 mcp_version="$(/usr/bin/sed -n 's/.*static[[:space:]]*let[[:space:]]*current[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
-  "$ROOT_DIR/Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/PeekabooMCPVersion.swift")"
+  "$ROOT_DIR/Core/WinkCore/Sources/WinkAgentRuntime/MCP/WinkMCPVersion.swift")"
 assert_value 'MCP server' "$mcp_version"
 
 for project in \
-  "$ROOT_DIR/Apps/Mac/Peekaboo.xcodeproj/project.pbxproj" \
-  "$ROOT_DIR/Apps/PeekabooInspector/Inspector.xcodeproj/project.pbxproj" \
+  "$ROOT_DIR/Apps/Mac/Wink.xcodeproj/project.pbxproj" \
+  "$ROOT_DIR/Apps/WinkInspector/Inspector.xcodeproj/project.pbxproj" \
   "$ROOT_DIR/Apps/Playground/Playground.xcodeproj/project.pbxproj"; do
   found=0
   while IFS= read -r marketing_version; do

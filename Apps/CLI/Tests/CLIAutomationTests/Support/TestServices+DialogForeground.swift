@@ -1,6 +1,6 @@
 import CoreGraphics
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 
 @MainActor
 extension StubDialogService {

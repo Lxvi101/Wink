@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-release-app-signing-test.XXXXXX")"
+TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wink-release-app-signing-test.XXXXXX")"
 TEST_DIR="$(realpath "$TEST_DIR")"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
@@ -43,12 +43,12 @@ make_fixture() {
     "$version_root/Updater.app/Contents/MacOS" \
     "$version_root/XPCServices/Downloader.xpc/Contents/MacOS" \
     "$version_root/XPCServices/Installer.xpc/Contents/MacOS"
-  write_plist "$app/Contents/Info.plist" Peekaboo
+  write_plist "$app/Contents/Info.plist" Wink
   write_plist "$version_root/Resources/Info.plist" Sparkle
   write_plist "$version_root/Updater.app/Contents/Info.plist" Updater
   write_plist "$version_root/XPCServices/Downloader.xpc/Contents/Info.plist" Downloader
   write_plist "$version_root/XPCServices/Installer.xpc/Contents/Info.plist" Installer
-  write_macho "$app/Contents/MacOS/Peekaboo"
+  write_macho "$app/Contents/MacOS/Wink"
   write_macho "$version_root/Autoupdate"
   write_macho "$version_root/Updater.app/Contents/MacOS/Updater"
   write_macho "$version_root/XPCServices/Downloader.xpc/Contents/MacOS/Downloader"
@@ -102,7 +102,7 @@ if [[ "${SIGN_TEST_TERMINAL:-0}" == 1 ]]; then
   esac
   signature_target="$target"
   case "$target" in
-    */Contents/MacOS/Peekaboo|*/Contents/MacOS/Playground)
+    */Contents/MacOS/Wink|*/Contents/MacOS/Playground)
       signature_target="${target%/Contents/MacOS/*}" ;;
     */Contents/Frameworks/Sparkle.framework/Versions/B/Sparkle)
       signature_target="${target%/Versions/B/Sparkle}" ;;
@@ -123,10 +123,10 @@ if [[ "${SIGN_TEST_TERMINAL:-0}" == 1 ]]; then
   fi
   [[ "$signature" != inspect-failure ]] || exit 93
   case "${target##*/}" in
-    peekaboo-certification-controller) identifier=boo.peekaboo.peekaboo-certification-controller ;;
-    background-computer-use-probe) identifier=boo.peekaboo.background-computer-use-probe ;;
-    node) identifier=boo.peekaboo.qualification-node ;;
-    *) identifier=boo.peekaboo.peekaboo ;;
+    wink-certification-controller) identifier=boo.wink.wink-certification-controller ;;
+    background-computer-use-probe) identifier=boo.wink.background-computer-use-probe ;;
+    node) identifier=boo.wink.qualification-node ;;
+    *) identifier=boo.wink.wink ;;
   esac
   printf 'Identifier=%s\nCDHash=0123456789abcdef0123456789abcdef01234567\n' "$identifier"
   case "$signature" in
@@ -162,7 +162,7 @@ timestamp_url='http://timestamp.apple.com/ts01'
 entitlements="$TEST_DIR/release entitlements.plist"
 printf '<plist version="1.0"><dict/></plist>\n' >"$entitlements"
 
-app="$TEST_DIR/Product With Spaces/Peekaboo.app"
+app="$TEST_DIR/Product With Spaces/Wink.app"
 make_fixture "$app"
 export SIGN_TEST_FAIL_FRAMEWORK_ONCE=1
 export SIGN_TEST_EXTENDED_FILE_OUTPUT=1
@@ -219,8 +219,8 @@ cat >"$TEST_DIR/nm" <<'EOF'
 printf '                 U _harmless\n'
 EOF
 chmod 755 "$TEST_DIR/nm"
-PEEKABOO_FILE_BIN="$TEST_DIR/file" PEEKABOO_CODESIGN_BIN="$TEST_DIR/codesign" \
-  PEEKABOO_NM_BIN="$TEST_DIR/nm" \
+WINK_FILE_BIN="$TEST_DIR/file" WINK_CODESIGN_BIN="$TEST_DIR/codesign" \
+  WINK_NM_BIN="$TEST_DIR/nm" \
   "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$app"
 unset SIGN_TEST_EXTENDED_FILE_OUTPUT
 
@@ -240,9 +240,9 @@ assert_refused_without_signing() {
 SIGN_TEST_FILE_ERROR=1 assert_refused_without_signing file-inspection 'not Mach-O' \
   --app "$app" --entitlements "$entitlements" --sign-identity "$identity" --timestamp-url "$timestamp_url"
 
-symlink_source="$TEST_DIR/symlink source/Peekaboo.app"
+symlink_source="$TEST_DIR/symlink source/Wink.app"
 make_fixture "$symlink_source"
-symlink_app="$TEST_DIR/symlink input/Peekaboo.app"
+symlink_app="$TEST_DIR/symlink input/Wink.app"
 mkdir -p "$(dirname "$symlink_app")"
 ln -s "$symlink_source" "$symlink_app"
 assert_refused_without_signing app-symlink 'symlinked' \
@@ -253,7 +253,7 @@ printf 'not a directory\n' >"$file_app"
 assert_refused_without_signing app-type 'not a directory' \
   --app "$file_app" --entitlements "$entitlements" --sign-identity "$identity" --timestamp-url "$timestamp_url"
 
-leaf_symlink_app="$TEST_DIR/leaf symlink/Peekaboo.app"
+leaf_symlink_app="$TEST_DIR/leaf symlink/Wink.app"
 make_fixture "$leaf_symlink_app"
 leaf_autoupdate="$leaf_symlink_app/Contents/Frameworks/Sparkle.framework/Versions/B/Autoupdate"
 mv "$leaf_autoupdate" "$leaf_autoupdate.real"
@@ -261,20 +261,20 @@ ln -s Autoupdate.real "$leaf_autoupdate"
 assert_refused_without_signing leaf-symlink 'Expected exactly one physical Autoupdate' \
   --app "$leaf_symlink_app" --entitlements "$entitlements" --sign-identity "$identity" --timestamp-url "$timestamp_url"
 
-duplicate_app="$TEST_DIR/duplicate/Peekaboo.app"
+duplicate_app="$TEST_DIR/duplicate/Wink.app"
 make_fixture "$duplicate_app"
 mkdir -p "$duplicate_app/Contents/Frameworks/Sparkle.framework/Versions/A"
 write_macho "$duplicate_app/Contents/Frameworks/Sparkle.framework/Versions/A/Autoupdate"
 assert_refused_without_signing duplicate 'found 2' \
   --app "$duplicate_app" --entitlements "$entitlements" --sign-identity "$identity" --timestamp-url "$timestamp_url"
 
-missing_app="$TEST_DIR/missing/Peekaboo.app"
+missing_app="$TEST_DIR/missing/Wink.app"
 make_fixture "$missing_app"
 rm -rf "$missing_app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices/Installer.xpc"
 assert_refused_without_signing missing 'Code bundle is missing' \
   --app "$missing_app" --entitlements "$entitlements" --sign-identity "$identity" --timestamp-url "$timestamp_url"
 
-unknown_app="$TEST_DIR/unknown/Peekaboo.app"
+unknown_app="$TEST_DIR/unknown/Wink.app"
 make_fixture "$unknown_app"
 write_macho "$unknown_app/Contents/Resources/rogue executable"
 assert_refused_without_signing unknown 'Unknown Mach-O payload' \
@@ -284,8 +284,8 @@ assert_refused_without_signing unknown 'Unknown Mach-O payload' \
 # guards. Load its existing functions without running the credentialed entrypoint;
 # no production override or exported test API is needed.
 terminal_root="$TEST_DIR/terminal-owner"
-mkdir -p "$terminal_root/scripts" "$terminal_root/Apps/Mac/Peekaboo"
-cp "$entitlements" "$terminal_root/Apps/Mac/Peekaboo/Peekaboo.entitlements"
+mkdir -p "$terminal_root/scripts" "$terminal_root/Apps/Mac/Wink"
+cp "$entitlements" "$terminal_root/Apps/Mac/Wink/Wink.entitlements"
 cp "$ROOT_DIR/scripts/sign-release-app.sh" "$ROOT_DIR/scripts/codesign-with-retry.sh" "$terminal_root/scripts/"
 awk '
   /^EXPECTED_(IDENTITY|TEAM_ID|REQUIREMENT)=|^TIMESTAMP_URL=/ { print }
@@ -325,10 +325,10 @@ STAGE_DIR="$SIGN_TEST_CASE_ROOT"
 BUILD_MANIFEST="$STAGE_DIR/build.json"
 SOURCE_COMMIT=fixture-source
 UNSIGNED_CLI="$STAGE_DIR/unsigned/cli"
-UNSIGNED_APP="$STAGE_DIR/unsigned/Peekaboo.app"
+UNSIGNED_APP="$STAGE_DIR/unsigned/Wink.app"
 UNSIGNED_PLAYGROUND="$STAGE_DIR/unsigned/Playground.app"
-UNSIGNED_NODE="$STAGE_DIR/unsigned/PeekabooQualificationNode.app"
-UNSIGNED_CONTROLLER="$STAGE_DIR/unsigned/qualification/peekaboo-certification-controller"
+UNSIGNED_NODE="$STAGE_DIR/unsigned/WinkQualificationNode.app"
+UNSIGNED_CONTROLLER="$STAGE_DIR/unsigned/qualification/wink-certification-controller"
 SIGNED_ROOT="$STAGE_DIR/signed"
 MAC_RELEASE_CODESIGN_IDENTITY="$EXPECTED_IDENTITY"
 export MAC_RELEASE_CODESIGN_IDENTITY
@@ -361,8 +361,8 @@ terminal_failures=0
 for library_mode in 700 644; do
   case_root="$TEST_DIR/terminal-$library_mode"
   unsigned="$case_root/unsigned"
-  make_fixture "$unsigned/Peekaboo.app"
-  write_macho "$unsigned/cli/peekaboo"
+  make_fixture "$unsigned/Wink.app"
+  write_macho "$unsigned/cli/wink"
   write_macho "$unsigned/cli/libswiftCompatibilitySpan.dylib"
   playground="$unsigned/Playground.app"
   write_plist "$playground/Contents/Info.plist" Playground
@@ -375,12 +375,12 @@ for library_mode in 700 644; do
     printf 'resource\n' > "$playground/Contents/Resources/plain $resource_mode.dylib"
     chmod "$resource_mode" "$playground/Contents/Resources/plain $resource_mode.dylib"
   done
-  write_macho "$unsigned/PeekabooQualificationNode.app/Contents/MacOS/node"
-  write_macho "$unsigned/qualification/peekaboo-certification-controller"
+  write_macho "$unsigned/WinkQualificationNode.app/Contents/MacOS/node"
+  write_macho "$unsigned/qualification/wink-certification-controller"
   write_macho "$unsigned/qualification/background-computer-use-probe"
   write_macho "$unsigned/qualification/libswiftCompatibilitySpan.dylib"
   jq -n '{build_mode:"production", unsigned_inputs: {
-    cli_inventory_sha256:"fixture-tree", peekaboo_inventory_sha256:"fixture-tree",
+    cli_inventory_sha256:"fixture-tree", wink_inventory_sha256:"fixture-tree",
     playground_inventory_sha256:"fixture-tree", qualification_node_inventory_sha256:"fixture-tree",
     qualification_inventory_sha256:"fixture-tree"}}' > "$case_root/build.json"
 

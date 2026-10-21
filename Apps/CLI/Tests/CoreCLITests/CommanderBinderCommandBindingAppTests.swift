@@ -1,7 +1,7 @@
 import Commander
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderAppConfigTests {
     @Test

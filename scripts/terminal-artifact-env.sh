@@ -44,12 +44,12 @@ TERMINAL_ARTIFACT_SECRET_NAMES=(
 )
 
 terminal_artifact_run_build() (
-  local -a scrub_args=(-u PEEKABOO_OP_SERVICE_TOKEN_FILE -u PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE)
+  local -a scrub_args=(-u WINK_OP_SERVICE_TOKEN_FILE -u WINK_MOLTY_OP_SERVICE_TOKEN_FILE)
   local secret_name environment_name
 
   # Scrub before launching env: its loader sees inherited variables before -u runs.
   # The subshell keeps the caller's environment intact, including on child failure.
-  builtin unset PEEKABOO_OP_SERVICE_TOKEN_FILE PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE || return
+  builtin unset WINK_OP_SERVICE_TOKEN_FILE WINK_MOLTY_OP_SERVICE_TOKEN_FILE || return
   for secret_name in "${TERMINAL_ARTIFACT_SECRET_NAMES[@]}"; do
     builtin unset "$secret_name" || return
     scrub_args+=(-u "$secret_name")

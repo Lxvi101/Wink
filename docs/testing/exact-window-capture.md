@@ -30,7 +30,7 @@ From the task checkout, with its pinned submodules initialized:
 
 ```bash
 pnpm run setup:swift
-pnpm exec swift test --package-path Core/PeekabooAutomationKit \
+pnpm exec swift test --package-path Core/WinkAutomationKit \
   --filter 'LegacyWindowCaptureGeometryTests|LegacyCapturedRasterTests|ScreenCaptureImageScalerTests|ObservationCaptureReceiptBindingTests'
 pnpm run build:cli
 ```
@@ -61,7 +61,7 @@ bash scripts/build-exact-window-fixture.sh "$PROOF_DIR/ExactWindowCapture.app"
 pnpm run build:cli
 CLI_BIN_DIR="$(pnpm exec swift build --package-path Apps/CLI --show-bin-path)"
 mkdir "$PROOF_DIR/after"
-cp "$CLI_BIN_DIR/peekaboo" "$PROOF_DIR/after/peekaboo"
+cp "$CLI_BIN_DIR/wink" "$PROOF_DIR/after/wink"
 git diff --binary > "$PROOF_DIR/source.patch"
 git ls-files --others --exclude-standard > "$PROOF_DIR/new-source-files.txt"
 ```
@@ -77,15 +77,15 @@ repository's signing wrapper, but not its debug helper that auto-selects an iden
 bash scripts/codesign-with-retry.sh --force --sign "$SIGN_IDENTITY" --options runtime --timestamp=none \
   "$PROOF_DIR/ExactWindowCapture.app"
 bash scripts/codesign-with-retry.sh --force --sign "$SIGN_IDENTITY" --options runtime --timestamp=none \
-  --identifier boo.peekaboo.peekaboo --entitlements Apps/CLI/Sources/Resources/peekaboo.entitlements \
-  "$PROOF_DIR/after/peekaboo"
+  --identifier boo.wink.wink --entitlements Apps/CLI/Sources/Resources/wink.entitlements \
+  "$PROOF_DIR/after/wink"
 codesign --verify --strict "$PROOF_DIR/ExactWindowCapture.app"
-codesign --verify --strict "$PROOF_DIR/after/peekaboo"
+codesign --verify --strict "$PROOF_DIR/after/wink"
 codesign --verify --strict "$BEFORE_CLI"
 codesign -dv --verbose=4 "$PROOF_DIR/ExactWindowCapture.app" 2> "$PROOF_DIR/fixture-signature.txt"
-codesign -dv --verbose=4 "$PROOF_DIR/after/peekaboo" 2> "$PROOF_DIR/after-signature.txt"
+codesign -dv --verbose=4 "$PROOF_DIR/after/wink" 2> "$PROOF_DIR/after-signature.txt"
 codesign -dv --verbose=4 "$BEFORE_CLI" 2> "$PROOF_DIR/before-signature.txt"
-shasum -a 256 "$BEFORE_CLI" "$PROOF_DIR/after/peekaboo" > "$PROOF_DIR/binary-sha256.txt"
+shasum -a 256 "$BEFORE_CLI" "$PROOF_DIR/after/wink" > "$PROOF_DIR/binary-sha256.txt"
 ```
 
 Inspect those signature records for the expected identity before launch. In a separate tracked foreground terminal
@@ -108,15 +108,15 @@ capture_proof() {
   local label="$1" binary="$2"
   shift 2
   local capture_rc=0
-  env PEEKABOO_CONFIG_DIR="$PROOF_DIR/config" PEEKABOO_CONFIG_DISABLE_MIGRATION=1 \
+  env PEEKABOO_CONFIG_DIR="$PROOF_DIR/config" WINK_CONFIG_DISABLE_MIGRATION=1 \
     "$binary" see --pid "$FIXTURE_PID" --window-id "$POPUP_ID" \
     --no-remote --capture-engine cg --no-elements --path "$PROOF_DIR/$label.png" --json "$@" \
     > "$PROOF_DIR/$label.json" 2> "$PROOF_DIR/$label.stderr" || capture_rc=$?
   printf '%s\n' "$capture_rc" > "$PROOF_DIR/$label.exit"
 }
 capture_proof before "$BEFORE_CLI"
-capture_proof after "$PROOF_DIR/after/peekaboo"
-capture_proof after-retina "$PROOF_DIR/after/peekaboo" --retina
+capture_proof after "$PROOF_DIR/after/wink"
+capture_proof after-retina "$PROOF_DIR/after/wink" --retina
 ```
 
 `PEEKABOO_CONFIG_DIR` isolates configuration; normal exact-window snapshot receipts still use local

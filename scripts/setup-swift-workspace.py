@@ -16,16 +16,16 @@ REMOTE = "https://github.com/steipete/Commander.git"
 # Only consumers that already select the live Commander filesystem package.
 # AutomationKit alone and the public root package deliberately retain remote resolution.
 PACKAGES = (
-    "Apps/CLI", "Apps/Mac", "Apps/Playground", "Apps/PeekabooInspector",
-    "Core/PeekabooCore", "Core/PeekabooExternalDependencies", "Core/PeekabooUICore",
+    "Apps/CLI", "Apps/Mac", "Apps/Playground", "Apps/WinkInspector",
+    "Core/WinkCore", "Core/WinkExternalDependencies", "Core/WinkUICore",
 )
 WORKSPACES = (
-    "Apps/Peekaboo.xcworkspace",
-    "Apps/Mac/Peekaboo.xcodeproj/project.xcworkspace",
+    "Apps/Wink.xcworkspace",
+    "Apps/Mac/Wink.xcodeproj/project.xcworkspace",
     "Apps/Playground/Playground.xcodeproj/project.xcworkspace",
-    "Apps/PeekabooInspector/Inspector.xcodeproj/project.xcworkspace",
+    "Apps/WinkInspector/Inspector.xcodeproj/project.xcworkspace",
 )
-OWNER = ".swiftpm/peekaboo-workspace"
+OWNER = ".swiftpm/wink-workspace"
 STATE = OWNER + "/owner.json"
 MIRROR = OWNER + "/mirrors.json"
 CONFIGS = (MIRROR,) + tuple(p + "/.swiftpm/configuration/mirrors.json" for p in PACKAGES) + tuple(
@@ -94,7 +94,7 @@ def source_command(function, *args):
 
 
 def validate_source():
-    source_command("peekaboo_verify_workspace_submodules")
+    source_command("wink_verify_workspace_submodules")
     for package in PACKAGES:
         if not safe_path(package + "/Package.swift").is_file():
             fail("supported package is missing: " + package)
@@ -136,7 +136,7 @@ def inspect():
 def write_owned(relative, content, previous=None):
     path = safe_path(relative)
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    descriptor, temporary = tempfile.mkstemp(prefix=".peekaboo-", dir=path.parent)
+    descriptor, temporary = tempfile.mkstemp(prefix=".wink-", dir=path.parent)
     try:
         with os.fdopen(descriptor, "wb") as output:
             output.write(content)
@@ -190,13 +190,13 @@ def main():
     original_umask = os.umask(0o077)
     # Serialize writers and hold ownership across compilation and the final integrity check.
     safe_path(".swiftpm").mkdir(exist_ok=True, mode=0o700)
-    lock = safe_path(".swiftpm/peekaboo-workspace.lock")
+    lock = safe_path(".swiftpm/wink-workspace.lock")
     try:
         lock.mkdir(mode=0o700)
     except FileExistsError:
-        fail("workspace configuration is busy (or an interrupted setup left .swiftpm/peekaboo-workspace.lock)")
+        fail("workspace configuration is busy (or an interrupted setup left .swiftpm/wink-workspace.lock)")
     try:
-        commit = source_command("peekaboo_require_source_commit") if options.release else None
+        commit = source_command("wink_require_source_commit") if options.release else None
         configure("setup" if options.action == "run" else options.action)
         if options.action == "run":
             child_env = dict(os.environ, SWIFTPM_MIRROR_CONFIG=str(ROOT / MIRROR))
@@ -208,12 +208,12 @@ def main():
                 os.umask(0o077)
             configure("check")
             if commit:
-                source_command("peekaboo_verify_source_commit", commit)
+                source_command("wink_verify_source_commit", commit)
             # Python uses negative signal numbers; an executable wrapper must expose
             # the shell convention rather than letting sys.exit wrap -SIGTERM to 241.
             return 128 - result.returncode if result.returncode < 0 else result.returncode
         if commit:
-            source_command("peekaboo_verify_source_commit", commit)
+            source_command("wink_verify_source_commit", commit)
         return 0
     finally:
         lock.rmdir()

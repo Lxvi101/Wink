@@ -1,5 +1,5 @@
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct CommanderRuntimeActionClassificationTests {
@@ -9,13 +9,13 @@ struct CommanderRuntimeActionClassificationTests {
         for (path, descriptor) in Self.leafDescriptors(descriptors) {
             let expected = (descriptor.type.init() as? any ActionOutputFormattable)?.defaultEffect != nil
             for arguments in [
-                ["/tmp/peekaboo-before"] + path,
+                ["/tmp/wink-before"] + path,
                 ["pb"] + path,
-                ["peekaboo-4.9"] + path + ["--json"],
-                ["peekaboo"] + path,
-                ["/usr/local/bin/peekaboo"] + path,
-                ["/tmp/peekaboo"] + path + ["--json"],
-                ["peekaboo"] + path + ["--", "--json"],
+                ["wink-4.9"] + path + ["--json"],
+                ["wink"] + path,
+                ["/usr/local/bin/wink"] + path,
+                ["/tmp/wink"] + path + ["--json"],
+                ["wink"] + path + ["--", "--json"],
             ] {
                 let actual = CommanderRuntimeRouter.isActionInvocation(argv: arguments)
                 #expect(
@@ -26,7 +26,7 @@ struct CommanderRuntimeActionClassificationTests {
         }
     }
 
-    @Test(arguments: ["peekaboo", "/tmp/peekaboo-before", "pb", "peekaboo-4.9"])
+    @Test(arguments: ["wink", "/tmp/wink-before", "pb", "wink-4.9"])
     func `omitted default subcommands keep the registered leaf classification`(executable: String) throws {
         for descriptor in CommanderRegistryBuilder.buildDescriptors() {
             guard let defaultName = descriptor.metadata.defaultSubcommandName else { continue }
@@ -42,20 +42,20 @@ struct CommanderRuntimeActionClassificationTests {
     @Test
     func `unknown and incomplete command paths are not actions`() {
         #expect(!CommanderRuntimeRouter.isActionInvocation(argv: []))
-        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["peekaboo"]))
-        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["peekaboo", "--json", "--version"]))
-        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["peekaboo", "unknown", "--json"]))
-        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["peekaboo", "window", "--json"]))
-        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["peekaboo", "window", "unknown", "--json"]))
+        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["wink"]))
+        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["wink", "--json", "--version"]))
+        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["wink", "unknown", "--json"]))
+        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["wink", "window", "--json"]))
+        #expect(!CommanderRuntimeRouter.isActionInvocation(argv: ["wink", "window", "unknown", "--json"]))
     }
 
     @Test
     func `capture selector shapes stay read-only while window and space mutations are actions`() {
         let captureShapes = [
-            ["peekaboo", "capture", "live", "--app", "Example", "--pid", "123", "--json"],
-            ["peekaboo", "capture", "live", "--window-title", "Main", "--window-index", "0", "--json"],
+            ["wink", "capture", "live", "--app", "Example", "--pid", "123", "--json"],
+            ["wink", "capture", "live", "--window-title", "Main", "--window-index", "0", "--json"],
             [
-                "peekaboo", "capture", "live", "--mode", "screen", "--screen-index", "0", "--app", "Example",
+                "wink", "capture", "live", "--mode", "screen", "--screen-index", "0", "--app", "Example",
                 "--json",
             ],
         ]
@@ -64,10 +64,10 @@ struct CommanderRuntimeActionClassificationTests {
         }
 
         #expect(CommanderRuntimeRouter.isActionInvocation(argv: [
-            "peekaboo", "window", "close", "--window-title", "Main", "--window-index", "0", "--json",
+            "wink", "window", "close", "--window-title", "Main", "--window-index", "0", "--json",
         ]))
         #expect(CommanderRuntimeRouter.isActionInvocation(argv: [
-            "peekaboo", "space", "move-window", "--app", "Example", "--pid", "123", "--to", "1", "--json",
+            "wink", "space", "move-window", "--app", "Example", "--pid", "123", "--to", "1", "--json",
         ]))
     }
 

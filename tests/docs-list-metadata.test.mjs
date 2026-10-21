@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 function runListing(t, files) {
-  const root = mkdtempSync(path.join(os.tmpdir(), 'peekaboo-docs-list-'));
+  const root = mkdtempSync(path.join(os.tmpdir(), 'wink-docs-list-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(path.join(root, 'scripts'));
   mkdirSync(path.join(root, 'docs'));

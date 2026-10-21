@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Fake accessibility window whose size setter clamps to a minimum, mirroring how AppKit
 /// constrains AX resize requests for windows with a minimum content size (e.g. SwiftUI

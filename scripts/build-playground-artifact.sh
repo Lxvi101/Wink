@@ -17,14 +17,14 @@ terminal_artifact_assert_build_env_is_clean || {
   exit 1
 }
 
-WORKSPACE="$ROOT_DIR/Apps/Peekaboo.xcworkspace"
-WORKSPACE_RELATIVE="Apps/Peekaboo.xcworkspace"
-CANONICAL_LOCK_RELATIVE="Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+WORKSPACE="$ROOT_DIR/Apps/Wink.xcworkspace"
+WORKSPACE_RELATIVE="Apps/Wink.xcworkspace"
+CANONICAL_LOCK_RELATIVE="Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 CANONICAL_LOCK="$ROOT_DIR/$CANONICAL_LOCK_RELATIVE"
 SCHEME=Playground
 CONFIGURATION=Debug
 DESTINATION="platform=macOS,arch=arm64"
-EXPECTED_BUNDLE_ID=boo.peekaboo.playground.debug
+EXPECTED_BUNDLE_ID=boo.wink.playground.debug
 MARKETING_VERSION="$(/usr/bin/plutil -extract version raw -o - "$ROOT_DIR/package.json")"
 DERIVED_DATA_PATH=""
 OUTPUT_APP=""
@@ -36,7 +36,7 @@ fail() {
   exit 1
 }
 
-case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in
+case "${WINK_TERMINAL_TEST_MODE:-0}" in
   1|true|yes|on)
     XCODEBUILD_BIN="${PLAYGROUND_XCODEBUILD_BIN:?test xcodebuild required}"
     DITTO_BIN="${PLAYGROUND_DITTO_BIN:-/usr/bin/ditto}"
@@ -55,7 +55,7 @@ case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in
     XCRUN_BIN=/usr/bin/xcrun
     XCODE_SELECT_BIN=/usr/bin/xcode-select
     ;;
-  *) fail 'PEEKABOO_TERMINAL_TEST_MODE must be boolean' ;;
+  *) fail 'WINK_TERMINAL_TEST_MODE must be boolean' ;;
 esac
 
 usage() {
@@ -112,8 +112,8 @@ while (($# > 0)); do
 done
 
 case "$CONFIGURATION" in
-  Debug) EXPECTED_BUNDLE_ID=boo.peekaboo.playground.debug ;;
-  Release) EXPECTED_BUNDLE_ID=boo.peekaboo.playground ;;
+  Debug) EXPECTED_BUNDLE_ID=boo.wink.playground.debug ;;
+  Release) EXPECTED_BUNDLE_ID=boo.wink.playground ;;
   *) fail "unsupported configuration: $CONFIGURATION" ;;
 esac
 
@@ -132,7 +132,7 @@ for competing_lock in "${competing_locks[@]}"; do
     fail "remove noncanonical Playground dependency lock: $competing_lock"
 done
 
-SOURCE_COMMIT="$(peekaboo_require_source_commit "$ROOT_DIR")" || \
+SOURCE_COMMIT="$(wink_require_source_commit "$ROOT_DIR")" || \
   fail 'a clean checkout with an exact source commit is required'
 SOURCE_TREE="$(git -C "$ROOT_DIR" rev-parse HEAD:Apps/Playground)"
 DEPENDENCY_LOCK_SHA256="$(shasum -a 256 "$CANONICAL_LOCK" | awk '{print $1}')"
@@ -192,7 +192,7 @@ fi
 
 CREATED_DERIVED_DATA=false
 if [[ -z "$DERIVED_DATA_PATH" ]]; then
-  DERIVED_DATA_PATH="$(mktemp -d /tmp/peekaboo-playground-build.XXXXXX)"
+  DERIVED_DATA_PATH="$(mktemp -d /tmp/wink-playground-build.XXXXXX)"
   CREATED_DERIVED_DATA=true
 else
   [[ "$DERIVED_DATA_PATH" == /* ]] || DERIVED_DATA_PATH="$ROOT_DIR/$DERIVED_DATA_PATH"
@@ -234,12 +234,12 @@ BUNDLE_ID="$($PLISTBUDDY_BIN -c 'Print :CFBundleIdentifier' "$BUILT_APP/Contents
 CURRENT_LOCK_SHA256="$(shasum -a 256 "$CANONICAL_LOCK" | awk '{print $1}')"
 [[ "$CURRENT_LOCK_SHA256" == "$DEPENDENCY_LOCK_SHA256" ]] || \
   fail 'canonical dependency lock changed during the build'
-peekaboo_verify_source_commit "$ROOT_DIR" "$SOURCE_COMMIT" || \
+wink_verify_source_commit "$ROOT_DIR" "$SOURCE_COMMIT" || \
   fail 'source checkout changed during the build'
 
 mkdir -p "$BUILT_APP/Contents/Resources" "$(dirname "$OUTPUT_APP")"
-contract_json > "$BUILT_APP/Contents/Resources/PeekabooPlaygroundSource.json"
-chmod 444 "$BUILT_APP/Contents/Resources/PeekabooPlaygroundSource.json"
+contract_json > "$BUILT_APP/Contents/Resources/WinkPlaygroundSource.json"
+chmod 444 "$BUILT_APP/Contents/Resources/WinkPlaygroundSource.json"
 "$DITTO_BIN" "$BUILT_APP" "$OUTPUT_APP"
 
 printf 'Playground app: %s\n' "$OUTPUT_APP"

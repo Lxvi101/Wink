@@ -323,7 +323,7 @@ struct WindowTestingView: View {
     }
 
     private func openLogViewer() {
-        if let url = URL(string: "peekaboo-playground://showWindow?id=log-viewer") {
+        if let url = URL(string: "wink-playground://showWindow?id=log-viewer") {
             NSWorkspace.shared.open(url)
         }
         self.actionLogger.log(.window, "Log viewer window requested")
@@ -394,7 +394,7 @@ struct TestWindowContent: View {
         VStack {
             Text("Test Window \(self.number)")
                 .font(.title)
-            Text("This is a test window for Peekaboo automation")
+            Text("This is a test window for Wink automation")
                 .foregroundColor(.secondary)
             Spacer()
             Button("Log Action") {

@@ -1,10 +1,10 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -13,7 +13,7 @@ struct SetValueOutcomeCommandTests {
     func `post-dispatch readback failure preserves receipt and blocks blind replay`() async throws {
         let automation = OutcomeStubAutomationService()
         let snapshots = StubSnapshotManager()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -72,7 +72,7 @@ struct SetValueOutcomeCommandTests {
     func `Bridge result binding refusal stays retry safe and preserves the snapshot`() async throws {
         let automation = OutcomeStubAutomationService()
         let snapshots = StubSnapshotManager()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -82,7 +82,7 @@ struct SetValueOutcomeCommandTests {
                 route: .bridge,
                 reason: .runtimeIncompatible,
                 message: "This Bridge host cannot return a verifiable set-value result.",
-                hint: "Update and relaunch Peekaboo before retrying set-value."
+                hint: "Update and relaunch Wink before retrying set-value."
             ),
             for: .setValue
         )
@@ -113,7 +113,7 @@ struct SetValueOutcomeCommandTests {
         let automation = OutcomeStubAutomationService()
         automation.setValueResultTargetBindingSupported = false
         let snapshots = StubSnapshotManager()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -144,7 +144,7 @@ struct SetValueOutcomeCommandTests {
         ] {
             let automation = CapabilityClaimingLegacyAutomationService()
             let snapshots = StubSnapshotManager()
-            let services = TestServicesFactory.makePeekabooServices(
+            let services = TestServicesFactory.makeWinkServices(
                 snapshots: snapshots,
                 automation: automation
             )
@@ -177,7 +177,7 @@ struct SetValueOutcomeCommandTests {
             automation.actionOutcome = .confirmedNoChange()
             automation.actionOutcomeTargetIdentity = nil
             let snapshots = StubSnapshotManager()
-            let services = TestServicesFactory.makePeekabooServices(
+            let services = TestServicesFactory.makeWinkServices(
                 snapshots: snapshots,
                 automation: automation
             )
@@ -213,7 +213,7 @@ struct SetValueOutcomeCommandTests {
                 processIdentity: .init(processIdentifier: 54321, processStartIdentity: 8)
             )
             let snapshots = StubSnapshotManager()
-            let services = TestServicesFactory.makePeekabooServices(
+            let services = TestServicesFactory.makeWinkServices(
                 snapshots: snapshots,
                 automation: automation
             )

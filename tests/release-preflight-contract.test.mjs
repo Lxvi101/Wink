@@ -149,7 +149,7 @@ test('migration guide covers every mapping extracted from CommanderMigrationAdvi
   ]);
 
   const removedRootRows = REMOVED_ROOT_COMMANDS.map((command) =>
-    `| \`peekaboo ${command} example\` | \`replacement for ${command}\` |`
+    `| \`wink ${command} example\` | \`replacement for ${command}\` |`
   );
   const guide = [
     '| Old | New |',
@@ -213,12 +213,12 @@ test('publication preflight routes its freshness comparison through the release 
 });
 
 test('npm version availability fails closed on failed, empty, and malformed registry responses', () => {
-  const request = { packageName: '@steipete/peekaboo', version: '4.2.2' };
+  const request = { packageName: 'wink', version: '4.2.2' };
 
   for (const registryOutput of [null, undefined, '', '   ']) {
     assert.match(
       validateNpmVersionAvailability({ ...request, registryOutput })[0],
-      /registry query failed or returned no data.*npm view @steipete\/peekaboo versions --json/
+      /registry query failed or returned no data.*npm view @steipete\/wink versions --json/
     );
   }
 
@@ -235,7 +235,7 @@ test('npm version availability fails closed on failed, empty, and malformed regi
 });
 
 test('npm version availability accepts valid registry lists and rejects an already published version', () => {
-  const request = { packageName: '@steipete/peekaboo', version: '4.2.2' };
+  const request = { packageName: 'wink', version: '4.2.2' };
 
   for (const registryOutput of ['[]', '["4.2.0", "4.2.1"]', '"4.2.0"']) {
     assert.deepEqual(validateNpmVersionAvailability({ ...request, registryOutput }), []);
@@ -254,7 +254,7 @@ const sanitizerPath = join(projectRoot, 'scripts/terminal-artifact-env.sh');
 const safeTestsFunction = prepareSource.match(/^function runSafeTests\(\) \{[\s\S]*?^\}/m)?.[0];
 
 function verifyBinaryFixture(t, {
-  name = 'peekaboo',
+  name = 'wink',
   mode = 0o755,
   missing = false,
   symlink = false,
@@ -265,7 +265,7 @@ function verifyBinaryFixture(t, {
   help = '  fixture help \u00e9\n',
   helpExit = 0
 } = {}) {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), 'peekaboo-binary-contract-')));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'wink-binary-contract-')));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const tools = join(root, 'tools');
   const binaryPath = join(root, name);
@@ -299,7 +299,7 @@ process.exit(Number(process.env.${tool.toUpperCase()}_EXIT));
     LIPO_EXIT: String(lipoExit),
     BINARY_OUTPUT: help,
     BINARY_EXIT: String(helpExit),
-    PEEKABOO_REQUIRE_UNIVERSAL: universal ? '1' : '0'
+    WINK_REQUIRE_UNIVERSAL: universal ? '1' : '0'
   };
   const execFunction = prepareSource.match(/^function exec\(command, options = \{\}\) \{[\s\S]*?^\}/m)?.[0];
   const verifyFunction = prepareSource.match(/^function buildAndVerifyPackage\(\) \{[\s\S]*?^\}/m)?.[0];
@@ -332,7 +332,7 @@ process.exit(Number(process.env.${tool.toUpperCase()}_EXIT));
       }
       return execFileSync(file, Array.from(args), { ...options, env, timeout: 5000 });
     },
-    execNpm() { return 'peekaboo\npeekaboo-mcp.js\nREADME.md\nLICENSE\n'; },
+    execNpm() { return 'wink\nwink-mcp.js\nREADME.md\nLICENSE\n'; },
     execWithOutput() { assert.fail('binary verification must not build a release'); },
     logStep() {},
     log(message) { messages.push(message); },
@@ -351,11 +351,11 @@ process.exit(Number(process.env.${tool.toUpperCase()}_EXIT));
 }
 
 for (const name of [
-  'peekaboo with spaces',
-  "peekaboo 'single quotes'",
-  'peekaboo "double quotes"',
-  'peekaboo $(touch dollar-marker)',
-  'peekaboo `touch backtick-marker`'
+  'wink with spaces',
+  "wink 'single quotes'",
+  'wink "double quotes"',
+  'wink $(touch dollar-marker)',
+  'wink `touch backtick-marker`'
 ]) {
   test(`binary verification passes a literal filename: ${name}`, (t) => {
     const result = verifyBinaryFixture(t, { name });
@@ -379,17 +379,17 @@ test('binary verification follows symlinks and accepts owner-only executable per
 
 test('binary verification preserves permission, architecture, and command failures', (t) => {
   const cases = [
-    [{ missing: true }, 'peekaboo binary not found', []],
-    [{ mode: 0o644 }, 'peekaboo binary is not executable', []],
+    [{ missing: true }, 'wink binary not found', []],
+    [{ mode: 0o644 }, 'wink binary is not executable', []],
     [{ statFailure: true }, 'Failed to check binary permissions', []],
-    [{ architectures: ' \nx86_64 \n' }, 'peekaboo binary is missing arm64', ['lipo']],
-    [{ universal: true }, 'peekaboo binary does not contain x86_64', ['lipo']],
+    [{ architectures: ' \nx86_64 \n' }, 'wink binary is missing arm64', ['lipo']],
+    [{ universal: true }, 'wink binary does not contain x86_64', ['lipo']],
     [{ lipoExit: 31 }, 'Failed to check binary architectures (lipo command failed)', ['lipo']],
-    [{ help: '' }, 'peekaboo binary does not respond to --help command', ['lipo', 'binary']],
-    [{ help: ' \t\n' }, 'peekaboo binary does not respond to --help command', ['lipo', 'binary']],
-    [{ helpExit: 29 }, 'peekaboo binary failed to execute with --help', ['lipo', 'binary']],
+    [{ help: '' }, 'wink binary does not respond to --help command', ['lipo', 'binary']],
+    [{ help: ' \t\n' }, 'wink binary does not respond to --help command', ['lipo', 'binary']],
+    [{ helpExit: 29 }, 'wink binary failed to execute with --help', ['lipo', 'binary']],
     // Any executable bit passes the mode gate, even when this owner cannot execute.
-    [{ mode: 0o654 }, 'peekaboo binary failed to execute with --help', ['lipo']]
+    [{ mode: 0o654 }, 'wink binary failed to execute with --help', ['lipo']]
   ];
   for (const [options, diagnostic, tools] of cases) {
     const result = verifyBinaryFixture(t, options);
@@ -410,7 +410,7 @@ test('binary verification requires x86_64 only in universal mode', (t) => {
   }
   const arm = verifyBinaryFixture(t);
   assert.equal(arm.passed, true, arm.messages.join('\n'));
-  assert.ok(arm.messages.includes('Binary is arm64-only (set PEEKABOO_REQUIRE_UNIVERSAL=1 to enforce universal)'));
+  assert.ok(arm.messages.includes('Binary is arm64-only (set WINK_REQUIRE_UNIVERSAL=1 to enforce universal)'));
 });
 
 function cliProbeFixture({ failArgs, errorCode = 'ETIMEDOUT' } = {}) {
@@ -428,9 +428,9 @@ function cliProbeFixture({ failArgs, errorCode = 'ETIMEDOUT' } = {}) {
       calls.push({ args: Array.from(args), options });
       let stdout;
       if (args[0] === 'invalid-command') stdout = "Unknown command 'invalid-command'";
-      else if (replacements.has(args[0])) stdout = `Command 'peekaboo ${args[0]}' was removed in v4. Use '${replacements.get(args[0])}'.`;
+      else if (replacements.has(args[0])) stdout = `Command 'wink ${args[0]}' was removed in v4. Use '${replacements.get(args[0])}'.`;
       else if (args.includes('--json')) stdout = JSON.stringify({ success: true, data: { apps: [], windows: [], screens: [] } });
-      else stdout = '--no-elements --tree --no-screenshot --at --wait-for --long-press --delay --hold cmd+shift+t AXPress --on --from --to --button --duration --foreground peekaboo app list --include-hidden peekaboo window list --group-by-space peekaboo screen list';
+      else stdout = '--no-elements --tree --no-screenshot --at --wait-for --long-press --delay --hold cmd+shift+t AXPress --on --from --to --button --duration --foreground wink app list --include-hidden wink window list --group-by-space wink screen list';
       const failed = JSON.stringify(Array.from(args)) === JSON.stringify(failArgs);
       return {
         stdout, status: failed ? null : (args[0] === 'invalid-command' || replacements.has(args[0]) ? 1 : 0),
@@ -438,7 +438,7 @@ function cliProbeFixture({ failArgs, errorCode = 'ETIMEDOUT' } = {}) {
       };
     }
   });
-  return { passed: check('/fixture/peekaboo'), calls, messages };
+  return { passed: check('/fixture/wink'), calls, messages };
 }
 
 test('CLI probe failures cannot pass on partial expected diagnostics or JSON', () => {
@@ -479,16 +479,16 @@ function safeTestsLaunch() {
   assert.equal(run(), true);
   assert.equal(launch.command, '/bin/bash');
   assert.deepEqual(launch.args.slice(0, 4), ['--noprofile', '--norc', '-p', '-c']);
-  assert.deepEqual(launch.args.slice(5), ['peekaboo-release-tests', sanitizerPath, 'pnpm', 'test']);
+  assert.deepEqual(launch.args.slice(5), ['wink-release-tests', sanitizerPath, 'pnpm', 'test']);
   assert.equal(launch.options.cwd, projectRoot);
   assert.equal(launch.options.stdio, 'inherit');
   return launch;
 }
 
 function environmentFixture(t) {
-  const root = mkdtempSync('/tmp/peekaboo preflight env ');
-  const rejectedTool = `peekaboo-rejected-${root.slice(-6)}`;
-  const absentTool = `peekaboo-absent-${root.slice(-6)}`;
+  const root = mkdtempSync('/tmp/wink preflight env ');
+  const rejectedTool = `wink-rejected-${root.slice(-6)}`;
+  const absentTool = `wink-absent-${root.slice(-6)}`;
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const dir of ['home', 'tmp', 'scripts', 'signing-shim']) mkdirSync(join(root, dir));
   const write = (path, text) => writeFileSync(join(root, path), text);
@@ -509,7 +509,7 @@ for name in "\${TERMINAL_ARTIFACT_SECRET_NAMES[@]}"; do
 done
 [[ "$MAC_RELEASE_CODESIGN_KEYCHAIN" == "$HOME/keychain" && "$CODESIGN_KEYCHAIN" == "$HOME/keychain" ]]
 [[ "$CODESIGN_IDENTITY" == fixture ]]
-[[ "$PEEKABOO_OP_SERVICE_TOKEN_FILE" == "$HOME/primary" && "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE" == "$HOME/legacy" ]]
+[[ "$WINK_OP_SERVICE_TOKEN_FILE" == "$HOME/primary" && "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE" == "$HOME/legacy" ]]
 printf 'later-signing-child-authority-retained=true\\n'
 `);
   write('probe', `#!/bin/bash
@@ -519,7 +519,7 @@ assertion=protected-variables
 trap 'printf "preflight-probe: assertion=%s tool=%s exit=%s\\n" "$assertion" "\${tool:-none}" "$?" >&2' ERR
 terminal_artifact_assert_build_env_is_clean
 for name in MAC_RELEASE_CODESIGN_KEYCHAIN CODESIGN_KEYCHAIN CODESIGN_IDENTITY \\
-  PEEKABOO_OP_SERVICE_TOKEN_FILE PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE CDPATH GLOBIGNORE BASH_FUNC_fixture; do
+  WINK_OP_SERVICE_TOKEN_FILE WINK_MOLTY_OP_SERVICE_TOKEN_FILE CDPATH GLOBIGNORE BASH_FUNC_fixture; do
   assertion="unset-$name"
   [[ -z "\${!name+x}" ]]
 done
@@ -527,7 +527,7 @@ assertion=exact-trusted-path
 [[ "$PATH" == /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin ]]
 assertion=allowed-values
 [[ "$SWIFTPM_MIRROR_CONFIG" == "$HOME/verified-source-mapping.json" ]]
-[[ "$DEVELOPER_DIR" == "$HOME/developer" && "$PEEKABOO_USE_RESOLVED_VERSIONS" == 1 ]]
+[[ "$DEVELOPER_DIR" == "$HOME/developer" && "$WINK_USE_RESOLVED_VERSIONS" == 1 ]]
 assertion=tool-resolution
 for tool in node pnpm npm python3 git codesign bash ${rejectedTool} ${absentTool}; do
   # Safe refusal is not evidence that a required build command is installed.
@@ -536,7 +536,7 @@ for tool in node pnpm npm python3 git codesign bash ${rejectedTool} ${absentTool
       /opt/homebrew/bin/*|/usr/local/bin/*|/usr/bin/*|/bin/*) ;;
       *) printf 'preflight-probe: tool=%s unsafe-resolution\\n' "$tool" >&2; exit 92 ;;
     esac
-    [[ "$tool" != peekaboo-rejected-* && "$tool" != peekaboo-absent-* ]]
+    [[ "$tool" != wink-rejected-* && "$tool" != wink-absent-* ]]
     printf 'tool=%s resolution=trusted\\n' "$tool"
   else
     lookup_exit=$?
@@ -557,8 +557,8 @@ source "$FIXTURE_SANITIZER"
 export RELEASE_PREFLIGHT_COMPLETED=false RELEASE_PUBLICATION_ELIGIBLE=false
 export MAC_RELEASE_CODESIGN_KEYCHAIN="$HOME/keychain" CODESIGN_KEYCHAIN="$HOME/keychain" CODESIGN_IDENTITY=fixture
 export SWIFTPM_MIRROR_CONFIG="$HOME/verified-source-mapping.json" DEVELOPER_DIR="$HOME/developer"
-export PEEKABOO_USE_RESOLVED_VERSIONS=1
-export PEEKABOO_OP_SERVICE_TOKEN_FILE="$HOME/primary" PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE="$HOME/legacy"
+export WINK_USE_RESOLVED_VERSIONS=1
+export WINK_OP_SERVICE_TOKEN_FILE="$HOME/primary" WINK_MOLTY_OP_SERVICE_TOKEN_FILE="$HOME/legacy"
 export CDPATH=sentinel GLOBIGNORE=sentinel BASH_FUNC_fixture=sentinel
 for name in "\${TERMINAL_ARTIFACT_SECRET_NAMES[@]}"; do
   printf -v "$name" sentinel
@@ -580,7 +580,7 @@ check_parent() {
   done
   [[ "$PATH" == "$parent_path" && "$(command -v codesign)" == "$PWD/signing-shim/codesign" ]]
   [[ "$MAC_RELEASE_CODESIGN_KEYCHAIN" == "$HOME/keychain" && "$CODESIGN_KEYCHAIN" == "$HOME/keychain" && "$CODESIGN_IDENTITY" == fixture ]]
-  [[ "$PEEKABOO_OP_SERVICE_TOKEN_FILE" == "$HOME/primary" && "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE" == "$HOME/legacy" ]]
+  [[ "$WINK_OP_SERVICE_TOKEN_FILE" == "$HOME/primary" && "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE" == "$HOME/legacy" ]]
   (
     trap - EXIT
     # Only this fake signing child sheds loader poison; the parent retains it.
@@ -627,7 +627,7 @@ test('direct preparation test launcher preserves child exits and refuses unavail
   local name
   for name in "\${TERMINAL_ARTIFACT_SECRET_NAMES[@]}" CDPATH GLOBIGNORE BASH_FUNC_fixture \\
     MAC_RELEASE_CODESIGN_KEYCHAIN CODESIGN_KEYCHAIN CODESIGN_IDENTITY \\
-    PEEKABOO_OP_SERVICE_TOKEN_FILE PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE; do
+    WINK_OP_SERVICE_TOKEN_FILE WINK_MOLTY_OP_SERVICE_TOKEN_FILE; do
     [[ -z "\${!name+x}" ]] || { printf 'direct pre-native variable remains: %s\\n' "$name" >&2; return 91; }
   done
   printf 'direct-pre-native-clean=true\\n'

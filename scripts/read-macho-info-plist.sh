@@ -26,7 +26,7 @@ done
 [[ "$BINARY" == /* && -f "$BINARY" && ! -L "$BINARY" ]] || fail 'invalid binary path'
 architectures="$(/usr/bin/lipo -archs "$BINARY")" || fail 'could not read architectures'
 binary_info="$(/usr/bin/lipo -info "$BINARY")" || fail 'could not inspect architecture container'
-work_dir="$(mktemp -d /tmp/peekaboo-macho-info.XXXXXX)"
+work_dir="$(mktemp -d /tmp/wink-macho-info.XXXXXX)"
 trap 'rm -rf "$work_dir"' EXIT
 expected_value=""
 has_expected_value=false

@@ -1,13 +1,13 @@
 ---
-summary: 'Send macOS keyboard chords using Peekaboo key names'
+summary: 'Send macOS keyboard chords using Wink key names'
 read_when:
   - 'navigating dialogs with arrow/tab/return patterns'
   - 'sending a receipt-pinned background or explicitly foreground raw key sequence'
 ---
 
-# `peekaboo press`
+# `wink press`
 
-`press` sends raw macOS keyboard chords such as `cmd+c`, `cmd+shift+t`, and `Return`, using Peekaboo's case-insensitive key names. Multiple positional chords form a sequence. Raw keys require either `--foreground` or an exact window/snapshot receipt that proves the focused destination before native background delivery.
+`press` sends raw macOS keyboard chords such as `cmd+c`, `cmd+shift+t`, and `Return`, using Wink's case-insensitive key names. Multiple positional chords form a sequence. Raw keys require either `--foreground` or an exact window/snapshot receipt that proves the focused destination before native background delivery.
 
 ## Key options
 | Flag | Description |
@@ -23,7 +23,7 @@ read_when:
 
 ## Key names
 
-Peekaboo does not use the full xdotool/X11 key vocabulary. Names are case-insensitive, so capitalizing `Delete` does not change its meaning.
+Wink does not use the full xdotool/X11 key vocabulary. Names are case-insensitive, so capitalizing `Delete` does not change its meaning.
 
 | Names | Meaning |
 | --- | --- |
@@ -31,10 +31,10 @@ Peekaboo does not use the full xdotool/X11 key vocabulary. Names are case-insens
 | `forwarddelete`, `forward_delete` | The forward-delete key. |
 | `cmd`, `command` | The Command modifier; `super` is not supported. |
 
-Using a fresh exact-window snapshot from `see` for each invocation, `peekaboo press delete --snapshot SNAPSHOT_ID` sends backward delete, while `peekaboo press forwarddelete --snapshot SNAPSHOT_ID` sends forward delete. Chords use `+`; separate complete chords with spaces.
+Using a fresh exact-window snapshot from `see` for each invocation, `wink press delete --snapshot SNAPSHOT_ID` sends backward delete, while `wink press forwarddelete --snapshot SNAPSHOT_ID` sends forward delete. Chords use `+`; separate complete chords with spaces.
 
 ## Delivery mode
-- **Exact background** accepts only a fresh exact-window selector or snapshot. Peekaboo pins process generation, window ID/bounds, and focused-element identity; missing, ambiguous, or stale receipts refuse before dispatch. App/PID-only and targetless forms retain the canonical retry-safe refusal.
+- **Exact background** accepts only a fresh exact-window selector or snapshot. Wink pins process generation, window ID/bounds, and focused-element identity; missing, ambiguous, or stale receipts refuse before dispatch. App/PID-only and targetless forms retain the canonical retry-safe refusal.
 - **Background-only Agent/MCP** accepts only an explicit fresh exact non-dialog snapshot. Window-selector-only and
   implicit-latest forms are also refused by that stricter policy.
 - **Foreground** (`--foreground`) focuses a supplied target first and sends normal/global key presses. A dispatched chord remains `effect: unverifiable`; run a fresh observation before continuing.
@@ -62,30 +62,30 @@ Using a fresh exact-window snapshot from `see` for each invocation, `peekaboo pr
 ## Examples
 ```bash
 # Equivalent to hitting Return once
-peekaboo press return --foreground
+wink press return --foreground
 
 # Tab through a menu twice, then confirm
-peekaboo press Tab Tab Return --foreground
+wink press Tab Tab Return --foreground
 
 # Walk a dialog down three rows with headroom between repetitions
-peekaboo press down --count 3 --delay 200ms --foreground
+wink press down --count 3 --delay 200ms --foreground
 
 # Send Return after explicitly focusing TextEdit
-peekaboo press return --app TextEdit --foreground
+wink press return --app TextEdit --foreground
 
 # Reopen a browser tab with explicit foreground consent
-peekaboo press cmd+shift+t --app Safari --foreground
+wink press cmd+shift+t --app Safari --foreground
 
 # Send a chord to one already-focused exact window without activating it
-peekaboo press cmd+l --window-id 12345
+wink press cmd+l --window-id 12345
 
 # Use the only background form exposed to Agent/MCP policy
-peekaboo press cmd+l --snapshot "$FRESH_EXACT_NON_DIALOG_SNAPSHOT"
+wink press cmd+l --snapshot "$FRESH_EXACT_NON_DIALOG_SNAPSHOT"
 ```
 
 ## Troubleshooting
-- Verify Screen Recording, Accessibility, and Event Synthesizing permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
-- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see`.
+- Verify Screen Recording, Accessibility, and Event Synthesizing permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
+- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `wink see`.
 - Re-run with `--json` or `--verbose` to surface detailed errors.
 - Exact-window focus checks distinguish unreadable or malformed AX window evidence from a readable list without the target and a confirmed different owning window. Read failures include the observation stage and native AX error code when available; they do not prove that focus moved. These checks still stop new key-downs, preserve owed releases, and never authorize a blind retry after partial input.

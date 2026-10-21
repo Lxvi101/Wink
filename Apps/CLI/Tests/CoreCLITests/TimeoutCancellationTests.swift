@@ -1,14 +1,14 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct TimeoutCancellationTests {
     @Test(arguments: [(0.2, "200 milliseconds"), (1.5, "1.5 seconds")])
     func `command deadline retains fractional duration in caught errors`(
         seconds: Double, expected: String
     ) async throws {
-        let error = try #require(await #expect(throws: PeekabooError.self) {
+        let error = try #require(await #expect(throws: WinkError.self) {
             try await withCommandTimeout(seconds: seconds, operationName: "Synthetic wait") {
                 try await Task.sleep(for: .seconds(30))
             }

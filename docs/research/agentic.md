@@ -1,7 +1,7 @@
 ---
 summary: 'Agentic improvements: desktop context injection, tool gating, and verification loops (research + plan)'
 read_when:
-  - 'planning improvements to Peekaboo agent runtime'
+  - 'planning improvements to Wink agent runtime'
   - 'auditing prompt-injection risks from desktop context'
   - 'wiring verification/smart-capture into tool execution'
 ---
@@ -21,7 +21,7 @@ This doc is intentionally biased toward:
 
 ### Desktop context injection (`DESKTOP_STATE`)
 
-Implemented in `Core/PeekabooCore/Sources/PeekabooAgentRuntime/Agent/PeekabooAgentService+Streaming.swift`.
+Implemented in `Core/WinkCore/Sources/WinkAgentRuntime/Agent/WinkAgentService+Streaming.swift`.
 
 Behavior:
 
@@ -50,18 +50,18 @@ PR #47 introduced these types and helpers. The production streaming path now pas
 - `AgentEnhancementOptions`
 - `SmartCaptureService` (diff-aware capture, region capture)
 - `ActionVerifier` (post-action screenshot verification via AI)
-- `PeekabooAgentService+Enhancements.swift` verification helpers
+- `WinkAgentService+Enhancements.swift` verification helpers
 
 ## What did not ship from PR #47
 
 Intentionally not carried over from the original PR diff:
 
-- `Core/PeekabooCore/Package.resolved` (avoid unrelated dependency churn; upstream already moved on).
-- `Core/PeekabooCore/Sources/PeekabooXPC/PeekabooXPCInterface.swift` (obsolete: Peekaboo v3 beta2 moved to the Bridge socket host model; XPC helper path removed).
+- `Core/WinkCore/Package.resolved` (avoid unrelated dependency churn; upstream already moved on).
+- `Core/WinkCore/Sources/WinkXPC/WinkXPCInterface.swift` (obsolete: Wink v3 beta2 moved to the Bridge socket host model; XPC helper path removed).
 
 ## Problem framing
 
-Peekaboo is an *agentic* system with:
+Wink is an *agentic* system with:
 
 - a long-running model loop,
 - powerful local tools (click/type/shell/dialogs/files/clipboard/etc),
@@ -177,7 +177,7 @@ Goal: reduce accidental leakage when clipboard contains secrets.
 What exists:
 
 - `ActionVerifier` can capture a post-action screenshot and ask a model to judge success.
-- `executeToolWithVerification(...)` exists in `PeekabooAgentService+Enhancements.swift`, but is not called from the real streaming loop.
+- `executeToolWithVerification(...)` exists in `WinkAgentService+Enhancements.swift`, but is not called from the real streaming loop.
 
 What’s missing:
 
@@ -221,7 +221,7 @@ Follow-ups:
 
 ### 6) Optional “approvals” for high-risk actions
 
-Peekaboo already supports tool allow/deny filters.
+Wink already supports tool allow/deny filters.
 
 OpenAI guidance (and general agent safety practice) suggests **human confirmation** for consequential actions.
 
@@ -237,7 +237,7 @@ We can add an optional gate without complicating the default:
 In CLI, approvals can be:
 
 - interactive prompt (TTY),
-- or require `--yes` / `PEEKABOO_APPROVE_ALL=1` for non-interactive.
+- or require `--yes` / `WINK_APPROVE_ALL=1` for non-interactive.
 
 ### 7) Structured outputs between steps (reduce smuggling channels)
 

@@ -1,8 +1,8 @@
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe), .serialized)
 struct PasteCommandInventoryEligibilityTests {
@@ -40,7 +40,7 @@ struct PasteCommandInventoryEligibilityTests {
                     "--json",
                     "--no-remote",
                 ],
-                services: TestServicesFactory.makePeekabooServices(
+                services: TestServicesFactory.makeWinkServices(
                     applications: StubApplicationService(applications: [application]),
                     clipboard: clipboard,
                     automation: automation

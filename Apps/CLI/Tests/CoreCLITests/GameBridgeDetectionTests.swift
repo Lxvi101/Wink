@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomationKit
+@testable import WinkAutomationKit
 
 @Suite("GameBridge Detection Tests")
 struct GameBridgeDetectionTests {
@@ -301,14 +301,14 @@ struct GameBridgeDetectionTests {
             windowContext: context,
             snapshotId: "oversized-snapshot",
             manifestRootURL: manifestRootURL,
-            environment: ["PEEKABOO_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(maximumBytes)]
+            environment: ["WINK_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(maximumBytes)]
         )
 
         #expect(result == nil)
         #expect(GameBridgeDetectionService.readManifest(
             appName: "firestaff",
             manifestRootURL: manifestRootURL,
-            environment: ["PEEKABOO_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(maximumBytes)]
+            environment: ["WINK_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(maximumBytes)]
         ) == nil)
         #expect(GameBridgeDetectionService.readManifest(
             appName: "firestaff",
@@ -318,13 +318,13 @@ struct GameBridgeDetectionTests {
         #expect(GameBridgeDetectionService.readManifest(
             appName: "firestaff",
             manifestRootURL: manifestRootURL,
-            environment: ["PEEKABOO_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(json.utf8.count)]
+            environment: ["WINK_GAMEBRIDGE_MAX_MANIFEST_BYTES": String(json.utf8.count)]
         )?.gameState == "huge")
         for invalid in ["0", "-1", "abc", "999999999999999999999999999"] {
             #expect(GameBridgeDetectionService.readManifest(
                 appName: "firestaff",
                 manifestRootURL: manifestRootURL,
-                environment: ["PEEKABOO_GAMEBRIDGE_MAX_MANIFEST_BYTES": invalid]
+                environment: ["WINK_GAMEBRIDGE_MAX_MANIFEST_BYTES": invalid]
             ) == nil)
         }
     }
@@ -367,7 +367,7 @@ struct GameBridgeDetectionTests {
 
     private func writeFirestaffManifest(_ json: String) throws -> URL {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-gamebridge-tests-\(UUID().uuidString)")
+            .appendingPathComponent("wink-gamebridge-tests-\(UUID().uuidString)")
         let dir = root.appendingPathComponent(".firestaff")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let manifestPath = dir.appendingPathComponent("accessibility.json")

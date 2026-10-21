@@ -152,7 +152,7 @@ struct ClickTestingView: View {
                     }
                 }
 
-                // Mouse move probe (used to verify `peekaboo move` end-to-end)
+                // Mouse move probe (used to verify `wink move` end-to-end)
                 GroupBox("Mouse Movement") {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Move the cursor into this area to generate deterministic logs:")

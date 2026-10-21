@@ -245,7 +245,7 @@ export function js() {
 const root=document.documentElement;
 const themeToggle=document.querySelector('[data-theme-toggle]');
 const themeMedia=window.matchMedia('(prefers-color-scheme: light)');
-function storedTheme(){try{const theme=localStorage.getItem('peekaboo-theme');return theme==='light'||theme==='dark'?theme:null}catch{return null}}
+function storedTheme(){try{const theme=localStorage.getItem('wink-theme');return theme==='light'||theme==='dark'?theme:null}catch{return null}}
 function systemTheme(){return themeMedia.matches?'light':'dark'}
 function applyTheme(theme){
   root.dataset.theme=theme;
@@ -254,7 +254,7 @@ function applyTheme(theme){
 applyTheme(root.dataset.theme||storedTheme()||systemTheme());
 themeToggle?.addEventListener('click',()=>{
   const next=root.dataset.theme==='dark'?'light':'dark';
-  try{localStorage.setItem('peekaboo-theme',next)}catch{}
+  try{localStorage.setItem('wink-theme',next)}catch{}
   applyTheme(next);
 });
 const syncSystemTheme=()=>{if(!storedTheme())applyTheme(systemTheme())};
@@ -310,7 +310,7 @@ if(tocLinks.length){const map=new Map();tocLinks.forEach(a=>{const id=a.getAttri
 }
 
 export function faviconSvg() {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Peekaboo">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Wink">
 <defs>
 <radialGradient id="g" cx="0.45" cy="0.32" r="0.65">
 <stop offset="0" stop-color="#00f5a0"/>

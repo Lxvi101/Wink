@@ -1,8 +1,8 @@
 import Commander
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -18,11 +18,11 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
             commandType: SeeCommand.self
         )
         let capabilities = [
-            PeekabooBridgeHostCapability.desktopObservationFreshAccessibilityTree,
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.desktopObservationFreshAccessibilityTree,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
         ]
         let capable = Self.handshake(capabilities: capabilities)
-        let older = Self.handshake(capabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership])
+        let older = Self.handshake(capabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership])
         let missingOperation = Self.handshake(operations: [.captureScreen], capabilities: capabilities)
         let disabled = Self.handshake(enabledOperations: [.captureScreen], capabilities: capabilities)
         #expect(options.requiresDesktopObservationFreshAccessibilityTree)
@@ -35,11 +35,11 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
         #expect(!CommandRuntime.supportsRemoteRequirements(for: older, options: options))
         #expect(CommandRuntime.supportsRemoteRequirements(for: older, options: ordinary))
         let failure = RuntimeHostResolver.requiredHostFailure(explicitSocket: nil, options: options)
-        #expect(failure?.contains(PeekabooBridgeHostCapability.desktopObservationFreshAccessibilityTree) == true)
+        #expect(failure?.contains(WinkBridgeHostCapability.desktopObservationFreshAccessibilityTree) == true)
         #expect(failure?.contains("--no-remote") == true)
     }
 
-    private static let observationOperations: [PeekabooBridgeOperation] = [
+    private static let observationOperations: [WinkBridgeOperation] = [
         .captureScreen,
         .desktopObservation,
     ]
@@ -47,18 +47,18 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
     @Test
     func `desktop observation OCR requires the operation and additive host capability`() {
         let capable = Self.handshake(capabilities: [
-            PeekabooBridgeHostCapability.desktopObservationOCR,
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.desktopObservationOCR,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
         ])
         let legacy = Self.handshake(capabilities: nil)
         let empty = Self.handshake(capabilities: [])
         let missingOperation = Self.handshake(
             operations: [.captureScreen],
-            capabilities: [PeekabooBridgeHostCapability.desktopObservationOCR]
+            capabilities: [WinkBridgeHostCapability.desktopObservationOCR]
         )
         let disabled = Self.handshake(
             enabledOperations: [.captureScreen],
-            capabilities: [PeekabooBridgeHostCapability.desktopObservationOCR]
+            capabilities: [WinkBridgeHostCapability.desktopObservationOCR]
         )
 
         #expect(CommandRuntime.supportsDesktopObservationOCR(for: capable))
@@ -83,11 +83,11 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
             commandType: SeeCommand.self
         )
         let capable = Self.handshake(capabilities: [
-            PeekabooBridgeHostCapability.desktopObservationOCR,
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.desktopObservationOCR,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
         ])
         let ownerAware = Self.handshake(capabilities: [
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
         ])
         let legacy = Self.handshake(capabilities: nil)
 
@@ -113,7 +113,7 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
         options.requiresDesktopObservation = true
         options.requiresDesktopObservationOCR = true
         let legacy = Self.handshake(capabilities: nil)
-        let capable = Self.handshake(capabilities: [PeekabooBridgeHostCapability.desktopObservationOCR])
+        let capable = Self.handshake(capabilities: [WinkBridgeHostCapability.desktopObservationOCR])
 
         #expect(await RuntimeHostResolver.validateRemoteCandidate(
             candidate,
@@ -139,7 +139,7 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
         )
 
         let failure = RuntimeHostResolver.requiredHostFailure(explicitSocket: nil, options: remoteOCR)
-        #expect(failure?.contains(PeekabooBridgeHostCapability.desktopObservationOCR) == true)
+        #expect(failure?.contains(WinkBridgeHostCapability.desktopObservationOCR) == true)
         #expect(failure?.contains("Update and relaunch") == true)
         #expect(failure?.contains("--no-remote") == true)
         #expect(localOCR.remoteIsolationRequested)
@@ -158,12 +158,12 @@ struct DesktopObservationOCRRuntimeCapabilityTests {
     }
 
     private static func handshake(
-        operations: [PeekabooBridgeOperation] = Self.observationOperations,
-        enabledOperations: [PeekabooBridgeOperation]? = nil,
+        operations: [WinkBridgeOperation] = Self.observationOperations,
+        enabledOperations: [WinkBridgeOperation]? = nil,
         capabilities: [String]?
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: operations,

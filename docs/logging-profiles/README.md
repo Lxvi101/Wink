@@ -1,20 +1,20 @@
 ---
-summary: 'Review Peekaboo Logging - Fixing macOS Log Privacy Redaction guidance'
+summary: 'Review Wink Logging - Fixing macOS Log Privacy Redaction guidance'
 read_when:
-  - 'planning work related to peekaboo logging - fixing macos log privacy redaction'
+  - 'planning work related to wink logging - fixing macos log privacy redaction'
   - 'debugging or extending features described here'
 ---
 
-# Peekaboo Logging - Fixing macOS Log Privacy Redaction
+# Wink Logging - Fixing macOS Log Privacy Redaction
 
 This directory contains configuration profiles and documentation for controlling macOS logging behavior and dealing with privacy redaction in logs.
 
 ## The Problem
 
-When viewing Peekaboo logs using Apple's unified logging system, you'll see `<private>` instead of actual values:
+When viewing Wink logs using Apple's unified logging system, you'll see `<private>` instead of actual values:
 
 ```
-2025-07-28 14:40:08.062262+0100 Peekaboo: Clicked element <private> at position <private>
+2025-07-28 14:40:08.062262+0100 Wink: Clicked element <private> at position <private>
 ```
 
 This makes debugging extremely difficult as you can't see session IDs, URLs, or other important debugging information.
@@ -28,7 +28,7 @@ Apple redacts dynamic values in logs by default to protect user privacy:
 
 ## How macOS Log Privacy Actually Works
 
-Based on testing with Peekaboo, here's what gets redacted and what doesn't:
+Based on testing with Wink, here's what gets redacted and what doesn't:
 
 ### What Gets Redacted (shows as `<private>`)
 - **UUID values**: `session-ABC123...` → `<private>`
@@ -70,9 +70,9 @@ After testing, we discovered that **sudo doesn't always reveal private data** in
 
 ## Solutions
 
-### Solution 1: Configuration Profile (Required for Peekaboo Development) ⭐ RECOMMENDED
+### Solution 1: Configuration Profile (Required for Wink Development) ⭐ RECOMMENDED
 
-The most reliable—and now **mandatory**—way to see private data is to install the Peekaboo logging profile so macOS captures the actual values when logs are written. We keep this profile installed on every development machine so investigations always match the behavior described in [Logging Privacy Shenanigans](https://steipete.me/posts/2025/logging-privacy-shenanigans/).
+The most reliable—and now **mandatory**—way to see private data is to install the Wink logging profile so macOS captures the actual values when logs are written. We keep this profile installed on every development machine so investigations always match the behavior described in [Logging Privacy Shenanigans](https://steipete.me/posts/2025/logging-privacy-shenanigans/).
 
 #### ⚠️ SECURITY NOTE ⚠️
 
@@ -86,7 +86,7 @@ Only skip the profile on customer-facing demo hardware or other locked-down syst
 
 1. **Open the profile**:
    ```bash
-   open docs/logging-profiles/EnablePeekabooLogPrivateData.mobileconfig
+   open docs/logging-profiles/EnableWinkLogPrivateData.mobileconfig
    ```
 
 2. **System will prompt to review the profile**
@@ -94,7 +94,7 @@ Only skip the profile on customer-facing demo hardware or other locked-down syst
 3. **Install via System Settings**:
    - **macOS 15 (Sequoia) and later**: Go to System Settings > General > Device Management
    - **macOS 15 (Sequoia) and earlier**: Go to System Settings > Privacy & Security > Profiles
-   - Click on "Peekaboo Private Data Logging"
+   - Click on "Wink Private Data Logging"
    - Click "Install..." and authenticate
 
 4. **Wait 1-2 minutes** for the system to apply changes
@@ -102,7 +102,7 @@ Only skip the profile on customer-facing demo hardware or other locked-down syst
 5. **Test it works**:
    ```bash
    # Generate fresh logs
-   ./peekaboo --version
+   ./wink --version
    
    # View logs - private data should now be visible
    ./scripts/pblog.sh -c PrivacyTest -l 1m
@@ -117,7 +117,7 @@ Leave the profile installed so these values stay visible. Only remove it when on
 If you are on a system that forbids custom profiles, run the following instead and keep it active for the duration of your debugging session:
 
 ```bash
-sudo log config --mode private_data:on --subsystem boo.peekaboo.core --subsystem boo.peekaboo.mac --persist
+sudo log config --mode private_data:on --subsystem boo.wink.core --subsystem boo.wink.mac --persist
 ```
 
 Remember to reset (`sudo log config --reset private_data`) only when you explicitly need to revert to the stock policy.
@@ -126,22 +126,22 @@ Remember to reset (`sudo log config --reset private_data`) only when you explici
 
 The profile sets `Enable-Private-Data` to `true` for:
 - System-wide logging
-- All Peekaboo subsystems:
-  - `boo.peekaboo.core`
-  - `boo.peekaboo.app`
-  - `boo.peekaboo.playground`
-  - `boo.peekaboo.inspector`
-  - `boo.peekaboo`
+- All Wink subsystems:
+  - `boo.wink.core`
+  - `boo.wink.app`
+  - `boo.wink.playground`
+  - `boo.wink.inspector`
+  - `boo.wink`
 
 This tells macOS to capture the actual values when logs are written, instead of replacing them with `<private>`.
 
-The profile includes all Peekaboo subsystems:
-- `boo.peekaboo.core` - Core services and libraries
-- `boo.peekaboo.cli` - CLI tool specific logging
-- `boo.peekaboo.app` - Mac app
-- `boo.peekaboo.playground` - Playground test app
-- `boo.peekaboo.inspector` - Inspector app
-- `boo.peekaboo` - General Mac app components
+The profile includes all Wink subsystems:
+- `boo.wink.core` - Core services and libraries
+- `boo.wink.cli` - CLI tool specific logging
+- `boo.wink.app` - Mac app
+- `boo.wink.playground` - Playground test app
+- `boo.wink.inspector` - Inspector app
+- `boo.wink` - General Mac app components
 
 ### Solution 2: Code-Level Fix (Production Safe)
 
@@ -201,7 +201,7 @@ While sudo doesn't reveal private data, setting up passwordless sudo is still us
 
 ## Using pblog.sh
 
-pblog is Peekaboo's log viewer utility. With passwordless sudo configured, you can use:
+pblog is Wink's log viewer utility. With passwordless sudo configured, you can use:
 
 ```bash
 # View all logs with private data visible (requires sudo)
@@ -222,11 +222,11 @@ pblog is Peekaboo's log viewer utility. With passwordless sudo configured, you c
 
 ## Testing Privacy Behavior
 
-Peekaboo includes built-in privacy test logging:
+Wink includes built-in privacy test logging:
 
 1. **Run the CLI** (any command will trigger the test logs):
    ```bash
-   ./peekaboo --version
+   ./wink --version
    ```
 
 2. **(Optional) Check logs without the profile** (only on sacrificial VMs):
@@ -311,7 +311,7 @@ This keeps sudo active for 60 minutes after each use.
 
 **For convenience**: Set up passwordless sudo to avoid typing your password when viewing logs.
 
-Remember: The configuration profile disables ALL privacy protection for Peekaboo logs. Always remove it after debugging!
+Remember: The configuration profile disables ALL privacy protection for Wink logs. Always remove it after debugging!
 
 ## References
 

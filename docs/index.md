@@ -1,18 +1,18 @@
 ---
-title: Peekaboo documentation
-summary: 'Entry point for installing, configuring, and using Peekaboo across CLI, MCP, app, and library surfaces.'
+title: Wink documentation
+summary: 'Entry point for installing, configuring, and using Wink across CLI, MCP, app, and library surfaces.'
 description: macOS automation that sees the screen and does the clicks. Native CLI, MCP server, and agent runtime for OpenAI, Claude, Grok, Gemini, and Ollama.
 read_when:
-  - 'starting with Peekaboo or looking for the right documentation page'
+  - 'starting with Wink or looking for the right documentation page'
   - 'linking the public documentation hub from README, site, or release notes'
 ---
 
-# Peekaboo documentation
+# Wink documentation
 
-Peekaboo is a macOS automation toolkit for humans and agents. It captures pixels, reads the accessibility tree, drives input, and ships an agent runtime plus an MCP server so AI clients (Codex, Claude Code, Cursor) can drive the desktop with the same primitives you'd use from the shell.
+Wink is a macOS automation toolkit for humans and agents. It captures pixels, reads the accessibility tree, drives input, and ships an agent runtime plus an MCP server so AI clients (Codex, Claude Code, Cursor) can drive the desktop with the same primitives you'd use from the shell.
 
 > **TL;DR** — `brew install openclaw/tap/peekaboo`, grant Screen Recording + Accessibility, then
-> `peekaboo agent "open Safari and search for Peekaboo" --allow-foreground`.
+> `wink agent "open Safari and search for Wink" --allow-foreground`.
 
 ## Where to start
 
@@ -22,12 +22,12 @@ Peekaboo is a macOS automation toolkit for humans and agents. It captures pixels
 - **[Permissions](permissions.md)** — what to grant, why, and how to verify.
 - **[Configuration](configuration.md)** — environment variables, config files, credential storage.
 
-## What Peekaboo does
+## What Wink does
 
 - **[Capture & vision](commands/capture.md)** — pixel-accurate screen, window, and menu-bar capture; annotated AX maps.
 - **[Automation](automation.md)** — click, type, scroll, drag, hotkeys, menus, dialogs, windows, Spaces.
 - **[Agent](commands/agent.md)** — natural-language plan/act loop with provider switching, resumable sessions, and visualizer feedback.
-- **[MCP](MCP.md)** — expose every Peekaboo tool over stdio for Codex, Claude Code, and Cursor.
+- **[MCP](MCP.md)** — expose every Wink tool over stdio for Codex, Claude Code, and Cursor.
 - **[Daemon](daemon.md)** — warm CLI runtime, lifecycle, sockets, and migration.
 - **[Bridge host](bridge-host.md)** — TCC broker transport, discovery, security, and troubleshooting.
 
@@ -44,12 +44,12 @@ Peekaboo is a macOS automation toolkit for humans and agents. It captures pixels
 | Surface | Use it for | Entry point |
 | --- | --- | --- |
 | **CLI** | scripts, ad-hoc captures, CI | `brew install openclaw/tap/peekaboo` |
-| **MCP server** | Codex, Claude Code, Cursor | `npx @steipete/peekaboo mcp` |
-| **Mac app** | menu-bar visualizer, permission prompts | [Releases](https://github.com/openclaw/Peekaboo/releases/latest) |
+| **MCP server** | Codex, Claude Code, Cursor | `npx wink mcp` |
+| **Mac app** | menu-bar visualizer, permission prompts | [Releases](https://github.com/Lxvi101/Wink/releases/latest) |
 | **Library** | embed foundation, protocols, automation, or Bridge in Swift apps and tools | Root `Package.swift` |
 
 ## Get help
 
-- File issues: [github.com/openclaw/Peekaboo/issues](https://github.com/openclaw/Peekaboo/issues)
-- Source: [github.com/openclaw/Peekaboo](https://github.com/openclaw/Peekaboo)
+- File issues: [github.com/Lxvi101/Wink/issues](https://github.com/Lxvi101/Wink/issues)
+- Source: [github.com/Lxvi101/Wink](https://github.com/Lxvi101/Wink)
 - Author: [@steipete](https://x.com/steipete)

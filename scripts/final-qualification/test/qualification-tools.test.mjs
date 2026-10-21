@@ -147,7 +147,7 @@ function fixtureAuthenticatedBundleForProtocol(hostProtocolVersion) {
     const payload = JSON.parse(bytes).receipt.payload;
     return {
       valid: true,
-      validator_id: 'peekaboo-bridge-receipt-validate-v1',
+      validator_id: 'wink-bridge-receipt-validate-v1',
       trust_source: 'authenticated_live_listener',
       minimum_protocol_version: '1.29',
       request_id: String(payload.requestID).toLowerCase(),
@@ -241,7 +241,7 @@ function writeJSON(filePath, value, mode = 0o600) {
 
 function launchEnvironment(kind, receiptDirectory = null) {
   const environment = { HOME: '/private/tmp/fixture-home', PATH: '/usr/bin:/bin:/usr/sbin:/sbin' };
-  if (kind === 'agent') environment.PEEKABOO_OPERATION_RECEIPT_DIRECTORY = receiptDirectory;
+  if (kind === 'agent') environment.WINK_OPERATION_RECEIPT_DIRECTORY = receiptDirectory;
   const environmentKeys = Object.keys(environment).sort();
   return {
     environment_policy_version: 1,
@@ -304,7 +304,7 @@ function certificationSummaryFixture(monitorEvidence, planControllers) {
     file_sha256: digest,
     verdict: {
       valid: true,
-      validator_id: 'peekaboo-bridge-receipt-validate-v1',
+      validator_id: 'wink-bridge-receipt-validate-v1',
       trust_source: 'authenticated_live_listener',
       minimum_protocol_version: '1.29',
       host_protocol_version: '1.32',
@@ -439,7 +439,7 @@ function installedInventory(
 ) {
   const projection = {
     deployment_envelope_sha256: '8'.repeat(64),
-    peekaboo_source_commit: SOURCE,
+    wink_source_commit: SOURCE,
     openclaw_source_commit: OPENCLAW_SOURCE,
     qualification_tools_aggregate_sha256: qualificationToolsAggregate,
     entries,
@@ -482,10 +482,10 @@ function taskProcessTree(root, role, hostUUID, epoch, {
     integrated_cu: 760,
   };
   const executableNames = {
-    agent: 'peekaboo',
-    agent_requester: 'peekaboo',
-    bridge: 'Peekaboo',
-    coordinator: 'peekaboo-certification-controller',
+    agent: 'wink',
+    agent_requester: 'wink',
+    bridge: 'Wink',
+    coordinator: 'wink-certification-controller',
     elevation: 'OpenClaw',
     fixture: 'Playground',
     integrated_cu: 'SkyComputerUseService',
@@ -768,7 +768,7 @@ function writeSynchronizedProcessTree(root, name, tree) {
 }
 
 function artifactFixture(root, executablePath = '/usr/bin/true', monitorPath = '/usr/bin/true') {
-  const peekaboo = writeJSON(path.join(root, 'peekaboo-artifact-manifest.json'), {
+  const wink = writeJSON(path.join(root, 'wink-artifact-manifest.json'), {
     schema: 6,
     phase: 'candidate_verified_not_installed',
     source_commit: SOURCE,
@@ -812,7 +812,7 @@ function artifactFixture(root, executablePath = '/usr/bin/true', monitorPath = '
     installerSha256: '5'.repeat(64),
     installerChecksum: 'install-openclaw-elevation.sha256',
     sourceCommit: OPENCLAW_SOURCE,
-    peekabooCommit: SOURCE,
+    winkCommit: SOURCE,
     version: '2026.8.2',
     build: '1',
     authority: 'Developer ID Application: Fixture',
@@ -823,7 +823,7 @@ function artifactFixture(root, executablePath = '/usr/bin/true', monitorPath = '
     notarizationId: '12345678-1234-4abc-8def-123456789abc',
   };
   const openclaw = writeJSON(path.join(root, 'openclaw-artifact-receipt.json'), openclawValue, 0o400);
-  return { peekaboo, openclaw, openclawValue };
+  return { wink, openclaw, openclawValue };
 }
 
 function elevationReceipt(root, role, artifact) {
@@ -835,7 +835,7 @@ function elevationReceipt(root, role, artifact) {
       ? 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA'
       : 'BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB',
     sourceCommit: OPENCLAW_SOURCE,
-    peekabooCommit: SOURCE,
+    winkCommit: SOURCE,
     archiveSha256: artifact.openclawValue.archiveSha256,
     artifactReceiptSha256: sha256(fs.readFileSync(artifact.openclaw)),
     installerSha256: artifact.openclawValue.installerSha256,
@@ -870,8 +870,8 @@ function deploymentFixture(
   const studioUUID = STUDIO_UUID;
   const artifactRoots = Object.fromEntries([
     ['openclaw_app', 'installed-openclaw-root'],
-    ['peekaboo_app', 'installed-peekaboo-root'],
-    ['peekaboo_cli', 'installed-cli-root'],
+    ['wink_app', 'installed-wink-root'],
+    ['wink_cli', 'installed-cli-root'],
   ].map(([artifactName, directoryName]) => [artifactName, privateDirectory(root, directoryName)]));
   const installedFile = (artifactName, relativePath, bytes, mode) => {
     const filePath = path.join(artifactRoots[artifactName], relativePath);
@@ -900,33 +900,33 @@ function deploymentFixture(
       0o755,
     ),
     installedFile(
-      'peekaboo_app',
-      'Peekaboo.app/Contents/MacOS/Peekaboo',
+      'wink_app',
+      'Wink.app/Contents/MacOS/Wink',
       fs.readFileSync('/usr/bin/true'),
       0o755,
     ),
     installedFile(
-      'peekaboo_cli',
+      'wink_cli',
       'runtime/libswiftCompatibilitySpan.dylib',
       fs.readFileSync('/usr/bin/true'),
       0o644,
     ),
     installedFile(
-      'peekaboo_cli',
-      'runtime/peekaboo',
+      'wink_cli',
+      'runtime/wink',
       fs.readFileSync('/usr/bin/true'),
       0o755,
     ),
     {
-      artifact: 'peekaboo_cli', relative_path: 'symlink/peekaboo',
-      type: 'symlink', mode: 0o777, target: '../runtime/peekaboo',
+      artifact: 'wink_cli', relative_path: 'symlink/wink',
+      type: 'symlink', mode: 0o777, target: '../runtime/wink',
     },
   ].sort((left, right) => (
     `${left.artifact}\0${left.relative_path}`.localeCompare(`${right.artifact}\0${right.relative_path}`)
   ));
-  const symlinkPath = path.join(artifactRoots.peekaboo_cli, 'symlink/peekaboo');
+  const symlinkPath = path.join(artifactRoots.wink_cli, 'symlink/wink');
   fs.mkdirSync(path.dirname(symlinkPath), { recursive: true });
-  fs.symlinkSync('../runtime/peekaboo', symlinkPath);
+  fs.symlinkSync('../runtime/wink', symlinkPath);
   entries.find((entry) => entry.type === 'symlink').mode = Number(
     fs.lstatSync(symlinkPath, { bigint: true }).mode & 0o7777n,
   );
@@ -1190,7 +1190,7 @@ function projectionFixture(root) {
   const crashDirectory = privateDirectory(privateDirectory(privateDirectory(fixtureHome, 'Library'), 'Logs'), 'DiagnosticReports');
   fs.chmodSync(crashDirectory, 0o770);
   const runs = privateDirectory(root, 'runs');
-  const peekaboo = executable(root, 'peekaboo');
+  const wink = executable(root, 'wink');
   const controller = executable(root, 'controller');
   const monitor = executable(root, 'monitor');
   const emitterExecutable = executable(root, 'cu-emitter');
@@ -1254,7 +1254,7 @@ function projectionFixture(root) {
     paths: {
       catalog,
       runs_directory: runs,
-      peekaboo_executable: peekaboo,
+      wink_executable: wink,
       controller_executable: controller,
       monitor_executable: monitor,
       crash_directory: crashDirectory,
@@ -1461,7 +1461,7 @@ test('Playground alert lifecycle requires exact generation, ordered background d
       label: 'cycle 1 alert',
       cycle: 1,
       execution_nonce: '1'.repeat(64),
-      peekaboo_source_commit: SOURCE,
+      wink_source_commit: SOURCE,
       bridge_source_commit: SOURCE,
       playground_code_signature_hash: PLAYGROUND_CDHASH,
     };
@@ -1564,7 +1564,7 @@ test('crash comparison binds zero delta to one complete matrix cycle', () => {
   const inventory = (capturedAt, entries = []) => ({
     version: 1,
     directory: '/Users/fixture/Library/Logs/DiagnosticReports',
-    prefixes: ['Peekaboo', 'Playground'],
+    prefixes: ['Wink', 'Playground'],
     entries,
     captured_at_milliseconds: capturedAt,
   });
@@ -1578,11 +1578,11 @@ test('crash comparison binds zero delta to one complete matrix cycle', () => {
     failures: [],
     execution_nonce: '1'.repeat(64),
     host_uuid: LOCAL_UUID,
-    peekaboo_source_commit: SOURCE,
+    wink_source_commit: SOURCE,
     bridge_source_commit: SOURCE,
     deployment_envelope_sha256: '8'.repeat(64),
     installed_inventory_aggregate_sha256: '9'.repeat(64),
-    peekaboo_artifact_manifest_sha256: 'a'.repeat(64),
+    wink_artifact_manifest_sha256: 'a'.repeat(64),
     started_at_milliseconds: startedAt,
     completed_at_milliseconds: completedAt,
   };
@@ -1627,7 +1627,7 @@ test('documented alert and crash helper CLI entrypoints parse their closed optio
     const inventory = (capturedAt) => ({
       version: 1,
       directory: '/Users/fixture/Library/Logs/DiagnosticReports',
-      prefixes: ['Peekaboo', 'Playground'],
+      prefixes: ['Wink', 'Playground'],
       entries: [],
       captured_at_milliseconds: capturedAt,
     });
@@ -1637,10 +1637,10 @@ test('documented alert and crash helper CLI entrypoints parse their closed optio
       version: 2, cycle: 1, success: true, catalog_version: 2,
       expected_cases: 42, observed_cases: 42, failures: [],
       execution_nonce: '1'.repeat(64), host_uuid: LOCAL_UUID,
-      peekaboo_source_commit: SOURCE, bridge_source_commit: SOURCE,
+      wink_source_commit: SOURCE, bridge_source_commit: SOURCE,
       deployment_envelope_sha256: '8'.repeat(64),
       installed_inventory_aggregate_sha256: '9'.repeat(64),
-      peekaboo_artifact_manifest_sha256: 'a'.repeat(64),
+      wink_artifact_manifest_sha256: 'a'.repeat(64),
       started_at_milliseconds: startedAt, completed_at_milliseconds: completedAt,
     });
     const output = path.join(root, 'comparison.json');
@@ -2397,7 +2397,7 @@ test('policy scanner recognizes native class symbols and bounds chained symbol d
   }
 
   const codeDirectory = (mutate = () => {}) => {
-    const identifier = Buffer.from('dev.peekaboo.fixture\0');
+    const identifier = Buffer.from('dev.wink.fixture\0');
     const hashOffset = 44 + identifier.length;
     const payload = Buffer.alloc(hashOffset + 32);
     payload.writeUInt32BE(0xfade0c02, 0);
@@ -2631,7 +2631,7 @@ test('policy scanner recognizes native class symbols and bounds chained symbol d
         : version >= 0x20400 ? 88
           : version >= 0x20300 ? 64
             : version >= 0x20200 ? 52 : 48;
-    const identifier = Buffer.from('dev.peekaboo.versioned\0');
+    const identifier = Buffer.from('dev.wink.versioned\0');
     const hashOffset = headerSize + identifier.length;
     const payload = Buffer.alloc(hashOffset + codeSlotCount * 32);
     payload.writeUInt32BE(0xfade0c02, 0);
@@ -2713,7 +2713,7 @@ test('policy scanner recognizes native class symbols and bounds chained symbol d
     codeSlotCount = 1,
     scatterCount = codeSlotCount,
   ) => {
-    const identifier = Buffer.from('dev.peekaboo.scatter\0');
+    const identifier = Buffer.from('dev.wink.scatter\0');
     const scatterOffset = 48 + identifier.length;
     const hashOffset = scatterOffset + 48;
     const payload = Buffer.alloc(hashOffset + codeSlotCount * 32);
@@ -3136,7 +3136,7 @@ test('policy scanner uses structural Mach-O evidence and broad markers only for 
     const signedNeutralExecutable = path.join(appleScriptFixtureRoot, 'signed-neutral-helper');
     fs.copyFileSync(disabledProseExecutable, signedNeutralExecutable);
     const signNeutral = spawnSync('/usr/bin/codesign', [
-      '--force', '--sign', '-', '--identifier', 'dev.peekaboo.neutral', signedNeutralExecutable,
+      '--force', '--sign', '-', '--identifier', 'dev.wink.neutral', signedNeutralExecutable,
     ], { encoding: 'utf8' });
     assert.equal(signNeutral.status, 0, signNeutral.stderr);
     const signedNeutralBytes = fs.readFileSync(signedNeutralExecutable);
@@ -3477,39 +3477,39 @@ test('policy scanner uses structural Mach-O evidence and broad markers only for 
   );
 });
 
-test('installed Foundation-signed Peekaboo 4.2.2 CLI and app tree are benign', (context) => {
+test('installed Foundation-signed Wink 4.2.2 CLI and app tree are benign', (context) => {
   const fixtures = [
     {
       label: 'CLI',
-      executable: '/Users/steipete/bin/peekaboo',
-      identifier: 'boo.peekaboo.peekaboo',
-      signatureTarget: '/Users/steipete/bin/peekaboo',
+      executable: '/Users/steipete/bin/wink',
+      identifier: 'boo.wink.wink',
+      signatureTarget: '/Users/steipete/bin/wink',
       verifyArguments: ['--verify', '--strict'],
-      relativePath: 'bin/peekaboo',
+      relativePath: 'bin/wink',
     },
     {
       label: 'app',
-      executable: '/Applications/Peekaboo.app/Contents/MacOS/Peekaboo',
-      identifier: 'boo.peekaboo.mac',
-      signatureTarget: '/Applications/Peekaboo.app',
+      executable: '/Applications/Wink.app/Contents/MacOS/Wink',
+      identifier: 'boo.wink.mac',
+      signatureTarget: '/Applications/Wink.app',
       verifyArguments: ['--verify', '--deep', '--strict'],
-      relativePath: 'Peekaboo.app/Contents/MacOS/Peekaboo',
+      relativePath: 'Wink.app/Contents/MacOS/Wink',
     },
   ];
   if (fixtures.some((fixture) => !fs.existsSync(fixture.executable))) {
-    context.skip('installed Peekaboo 4.2.2 fixtures are unavailable on this host');
+    context.skip('installed Wink 4.2.2 fixtures are unavailable on this host');
     return;
   }
   const cliVersion = spawnSync(fixtures[0].executable, ['--version'], { encoding: 'utf8' });
-  if (cliVersion.status !== 0 || !/^Peekaboo 4\.2\.2\b/.test(cliVersion.stdout)) {
-    context.skip('installed Peekaboo CLI is not the 4.2.2 release fixture');
+  if (cliVersion.status !== 0 || !/^Wink 4\.2\.2\b/.test(cliVersion.stdout)) {
+    context.skip('installed Wink CLI is not the 4.2.2 release fixture');
     return;
   }
   const appVersion = spawnSync('/usr/libexec/PlistBuddy', [
-    '-c', 'Print :CFBundleShortVersionString', '/Applications/Peekaboo.app/Contents/Info.plist',
+    '-c', 'Print :CFBundleShortVersionString', '/Applications/Wink.app/Contents/Info.plist',
   ], { encoding: 'utf8' });
   if (appVersion.status !== 0 || appVersion.stdout.trim() !== '4.2.2') {
-    context.skip('installed Peekaboo app is not the 4.2.2 release fixture');
+    context.skip('installed Wink app is not the 4.2.2 release fixture');
     return;
   }
   for (const fixture of fixtures) {
@@ -3531,7 +3531,7 @@ test('installed Foundation-signed Peekaboo 4.2.2 CLI and app tree are benign', (
     assert.match(legacySearch, /remote desktop observation post-processing/);
     assert.deepEqual(policyFindingsForFile(fixture.relativePath, 0o755, bytes), []);
   }
-  const appRoot = '/Applications/Peekaboo.app';
+  const appRoot = '/Applications/Wink.app';
   const pending = [appRoot];
   let scannedCodeCount = 0;
   while (pending.length > 0) {
@@ -3886,7 +3886,7 @@ test('managed launcher suspends the coordinator until signed-monitor identity an
     const bridgeSocket = path.join(root, 'bridge.sock');
     const planPath = writeJSON(path.join(root, 'plan.json'), {
       version: 1,
-      peekaboo_executable: '/usr/bin/true',
+      wink_executable: '/usr/bin/true',
       monitor_executable: monitor,
       bridge: { socket_path: bridgeSocket },
       monitor: { code_signature_hash: codeSignatureHash(monitor) },
@@ -4102,7 +4102,7 @@ test('managed launcher suspends the coordinator until signed-monitor identity an
 
     const noHandshakePlan = writeJSON(path.join(root, 'no-handshake-plan.json'), {
       version: 1,
-      peekaboo_executable: '/usr/bin/true',
+      wink_executable: '/usr/bin/true',
       monitor_executable: '/usr/bin/true',
       bridge: { socket_path: bridgeSocket },
       monitor: { code_signature_hash: codeSignatureHash('/usr/bin/true') },
@@ -4521,7 +4521,7 @@ function playgroundAlertLifecycleFixture(root, cycle, executionNonce, startedAt,
     physicalTargets,
     cycle,
     executionNonce,
-    peekabooSourceCommit: SOURCE,
+    winkSourceCommit: SOURCE,
     bridgeSourceCommit: SOURCE,
     button,
   });
@@ -4531,7 +4531,7 @@ function playgroundAlertLifecycleFixture(root, cycle, executionNonce, startedAt,
 
 function heldPointerClientID(executionNonce) {
   const digest = Buffer.from(sha256(Buffer.concat([
-    Buffer.from('peekaboo.held-pointer-certification.client.v1\0', 'utf8'),
+    Buffer.from('wink.held-pointer-certification.client.v1\0', 'utf8'),
     Buffer.from(executionNonce, 'utf8'),
   ])), 'hex').subarray(0, 16);
   digest[6] = (digest[6] & 0x0f) | 0x80;
@@ -4649,7 +4649,7 @@ function signedBundleFixture(root, name, operation, targetValue, startedAt, comp
     success: true,
     data: {
       valid: true,
-      validator_id: 'peekaboo-bridge-receipt-validate-v1',
+      validator_id: 'wink-bridge-receipt-validate-v1',
       trust_source: 'authenticated_live_listener',
       minimum_protocol_version: '1.29',
       request_id: requestID,
@@ -4771,9 +4771,9 @@ function agentTerminalBundleFixture(root, {
     processCreationLimit: 0,
     environmentPolicyVersion: 3,
     environmentKeys: [
-      'PATH', 'PEEKABOO_AGENT_EXECUTION_GATE_CHALLENGE',
-      'PEEKABOO_AGENT_EXECUTION_GATE_FD', 'PEEKABOO_AGENT_EXECUTION_LOCKDOWN_FD',
-      'PEEKABOO_AGENT_EXECUTION_PROCESS_LIMIT', 'PEEKABOO_OPERATION_RECEIPT_DIRECTORY',
+      'PATH', 'WINK_AGENT_EXECUTION_GATE_CHALLENGE',
+      'WINK_AGENT_EXECUTION_GATE_FD', 'WINK_AGENT_EXECUTION_LOCKDOWN_FD',
+      'WINK_AGENT_EXECUTION_PROCESS_LIMIT', 'WINK_OPERATION_RECEIPT_DIRECTORY',
     ],
     environmentSHA256,
     stdout: evidence(stdoutBytes),
@@ -4862,7 +4862,7 @@ function agentTaskContractFixture(targetA, targetB) {
   ];
   return {
     version: 1,
-    kind: 'peekaboo-concurrent-agent-qualification',
+    kind: 'wink-concurrent-agent-qualification',
     goal: 'two-target-background-mutate-verify-restore-with-concurrent-cu',
     constraints: {
       delivery_mode: 'background',
@@ -4916,7 +4916,7 @@ function concurrentFixture(root, {
   const targetB = { pid: 302, start_identity: '302001', window_id: 402 };
   const planValue = {
     version: 1,
-    peekaboo_executable: agentExecutable,
+    wink_executable: agentExecutable,
     monitor_executable: '/usr/bin/true',
     bridge: {
       socket_path: bridgeSocket,
@@ -4965,7 +4965,7 @@ function concurrentFixture(root, {
     },
   };
   const plan = writeJSON(path.join(root, 'plan.json'), planValue);
-  const marker = `peekaboo-foreground-postcondition:${NONCE}`;
+  const marker = `wink-foreground-postcondition:${NONCE}`;
   const baselineDigest = '1'.repeat(64);
   const monitorEvidenceValue = {
     version: 1, execution_nonce: NONCE, monitor_instance_id: UUID,
@@ -6278,7 +6278,7 @@ test('qualification manifest closes every required evidence class and detects by
           failures: [],
           execution_nonce: executionNonce,
           host_uuid: LOCAL_UUID,
-          peekaboo_source_commit: SOURCE,
+          wink_source_commit: SOURCE,
           bridge_source_commit: SOURCE,
           started_at_milliseconds: startedAt,
           completed_at_milliseconds: completedAt,
@@ -6288,7 +6288,7 @@ test('qualification manifest closes every required evidence class and detects by
           cycle,
           execution_nonce: executionNonce,
           host_uuid: LOCAL_UUID,
-          peekaboo_source_commit: SOURCE,
+          wink_source_commit: SOURCE,
           started_at_milliseconds: startedAt - 10,
           completed_at_milliseconds: completedAt + 10,
           passed: true,
@@ -6498,12 +6498,12 @@ test('qualification manifest closes every required evidence class and detects by
     const artifactManifest = writeJSON(path.join(root, 'artifact-binding.json'), {
       version: 2,
       deployment_envelope_sha256: '8'.repeat(64),
-      peekaboo_source_commit: SOURCE,
+      wink_source_commit: SOURCE,
       openclaw_source_commit: OPENCLAW_SOURCE,
       qualification_tools_aggregate_sha256: qualificationToolsAggregate,
-      peekaboo_artifact_manifest: {
-        path: artifact.peekaboo,
-        sha256: sha256(fs.readFileSync(artifact.peekaboo)),
+      wink_artifact_manifest: {
+        path: artifact.wink,
+        sha256: sha256(fs.readFileSync(artifact.wink)),
       },
       openclaw_artifact_receipt: {
         path: artifact.openclaw,
@@ -6514,7 +6514,7 @@ test('qualification manifest closes every required evidence class and detects by
     const candidateBinding = {
       deployment_envelope_sha256: '8'.repeat(64),
       installed_inventory_aggregate_sha256: installedAggregate,
-      peekaboo_artifact_manifest_sha256: sha256(fs.readFileSync(artifact.peekaboo)),
+      wink_artifact_manifest_sha256: sha256(fs.readFileSync(artifact.wink)),
     };
     for (const cycle of matrix) {
       writeJSON(cycle.certificate, {
@@ -6631,7 +6631,7 @@ test('qualification manifest closes every required evidence class and detects by
     assert.match(forbiddenScannerRun.stderr, /forbidden executable or script policy evidence/);
     writeFile(installedScriptPath, cleanInstalledScript, 0o755);
     const installedDylibPath = path.join(
-      deployment.artifactRoots.peekaboo_cli,
+      deployment.artifactRoots.wink_cli,
       'runtime/libswiftCompatibilitySpan.dylib',
     );
     const cleanInstalledDylib = fs.readFileSync(installedDylibPath);
@@ -6672,8 +6672,8 @@ test('qualification manifest closes every required evidence class and detects by
     assert.match(forbiddenDylibRun.stderr, /forbidden executable or script policy evidence/);
     writeFile(installedDylibPath, cleanInstalledDylib, 0o644);
     const installedSymlinkPath = path.join(
-      deployment.artifactRoots.peekaboo_cli,
-      'symlink/peekaboo',
+      deployment.artifactRoots.wink_cli,
+      'symlink/wink',
     );
     const cleanInstalledSymlinkTarget = fs.readlinkSync(installedSymlinkPath);
     for (const [target, suffix, expected] of [
@@ -6686,7 +6686,7 @@ test('qualification manifest closes every required evidence class and detects by
         JSON.parse(fs.readFileSync(deployment.installed[0])).entries,
       );
       const symlinkEntry = symlinkEntries.find((entry) => (
-        entry.relative_path === 'symlink/peekaboo'
+        entry.relative_path === 'symlink/wink'
       ));
       symlinkEntry.target = target;
       const symlinkInventory = installedInventory(
@@ -6802,7 +6802,7 @@ test('qualification manifest closes every required evidence class and detects by
       [
         'app',
         (value) => { value.app.cdhash = '0'.repeat(40); },
-        /Peekaboo\.app artifact differs from the local Bridge root/,
+        /Wink\.app artifact differs from the local Bridge root/,
       ],
       [
         'playground',
@@ -6810,7 +6810,7 @@ test('qualification manifest closes every required evidence class and detects by
         /Playground CDHash differs from the candidate artifact|Playground artifact differs from the local fixture root/,
       ],
     ]) {
-      const driftedArtifactValue = structuredClone(JSON.parse(fs.readFileSync(artifact.peekaboo)));
+      const driftedArtifactValue = structuredClone(JSON.parse(fs.readFileSync(artifact.wink)));
       mutateArtifact(driftedArtifactValue);
       const driftedArtifact = writeJSON(
         path.join(root, `drifted-${artifactDrift}-artifact.json`),
@@ -6818,7 +6818,7 @@ test('qualification manifest closes every required evidence class and detects by
         0o400,
       );
       const driftedBindingValue = structuredClone(JSON.parse(fs.readFileSync(artifactManifest)));
-      driftedBindingValue.peekaboo_artifact_manifest = {
+      driftedBindingValue.wink_artifact_manifest = {
         path: driftedArtifact,
         sha256: sha256(fs.readFileSync(driftedArtifact)),
       };
@@ -6831,8 +6831,8 @@ test('qualification manifest closes every required evidence class and detects by
       driftedInput.matrix_cycles = matrix.map((cycle, cycleIndex) => {
         const certificate = JSON.parse(fs.readFileSync(cycle.certificate));
         const crash = JSON.parse(fs.readFileSync(cycle.crash_inventory));
-        certificate.peekaboo_artifact_manifest_sha256 = sha256(fs.readFileSync(driftedArtifact));
-        crash.peekaboo_artifact_manifest_sha256 = certificate.peekaboo_artifact_manifest_sha256;
+        certificate.wink_artifact_manifest_sha256 = sha256(fs.readFileSync(driftedArtifact));
+        crash.wink_artifact_manifest_sha256 = certificate.wink_artifact_manifest_sha256;
         return {
           certificate: writeJSON(
             path.join(root, `drifted-${artifactDrift}-certificate-${cycleIndex}.json`),
@@ -6859,7 +6859,7 @@ test('qualification manifest closes every required evidence class and detects by
       ['path', (entries) => { entries[0].relative_path = 'OpenClaw.app/Contents/MacOS/OpenClaw2'; }],
       ['mode', (entries) => { entries[0].mode = 0o700; }],
       ['hash', (entries) => { entries[0].sha256 = '0'.repeat(64); }],
-      ['symlink', (entries) => { entries.at(-1).target = '../other/peekaboo'; }],
+      ['symlink', (entries) => { entries.at(-1).target = '../other/wink'; }],
     ];
     for (const [driftName, mutate] of installedDrifts) {
       const mismatchedEntries = structuredClone(localInventory.entries);
@@ -7027,8 +7027,8 @@ test('qualification manifest closes every required evidence class and detects by
       entry.pid === wrongRequesterRoot.pid
         && entry.start_identity === wrongRequesterRoot.start_identity
     ));
-    wrongRequesterProcess.executable_path = '/private/tmp/qualification/peekaboo-copy';
-    wrongRequesterProcess.executable_name = 'peekaboo-copy';
+    wrongRequesterProcess.executable_path = '/private/tmp/qualification/wink-copy';
+    wrongRequesterProcess.executable_name = 'wink-copy';
     wrongRequesterProcess.executable_sha256 = '0'.repeat(64);
     wrongRequesterBytesInput.deployment.process_trees[1] = writeSynchronizedProcessTree(
       root,
@@ -8113,7 +8113,7 @@ test('qualification manifest closes every required evidence class and detects by
     );
     const staleCandidateCycleInput = structuredClone(inputValue);
     const staleCandidateCertificate = JSON.parse(fs.readFileSync(matrix[0].certificate));
-    staleCandidateCertificate.peekaboo_artifact_manifest_sha256 = '0'.repeat(64);
+    staleCandidateCertificate.wink_artifact_manifest_sha256 = '0'.repeat(64);
     staleCandidateCycleInput.matrix_cycles[0].certificate = writeJSON(
       path.join(root, 'stale-candidate-cycle.json'),
       staleCandidateCertificate,
@@ -8131,7 +8131,7 @@ test('qualification manifest closes every required evidence class and detects by
       {
         ...JSON.parse(fs.readFileSync(matrix[0].crash_inventory)),
         passed: false,
-        added: [{ name: 'Peekaboo.crash' }],
+        added: [{ name: 'Wink.crash' }],
       },
     );
     assert.throws(

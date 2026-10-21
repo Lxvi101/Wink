@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -50,7 +50,7 @@ struct DaemonControlTransportTests {
             probed.append(client.socketPath)
             if client.socketPath == untrustedPath {
                 // The test executable has no trusted release signature, just like a stale development daemon.
-                let untrusted = PeekabooBridgeClient(
+                let untrusted = WinkBridgeClient(
                     socketPath: client.socketPath, trustedHostTeamIDs: ["FWJYW4S8P8"]
                 )
                 _ = try await untrusted.handshake(client: .init(
@@ -59,7 +59,7 @@ struct DaemonControlTransportTests {
                 Issue.record("Unsigned historical host was accepted")
                 return nil
             }
-            return PeekabooDaemonStatus(
+            return WinkDaemonStatus(
                 running: true,
                 pid: 123,
                 mode: .auto,
@@ -75,10 +75,10 @@ struct DaemonControlTransportTests {
         #expect(targets.map(\.client.socketPath) == [currentPath])
     }
 
-    @Test(arguments: [PeekabooBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
-    func `historical inventory retains failures from authenticated hosts`(code: PeekabooBridgeErrorCode) async {
-        let failure = PeekabooBridgeErrorEnvelope(code: code, message: "Authenticated host refused")
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+    @Test(arguments: [WinkBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
+    func `historical inventory retains failures from authenticated hosts`(code: WinkBridgeErrorCode) async {
+        let failure = WinkBridgeErrorEnvelope(code: code, message: "Authenticated host refused")
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await DaemonControlResolver.validatedHistoricalTargets(
                 socketPaths: ["/tmp/daemon-aaaaaaaaaaaaaaaa.sock"]
             ) { _ in throw failure }
@@ -95,8 +95,8 @@ struct DaemonControlTransportTests {
             """#
                 .utf8
         )
-        let remoteError = try JSONDecoder().decode(PeekabooBridgeErrorEnvelope.self, from: forged)
-        await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let remoteError = try JSONDecoder().decode(WinkBridgeErrorEnvelope.self, from: forged)
+        await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await DaemonControlResolver.validatedHistoricalTargets(
                 socketPaths: ["/tmp/daemon-aaaaaaaaaaaaaaaa.sock"]
             ) { _ in throw remoteError }
@@ -114,10 +114,10 @@ struct DaemonControlTransportTests {
         #expect(await peer.acceptedConnectionCount == 1)
     }
 
-    @Test(arguments: [PeekabooBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
-    func `control resolution preserves probe failures in JSON output`(code: PeekabooBridgeErrorCode) async throws {
+    @Test(arguments: [WinkBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
+    func `control resolution preserves probe failures in JSON output`(code: WinkBridgeErrorCode) async throws {
         let peer = try ScriptedBridgePeer(responses: [.error(.init(code: code, message: "Fixture probe failure"))])
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await DaemonControlResolver.targets(explicitSocket: peer.socketPath)
         }
         await peer.stop()
@@ -132,7 +132,7 @@ struct DaemonControlTransportTests {
         #expect(envelope["success"] as? Bool == false)
         #expect(envelope["data"] is NSNull)
         let expectedMessage = code == .unauthorizedClient
-            ? PeekabooBridgeSigningDiagnostics.appendingUnsignedBuildHint(to: "Fixture probe failure")
+            ? WinkBridgeSigningDiagnostics.appendingUnsignedBuildHint(to: "Fixture probe failure")
             : "Fixture probe failure"
         #expect(failure.message == expectedMessage)
         #expect((envelope["error"] as? [String: Any])?["message"] as? String == expectedMessage)
@@ -159,7 +159,7 @@ struct DaemonControlTransportTests {
 
     @Test(arguments: [false, true])
     func `confirmed stopped and non daemon endpoints preserve control semantics`(gui: Bool) async throws {
-        let response: PeekabooBridgeResponse = gui
+        let response: WinkBridgeResponse = gui
             ? .error(.init(code: .operationNotSupported, message: "Not a daemon"))
             : .daemonStatus(.init(running: false))
         let peer = try ScriptedBridgePeer(responses: [.handshake(Self.handshake), response])
@@ -200,7 +200,7 @@ struct DaemonControlTransportTests {
     func `failed daemon inventory cannot become an empty mutation barrier`() async {
         var options = CommandRuntimeOptions()
         options.requiresCallerDesktopMutationBarrier = true
-        let failure = PeekabooBridgeErrorEnvelope(code: .timeout, message: "Fixture inventory unavailable")
+        let failure = WinkBridgeErrorEnvelope(code: .timeout, message: "Fixture inventory unavailable")
         let dependencies = RuntimeHostResolver.Dependencies(
             makeLocalServices: { _ in fatalError("A failed inventory must not construct local services") },
             claimScreenCaptureKitOwner: { fatalError("This fixture must not claim native capture ownership") },
@@ -208,7 +208,7 @@ struct DaemonControlTransportTests {
             remoteCandidatePlan: { _, _ in throw failure }
         )
 
-        let result = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let result = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await RuntimeHostResolver.resolveServices(
                 options: options, environment: [:], configurationInput: nil, dependencies: dependencies
             )
@@ -266,14 +266,14 @@ struct DaemonControlTransportTests {
         if terminated {
             #expect(try await operation())
         } else {
-            let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) { try await operation() }
+            let error = await #expect(throws: WinkBridgeErrorEnvelope.self) { try await operation() }
             #expect(error?.code == .timeout)
             #expect(error?.message.contains("accepted stop request") == true)
         }
         await peer.stop()
         let requests = await peer.requests
         #expect(requests.count == 2)
-        let stop = try JSONDecoder.peekabooBridgeDecoder().decode(PeekabooBridgeRequest.self, from: requests[1])
+        let stop = try JSONDecoder.winkBridgeDecoder().decode(WinkBridgeRequest.self, from: requests[1])
         guard case let .daemonStopIf(request) = stop else {
             Issue.record("Conditional stop lost its expected PID")
             return
@@ -285,7 +285,7 @@ struct DaemonControlTransportTests {
     func `accepted stop deadline is TIMEOUT rather than a refusal in JSON`() async throws {
         let peer = try ScriptedBridgePeer(responses: [.handshake(Self.handshake), .bool(true)])
         let client = DaemonControlClient(socketPath: peer.socketPath, requestTimeoutSec: 0.1)
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await client.stopAndWait(waitSeconds: 0, expectedPID: nil)
         }
         await peer.stop()
@@ -320,12 +320,12 @@ struct DaemonControlTransportTests {
             .handshake(Self.handshake), .error(.init(code: .unauthorizedClient, message: "Fixture request failure")),
         ])
         let client = DaemonControlClient(socketPath: peer.socketPath, requestTimeoutSec: 0.1)
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await client.stopAndWait(waitSeconds: 0, expectedPID: 42)
         }
         await peer.stop()
         #expect(error?.code == .unauthorizedClient)
-        #expect(error?.message == PeekabooBridgeSigningDiagnostics.appendingUnsignedBuildHint(
+        #expect(error?.message == WinkBridgeSigningDiagnostics.appendingUnsignedBuildHint(
             to: "Fixture request failure"
         ))
     }
@@ -362,7 +362,7 @@ struct DaemonControlTransportTests {
         await peer.stop()
     }
 
-    private static var handshake: PeekabooBridgeHandshakeResponse {
+    private static var handshake: WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 28),
             hostKind: .gui,

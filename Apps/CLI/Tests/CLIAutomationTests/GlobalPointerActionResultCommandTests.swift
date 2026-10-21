@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.serialized, .tags(.safe))
 @MainActor
 struct GlobalPointerActionResultCommandTests {
@@ -165,7 +165,7 @@ struct GlobalPointerActionResultCommandTests {
                     processIdentity: InputFocusFixtures.identity().processIdentity
                 )
             }
-            let base = TestServicesFactory.makePeekabooServices(
+            let base = TestServicesFactory.makeWinkServices(
                 windows: windows,
                 automation: automation
             )
@@ -197,7 +197,7 @@ struct GlobalPointerActionResultCommandTests {
         let automation = OutcomeStubAutomationService()
         automation.actionOutcome = Self.bridgePointerOutcome
         let windows = InputFocusWindowService(focusOutcome: InputFocusFixtures.focusOutcome)
-        let base = TestServicesFactory.makePeekabooServices(
+        let base = TestServicesFactory.makeWinkServices(
             windows: windows,
             automation: automation
         )

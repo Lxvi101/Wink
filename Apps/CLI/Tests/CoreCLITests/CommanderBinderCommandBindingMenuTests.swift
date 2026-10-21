@@ -1,7 +1,7 @@
 import Commander
-import PeekabooFoundationTestSupport
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderMenuDockTests {
     @Test

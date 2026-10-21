@@ -1,21 +1,21 @@
 ---
-summary: "Describe Peekaboo Bridge host architecture (socket-based TCC broker)"
+summary: "Describe Wink Bridge host architecture (socket-based TCC broker)"
 read_when:
-  - "embedding Peekaboo automation into another macOS app"
-  - "debugging remote execution for Peekaboo CLI"
+  - "embedding Wink automation into another macOS app"
+  - "debugging remote execution for Wink CLI"
   - "auditing auth/security for privileged automation surfaces"
 ---
 
-# Peekaboo Bridge Host
+# Wink Bridge Host
 
-Peekaboo Bridge is a **socket-based** broker for permission-bound operations (Screen Recording, Accessibility, and Event Synthesizing). It lets a CLI (or other client process) drive automation via a host app that already has the necessary TCC grants.
+Wink Bridge is a **socket-based** broker for permission-bound operations (Screen Recording, Accessibility, and Event Synthesizing). It lets a CLI (or other client process) drive automation via a host app that already has the necessary TCC grants.
 
 This replaces the previous XPC-based helper approach.
 
 ## Hosts and discovery
 
-Most CLI automation commands first reuse a healthy Peekaboo daemon. If none can satisfy the operation, they try a
-capable Peekaboo.app GUI Bridge host before starting a daemon on demand. Implicit screen-capture observation, AX-tree
+Most CLI automation commands first reuse a healthy Wink daemon. If none can satisfy the operation, they try a
+capable Wink.app GUI Bridge host before starting a daemon on demand. Implicit screen-capture observation, AX-tree
 inspection, browser, and snapshot-state commands additionally prefer the current CLI build's deterministic
 `daemon-<build>.sock` and may start that exact-build daemon before considering the GUI host. This keeps in-memory state
 and host capabilities on the same executable generation. An explicit Bridge socket, a custom daemon socket, and
@@ -24,7 +24,7 @@ Operations that permit process-local fallback can use it when no compatible host
 and launch prefer the GUI host, while relaunch and quit require a reusable daemon that survives the caller.
 
 During implicit routing, an on-demand daemon that reports missing Screen Recording, Accessibility, or Event
-Synthesizing grants held by the running Peekaboo.app host ranks after that app, unless the daemon also holds a grant
+Synthesizing grants held by the running Wink.app host ranks after that app, unless the daemon also holds a grant
 the app reports missing; unreported permissions keep the existing order. Snapshot-owned actions and lifecycle
 commands requiring a surviving daemon retain their existing routing.
 
@@ -56,10 +56,10 @@ described in [Snapshot authority](#snapshot-authority) before selecting an execu
 
 Bridge diagnostics inspect sockets in this order:
 
-1. **Peekaboo daemon** (normal automation runtime)
-   - Socket: `~/Library/Application Support/Peekaboo/daemon.sock`
-2. **Peekaboo.app** (permission broker)
-   - Socket: `~/Library/Application Support/Peekaboo/bridge.sock`
+1. **Wink daemon** (normal automation runtime)
+   - Socket: `~/Library/Application Support/Wink/daemon.sock`
+2. **Wink.app** (permission broker)
+   - Socket: `~/Library/Application Support/Wink/bridge.sock`
 3. **Claude.app** (fallback host; piggyback on Claude Desktop TCC grants)
    - Socket: `~/Library/Application Support/Claude/bridge.sock`
 4. **Clawdbot.app** (fallback host)
@@ -69,15 +69,15 @@ Bridge diagnostics inspect sockets in this order:
 This selection preserves existing app-held TCC grants while keeping socket ownership separate. Claude.app and
 Clawdbot.app sockets participate automatically only in authenticated snapshot-owner resolution; for commands without
 a concrete snapshot they remain diagnostic-only unless selected with `--bridge-socket` or
-`PEEKABOO_BRIDGE_SOCKET`.
+`WINK_BRIDGE_SOCKET`.
 
-There is **no auto-launch** of Peekaboo.app.
+There is **no auto-launch** of Wink.app.
 
-Peekaboo.app is the GUI/Bridge host; its bundle executable is not the CLI, even when a
-case-insensitive filesystem accepts the lowercase name `peekaboo`. CLI-style invocations such as
-`Peekaboo.app/Contents/MacOS/peekaboo --version` or `Peekaboo see --no-elements` print installation
+Wink.app is the GUI/Bridge host; its bundle executable is not the CLI, even when a
+case-insensitive filesystem accepts the lowercase name `wink`. CLI-style invocations such as
+`Wink.app/Contents/MacOS/wink --version` or `Wink see --no-elements` print installation
 guidance to stderr and exit with status 64 before registering capture capability or starting a Bridge
-listener. Use the separate `peekaboo` binary from Homebrew or `peekaboo-macos-universal.tar.gz`.
+listener. Use the separate `wink` binary from Homebrew or `wink-macos-universal.tar.gz`.
 The app's `--background-bridge-host`, `--interactive`, and Cocoa/LaunchServices launch arguments remain supported.
 
 `pnpm app:restart` remains the contributor workflow: it builds Debug with the repository's ordinary
@@ -86,11 +86,11 @@ Managed replacement of the stable TCC app is deliberately
 separate:
 
 ```bash
-pnpm app:install-companion -- --source-app /absolute/path/Peekaboo.app --healthcheck-cli /absolute/path/peekaboo
+pnpm app:install-companion -- --source-app /absolute/path/Wink.app --healthcheck-cli /absolute/path/wink
 ```
 
 The `--` separates pnpm's script invocation from the installer options. You can also pass
-`--deployment` directly to `scripts/restart-peekaboo.sh` and omit that separator. Deployment mode requires the trusted signed artifact and current
+`--deployment` directly to `scripts/restart-wink.sh` and omit that separator. Deployment mode requires the trusted signed artifact and current
 signed CLI, then retains the transactional signer/native-only/readiness/rollback gates described
 below.
 
@@ -112,7 +112,7 @@ before interrupted-transaction recovery can invoke application lifecycle command
 
 If the companion declines a normal quit, deployment intentionally stops and preserves its recovery
 journal and bundles; there is no automatic force-quit fallback. Finish or cancel ongoing work, quit
-Peekaboo from its menu-bar menu, then rerun the same deployment command with the signed app and
+Wink from its menu-bar menu, then rerun the same deployment command with the signed app and
 healthcheck CLI. Leave the recovery journal and transaction directory intact so the installer can
 verify and recover them; do not delete them or signal a PID copied from an earlier attempt.
 
@@ -122,7 +122,7 @@ permission state, and GUI Bridge listener, but startup never presents API-key or
 onboarding, opens the main/Settings/Inspector windows, promotes the app into the Dock, or handles
 an invisible-window reopen by activating UI. It also leaves Sparkle stopped so an automatic update
 check or installer relaunch cannot drop the required host mode. Update actions stay hidden in this
-managed process; quit it and launch Peekaboo with `--interactive` before updating. Explicit later user
+managed process; quit it and launch Wink with `--interactive` before updating. Explicit later user
 intent from the status item or a configured shortcut still opens the requested interface. If its
 Bridge listener cannot take
 ownership after bounded legacy-host migration retries, the app exits nonzero instead of remaining
@@ -130,22 +130,22 @@ alive without a usable Bridge. The managed host binds the main-app Launch at Log
 exact installed bundle version and code-signature hash. A registered main-app login
 service can therefore restart that same build unattended, while a rolled-back or independently
 updated build ignores the stale receipt. Quit the managed host and run
-`open -a Peekaboo --args --interactive` for an explicit update session; the next ordinary login
+`open -a Wink --args --interactive` for an explicit update session; the next ordinary login
 launch remains background-only.
 
-`peekaboo mcp` never hosts a Bridge listener. When it must run services locally, its in-process daemon is limited to
+`wink mcp` never hosts a Bridge listener. When it must run services locally, its in-process daemon is limited to
 the window tracker and other process-local support.
 
 ## Embedding a native host
 
-Signed macOS applications can host the native automation surface without linking `PeekabooCore`, Tachikoma, browser
-support, or agent/provider state. The `PeekabooBridge` product exposes a checked runtime with an explicit socket and
+Signed macOS applications can host the native automation surface without linking `WinkCore`, Tachikoma, browser
+support, or agent/provider state. The `WinkBridge` product exposes a checked runtime with an explicit socket and
 explicit caller-signing policy:
 
 ```swift
-import PeekabooBridge
+import WinkBridge
 
-let runtime = await PeekabooEmbeddedBridgeRuntime.make(
+let runtime = await WinkEmbeddedBridgeRuntime.make(
     configuration: .init(
         socketPath: embeddedBridgeSocketPath,
         allowlistedTeams: ["YOUR_TEAM_ID"],
@@ -158,7 +158,7 @@ capture artifacts into manager-owned storage, and defaults action-capable input 
 delivery. Its allowlist is native-only: browser MCP, daemon control, interactive permission prompts, and the legacy
 AppleScript probe cannot be enabled by configuration. Protocol 1.31 Agent execution is also excluded: the embedded
 native Bridge deliberately has no Agent or provider surface. The containing app remains responsible for presenting
-permission UI and choosing an app-specific socket path; embedded hosts never compete for Peekaboo.app's socket by
+permission UI and choosing an app-specific socket path; embedded hosts never compete for Wink.app's socket by
 default. The runtime always advertises the `backgroundBridgeHost` capability; caller-supplied capabilities are additive
 and cannot remove that routing contract.
 
@@ -169,7 +169,7 @@ signing-capability registration or bind leaves the runtime stopped and does not 
 
 Native embedding clients that need a split pointer down/up sequence can use
 `ExactWindowHeldPointerLifecycleServiceProtocol`. This API is intentionally absent from the standalone CLI and MCP
-tool catalog. The source-bound `peekaboo-certification-controller --held-pointer-plan` mode exercises this same
+tool catalog. The source-bound `wink-certification-controller --held-pointer-plan` mode exercises this same
 embedding API for physical release qualification; it is not an end-user input command. Create one opaque owner,
 begin with an exact process-generation/window/bounds target and a bounded
 expiry, then release or revoke with the returned opaque hold receipt. Mouse-down retains that exact window's mutation
@@ -180,7 +180,7 @@ the owner before releasing the embedding client. Terminal results remain availab
 concurrent or retried release/revoke calls return the first result without another mouse-up; idle-owner disconnect
 closes the owner as a signed no-change operation.
 
-Peekaboo.app and the reusable daemon still use the full `PeekabooServices` registry because they also own agent,
+Wink.app and the reusable daemon still use the full `WinkServices` registry because they also own agent,
 browser, configuration, audio, and visualizer state. A follow-up can make that registry compose this native bundle once
 those app-only services are injected separately; moving them into the embedded runtime would defeat its lean boundary.
 
@@ -308,10 +308,10 @@ enabled `desktopObservation` operation is absent; an older host cannot silently 
 and run its default backend. `auto` remains compatible, and request-scoped selection does not alter
 the long-lived daemon's fallback policy.
 
-ScreenCaptureKit coordination covers Peekaboo's CLI/app processes and applications that embed or explicitly register
-Peekaboo's capture runtime. Merely running a third-party application that uses ScreenCaptureKit does not make it a
-Peekaboo participant or require it to publish Peekaboo receipts. An application such as OpenClaw can participate when
-it embeds Peekaboo; its registered process may own Peekaboo's ScreenCaptureKit lane even when another Bridge socket is
+ScreenCaptureKit coordination covers Wink's CLI/app processes and applications that embed or explicitly register
+Wink's capture runtime. Merely running a third-party application that uses ScreenCaptureKit does not make it a
+Wink participant or require it to publish Wink receipts. An application such as OpenClaw can participate when
+it embeds Wink; its registered process may own Wink's ScreenCaptureKit lane even when another Bridge socket is
 selected. Process ownership receipts identify the owner generation and build, not its Bridge socket path. A missing
 socket path in that receipt does not mean the owner has no reachable listener.
 
@@ -392,7 +392,7 @@ response remains retry-unsafe when dispatch may have begun, never a reason to re
 
 Protocol `1.31` adds the capability-gated `agentExecutionTrace` operation for one long-running, signed background Agent
 execution. It is a single Bridge request from launch through terminal reap, not a prepare/start or other two-call
-lifecycle. The host derives the executable from the exact authenticated Peekaboo CLI peer and accepts only the task and
+lifecycle. The host derives the executable from the exact authenticated Wink CLI peer and accepts only the task and
 bounded coordination inputs. It never accepts an executable path, shell command, AppleScript, JXA, arbitrary arguments,
 or environment overrides. Because the task is carried in `argv`, its UTF-8 encoding is limited to 256 KiB and the host
 also caps the complete argument, environment, terminator, and pointer payload at 512 KiB before `posix_spawn`; this
@@ -441,7 +441,7 @@ The signed terminal v1 response commits the exact request, process identity, fix
 commitments, coordination and acknowledgement bytes plus hashes, complete bounded stdout/stderr bytes plus hashes and
 sizes, exit status or terminating signal, and launch/lockdown/release/terminal-observation timestamps. Its canonical
 `responseSHA256` binds those fields into the protocol 1.29 receipt chain. The hidden qualification adapter writes the
-canonical `PeekabooBridgeOperationReceiptBundle` itself, not a newly encoded semantic response, so its exact canonical
+canonical `WinkBridgeOperationReceiptBundle` itself, not a newly encoded semantic response, so its exact canonical
 request/response bytes and listener/session signatures remain independently checkable. The connected listener
 attestation captured during the authenticated handshake remains the external trust anchor; a bundle's self-carried
 listener proves integrity but not provenance by itself. Once the release pipe accepts the complete challenge, losing
@@ -457,7 +457,7 @@ The client does not treat the response-carried, self-signed listener as provenan
 socket peer's audit token and requires exact PID/PID-version, process-start, live kernel CDHash, Apple-anchored signing
 identity, trusted team membership, and listener-host agreement before installing a 1.29 session. The unsigned daemon
 developer opt-in described under [Security](#security) replaces only the signing/team requirement with same-effective-UID
-and own-live-CDHash checks; listener, session, and per-request generation binding still apply. Bundled Peekaboo socket
+and own-live-CDHash checks; listener, session, and per-request generation binding still apply. Bundled Wink socket
 paths use the release-team migration allowlist. Custom socket clients must pass `trustedHostTeamIDs` or enable that
 unsigned developer policy; otherwise the handshake is capped at receiptless protocol 1.28 so an arbitrary same-user
 Developer ID process cannot replace the socket and mint a trusted-looking receipt chain.
@@ -565,12 +565,12 @@ valid receipt from the predecessor still completes its original caller, but cann
 or replace the latest-receipt cache.
 
 The listener archive is private and bounded by listener and logical-session retention, with retired session
-directories quarantined before asynchronous cleanup. `PEEKABOO_OPERATION_RECEIPT_DIRECTORY` optionally exports the
+directories quarantined before asynchronous cleanup. `WINK_OPERATION_RECEIPT_DIRECTORY` optionally exports the
 complete verification bundle for each terminal protocol 1.29 request. The export is sensitive and intended for
 private certification. The Swift `validateIntegrity()` API proves canonical encoding, signature-chain integrity, and
 operation semantics, but not listener provenance: the bundle carries its own self-signed listener. Certification uses
 `validate(trustAnchor:)` with an exact listener attestation, public key, or digest obtained from an independently
-authenticated live handshake. `peekaboo bridge receipt validate` exposes that anchored verification and reports the
+authenticated live handshake. `wink bridge receipt validate` exposes that anchored verification and reports the
 authenticated host source commit and negotiated protocol separately from the protocol-1.29 receipt floor. The live
 multi-target coordinator validates every exported bundle against the exact connected listener before certification.
 
@@ -582,17 +582,17 @@ proof, accepts a success for an error-only protocol 1.29 operation, or permits a
 
 ## Security
 
-Peekaboo BridgeHost validates callers before processing any request:
+Wink BridgeHost validates callers before processing any request:
 
 - Reads the peer PID via `getsockopt(..., LOCAL_PEERPID, ...)`.
 - Validates the peer’s **code signature TeamID** via Security.framework (`SecCodeCopyGuestWithAttributes`).
 - Rejects any process not signed by an allowlisted TeamID (default: `FWJYW4S8P8`, plus `Y5PE65HELJ` for transition-era CLI compatibility).
-- Peekaboo.app additionally admits only the exact signing identifiers of its CLI, GUI, and source-bound certification controller (`boo.peekaboo.peekaboo-certification-controller`). The controller retains its own matched-build checks; this admission does not grant CLI-only certification, browser-handoff, or Agent operations to other clients.
+- Wink.app additionally admits only the exact signing identifiers of its CLI, GUI, and source-bound certification controller (`boo.wink.wink-certification-controller`). The controller retains its own matched-build checks; this admission does not grant CLI-only certification, browser-handoff, or Agent operations to other clients.
 
-Unsigned source builds, including Homebrew core's `peekaboo` formula, normally cannot use trusted Bridge or daemon
+Unsigned source builds, including Homebrew core's `wink` formula, normally cannot use trusted Bridge or daemon
 hosts; prefer the [notarized tap or npm CLI installs](install.md#homebrew-recommended).
 
-`PEEKABOO_ALLOW_UNSIGNED_DAEMON=1` is an explicit developer exception only for processes that are not release-signed.
+`WINK_ALLOW_UNSIGNED_DAEMON=1` is an explicit developer exception only for processes that are not release-signed.
 An opted-in unsigned client can authenticate an on-demand daemon only when its live socket peer has the same
 effective UID and exact same live kernel CDHash as itself. An opted-in unsigned daemon applies the same rule to
 clients. Existing audit-token, liveness, process-generation, and receipt bindings remain in force. GUI hosts and
@@ -606,7 +606,7 @@ Enable only on machines you control; prefer the notarized install.
 
 Debug-only escape hatch:
 
-- Set `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1` to allow same-UID unsigned clients (local dev only).
+- Set `WINK_ALLOW_UNSIGNED_SOCKET_CLIENTS=1` to allow same-UID unsigned clients (local dev only).
 
 ## Snapshot authority
 
@@ -619,14 +619,14 @@ The disk owner marker is durable routing and collision evidence inside the user'
 authenticate snapshot state against a hostile same-user process that can already rewrite that cache.
 
 When an action supplies a concrete reference, the CLI checks caller-local services and all authenticated live Bridge
-candidates: reusable and build-scoped daemons, Peekaboo.app, Claude.app, and Clawdbot.app. It routes only when exactly
+candidates: reusable and build-scoped daemons, Wink.app, Claude.app, and Clawdbot.app. It routes only when exactly
 one reports ownership through `ownsSnapshot`. Zero claims, multiple claims, an unreachable producer, or a host that
 cannot negotiate producer-bound references fails before dispatch. There is no “latest” substitution, local fallback,
 cross-host recreation, or speculative replay.
 
-`--bridge-socket` and `PEEKABOO_BRIDGE_SOCKET` are strict: only that authenticated listener may claim the reference,
+`--bridge-socket` and `WINK_BRIDGE_SOCKET` are strict: only that authenticated listener may claim the reference,
 and failure is terminal. These remote snapshot routes skip the unused caller-local service container.
-`--no-remote` and `PEEKABOO_NO_REMOTE` check only the caller-local manager. Without either
+`--no-remote` and `WINK_NO_REMOTE` check only the caller-local manager. Without either
 override, the ownership probe can select Claude.app or Clawdbot.app even though those sockets are not general implicit
 routing fallbacks.
 
@@ -637,16 +637,16 @@ response bytes. Protocol 1.5 desktop observation provides the raster metadata, w
 
 ## CLI behavior
 
-- By default, automation-oriented CLI commands use a healthy reusable daemon, then a capable Peekaboo.app GUI host,
+- By default, automation-oriented CLI commands use a healthy reusable daemon, then a capable Wink.app GUI host,
   then auto-start a daemon, with process-local execution as the final operation-dependent fallback. Implicit
   screen-capture observation, AX-tree inspection, browser, and snapshot-state work first prefers—and may auto-start—the
   current CLI build's build-scoped daemon so an older compatible host does not become the owner of build-sensitive
   in-memory state.
-- Implicit auto-start skips a daemon predicted by the caller's non-interactive permission preflights to be weaker than a capable Peekaboo.app host; concrete snapshot ownership and commands requiring a surviving lifecycle host keep their existing routing.
+- Implicit auto-start skips a daemon predicted by the caller's non-interactive permission preflights to be weaker than a capable Wink.app host; concrete snapshot ownership and commands requiring a surviving lifecycle host keep their existing routing.
 - Use `--no-remote` to force local execution.
-- Use `--bridge-socket <path>` or `PEEKABOO_BRIDGE_SOCKET` to override host discovery.
-- Use `PEEKABOO_DAEMON_SOCKET` only to change the auto-start daemon socket without treating it as an explicit Bridge override.
-- Use `peekaboo bridge status` to verify which host would be selected and why (probe results, handshake errors, etc.).
+- Use `--bridge-socket <path>` or `WINK_BRIDGE_SOCKET` to override host discovery.
+- Use `WINK_DAEMON_SOCKET` only to change the auto-start daemon socket without treating it as an explicit Bridge override.
+- Use `wink bridge status` to verify which host would be selected and why (probe results, handshake errors, etc.).
 
 Bridge status separates `handshake succeeded` from permissions, advertised capture support, desktop-observation
 enablement, and ScreenCaptureKit preparation. The selected remote host shows these diagnostics without `--verbose`;
@@ -664,19 +664,19 @@ including `hostCapabilities` and `screenCaptureKitReadiness`, without adding hum
 
 TCC permissions belong to the process that performs the capture. When the CLI routes through Bridge, Screen
 Recording must be granted to the selected host app, not just to the terminal, Node process, or editor that
-spawned `peekaboo`.
+spawned `wink`.
 
 For subprocess runners such as OpenClaw, this means a capture can fail through Bridge even though the parent
 process is listed in System Settings. Check the selected host and permission source first:
 
 ```bash
-peekaboo bridge status --verbose
-peekaboo permissions status
+wink bridge status --verbose
+wink permissions status
 ```
 
 If the parent process already has Screen Recording but the selected Bridge host does not, force local capture
 and the CoreGraphics engine:
 
 ```bash
-peekaboo see --mode screen --screen-index 0 --no-remote --capture-engine cg --json
+wink see --mode screen --screen-index 0 --no-remote --capture-engine cg --json
 ```

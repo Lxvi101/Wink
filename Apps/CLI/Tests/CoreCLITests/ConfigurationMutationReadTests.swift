@@ -1,7 +1,7 @@
 import CryptoKit
 import Darwin
 import Foundation
-import PeekabooAutomation
+import WinkAutomation
 import Tachikoma
 import Testing
 
@@ -203,9 +203,9 @@ struct ConfigurationMutationReadTests {
 
     private func withOwnedConfiguration(_ body: (ConfigurationManager, URL) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-config-sdk-owned-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-config-sdk-owned-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
-        let keys = ["PEEKABOO_CONFIG_DIR", "PEEKABOO_CONFIG_DISABLE_MIGRATION", "OWNED_CONFIG_SAVE_PATH"]
+        let keys = ["PEEKABOO_CONFIG_DIR", "WINK_CONFIG_DISABLE_MIGRATION", "OWNED_CONFIG_SAVE_PATH"]
         let previous = keys.map { key in getenv(key).map { String(cString: $0) } }
         let previousProfile = TachikomaConfiguration.profileDirectoryName
         setenv(keys[0], root.path, 1)

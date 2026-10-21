@@ -22,7 +22,7 @@ function canonicalValue(value) {
 
 function aggregateSHA256(name, value) {
   return createHash('sha256').update(Buffer.concat([
-    Buffer.from(`peekaboo.multi-target-certification.${name}.v2\0`, 'utf8'),
+    Buffer.from(`wink.multi-target-certification.${name}.v2\0`, 'utf8'),
     Buffer.from(JSON.stringify(canonicalValue(value)), 'utf8')
   ])).digest('hex');
 }
@@ -42,12 +42,12 @@ const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const exactSHA = /^[0-9a-f]{64}$/;
 const exactCDHash = /^[0-9a-f]{40,64}$/;
 const exactSource = /^[0-9a-f]{40}$/;
-const fixtureTools = process.env.PEEKABOO_TERMINAL_VALIDATOR_FIXTURE_TOOLS ?? null;
-if (fixtureTools && (process.env.PEEKABOO_TERMINAL_TEST_MODE !== '1' || !path.isAbsolute(fixtureTools) ||
+const fixtureTools = process.env.WINK_TERMINAL_VALIDATOR_FIXTURE_TOOLS ?? null;
+if (fixtureTools && (process.env.WINK_TERMINAL_TEST_MODE !== '1' || !path.isAbsolute(fixtureTools) ||
     path.resolve(fixtureTools) !== fixtureTools)) {
   throw new Error('validator fixture tools require explicit test mode and an absolute normalized path');
 }
-if (!fixtureTools && process.env.PEEKABOO_TERMINAL_TEST_MODE) {
+if (!fixtureTools && process.env.WINK_TERMINAL_TEST_MODE) {
   throw new Error('validator test mode requires fixture tools');
 }
 const codesignBinary = fixtureTools ? path.join(fixtureTools, 'codesign') : '/usr/bin/codesign';
@@ -130,7 +130,7 @@ function plistValue(plistPath, key) {
 }
 
 async function machoPlistValue(binary, key) {
-  const temporary = await mkdtemp(path.join(os.tmpdir(), 'peekaboo-macho-info-'));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), 'wink-macho-info-'));
   try {
     const architectures = run('/usr/bin/lipo', ['-archs', binary]).trim().split(/\s+/);
     if (architectures.length === 0 || !architectures[0]) throw new Error(`Mach-O has no architecture: ${binary}`);
@@ -183,7 +183,7 @@ async function machoPlistValue(binary, key) {
 async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier) {
   const archive = path.join(root, record.path);
   const retainedTree = path.join(root, record.tree_manifest.path);
-  const temporary = await mkdtemp(path.join(os.tmpdir(), 'peekaboo-terminal-validate-'));
+  const temporary = await mkdtemp(path.join(os.tmpdir(), 'wink-terminal-validate-'));
   try {
     if (kind === 'zip') {
       await archivePolicy.validateZipArchive(archive, expectedRoot, record.path);
@@ -202,7 +202,7 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
     const retained = await readFile(retainedTree, 'utf8');
     if (generated !== retained) throw new Error(`${record.path} does not roundtrip to its tree receipt`);
     const retainedInventory = JSON.parse(retained);
-    const signedTarget = kind === 'tar' ? path.join(extractedRoot, 'peekaboo') : extractedRoot;
+    const signedTarget = kind === 'tar' ? path.join(extractedRoot, 'wink') : extractedRoot;
     const signatureText = inspectSignature(signedTarget, {
       deep: kind === 'zip',
       identifier: expectedIdentifier,
@@ -218,11 +218,11 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
           throw new Error(`CLI ${architecture} CDHash mismatch`);
         }
       }
-      if (await machoPlistValue(signedTarget, 'PeekabooSourceCommit') !== manifest.source_commit ||
+      if (await machoPlistValue(signedTarget, 'WinkSourceCommit') !== manifest.source_commit ||
           await machoPlistValue(signedTarget, 'CFBundleShortVersionString') !== manifest.version ||
-          await machoPlistValue(signedTarget, 'PeekabooCertificationSourceManifestSHA256') !==
+          await machoPlistValue(signedTarget, 'WinkCertificationSourceManifestSHA256') !==
             controllerSourceReceipt.aggregate_sha256 ||
-          await machoPlistValue(signedTarget, 'PeekabooCertificationCatalogSHA256') !==
+          await machoPlistValue(signedTarget, 'WinkCertificationCatalogSHA256') !==
             controllerSourceReceipt.catalog_sha256) {
         throw new Error('CLI signed source/version mismatch');
       }
@@ -231,7 +231,7 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
         if (entry.type !== 'file' || entry.path.includes('/')) {
           throw new Error(`CLI archive contains a non-flat or non-file entry: ${entry.path}`);
         }
-        if (entry.path === 'peekaboo' || entry.path === 'LICENSE' || entry.path === 'VERSION') continue;
+        if (entry.path === 'wink' || entry.path === 'LICENSE' || entry.path === 'VERSION') continue;
         if (!/^libswiftCompatibility[^/]*\.dylib$/.test(entry.path)) {
           throw new Error(`CLI archive contains an unexpected file: ${entry.path}`);
         }
@@ -245,33 +245,33 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
       }
       const notarizedTree = JSON.parse(await readFile(path.join(root, record.notarized_tree_manifest.path), 'utf8'));
       const signedEntries = retainedInventory.entries.filter((entry) =>
-        entry.path === 'peekaboo' || /^libswiftCompatibility[^/]*\.dylib$/.test(entry.path));
+        entry.path === 'wink' || /^libswiftCompatibility[^/]*\.dylib$/.test(entry.path));
       const notarizedEntries = notarizedTree.entries.filter((entry) => entry.path !== '.');
       if (JSON.stringify(signedEntries) !== JSON.stringify(notarizedEntries)) {
         throw new Error('CLI archive signed payload differs from notarized tree');
       }
-    } else if (expectedRoot === 'Peekaboo.app') {
+    } else if (expectedRoot === 'Wink.app') {
       const info = path.join(extractedRoot, 'Contents', 'Info.plist');
-      if (plistValue(info, 'PeekabooSourceCommit') !== manifest.source_commit ||
+      if (plistValue(info, 'WinkSourceCommit') !== manifest.source_commit ||
           plistValue(info, 'CFBundleShortVersionString') !== manifest.version ||
-          plistValue(info, 'CFBundleIdentifier') !== 'boo.peekaboo.mac') {
-        throw new Error('Peekaboo.app signed source/version mismatch');
+          plistValue(info, 'CFBundleIdentifier') !== 'boo.wink.mac') {
+        throw new Error('Wink.app signed source/version mismatch');
       }
     } else if (expectedRoot === 'Playground.app') {
       const info = path.join(extractedRoot, 'Contents', 'Info.plist');
       const receipt = JSON.parse(await readFile(path.join(extractedRoot, 'Contents', 'Resources',
-        'PeekabooPlaygroundSource.json'), 'utf8'));
+        'WinkPlaygroundSource.json'), 'utf8'));
       exactKeys(receipt, ['version', 'source_commit', 'source_tree', 'dependency_lock_path',
         'dependency_lock_sha256', 'workspace', 'scheme', 'configuration', 'bundle_identifier',
         'marketing_version', 'developer_dir', 'xcodebuild_version', 'sdk_version', 'swiftc_version'],
       'Playground embedded source receipt');
-      if (plistValue(info, 'CFBundleIdentifier') !== 'boo.peekaboo.playground.debug' ||
+      if (plistValue(info, 'CFBundleIdentifier') !== 'boo.wink.playground.debug' ||
           receipt.version !== 2 || receipt.source_commit !== manifest.source_commit ||
           receipt.marketing_version !== manifest.version ||
           receipt.dependency_lock_path !== manifest.dependency_lock_path ||
           receipt.dependency_lock_sha256 !== manifest.dependency_lock_sha256 ||
-          receipt.workspace !== 'Apps/Peekaboo.xcworkspace' || receipt.scheme !== 'Playground' ||
-          receipt.configuration !== 'Debug' || receipt.bundle_identifier !== 'boo.peekaboo.playground.debug' ||
+          receipt.workspace !== 'Apps/Wink.xcworkspace' || receipt.scheme !== 'Playground' ||
+          receipt.configuration !== 'Debug' || receipt.bundle_identifier !== 'boo.wink.playground.debug' ||
           receipt.developer_dir !== manifest.toolchain.developer_dir ||
           receipt.xcodebuild_version !== manifest.toolchain.xcodebuild_version ||
           receipt.sdk_version !== manifest.toolchain.sdk_version ||
@@ -279,15 +279,15 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
         throw new Error('Playground signed provenance receipt mismatch');
       }
     }
-    if (expectedRoot === 'PeekabooQualificationNode.app') {
+    if (expectedRoot === 'WinkQualificationNode.app') {
       const nodeBinary = path.join(extractedRoot, 'Contents', 'MacOS', 'node');
       const info = path.join(extractedRoot, 'Contents', 'Info.plist');
-      if (plistValue(info, 'CFBundleIdentifier') !== 'boo.peekaboo.qualification-node' ||
+      if (plistValue(info, 'CFBundleIdentifier') !== 'boo.wink.qualification-node' ||
           plistValue(info, 'CFBundleShortVersionString') !== '26.9.0') {
         throw new Error('qualification Node Info.plist mismatch');
       }
       const embeddedSource = JSON.parse(await readFile(path.join(extractedRoot, 'Contents', 'Resources',
-        'PeekabooQualificationNodeSource.json'), 'utf8'));
+        'WinkQualificationNodeSource.json'), 'utf8'));
       if (embeddedSource.runtime_version !== record.runtime.version ||
           embeddedSource.identifier !== record.runtime.identifier ||
           embeddedSource.executable_path !== record.runtime.executable_path ||
@@ -301,7 +301,7 @@ async function extractAndCompare(record, kind, expectedRoot, expectedIdentifier)
       }
       for (const architecture of ['arm64', 'x86_64']) {
         const details = inspectSignature(nodeBinary, {
-          identifier: 'boo.peekaboo.qualification-node',
+          identifier: 'boo.wink.qualification-node',
           architecture
         });
         if (signatureField(details, 'CDHash') !== record.runtime.binary_cdhashes[architecture]) {
@@ -418,22 +418,22 @@ exactKeys(manifest, ['schema', 'phase', 'root', 'version', 'source_commit', 'dep
 if (manifest.schema !== 7 || manifest.phase !== 'candidate_verified_not_installed' || manifest.root !== '.' ||
     typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(manifest.version) ||
     !exactSource.test(manifest.source_commit) ||
-    manifest.dependency_lock_path !== 'Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved' ||
+    manifest.dependency_lock_path !== 'Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved' ||
     !exactSHA.test(manifest.dependency_lock_sha256)) {
   throw new Error('manifest source contract is invalid');
 }
 const expectedRootEntries = [
-  'Peekaboo-' + manifest.version + '.app.zip',
-  'Peekaboo-' + manifest.version + '.dmg',
-  'PeekabooQualificationNode-26.9.0.app.zip',
+  'Wink-' + manifest.version + '.app.zip',
+  'Wink-' + manifest.version + '.dmg',
+  'WinkQualificationNode-26.9.0.app.zip',
   'Playground-' + manifest.version + '.app.zip',
   'checksums.txt',
   'cli-notary-tree.json',
   'cli-tree.json',
   'notary',
-  'peekaboo-app-tree.json',
-  'peekaboo-dmg-payload.json',
-  'peekaboo-macos-universal.tar.gz',
+  'wink-app-tree.json',
+  'wink-dmg-payload.json',
+  'wink-macos-universal.tar.gz',
   'playground-app-tree.json',
   'qualification-node-app-tree.json',
   'qualification',
@@ -534,30 +534,30 @@ if (manifest.app.source_commit !== manifest.source_commit || manifest.playground
     manifest.monitor.source_commit !== manifest.source_commit || manifest.controller.source_commit !== manifest.source_commit ||
     manifest.monitor.source_path !== 'scripts/support/background-computer-use-probe.swift' ||
     manifest.monitor.relative_path !== 'qualification/background-computer-use-probe' ||
-    manifest.controller.relative_path !== 'qualification/peekaboo-certification-controller' ||
+    manifest.controller.relative_path !== 'qualification/wink-certification-controller' ||
     manifest.controller.team_id !== 'FWJYW4S8P8' ||
     manifest.controller.authority !== 'Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)' ||
-    manifest.controller.signing_identifier !== 'boo.peekaboo.peekaboo-certification-controller' ||
+    manifest.controller.signing_identifier !== 'boo.wink.wink-certification-controller' ||
     JSON.stringify(manifest.controller.architectures) !== JSON.stringify(['arm64', 'x86_64']) ||
     Object.values(manifest.verification).some((value) => value !== true)) {
   throw new Error('schema-7 compatibility projection mismatch');
 }
-exactKeys(manifest.artifacts, ['cli', 'peekaboo_app_zip', 'peekaboo_dmg', 'playground_app_zip',
+exactKeys(manifest.artifacts, ['cli', 'wink_app_zip', 'wink_dmg', 'playground_app_zip',
   'qualification_node_app_zip', 'qualification_monitor', 'certification_controller'], 'artifacts');
-exactKeys(manifest.notarization, ['cli', 'peekaboo_app', 'peekaboo_dmg', 'playground_app',
+exactKeys(manifest.notarization, ['cli', 'wink_app', 'wink_dmg', 'playground_app',
   'qualification_node_app', 'certification_controller'], 'notarization');
 
-validateNotary(manifest.notarization.cli, 'cli_tree', 'notarization.cli', ['boo.peekaboo.peekaboo']);
-validateNotary(manifest.notarization.peekaboo_app, 'app', 'notarization.peekaboo_app', ['boo.peekaboo.mac']);
+validateNotary(manifest.notarization.cli, 'cli_tree', 'notarization.cli', ['boo.wink.wink']);
+validateNotary(manifest.notarization.wink_app, 'app', 'notarization.wink_app', ['boo.wink.mac']);
 validateNotary(manifest.notarization.playground_app, 'app', 'notarization.playground_app',
-  ['boo.peekaboo.playground.debug']);
-validateNotary(manifest.notarization.peekaboo_dmg, 'dmg', 'notarization.peekaboo_dmg', null);
+  ['boo.wink.playground.debug']);
+validateNotary(manifest.notarization.wink_dmg, 'dmg', 'notarization.wink_dmg', null);
 validateNotary(manifest.notarization.qualification_node_app, 'app', 'notarization.qualification_node_app',
-  ['boo.peekaboo.qualification-node']);
+  ['boo.wink.qualification-node']);
 validateNotary(manifest.notarization.certification_controller, 'controller_tree',
-  'notarization.certification_controller', ['boo.peekaboo.peekaboo-certification-controller']);
+  'notarization.certification_controller', ['boo.wink.wink-certification-controller']);
 await validateBoundFile(manifest.artifacts.cli, 'artifacts.cli', {
-  expectedPath: 'peekaboo-macos-universal.tar.gz',
+  expectedPath: 'wink-macos-universal.tar.gz',
   treePath: 'cli-tree.json',
   extraKeys: ['cdhashes', 'notarized_tree_manifest']
 });
@@ -574,19 +574,19 @@ if (!exactCDHash.test(manifest.artifacts.cli.cdhashes.arm64) ||
     manifest.artifacts.cli.cdhash !== manifest.artifacts.cli.cdhashes.arm64) {
   throw new Error('CLI architecture CDHashes are invalid');
 }
-await validateBoundFile(manifest.artifacts.peekaboo_app_zip, 'artifacts.peekaboo_app_zip', {
-  expectedPath: `Peekaboo-${manifest.version}.app.zip`,
-  treePath: 'peekaboo-app-tree.json'
+await validateBoundFile(manifest.artifacts.wink_app_zip, 'artifacts.wink_app_zip', {
+  expectedPath: `Wink-${manifest.version}.app.zip`,
+  treePath: 'wink-app-tree.json'
 });
-await validateBoundFile(manifest.artifacts.peekaboo_dmg, 'artifacts.peekaboo_dmg', {
-  expectedPath: `Peekaboo-${manifest.version}.dmg`,
+await validateBoundFile(manifest.artifacts.wink_dmg, 'artifacts.wink_dmg', {
+  expectedPath: `Wink-${manifest.version}.dmg`,
   extraKeys: ['payload_receipt']
 });
-exactKeys(manifest.artifacts.peekaboo_dmg.payload_receipt, ['path', 'sha256'], 'DMG payload receipt');
-if (manifest.artifacts.peekaboo_dmg.payload_receipt.path !== 'peekaboo-dmg-payload.json' ||
-    !exactSHA.test(manifest.artifacts.peekaboo_dmg.payload_receipt.sha256) ||
-    await sha256(path.join(root, manifest.artifacts.peekaboo_dmg.payload_receipt.path)) !==
-      manifest.artifacts.peekaboo_dmg.payload_receipt.sha256) {
+exactKeys(manifest.artifacts.wink_dmg.payload_receipt, ['path', 'sha256'], 'DMG payload receipt');
+if (manifest.artifacts.wink_dmg.payload_receipt.path !== 'wink-dmg-payload.json' ||
+    !exactSHA.test(manifest.artifacts.wink_dmg.payload_receipt.sha256) ||
+    await sha256(path.join(root, manifest.artifacts.wink_dmg.payload_receipt.path)) !==
+      manifest.artifacts.wink_dmg.payload_receipt.sha256) {
   throw new Error('DMG payload receipt hash mismatch');
 }
 await validateBoundFile(manifest.artifacts.playground_app_zip, 'artifacts.playground_app_zip', {
@@ -595,7 +595,7 @@ await validateBoundFile(manifest.artifacts.playground_app_zip, 'artifacts.playgr
   embeddedKey: 'embedded_manifest_sha256'
 });
 await validateBoundFile(manifest.artifacts.qualification_node_app_zip, 'artifacts.qualification_node_app_zip', {
-  expectedPath: 'PeekabooQualificationNode-26.9.0.app.zip',
+  expectedPath: 'WinkQualificationNode-26.9.0.app.zip',
   treePath: 'qualification-node-app-tree.json',
   embeddedKey: 'embedded_runtime_manifest_sha256',
   extraKeys: ['runtime']
@@ -607,7 +607,7 @@ exactKeys(monitorArtifact.cdhashes, ['arm64', 'x86_64'], 'qualification monitor 
 exactKeys(monitorArtifact.source, ['path', 'sha256'], 'qualification monitor source');
 exactKeys(monitorArtifact.tree_manifest, ['path', 'sha256'], 'qualification monitor tree manifest');
 if (monitorArtifact.path !== 'qualification/background-computer-use-probe' ||
-    monitorArtifact.identifier !== 'boo.peekaboo.background-computer-use-probe' ||
+    monitorArtifact.identifier !== 'boo.wink.background-computer-use-probe' ||
     JSON.stringify(monitorArtifact.architectures) !== JSON.stringify(['arm64', 'x86_64']) ||
     monitorArtifact.source_commit !== manifest.source_commit || !exactSHA.test(monitorArtifact.sha256) ||
     !exactCDHash.test(monitorArtifact.cdhash) || !exactCDHash.test(monitorArtifact.cdhashes.arm64) ||
@@ -624,8 +624,8 @@ exactKeys(controller, ['path', 'sha256', 'size', 'cdhash', 'cdhashes', 'source_c
 exactKeys(controller.cdhashes, ['arm64', 'x86_64'], 'controller architecture CDHashes');
 exactKeys(controller.source_manifest, ['path', 'sha256', 'aggregate_sha256'], 'controller source manifest');
 exactKeys(controller.tree_manifest, ['path', 'sha256'], 'controller tree manifest');
-if (controller.path !== 'qualification/peekaboo-certification-controller' ||
-    controller.identifier !== 'boo.peekaboo.peekaboo-certification-controller' ||
+if (controller.path !== 'qualification/wink-certification-controller' ||
+    controller.identifier !== 'boo.wink.wink-certification-controller' ||
     JSON.stringify(controller.architectures) !== JSON.stringify(['arm64', 'x86_64']) ||
     controller.source_commit !== manifest.source_commit || !exactSHA.test(controller.sha256) ||
     !exactCDHash.test(controller.cdhash) || !exactCDHash.test(controller.cdhashes.arm64) ||
@@ -670,8 +670,8 @@ for (const sourceFile of controllerSourceReceipt.files) {
   }
   sourcePaths.add(sourceFile.path);
 }
-if (manifest.app.zip_sha256 !== manifest.artifacts.peekaboo_app_zip.sha256 ||
-    manifest.app.cdhash !== manifest.artifacts.peekaboo_app_zip.cdhash ||
+if (manifest.app.zip_sha256 !== manifest.artifacts.wink_app_zip.sha256 ||
+    manifest.app.cdhash !== manifest.artifacts.wink_app_zip.cdhash ||
     manifest.playground.zip_sha256 !== manifest.artifacts.playground_app_zip.sha256 ||
     manifest.playground.cdhash !== manifest.artifacts.playground_app_zip.cdhash ||
     manifest.monitor.executable_sha256 !== monitorArtifact.sha256 ||
@@ -680,45 +680,45 @@ if (manifest.app.zip_sha256 !== manifest.artifacts.peekaboo_app_zip.sha256 ||
     manifest.controller.executable_sha256 !== controller.sha256 || manifest.controller.cdhash !== controller.cdhash) {
   throw new Error('schema-7 artifact projection differs from rich artifact records');
 }
-const dmgSignatureDetails = inspectSignature(path.join(root, manifest.artifacts.peekaboo_dmg.path), {
-  identifier: manifest.notarization.peekaboo_dmg.code_identity.identifier
+const dmgSignatureDetails = inspectSignature(path.join(root, manifest.artifacts.wink_dmg.path), {
+  identifier: manifest.notarization.wink_dmg.code_identity.identifier
 });
-if (signatureField(dmgSignatureDetails, 'CDHash') !== manifest.artifacts.peekaboo_dmg.cdhash) {
+if (signatureField(dmgSignatureDetails, 'CDHash') !== manifest.artifacts.wink_dmg.cdhash) {
   throw new Error('DMG code identity mismatch');
 }
 const retainedDMGPayload = JSON.parse(await readFile(path.join(root,
-  manifest.artifacts.peekaboo_dmg.payload_receipt.path), 'utf8'));
+  manifest.artifacts.wink_dmg.payload_receipt.path), 'utf8'));
 const observedDMGPayload = await dmgPolicy.inspectDMGPayload({
-  dmgPath: path.join(root, manifest.artifacts.peekaboo_dmg.path),
-  expectedAppTree: path.join(root, manifest.artifacts.peekaboo_app_zip.tree_manifest.path),
+  dmgPath: path.join(root, manifest.artifacts.wink_dmg.path),
+  expectedAppTree: path.join(root, manifest.artifacts.wink_app_zip.tree_manifest.path),
   treeGenerator: trustedTreeGenerator
 });
 if (JSON.stringify(observedDMGPayload) !== JSON.stringify(retainedDMGPayload)) {
   throw new Error('DMG mounted payload differs from receipt');
 }
-await extractAndCompare(manifest.artifacts.cli, 'tar', 'peekaboo-macos-universal', 'boo.peekaboo.peekaboo');
-await extractAndCompare(manifest.artifacts.peekaboo_app_zip, 'zip', 'Peekaboo.app', 'boo.peekaboo.mac');
+await extractAndCompare(manifest.artifacts.cli, 'tar', 'wink-macos-universal', 'boo.wink.wink');
+await extractAndCompare(manifest.artifacts.wink_app_zip, 'zip', 'Wink.app', 'boo.wink.mac');
 await extractAndCompare(manifest.artifacts.playground_app_zip, 'zip', 'Playground.app',
-  'boo.peekaboo.playground.debug');
+  'boo.wink.playground.debug');
 await extractAndCompare(manifest.artifacts.qualification_node_app_zip, 'zip',
-  'PeekabooQualificationNode.app', 'boo.peekaboo.qualification-node');
+  'WinkQualificationNode.app', 'boo.wink.qualification-node');
 if (!exactSHA.test(manifest.artifacts.playground_app_zip.embedded_manifest_sha256)) {
   throw new Error('Playground embedded manifest hash is invalid');
 }
-if (manifest.notarization.peekaboo_app.final_artifact.tree_manifest_sha256 !==
-    manifest.artifacts.peekaboo_app_zip.tree_manifest.sha256 ||
+if (manifest.notarization.wink_app.final_artifact.tree_manifest_sha256 !==
+    manifest.artifacts.wink_app_zip.tree_manifest.sha256 ||
     manifest.notarization.playground_app.final_artifact.tree_manifest_sha256 !==
     manifest.artifacts.playground_app_zip.tree_manifest.sha256 ||
     manifest.notarization.qualification_node_app.final_artifact.tree_manifest_sha256 !==
     manifest.artifacts.qualification_node_app_zip.tree_manifest.sha256 ||
     manifest.notarization.certification_controller.final_artifact.tree_manifest_sha256 !==
     controller.tree_manifest.sha256 ||
-    manifest.notarization.peekaboo_dmg.final_artifact.sha256 !== manifest.artifacts.peekaboo_dmg.sha256 ||
-    manifest.notarization.peekaboo_dmg.final_artifact.size !== manifest.artifacts.peekaboo_dmg.size) {
+    manifest.notarization.wink_dmg.final_artifact.sha256 !== manifest.artifacts.wink_dmg.sha256 ||
+    manifest.notarization.wink_dmg.final_artifact.size !== manifest.artifacts.wink_dmg.size) {
   throw new Error('notary receipt final artifact binding mismatch');
 }
 for (const [receipt, treeRecord] of [
-  [manifest.notarization.peekaboo_app, manifest.artifacts.peekaboo_app_zip.tree_manifest],
+  [manifest.notarization.wink_app, manifest.artifacts.wink_app_zip.tree_manifest],
   [manifest.notarization.playground_app, manifest.artifacts.playground_app_zip.tree_manifest],
   [manifest.notarization.qualification_node_app, manifest.artifacts.qualification_node_app_zip.tree_manifest],
   [manifest.notarization.certification_controller, controller.tree_manifest]
@@ -738,7 +738,7 @@ exactKeys(nodeRuntime.inputs, ['arm64', 'x86_64'], 'qualification node inputs');
 for (const architecture of ['arm64', 'x86_64']) {
   exactKeys(nodeRuntime.inputs[architecture], ['url', 'archive_sha256', 'binary_sha256'], `node input ${architecture}`);
 }
-if (nodeRuntime.version !== '26.9.0' || nodeRuntime.identifier !== 'boo.peekaboo.qualification-node' ||
+if (nodeRuntime.version !== '26.9.0' || nodeRuntime.identifier !== 'boo.wink.qualification-node' ||
     nodeRuntime.executable_path !== 'Contents/MacOS/node' ||
     JSON.stringify(nodeRuntime.architectures) !== JSON.stringify(['arm64', 'x86_64']) ||
     !exactSHA.test(nodeRuntime.unsigned_binary_sha256) || !Number.isSafeInteger(nodeRuntime.unsigned_binary_size) ||
@@ -785,7 +785,7 @@ const fileEntry = (tree, entryPath, label) => {
   if (matches.length !== 1) throw new Error(`${label} tree entry is missing or duplicated`);
   return matches[0];
 };
-const cliExecutable = fileEntry(cliTree, 'peekaboo', 'CLI executable');
+const cliExecutable = fileEntry(cliTree, 'wink', 'CLI executable');
 if (manifest.notarization.cli.final_artifact.tree_manifest_sha256 !==
       manifest.artifacts.cli.notarized_tree_manifest.sha256 ||
     manifest.notarization.cli.final_artifact.tree_manifest_size !==
@@ -798,7 +798,7 @@ if (manifest.cli.sha256 !== cliExecutable.sha256 || manifest.cli.cdhash !== mani
 if (manifest.notarization.cli.code_identity.cdhash !== manifest.artifacts.cli.cdhash ||
     JSON.stringify(canonicalValue(manifest.notarization.cli.code_identity.cdhashes)) !==
       JSON.stringify(canonicalValue(manifest.artifacts.cli.cdhashes)) ||
-    manifest.notarization.peekaboo_app.code_identity.cdhash !== manifest.artifacts.peekaboo_app_zip.cdhash ||
+    manifest.notarization.wink_app.code_identity.cdhash !== manifest.artifacts.wink_app_zip.cdhash ||
     manifest.notarization.playground_app.code_identity.cdhash !== manifest.artifacts.playground_app_zip.cdhash ||
     manifest.notarization.qualification_node_app.code_identity.cdhash !==
       manifest.artifacts.qualification_node_app_zip.cdhash ||
@@ -807,16 +807,16 @@ if (manifest.notarization.cli.code_identity.cdhash !== manifest.artifacts.cli.cd
     manifest.notarization.certification_controller.code_identity.cdhash !== controller.cdhash ||
     JSON.stringify(canonicalValue(manifest.notarization.certification_controller.code_identity.cdhashes)) !==
       JSON.stringify(canonicalValue(controller.cdhashes)) ||
-    manifest.notarization.peekaboo_dmg.code_identity.cdhash !== manifest.artifacts.peekaboo_dmg.cdhash) {
+    manifest.notarization.wink_dmg.code_identity.cdhash !== manifest.artifacts.wink_dmg.cdhash) {
   throw new Error('notary code identity is not bound to the artifact record');
 }
 const playgroundSource = fileEntry(playgroundTree,
-  'Contents/Resources/PeekabooPlaygroundSource.json', 'Playground source manifest');
+  'Contents/Resources/WinkPlaygroundSource.json', 'Playground source manifest');
 if (playgroundSource.sha256 !== manifest.artifacts.playground_app_zip.embedded_manifest_sha256) {
   throw new Error('Playground embedded manifest hash is not bound to the tree');
 }
 const nodeSource = fileEntry(nodeTree,
-  'Contents/Resources/PeekabooQualificationNodeSource.json', 'Node source manifest');
+  'Contents/Resources/WinkQualificationNodeSource.json', 'Node source manifest');
 const nodeExecutable = fileEntry(nodeTree, 'Contents/MacOS/node', 'Node executable');
 const nodeLicense = fileEntry(nodeTree, nodeRuntime.license.path, 'Node license');
 const nodeEntitlements = fileEntry(nodeTree, nodeRuntime.entitlements.path, 'Node entitlements');
@@ -833,7 +833,7 @@ const generatedControllerTree = run('/usr/bin/ruby', [trustedTreeGenerator,
 if (generatedControllerTree !== await readFile(controllerTreePath, 'utf8')) {
   throw new Error('retained controller tree differs from its receipt');
 }
-const controllerEntry = fileEntry(controllerTree, 'peekaboo-certification-controller', 'controller executable');
+const controllerEntry = fileEntry(controllerTree, 'wink-certification-controller', 'controller executable');
 if (controllerEntry.sha256 !== controller.sha256 || controllerEntry.size !== controller.size) {
   throw new Error('controller executable differs from artifact record');
 }
@@ -852,10 +852,10 @@ for (const entry of qualificationRootEntries) {
   const candidatePath = path.join(qualificationRoot, entry.path);
   await requireRegularFile(candidatePath, `qualification/${entry.path}`);
   let expectedIdentifier;
-  if (entry.path === 'peekaboo-certification-controller') {
-    expectedIdentifier = 'boo.peekaboo.peekaboo-certification-controller';
+  if (entry.path === 'wink-certification-controller') {
+    expectedIdentifier = 'boo.wink.wink-certification-controller';
   } else if (entry.path === 'background-computer-use-probe') {
-    expectedIdentifier = 'boo.peekaboo.background-computer-use-probe';
+    expectedIdentifier = 'boo.wink.background-computer-use-probe';
   } else if (/^libswiftCompatibility[^/]*\.dylib$/.test(entry.path)) {
     expectedIdentifier = null;
   } else {
@@ -871,11 +871,11 @@ const controllerDetails = inspectSignature(controllerPath, { identifier: control
 const controllerArchitectures = run('/usr/bin/lipo', ['-archs', controllerPath]).trim().split(/\s+/);
 if (signatureField(controllerDetails, 'CDHash') !== controller.cdhash ||
     !controllerArchitectures.includes('arm64') || !controllerArchitectures.includes('x86_64') ||
-    await machoPlistValue(controllerPath, 'PeekabooSourceCommit') !== manifest.source_commit ||
+    await machoPlistValue(controllerPath, 'WinkSourceCommit') !== manifest.source_commit ||
     await machoPlistValue(controllerPath, 'CFBundleShortVersionString') !== manifest.version ||
-    await machoPlistValue(controllerPath, 'PeekabooCertificationSourceManifestSHA256') !==
+    await machoPlistValue(controllerPath, 'WinkCertificationSourceManifestSHA256') !==
       controllerSourceReceipt.aggregate_sha256 ||
-    await machoPlistValue(controllerPath, 'PeekabooCertificationCatalogSHA256') !==
+    await machoPlistValue(controllerPath, 'WinkCertificationCatalogSHA256') !==
       controllerSourceReceipt.catalog_sha256) {
   throw new Error('controller signed identity or architectures mismatch');
 }
@@ -887,7 +887,7 @@ for (const architecture of ['arm64', 'x86_64']) {
 }
 const monitorPath = path.join(qualificationRoot, 'background-computer-use-probe');
 const monitorDetails = inspectSignature(monitorPath, {
-  identifier: 'boo.peekaboo.background-computer-use-probe',
+  identifier: 'boo.wink.background-computer-use-probe',
   architecture: 'arm64'
 });
 const monitorArchitectures = run('/usr/bin/lipo', ['-archs', monitorPath]).trim().split(/\s+/);
@@ -895,13 +895,13 @@ if (signatureField(monitorDetails, 'CDHash') !== manifest.monitor.cdhash ||
     !monitorArchitectures.includes('arm64') || !monitorArchitectures.includes('x86_64') ||
     await sha256(monitorPath) !== manifest.monitor.executable_sha256 ||
     (await stat(monitorPath)).size !== monitorArtifact.size ||
-    await machoPlistValue(monitorPath, 'PeekabooSourceCommit') !== manifest.source_commit ||
+    await machoPlistValue(monitorPath, 'WinkSourceCommit') !== manifest.source_commit ||
     await machoPlistValue(monitorPath, 'CFBundleShortVersionString') !== manifest.version ||
-    await machoPlistValue(monitorPath, 'PeekabooCertificationSourceManifestSHA256') !==
+    await machoPlistValue(monitorPath, 'WinkCertificationSourceManifestSHA256') !==
       controllerSourceReceipt.aggregate_sha256 ||
-    await machoPlistValue(monitorPath, 'PeekabooCertificationCatalogSHA256') !==
+    await machoPlistValue(monitorPath, 'WinkCertificationCatalogSHA256') !==
       controllerSourceReceipt.catalog_sha256 ||
-    await machoPlistValue(monitorPath, 'PeekabooQualificationMonitorSourceSHA256') !==
+    await machoPlistValue(monitorPath, 'WinkQualificationMonitorSourceSHA256') !==
       monitorArtifact.source.sha256 ||
     await sha256(path.join(root, manifest.portable.source_tree.path,
       'scripts/support/background-computer-use-probe.swift')) !==
@@ -910,7 +910,7 @@ if (signatureField(monitorDetails, 'CDHash') !== manifest.monitor.cdhash ||
 }
 for (const architecture of ['arm64', 'x86_64']) {
   const details = inspectSignature(monitorPath, {
-    identifier: 'boo.peekaboo.background-computer-use-probe', architecture
+    identifier: 'boo.wink.background-computer-use-probe', architecture
   });
   if (signatureField(details, 'CDHash') !== monitorArtifact.cdhashes[architecture]) {
     throw new Error(`qualification monitor ${architecture} CDHash mismatch`);
@@ -923,14 +923,14 @@ if (JSON.stringify(toolEntries) !== JSON.stringify(['artifact-tree-manifest.rb',
   throw new Error('unbound portable tool exists');
 }
 const notaryEntries = (await readdir(path.join(root, 'notary'))).sort();
-const expectedNotary = ['cli.json', 'peekaboo-app.json', 'peekaboo-dmg.json', 'playground-app.json',
+const expectedNotary = ['cli.json', 'wink-app.json', 'wink-dmg.json', 'playground-app.json',
   'qualification-node-app.json', 'certification-controller.json', 'submissions'].sort();
 if (JSON.stringify(notaryEntries) !== JSON.stringify(expectedNotary)) throw new Error('unbound notary receipt exists');
 await requireDirectory(path.join(root, 'notary', 'submissions'), 'notary submissions');
 for (const [fileName, receipt] of [
   ['cli.json', manifest.notarization.cli],
-  ['peekaboo-app.json', manifest.notarization.peekaboo_app],
-  ['peekaboo-dmg.json', manifest.notarization.peekaboo_dmg],
+  ['wink-app.json', manifest.notarization.wink_app],
+  ['wink-dmg.json', manifest.notarization.wink_dmg],
   ['playground-app.json', manifest.notarization.playground_app],
   ['qualification-node-app.json', manifest.notarization.qualification_node_app],
   ['certification-controller.json', manifest.notarization.certification_controller]

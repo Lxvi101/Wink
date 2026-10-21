@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.automation), .enabled(if: CLITestEnvironment.runAutomationRead))
 struct ClickSnapshotWindowSelectionTests {
@@ -266,7 +266,7 @@ struct ClickSnapshotWindowSelectionTests {
         let window = Self.makeWindow()
         let windows = StubWindowService(windowsByApp: [application.name: [window]])
         let fixture = Self.makeFixture(application: application, window: window, windows: windows)
-        fixture.automation.clickError = PeekabooError.snapshotStale("window identity changed")
+        fixture.automation.clickError = WinkError.snapshotStale("window identity changed")
         let snapshotID = try await Self.storeSnapshot(window: window, in: fixture.snapshots)
 
         let result = try await InProcessCommandRunner.run(
@@ -381,7 +381,7 @@ private final class SnapshotReceiptOnlyWindowService: StubWindowService {
         self.windowLookupCount += 1
         if case .windowId = target {
             self.exactWindowLookupCount += 1
-            throw PeekabooError.windowNotFound(criteria: "fixture rejects redundant exact-window enumeration")
+            throw WinkError.windowNotFound(criteria: "fixture rejects redundant exact-window enumeration")
         }
         return try await super.listWindows(target: target)
     }

@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 struct SeePublicationArtifactSizeTests {
@@ -184,7 +184,7 @@ private struct Fixture {
 
     init(data: Data) throws {
         self.root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-see-publication-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-see-publication-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: false)
         self.url = self.root.appendingPathComponent("artifact.png")
         try data.write(to: self.url, options: .atomic)
@@ -192,7 +192,7 @@ private struct Fixture {
 
     init(sparseByteCount: Int) throws {
         self.root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-see-publication-sparse-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-see-publication-sparse-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: self.root, withIntermediateDirectories: false)
         self.url = self.root.appendingPathComponent("sparse.png")
         FileManager.default.createFile(atPath: self.url.path, contents: Data())

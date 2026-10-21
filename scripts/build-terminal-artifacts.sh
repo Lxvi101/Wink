@@ -29,7 +29,7 @@ done
 builtin unset required_entry_value
 PATH=/usr/bin:/bin
 builtin export PATH
-raw_function_names_file=$(/usr/bin/mktemp /tmp/peekaboo-functions.XXXXXX) || builtin exit 1
+raw_function_names_file=$(/usr/bin/mktemp /tmp/wink-functions.XXXXXX) || builtin exit 1
 /usr/bin/env -0 | /usr/bin/env -i /usr/bin/perl -0ne '
   if (index($_, "BASH_FUNC_") == 0) { my ($name) = split(/=/, $_, 2); print $name, chr(0); }
 ' > "$raw_function_names_file"
@@ -85,7 +85,7 @@ TIMESTAMP_URL=http://timestamp.apple.com/ts01
 EXPECTED_RELEASE_HELPER_COMMIT=20ab9a5e6bb1107788366726868f1a9b4c16d953
 EXPECTED_RELEASE_HELPER_SHA=e65e06ef89ec90ebfc537d28748a3c4de8ce89bd09b51e4d67ba4bdd95427255
 EXPECTED_RELEASE_HELPER_LIB_SHA=c29d3c46506c2d0bd2db7ab688bd3108d54e8824074a4fe800de6e3fe17284c9
-CANONICAL_LOCK_RELATIVE=Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved
+CANONICAL_LOCK_RELATIVE=Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved
 CANONICAL_LOCK="$ROOT_DIR/$CANONICAL_LOCK_RELATIVE"
 
 COMMAND="${1:-}"
@@ -108,27 +108,27 @@ cleanup_service_token_files() {
 trap cleanup_service_token_files EXIT
 
 if [[ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
-  [[ -z "${PEEKABOO_OP_SERVICE_TOKEN_FILE:-}" ]] || {
+  [[ -z "${WINK_OP_SERVICE_TOKEN_FILE:-}" ]] || {
     /bin/echo 'Conflicting service-token custody.' >&2
     builtin exit 1
   }
-  owned_op_service_token_file="$(/usr/bin/mktemp /tmp/peekaboo-op-token.XXXXXX)" || builtin exit 1
-  PEEKABOO_OP_SERVICE_TOKEN_FILE="$owned_op_service_token_file"
-  printf '%s' "$OP_SERVICE_ACCOUNT_TOKEN" > "$PEEKABOO_OP_SERVICE_TOKEN_FILE"
-  /bin/chmod 600 "$PEEKABOO_OP_SERVICE_TOKEN_FILE"
-  builtin export PEEKABOO_OP_SERVICE_TOKEN_FILE
+  owned_op_service_token_file="$(/usr/bin/mktemp /tmp/wink-op-token.XXXXXX)" || builtin exit 1
+  WINK_OP_SERVICE_TOKEN_FILE="$owned_op_service_token_file"
+  printf '%s' "$OP_SERVICE_ACCOUNT_TOKEN" > "$WINK_OP_SERVICE_TOKEN_FILE"
+  /bin/chmod 600 "$WINK_OP_SERVICE_TOKEN_FILE"
+  builtin export WINK_OP_SERVICE_TOKEN_FILE
   builtin unset OP_SERVICE_ACCOUNT_TOKEN
 fi
 if [[ -n "${MOLTY_OP_SERVICE_ACCOUNT_TOKEN:-}" ]]; then
-  [[ -z "${PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE:-}" ]] || {
+  [[ -z "${WINK_MOLTY_OP_SERVICE_TOKEN_FILE:-}" ]] || {
     /bin/echo 'Conflicting legacy service-token custody.' >&2
     builtin exit 1
   }
-  owned_molty_op_service_token_file="$(/usr/bin/mktemp /tmp/peekaboo-molty-op-token.XXXXXX)" || builtin exit 1
-  PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE="$owned_molty_op_service_token_file"
-  printf '%s' "$MOLTY_OP_SERVICE_ACCOUNT_TOKEN" > "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE"
-  /bin/chmod 600 "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE"
-  builtin export PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE
+  owned_molty_op_service_token_file="$(/usr/bin/mktemp /tmp/wink-molty-op-token.XXXXXX)" || builtin exit 1
+  WINK_MOLTY_OP_SERVICE_TOKEN_FILE="$owned_molty_op_service_token_file"
+  printf '%s' "$MOLTY_OP_SERVICE_ACCOUNT_TOKEN" > "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE"
+  /bin/chmod 600 "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE"
+  builtin export WINK_MOLTY_OP_SERVICE_TOKEN_FILE
   builtin unset MOLTY_OP_SERVICE_ACCOUNT_TOKEN
 fi
 PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin
@@ -140,12 +140,12 @@ fail() {
 }
 
 expose_service_tokens() {
-  if [[ -n "${PEEKABOO_OP_SERVICE_TOKEN_FILE:-}" ]]; then
-    OP_SERVICE_ACCOUNT_TOKEN="$(<"$PEEKABOO_OP_SERVICE_TOKEN_FILE")"
+  if [[ -n "${WINK_OP_SERVICE_TOKEN_FILE:-}" ]]; then
+    OP_SERVICE_ACCOUNT_TOKEN="$(<"$WINK_OP_SERVICE_TOKEN_FILE")"
     builtin export OP_SERVICE_ACCOUNT_TOKEN
   fi
-  if [[ -n "${PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE:-}" ]]; then
-    MOLTY_OP_SERVICE_ACCOUNT_TOKEN="$(<"$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE")"
+  if [[ -n "${WINK_MOLTY_OP_SERVICE_TOKEN_FILE:-}" ]]; then
+    MOLTY_OP_SERVICE_ACCOUNT_TOKEN="$(<"$WINK_MOLTY_OP_SERVICE_TOKEN_FILE")"
     builtin export MOLTY_OP_SERVICE_ACCOUNT_TOKEN
   fi
 }
@@ -161,7 +161,7 @@ Usage: scripts/build-terminal-artifacts.sh COMMAND [options]
 Commands:
   build       Credential-free compilation and unsigned input sealing.
   sign-code   Codesign-only private snapshot of CLI and both apps.
-  build-dmg   Credential-free DMG construction from notarized Peekaboo.app.
+  build-dmg   Credential-free DMG construction from notarized Wink.app.
   sign-dmg    Codesign-only private snapshot of the unsigned DMG.
   publish     Credential-free verification and atomic artifact publication.
   check-helper Verify the exact credential runner without resolving credentials.
@@ -198,9 +198,9 @@ case "$COMMAND" in
 esac
 if [[ "$COMMAND" != all ]]; then
   cleanup_service_token_files
-  PEEKABOO_OP_SERVICE_TOKEN_FILE=""
-  PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE=""
-  builtin unset PEEKABOO_OP_SERVICE_TOKEN_FILE PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE
+  WINK_OP_SERVICE_TOKEN_FILE=""
+  WINK_MOLTY_OP_SERVICE_TOKEN_FILE=""
+  builtin unset WINK_OP_SERVICE_TOKEN_FILE WINK_MOLTY_OP_SERVICE_TOKEN_FILE
   trap - EXIT
 fi
 
@@ -213,7 +213,7 @@ assert_clean_phase_environment() {
 }
 
 require_clean_source() {
-  SOURCE_COMMIT="$(peekaboo_require_source_commit "$ROOT_DIR")" || fail 'clean exact source required'
+  SOURCE_COMMIT="$(wink_require_source_commit "$ROOT_DIR")" || fail 'clean exact source required'
   VERSION="$(/usr/bin/plutil -extract version raw -o - "$ROOT_DIR/package.json")" || fail 'package version missing'
   DEPENDENCY_LOCK_SHA256="$(/usr/bin/shasum -a 256 "$CANONICAL_LOCK" | /usr/bin/awk '{print $1}')"
 }
@@ -263,38 +263,38 @@ record_toolchain() {
 }
 
 set_stage_paths() {
-  [[ -n "$STAGE_DIR" ]] || STAGE_DIR="/tmp/peekaboo-terminal-build-${SOURCE_COMMIT:?}"
+  [[ -n "$STAGE_DIR" ]] || STAGE_DIR="/tmp/wink-terminal-build-${SOURCE_COMMIT:?}"
   [[ "$STAGE_DIR" == /* && ! -L "$STAGE_DIR" ]] || fail 'stage path must be absolute and unsymlinked'
   BUILD_MANIFEST="$STAGE_DIR/terminal-build-manifest.json"
   UNSIGNED_CLI="$STAGE_DIR/cli"
-  UNSIGNED_APP="$STAGE_DIR/peekaboo-derived/Build/Products/Release/Peekaboo.app"
+  UNSIGNED_APP="$STAGE_DIR/wink-derived/Build/Products/Release/Wink.app"
   UNSIGNED_PLAYGROUND="$STAGE_DIR/playground/Playground.app"
-  UNSIGNED_NODE="$STAGE_DIR/node/PeekabooQualificationNode.app"
+  UNSIGNED_NODE="$STAGE_DIR/node/WinkQualificationNode.app"
   UNSIGNED_QUALIFICATION_ROOT="$STAGE_DIR/qualification"
-  UNSIGNED_CONTROLLER="$UNSIGNED_QUALIFICATION_ROOT/peekaboo-certification-controller"
+  UNSIGNED_CONTROLLER="$UNSIGNED_QUALIFICATION_ROOT/wink-certification-controller"
   UNSIGNED_MONITOR="$UNSIGNED_QUALIFICATION_ROOT/background-computer-use-probe"
   SOURCE_SNAPSHOT_ROOT="$STAGE_DIR/qualification-source"
   SOURCE_RECEIPT="$STAGE_DIR/controller-source-manifest.json"
   SOURCE_TREE_MANIFEST="$STAGE_DIR/qualification-source-tree.json"
   SIGNED_ROOT="$STAGE_DIR/signed"
   SIGNED_CLI="$SIGNED_ROOT/cli"
-  SIGNED_APP="$SIGNED_ROOT/Peekaboo.app"
+  SIGNED_APP="$SIGNED_ROOT/Wink.app"
   SIGNED_PLAYGROUND="$SIGNED_ROOT/Playground.app"
-  SIGNED_NODE="$SIGNED_ROOT/PeekabooQualificationNode.app"
+  SIGNED_NODE="$SIGNED_ROOT/WinkQualificationNode.app"
   SIGNED_CONTROLLER_ROOT="$SIGNED_ROOT/qualification"
   NOTARY_ROOT="$STAGE_DIR/notary"
   CLI_NOTARY_TRANSACTION="$NOTARY_ROOT/cli"
-  APP_NOTARY_TRANSACTION="$NOTARY_ROOT/peekaboo-app"
+  APP_NOTARY_TRANSACTION="$NOTARY_ROOT/wink-app"
   PLAYGROUND_NOTARY_TRANSACTION="$NOTARY_ROOT/playground-app"
   NODE_NOTARY_TRANSACTION="$NOTARY_ROOT/qualification-node-app"
   CONTROLLER_NOTARY_TRANSACTION="$NOTARY_ROOT/certification-controller"
-  DMG_NOTARY_TRANSACTION="$NOTARY_ROOT/peekaboo-dmg"
-  NOTARIZED_APP="$APP_NOTARY_TRANSACTION/Peekaboo.app"
+  DMG_NOTARY_TRANSACTION="$NOTARY_ROOT/wink-dmg"
+  NOTARIZED_APP="$APP_NOTARY_TRANSACTION/Wink.app"
   NOTARIZED_PLAYGROUND="$PLAYGROUND_NOTARY_TRANSACTION/Playground.app"
-  NOTARIZED_NODE="$NODE_NOTARY_TRANSACTION/PeekabooQualificationNode.app"
+  NOTARIZED_NODE="$NODE_NOTARY_TRANSACTION/WinkQualificationNode.app"
   DMG_ROOT="$STAGE_DIR/dmg"
-  UNSIGNED_DMG="$DMG_ROOT/Peekaboo-$VERSION.unsigned.dmg"
-  SIGNED_DMG="$DMG_ROOT/Peekaboo-$VERSION.signed.dmg"
+  UNSIGNED_DMG="$DMG_ROOT/Wink-$VERSION.unsigned.dmg"
+  SIGNED_DMG="$DMG_ROOT/Wink-$VERSION.signed.dmg"
   DMG_PAYLOAD_RECEIPT="$DMG_ROOT/payload.json"
   NOTARIZED_DMG="$DMG_NOTARY_TRANSACTION/$(basename "$SIGNED_DMG")"
 }
@@ -302,7 +302,7 @@ set_stage_paths() {
 tree_digest() {
   local target="$1"
   local output
-  output="$(mktemp /tmp/peekaboo-tree-digest.XXXXXX)"
+  output="$(mktemp /tmp/wink-tree-digest.XXXXXX)"
   terminal_artifact_tree_manifest "$target" "$output"
   /usr/bin/shasum -a 256 "$output" | /usr/bin/awk '{print $1}'
   rm -f "$output"
@@ -310,8 +310,8 @@ tree_digest() {
 
 verify_playground_manifest() {
   local app="$1"
-  local manifest="$app/Contents/Resources/PeekabooPlaygroundSource.json"
-  peekaboo_verify_playground_v2_receipt "$manifest" \
+  local manifest="$app/Contents/Resources/WinkPlaygroundSource.json"
+  wink_verify_playground_v2_receipt "$manifest" \
     "$SOURCE_COMMIT" "$(git -C "$ROOT_DIR" rev-parse HEAD:Apps/Playground)" \
     "$CANONICAL_LOCK_RELATIVE" "$DEPENDENCY_LOCK_SHA256" "$VERSION" \
     "$EFFECTIVE_DEVELOPER_DIR" "$XCODEBUILD_VERSION" "$SDK_VERSION" "$SWIFTC_VERSION"
@@ -321,7 +321,7 @@ verify_node_source_manifest() {
   local app="$1"
   local mode="${2:-unsigned}"
   local pin_mode="${3:-${BUILD_MODE:-production}}"
-  local manifest="$app/Contents/Resources/PeekabooQualificationNodeSource.json"
+  local manifest="$app/Contents/Resources/WinkQualificationNodeSource.json"
   local node_binary="$app/Contents/MacOS/node"
   local license="$app/Contents/Resources/LICENSE"
   local entitlements="$app/Contents/Resources/qualification-node.entitlements"
@@ -336,7 +336,7 @@ verify_node_source_manifest() {
       type == "object" and keys == ["architectures", "entitlements", "executable_path", "identifier", "inputs", "license",
         "runtime_version", "universal_binary_sha256", "universal_binary_size", "version"] and
       .version == 1 and .runtime_version == "26.9.0" and
-      .identifier == "boo.peekaboo.qualification-node" and .executable_path == "Contents/MacOS/node" and
+      .identifier == "boo.wink.qualification-node" and .executable_path == "Contents/MacOS/node" and
       .architectures == ["arm64", "x86_64"] and .license == {
         path: "Contents/Resources/LICENSE",
         sha256: $licenseSHA
@@ -371,7 +371,7 @@ verify_node_source_manifest() {
   archs=" $(/usr/bin/lipo -archs "$node_binary") "
   [[ "$archs" == *' arm64 '* && "$archs" == *' x86_64 '* && \
     "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")" == \
-      boo.peekaboo.qualification-node && \
+      boo.wink.qualification-node && \
     "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")" == 26.9.0 ]]
 }
 
@@ -395,13 +395,13 @@ verify_unsigned_stage() {
       .release_helper == {commit: "20ab9a5e6bb1107788366726868f1a9b4c16d953",
         executable_sha256: "e65e06ef89ec90ebfc537d28748a3c4de8ce89bd09b51e4d67ba4bdd95427255",
         library_sha256: "c29d3c46506c2d0bd2db7ab688bd3108d54e8824074a4fe800de6e3fe17284c9"} and
-      (.unsigned_inputs | keys == ["cli_inventory_sha256", "peekaboo_inventory_sha256",
+      (.unsigned_inputs | keys == ["cli_inventory_sha256", "wink_inventory_sha256",
         "playground_inventory_sha256", "qualification_inventory_sha256",
         "qualification_node_inventory_sha256", "qualification_source_inventory_sha256"] and
         all(.[]; test("^[0-9a-f]{64}$")))
     ' "$BUILD_MANIFEST" >/dev/null || fail 'build manifest does not match source/toolchain'
 
-  verify_dir="$(mktemp -d /tmp/peekaboo-stage-verify.XXXXXX)"
+  verify_dir="$(mktemp -d /tmp/wink-stage-verify.XXXXXX)"
   terminal_artifact_tree_manifest "$UNSIGNED_CLI" "$verify_dir/cli.json"
   terminal_artifact_tree_manifest "$UNSIGNED_APP" "$verify_dir/app.json"
   terminal_artifact_tree_manifest "$UNSIGNED_PLAYGROUND" "$verify_dir/playground.json"
@@ -411,7 +411,7 @@ verify_unsigned_stage() {
   [[ "$(/usr/bin/shasum -a 256 "$verify_dir/cli.json" | /usr/bin/awk '{print $1}')" == \
     "$(jq -r .unsigned_inputs.cli_inventory_sha256 "$BUILD_MANIFEST")" ]] || fail 'CLI stage changed'
   [[ "$(/usr/bin/shasum -a 256 "$verify_dir/app.json" | /usr/bin/awk '{print $1}')" == \
-    "$(jq -r .unsigned_inputs.peekaboo_inventory_sha256 "$BUILD_MANIFEST")" ]] || fail 'app stage changed'
+    "$(jq -r .unsigned_inputs.wink_inventory_sha256 "$BUILD_MANIFEST")" ]] || fail 'app stage changed'
   [[ "$(/usr/bin/shasum -a 256 "$verify_dir/playground.json" | /usr/bin/awk '{print $1}')" == \
     "$(jq -r .unsigned_inputs.playground_inventory_sha256 "$BUILD_MANIFEST")" ]] || \
     fail 'Playground stage changed'
@@ -428,18 +428,18 @@ verify_unsigned_stage() {
     fail 'qualification source tree receipt changed'
   rm -rf -- "$verify_dir"
 
-  cli_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CLI/peekaboo" \
-    --key PeekabooSourceCommit)"
-  cli_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CLI/peekaboo" \
+  cli_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CLI/wink" \
+    --key WinkSourceCommit)"
+  cli_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CLI/wink" \
     --key CFBundleShortVersionString)"
-  app_source="$(/usr/libexec/PlistBuddy -c 'Print :PeekabooSourceCommit' "$UNSIGNED_APP/Contents/Info.plist")"
+  app_source="$(/usr/libexec/PlistBuddy -c 'Print :WinkSourceCommit' "$UNSIGNED_APP/Contents/Info.plist")"
   app_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$UNSIGNED_APP/Contents/Info.plist")"
   controller_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CONTROLLER" \
-    --key PeekabooSourceCommit)"
+    --key WinkSourceCommit)"
   controller_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_CONTROLLER" \
     --key CFBundleShortVersionString)"
   monitor_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_MONITOR" \
-    --key PeekabooSourceCommit)"
+    --key WinkSourceCommit)"
   monitor_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_MONITOR" \
     --key CFBundleShortVersionString)"
   [[ "$cli_source" == "$SOURCE_COMMIT" && "$app_source" == "$SOURCE_COMMIT" && \
@@ -449,15 +449,15 @@ verify_unsigned_stage() {
     fail 'embedded source/version mismatch'
   certification_source_sha="$(jq -er .aggregate_sha256 "$SOURCE_RECEIPT")"
   certification_catalog_sha="$(jq -er .catalog_sha256 "$SOURCE_RECEIPT")"
-  for provenance_binary in "$UNSIGNED_CLI/peekaboo" "$UNSIGNED_CONTROLLER" "$UNSIGNED_MONITOR"; do
+  for provenance_binary in "$UNSIGNED_CLI/wink" "$UNSIGNED_CONTROLLER" "$UNSIGNED_MONITOR"; do
     [[ "$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$provenance_binary" \
-      --key PeekabooCertificationSourceManifestSHA256)" == "$certification_source_sha" && \
+      --key WinkCertificationSourceManifestSHA256)" == "$certification_source_sha" && \
       "$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$provenance_binary" \
-      --key PeekabooCertificationCatalogSHA256)" == "$certification_catalog_sha" ]] || \
+      --key WinkCertificationCatalogSHA256)" == "$certification_catalog_sha" ]] || \
       fail 'signed producer source anchor mismatch'
   done
   [[ "$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$UNSIGNED_MONITOR" \
-    --key PeekabooQualificationMonitorSourceSHA256)" == \
+    --key WinkQualificationMonitorSourceSHA256)" == \
     "$(/usr/bin/shasum -a 256 "$SOURCE_SNAPSHOT_ROOT/scripts/support/background-computer-use-probe.swift" | \
       /usr/bin/awk '{print $1}')" ]] || fail 'monitor source anchor mismatch'
   verify_playground_manifest "$UNSIGNED_PLAYGROUND" || fail 'Playground manifest mismatch'
@@ -478,16 +478,16 @@ build_phase() {
   require_clean_source
   record_toolchain
   set_stage_paths
-  case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in
+  case "${WINK_TERMINAL_TEST_MODE:-0}" in
     1|true|yes|on) BUILD_MODE=test_fixture ;;
     0|false|no|off|'') BUILD_MODE=production ;;
-    *) fail 'PEEKABOO_TERMINAL_TEST_MODE must be boolean' ;;
+    *) fail 'WINK_TERMINAL_TEST_MODE must be boolean' ;;
   esac
   stage_destination="$STAGE_DIR"
   [[ ! -e "$stage_destination" && ! -L "$stage_destination" ]] || \
     fail "stage already exists: $stage_destination"
   mkdir -p "$(dirname "$stage_destination")"
-  build_root="$(mktemp -d "$(dirname "$stage_destination")/.peekaboo-terminal-build.XXXXXX")"
+  build_root="$(mktemp -d "$(dirname "$stage_destination")/.wink-terminal-build.XXXXXX")"
   STAGE_DIR="$build_root"
   set_stage_paths
   cleanup_build_phase() {
@@ -499,7 +499,7 @@ build_phase() {
   trap 'cleanup_build_phase; exit 143' TERM HUP
   [[ -f "$CANONICAL_LOCK" && ! -L "$CANONICAL_LOCK" ]] || fail 'canonical dependency lock missing'
   mkdir -p "$UNSIGNED_CLI" "$STAGE_DIR/inventories" "$STAGE_DIR/node" "$UNSIGNED_QUALIFICATION_ROOT" \
-    "$STAGE_DIR/peekaboo-derived" "$STAGE_DIR/playground"
+    "$STAGE_DIR/wink-derived" "$STAGE_DIR/playground"
   build_source_snapshot
   certification_source_sha="$(jq -er .aggregate_sha256 "$SOURCE_RECEIPT")"
   certification_catalog_sha="$(jq -er .catalog_sha256 "$SOURCE_RECEIPT")"
@@ -511,23 +511,23 @@ build_phase() {
   cp "$CANONICAL_LOCK" "$cli_lock"
   set +e
   terminal_artifact_run_build /usr/bin/env DEVELOPER_DIR="$EFFECTIVE_DEVELOPER_DIR" \
-    MAC_RELEASE_CODESIGN_IDENTITY=- CODESIGN_TIMESTAMP=off PEEKABOO_USE_RESOLVED_VERSIONS=1 \
-    PEEKABOO_CERTIFICATION_SOURCE_MANIFEST_SHA256="$certification_source_sha" \
-    PEEKABOO_CERTIFICATION_CATALOG_SHA256="$certification_catalog_sha" \
+    MAC_RELEASE_CODESIGN_IDENTITY=- CODESIGN_TIMESTAMP=off WINK_USE_RESOLVED_VERSIONS=1 \
+    WINK_CERTIFICATION_SOURCE_MANIFEST_SHA256="$certification_source_sha" \
+    WINK_CERTIFICATION_CATALOG_SHA256="$certification_catalog_sha" \
     pnpm run build:swift:all
   build_result=$?
   set -e
   rm -f "$cli_lock"
   cli_lock=""
   ((build_result == 0)) || fail 'universal CLI build failed'
-  cp "$ROOT_DIR/peekaboo" "$UNSIGNED_CLI/peekaboo"
+  cp "$ROOT_DIR/wink" "$UNSIGNED_CLI/wink"
   for runtime_library in "$ROOT_DIR"/libswiftCompatibility*.dylib; do
     [[ -e "$runtime_library" ]] && cp "$runtime_library" "$UNSIGNED_CLI/"
   done
   controller_arm="$(bash "$ROOT_DIR/scripts/resolve-swift-binary-path.sh" \
-    "$ROOT_DIR/Apps/CLI" arm64 release peekaboo-certification-controller)"
+    "$ROOT_DIR/Apps/CLI" arm64 release wink-certification-controller)"
   controller_x64="$(bash "$ROOT_DIR/scripts/resolve-swift-binary-path.sh" \
-    "$ROOT_DIR/Apps/CLI" x86_64 release peekaboo-certification-controller)"
+    "$ROOT_DIR/Apps/CLI" x86_64 release wink-certification-controller)"
   /usr/bin/lipo -create -output "$UNSIGNED_CONTROLLER" "$controller_arm" "$controller_x64"
   /usr/bin/strip -Sxu "$UNSIGNED_CONTROLLER"
   "$ROOT_DIR/scripts/strip-toolchain-rpaths.sh" "$UNSIGNED_CONTROLLER"
@@ -542,13 +542,13 @@ build_phase() {
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleIdentifier</key><string>boo.peekaboo.background-computer-use-probe</string>
+<key>CFBundleIdentifier</key><string>boo.wink.background-computer-use-probe</string>
 <key>CFBundleShortVersionString</key><string>$VERSION</string>
 <key>CFBundleVersion</key><string>$VERSION</string>
-<key>PeekabooSourceCommit</key><string>$SOURCE_COMMIT</string>
-<key>PeekabooCertificationSourceManifestSHA256</key><string>$certification_source_sha</string>
-<key>PeekabooCertificationCatalogSHA256</key><string>$certification_catalog_sha</string>
-<key>PeekabooQualificationMonitorSourceSHA256</key><string>$monitor_source_sha</string>
+<key>WinkSourceCommit</key><string>$SOURCE_COMMIT</string>
+<key>WinkCertificationSourceManifestSHA256</key><string>$certification_source_sha</string>
+<key>WinkCertificationCatalogSHA256</key><string>$certification_catalog_sha</string>
+<key>WinkQualificationMonitorSourceSHA256</key><string>$monitor_source_sha</string>
 </dict></plist>
 EOF
   for architecture in arm64 x86_64; do
@@ -573,20 +573,20 @@ EOF
   "$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh" "$UNSIGNED_CONTROLLER" "$UNSIGNED_QUALIFICATION_ROOT"
   "$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh" "$UNSIGNED_MONITOR" "$UNSIGNED_QUALIFICATION_ROOT"
 
-  build_number="$(peekaboo_release_build_number "$VERSION")"
+  build_number="$(wink_release_build_number "$VERSION")"
   terminal_artifact_run_build /usr/bin/env DEVELOPER_DIR="$EFFECTIVE_DEVELOPER_DIR" \
     python3 "$ROOT_DIR/scripts/setup-swift-workspace.py" run --release -- /usr/bin/xcodebuild \
-    -workspace "$ROOT_DIR/Apps/Peekaboo.xcworkspace" -scheme Peekaboo -configuration Release \
-    -destination platform=macOS,arch=arm64 -derivedDataPath "$STAGE_DIR/peekaboo-derived" \
+    -workspace "$ROOT_DIR/Apps/Wink.xcworkspace" -scheme Wink -configuration Release \
+    -destination platform=macOS,arch=arm64 -derivedDataPath "$STAGE_DIR/wink-derived" \
     -disableAutomaticPackageResolution -onlyUsePackageVersionsFromResolvedFile -skipPackageUpdates -quiet \
-    MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$build_number" PEEKABOO_SOURCE_COMMIT="$SOURCE_COMMIT" \
+    MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$build_number" WINK_SOURCE_COMMIT="$SOURCE_COMMIT" \
     CODE_SIGN_IDENTITY= CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
   terminal_artifact_run_build /usr/bin/env DEVELOPER_DIR="$EFFECTIVE_DEVELOPER_DIR" \
     "$ROOT_DIR/scripts/build-playground-artifact.sh" --configuration Debug --output-app "$UNSIGNED_PLAYGROUND"
-  peekaboo_verify_source_commit "$ROOT_DIR" "$SOURCE_COMMIT" || fail 'source changed during build'
+  wink_verify_source_commit "$ROOT_DIR" "$SOURCE_COMMIT" || fail 'source changed during build'
 
   terminal_artifact_tree_manifest "$UNSIGNED_CLI" "$STAGE_DIR/inventories/cli.json"
-  terminal_artifact_tree_manifest "$UNSIGNED_APP" "$STAGE_DIR/inventories/peekaboo-app.json"
+  terminal_artifact_tree_manifest "$UNSIGNED_APP" "$STAGE_DIR/inventories/wink-app.json"
   terminal_artifact_tree_manifest "$UNSIGNED_PLAYGROUND" "$STAGE_DIR/inventories/playground-app.json"
   terminal_artifact_tree_manifest "$UNSIGNED_NODE" "$STAGE_DIR/inventories/qualification-node-app.json"
   terminal_artifact_tree_manifest "$UNSIGNED_QUALIFICATION_ROOT" "$STAGE_DIR/inventories/qualification.json"
@@ -597,7 +597,7 @@ EOF
     --arg developerDir "$EFFECTIVE_DEVELOPER_DIR" --arg xcodebuildVersion "$XCODEBUILD_VERSION" \
     --arg sdkVersion "$SDK_VERSION" --arg swiftcVersion "$SWIFTC_VERSION" \
     --arg cliInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/cli.json" | /usr/bin/awk '{print $1}')" \
-    --arg appInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/peekaboo-app.json" | /usr/bin/awk '{print $1}')" \
+    --arg appInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/wink-app.json" | /usr/bin/awk '{print $1}')" \
     --arg playgroundInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/playground-app.json" | /usr/bin/awk '{print $1}')" \
     --arg nodeInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/qualification-node-app.json" | /usr/bin/awk '{print $1}')" \
     --arg qualificationInventory "$(/usr/bin/shasum -a 256 "$STAGE_DIR/inventories/qualification.json" | /usr/bin/awk '{print $1}')" \
@@ -610,7 +610,7 @@ EOF
        toolchain: {developer_dir: $developerDir, xcodebuild_version: $xcodebuildVersion,
          sdk_version: $sdkVersion, swiftc_version: $swiftcVersion},
        unsigned_inputs: {cli_inventory_sha256: $cliInventory,
-         peekaboo_inventory_sha256: $appInventory,
+         wink_inventory_sha256: $appInventory,
          playground_inventory_sha256: $playgroundInventory,
          qualification_node_inventory_sha256: $nodeInventory,
          qualification_inventory_sha256: $qualificationInventory,
@@ -661,13 +661,13 @@ architecture_cdhashes_json() {
 }
 
 node_arch_cdhashes_json() {
-  architecture_cdhashes_json "$1" boo.peekaboo.qualification-node
+  architecture_cdhashes_json "$1" boo.wink.qualification-node
 }
 
 verify_node_entitlements() {
   local binary="$1"
   local work_dir expected_json actual_plist actual_json architecture
-  work_dir="$(mktemp -d /tmp/peekaboo-node-entitlements.XXXXXX)" || return 1
+  work_dir="$(mktemp -d /tmp/wink-node-entitlements.XXXXXX)" || return 1
   expected_json="$(/usr/bin/plutil -convert json -o - "$ROOT_DIR/scripts/qualification-node.entitlements")" || {
     rm -rf -- "$work_dir"; return 1;
   }
@@ -742,31 +742,31 @@ sign_code_phase() {
   signing_root="$(mktemp -d "$STAGE_DIR/.signing.XXXXXX")"
   trap 'rm -rf -- "${signing_root:-}"' EXIT INT TERM HUP
   /usr/bin/ditto "$UNSIGNED_CLI" "$signing_root/cli"
-  /usr/bin/ditto "$UNSIGNED_APP" "$signing_root/Peekaboo.app"
+  /usr/bin/ditto "$UNSIGNED_APP" "$signing_root/Wink.app"
   /usr/bin/ditto "$UNSIGNED_PLAYGROUND" "$signing_root/Playground.app"
-  /usr/bin/ditto "$UNSIGNED_NODE" "$signing_root/PeekabooQualificationNode.app"
+  /usr/bin/ditto "$UNSIGNED_NODE" "$signing_root/WinkQualificationNode.app"
   /usr/bin/ditto "$(dirname "$UNSIGNED_CONTROLLER")" "$signing_root/qualification"
   [[ "$(tree_digest "$signing_root/cli")" == "$(jq -r .unsigned_inputs.cli_inventory_sha256 "$BUILD_MANIFEST")" ]]
-  [[ "$(tree_digest "$signing_root/Peekaboo.app")" == \
-    "$(jq -r .unsigned_inputs.peekaboo_inventory_sha256 "$BUILD_MANIFEST")" ]]
+  [[ "$(tree_digest "$signing_root/Wink.app")" == \
+    "$(jq -r .unsigned_inputs.wink_inventory_sha256 "$BUILD_MANIFEST")" ]]
   [[ "$(tree_digest "$signing_root/Playground.app")" == \
     "$(jq -r .unsigned_inputs.playground_inventory_sha256 "$BUILD_MANIFEST")" ]]
-  [[ "$(tree_digest "$signing_root/PeekabooQualificationNode.app")" == \
+  [[ "$(tree_digest "$signing_root/WinkQualificationNode.app")" == \
     "$(jq -r .unsigned_inputs.qualification_node_inventory_sha256 "$BUILD_MANIFEST")" ]]
   [[ "$(tree_digest "$signing_root/qualification")" == \
     "$(jq -r .unsigned_inputs.qualification_inventory_sha256 "$BUILD_MANIFEST")" ]]
   verify_playground_manifest "$signing_root/Playground.app" || fail 'private Playground snapshot changed'
-  [[ "$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$signing_root/cli/peekaboo" \
-    --key PeekabooSourceCommit)" == "$SOURCE_COMMIT" ]] || fail 'private CLI snapshot changed'
-  verify_node_source_manifest "$signing_root/PeekabooQualificationNode.app" || fail 'private Node snapshot changed'
+  [[ "$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$signing_root/cli/wink" \
+    --key WinkSourceCommit)" == "$SOURCE_COMMIT" ]] || fail 'private CLI snapshot changed'
+  verify_node_source_manifest "$signing_root/WinkQualificationNode.app" || fail 'private Node snapshot changed'
 
   for runtime_library in "$signing_root"/cli/libswiftCompatibility*.dylib; do
     [[ -e "$runtime_library" ]] && sign_leaf "$runtime_library"
   done
   "$ROOT_DIR/scripts/codesign-with-retry.sh" --force --options runtime --timestamp="$TIMESTAMP_URL" \
-    --identifier boo.peekaboo.peekaboo --sign "$EXPECTED_IDENTITY" "$signing_root/cli/peekaboo"
-  "$ROOT_DIR/scripts/sign-release-app.sh" --app "$signing_root/Peekaboo.app" \
-    --entitlements "$ROOT_DIR/Apps/Mac/Peekaboo/Peekaboo.entitlements" \
+    --identifier boo.wink.wink --sign "$EXPECTED_IDENTITY" "$signing_root/cli/wink"
+  "$ROOT_DIR/scripts/sign-release-app.sh" --app "$signing_root/Wink.app" \
+    --entitlements "$ROOT_DIR/Apps/Mac/Wink/Wink.entitlements" \
     --sign-identity "$EXPECTED_IDENTITY" --timestamp-url "$TIMESTAMP_URL"
 
   playground_main="$signing_root/Playground.app/Contents/MacOS/Playground"
@@ -783,52 +783,52 @@ sign_code_phase() {
   sign_leaf "$signing_root/Playground.app"
   "$ROOT_DIR/scripts/codesign-with-retry.sh" --force --options runtime --timestamp="$TIMESTAMP_URL" \
     --entitlements "$ROOT_DIR/scripts/qualification-node.entitlements" \
-    --identifier boo.peekaboo.qualification-node --sign "$EXPECTED_IDENTITY" \
-    "$signing_root/PeekabooQualificationNode.app/Contents/MacOS/node"
+    --identifier boo.wink.qualification-node --sign "$EXPECTED_IDENTITY" \
+    "$signing_root/WinkQualificationNode.app/Contents/MacOS/node"
   "$ROOT_DIR/scripts/codesign-with-retry.sh" --force --options runtime --timestamp="$TIMESTAMP_URL" \
     --entitlements "$ROOT_DIR/scripts/qualification-node.entitlements" \
-    --sign "$EXPECTED_IDENTITY" "$signing_root/PeekabooQualificationNode.app"
+    --sign "$EXPECTED_IDENTITY" "$signing_root/WinkQualificationNode.app"
   for runtime_library in "$signing_root"/qualification/libswiftCompatibility*.dylib; do
     [[ -e "$runtime_library" ]] && sign_leaf "$runtime_library"
   done
   "$ROOT_DIR/scripts/codesign-with-retry.sh" --force --options runtime --timestamp="$TIMESTAMP_URL" \
-    --identifier boo.peekaboo.peekaboo-certification-controller --sign "$EXPECTED_IDENTITY" \
-    "$signing_root/qualification/peekaboo-certification-controller"
+    --identifier boo.wink.wink-certification-controller --sign "$EXPECTED_IDENTITY" \
+    "$signing_root/qualification/wink-certification-controller"
   "$ROOT_DIR/scripts/codesign-with-retry.sh" --force --options runtime --timestamp="$TIMESTAMP_URL" \
-    --identifier boo.peekaboo.background-computer-use-probe --sign "$EXPECTED_IDENTITY" \
+    --identifier boo.wink.background-computer-use-probe --sign "$EXPECTED_IDENTITY" \
     "$signing_root/qualification/background-computer-use-probe"
 
-  verify_foundation_signature "$signing_root/cli/peekaboo" || fail 'CLI signer mismatch'
-  architecture_cdhashes_json "$signing_root/cli/peekaboo" boo.peekaboo.peekaboo >/dev/null || \
+  verify_foundation_signature "$signing_root/cli/wink" || fail 'CLI signer mismatch'
+  architecture_cdhashes_json "$signing_root/cli/wink" boo.wink.wink >/dev/null || \
     fail 'CLI per-architecture signature mismatch'
-  /usr/bin/codesign --verify --deep --strict "$signing_root/Peekaboo.app"
-  verify_foundation_signature "$signing_root/Peekaboo.app" || fail 'app signer mismatch'
+  /usr/bin/codesign --verify --deep --strict "$signing_root/Wink.app"
+  verify_foundation_signature "$signing_root/Wink.app" || fail 'app signer mismatch'
   /usr/bin/codesign --verify --deep --strict "$signing_root/Playground.app"
   verify_foundation_signature "$signing_root/Playground.app" || fail 'Playground signer mismatch'
-  /usr/bin/codesign --verify --deep --strict "$signing_root/PeekabooQualificationNode.app"
-  verify_foundation_signature "$signing_root/PeekabooQualificationNode.app" || fail 'Node signer mismatch'
-  node_arch_cdhashes_json "$signing_root/PeekabooQualificationNode.app/Contents/MacOS/node" >/dev/null || \
+  /usr/bin/codesign --verify --deep --strict "$signing_root/WinkQualificationNode.app"
+  verify_foundation_signature "$signing_root/WinkQualificationNode.app" || fail 'Node signer mismatch'
+  node_arch_cdhashes_json "$signing_root/WinkQualificationNode.app/Contents/MacOS/node" >/dev/null || \
     fail 'Node per-architecture signature mismatch'
-  verify_node_entitlements "$signing_root/PeekabooQualificationNode.app/Contents/MacOS/node" || \
+  verify_node_entitlements "$signing_root/WinkQualificationNode.app/Contents/MacOS/node" || \
     fail 'Node JIT entitlements mismatch'
-  verify_foundation_signature "$signing_root/qualification/peekaboo-certification-controller" || \
+  verify_foundation_signature "$signing_root/qualification/wink-certification-controller" || \
     fail 'controller signer mismatch'
   controller_details="$(terminal_artifact_signature_details \
-    "$signing_root/qualification/peekaboo-certification-controller")"
+    "$signing_root/qualification/wink-certification-controller")"
   [[ "$(terminal_artifact_signature_field_from_details "$controller_details" Identifier)" == \
-    boo.peekaboo.peekaboo-certification-controller ]] || fail 'controller identifier mismatch'
-  architecture_cdhashes_json "$signing_root/qualification/peekaboo-certification-controller" \
-    boo.peekaboo.peekaboo-certification-controller >/dev/null || fail 'controller architecture identity mismatch'
+    boo.wink.wink-certification-controller ]] || fail 'controller identifier mismatch'
+  architecture_cdhashes_json "$signing_root/qualification/wink-certification-controller" \
+    boo.wink.wink-certification-controller >/dev/null || fail 'controller architecture identity mismatch'
   MAC_RELEASE_CODESIGN_IDENTITY="$EXPECTED_IDENTITY" MAC_RELEASE_CODESIGN_TEAM_ID="$EXPECTED_TEAM_ID" \
     "$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh" \
-    "$signing_root/qualification/peekaboo-certification-controller" "$signing_root/qualification"
+    "$signing_root/qualification/wink-certification-controller" "$signing_root/qualification"
   verify_foundation_signature "$signing_root/qualification/background-computer-use-probe" || \
     fail 'monitor signer mismatch'
   monitor_details="$(terminal_artifact_signature_details "$signing_root/qualification/background-computer-use-probe")"
   [[ "$(terminal_artifact_signature_field_from_details "$monitor_details" Identifier)" == \
-    boo.peekaboo.background-computer-use-probe ]] || fail 'monitor identifier mismatch'
+    boo.wink.background-computer-use-probe ]] || fail 'monitor identifier mismatch'
   architecture_cdhashes_json "$signing_root/qualification/background-computer-use-probe" \
-    boo.peekaboo.background-computer-use-probe >/dev/null || fail 'monitor architecture identity mismatch'
+    boo.wink.background-computer-use-probe >/dev/null || fail 'monitor architecture identity mismatch'
   MAC_RELEASE_CODESIGN_IDENTITY="$EXPECTED_IDENTITY" MAC_RELEASE_CODESIGN_TEAM_ID="$EXPECTED_TEAM_ID" \
     "$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh" \
     "$signing_root/qualification/background-computer-use-probe" "$signing_root/qualification"
@@ -845,15 +845,15 @@ sign_code_phase() {
         fail "Mach-O $architecture signer mismatch: $candidate"
     done
   done < <(find "$signing_root" -type f -print0)
-  native_only_verify_macho "$signing_root/qualification/peekaboo-certification-controller" \
+  native_only_verify_macho "$signing_root/qualification/wink-certification-controller" \
     'signed certification controller' /usr/bin/nm /usr/bin/strings >/dev/null || \
     fail 'signed controller violates native-only policy'
   native_only_verify_macho "$signing_root/qualification/background-computer-use-probe" \
     'signed qualification monitor' /usr/bin/nm /usr/bin/strings >/dev/null || \
     fail 'signed monitor violates native-only policy'
-  "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$signing_root/Peekaboo.app"
+  "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$signing_root/Wink.app"
   "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$signing_root/Playground.app"
-  "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$signing_root/PeekabooQualificationNode.app"
+  "$ROOT_DIR/scripts/verify-native-only-app.sh" --app "$signing_root/WinkQualificationNode.app"
   terminal_artifact_assert_no_xattrs "$signing_root" || fail 'signing introduced unbound xattrs'
   "$ROOT_DIR/scripts/atomic-rename-exclusive.rb" "$signing_root" "$SIGNED_ROOT"
   signing_root=""
@@ -868,8 +868,8 @@ validate_notary_receipt() {
   local final_sha code_target signature_details code_cdhash code_identifier submission_sha submission_size
   [[ -f "$receipt" && ! -L "$receipt" ]] || return 1
   code_target="$artifact"
-  [[ "$expected_kind" != controller_tree ]] || code_target="$artifact/peekaboo-certification-controller"
-  [[ "$expected_kind" != cli_tree ]] || code_target="$artifact/peekaboo"
+  [[ "$expected_kind" != controller_tree ]] || code_target="$artifact/wink-certification-controller"
+  [[ "$expected_kind" != cli_tree ]] || code_target="$artifact/wink"
   signature_details="$(terminal_artifact_signature_details "$code_target")" || return 1
   code_cdhash="$(terminal_artifact_signature_field_from_details "$signature_details" CDHash)"
   code_cdhash="$(printf '%s' "$code_cdhash" | /usr/bin/tr '[:upper:]' '[:lower:]')"
@@ -924,7 +924,7 @@ build_dmg_phase() {
   record_toolchain
   set_stage_paths
   validate_notary_receipt "$APP_NOTARY_TRANSACTION/receipt.json" app "$NOTARIZED_APP" || \
-    fail 'Peekaboo.app notary receipt mismatch'
+    fail 'Wink.app notary receipt mismatch'
   [[ ! -e "$DMG_ROOT" ]] || fail 'DMG stage already exists'
   dmg_build_root="$(mktemp -d "$STAGE_DIR/.dmg.XXXXXX")"
   trap 'rm -rf -- "${dmg_build_root:-}"' EXIT INT TERM HUP
@@ -976,7 +976,7 @@ verify_notarized_inputs() {
   validate_notary_receipt "$DMG_NOTARY_TRANSACTION/receipt.json" dmg "$NOTARIZED_DMG" || return 1
   validate_notary_receipt "$CONTROLLER_NOTARY_TRANSACTION/receipt.json" controller_tree \
     "$SIGNED_CONTROLLER_ROOT" || return 1
-  /usr/bin/codesign --verify --strict --check-notarization -R=notarized "$SIGNED_CLI/peekaboo" || return 1
+  /usr/bin/codesign --verify --strict --check-notarization -R=notarized "$SIGNED_CLI/wink" || return 1
   /usr/bin/codesign --verify --deep --strict --check-notarization -R=notarized "$NOTARIZED_APP" || return 1
   /usr/bin/xcrun stapler validate "$NOTARIZED_APP" || return 1
   /usr/bin/codesign --verify --deep --strict --check-notarization -R=notarized "$NOTARIZED_PLAYGROUND" || return 1
@@ -1038,7 +1038,7 @@ publish_phase() {
     fail 'publish output path must be new and absolute'
   verify_unsigned_stage
   verify_notarized_inputs || fail 'notarized inputs or receipts are incomplete'
-  dmg_payload_check="$(mktemp /tmp/peekaboo-dmg-payload-check.XXXXXX)"
+  dmg_payload_check="$(mktemp /tmp/wink-dmg-payload-check.XXXXXX)"
   terminal_artifact_run_build node "$ROOT_DIR/scripts/terminal-dmg-payload.mjs" \
     --dmg "$NOTARIZED_DMG" --expected-app-tree "$APP_NOTARY_TRANSACTION/tree.json" \
     --tree-generator "$ROOT_DIR/scripts/artifact-tree-manifest.rb" > "$dmg_payload_check"
@@ -1054,84 +1054,84 @@ publish_phase() {
     fail 'post-notary qualification Node JavaScript/JIT probe failed'
   verify_playground_manifest "$NOTARIZED_PLAYGROUND" || fail 'notarized Playground provenance changed'
   verify_node_source_manifest "$NOTARIZED_NODE" signed || fail 'notarized Node provenance changed'
-  cli_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$SIGNED_CLI/peekaboo" \
-    --key PeekabooSourceCommit)"
-  cli_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$SIGNED_CLI/peekaboo" \
+  cli_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$SIGNED_CLI/wink" \
+    --key WinkSourceCommit)"
+  cli_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$SIGNED_CLI/wink" \
     --key CFBundleShortVersionString)"
-  app_source="$(/usr/libexec/PlistBuddy -c 'Print :PeekabooSourceCommit' "$NOTARIZED_APP/Contents/Info.plist")"
+  app_source="$(/usr/libexec/PlistBuddy -c 'Print :WinkSourceCommit' "$NOTARIZED_APP/Contents/Info.plist")"
   app_version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$NOTARIZED_APP/Contents/Info.plist")"
   [[ "$cli_source" == "$SOURCE_COMMIT" && "$app_source" == "$SOURCE_COMMIT" && \
     "$cli_version" == "$VERSION" && "$app_version" == "$VERSION" ]] || fail 'final source/version mismatch'
 
   output_parent="$(dirname "$OUTPUT_DIR")"
   mkdir -p "$output_parent"
-  publish_root="$(mktemp -d "$output_parent/.peekaboo-terminal-publish.XXXXXX")"
-  mkdir -p "$publish_root/notary" "$publish_root/peekaboo-macos-universal"
-  cp "$SIGNED_CLI/peekaboo" "$publish_root/peekaboo-macos-universal/"
+  publish_root="$(mktemp -d "$output_parent/.wink-terminal-publish.XXXXXX")"
+  mkdir -p "$publish_root/notary" "$publish_root/wink-macos-universal"
+  cp "$SIGNED_CLI/wink" "$publish_root/wink-macos-universal/"
   for runtime_library in "$SIGNED_CLI"/libswiftCompatibility*.dylib; do
-    [[ -e "$runtime_library" ]] && cp "$runtime_library" "$publish_root/peekaboo-macos-universal/"
+    [[ -e "$runtime_library" ]] && cp "$runtime_library" "$publish_root/wink-macos-universal/"
   done
-  materialize_committed_file LICENSE "$publish_root/peekaboo-macos-universal/LICENSE"
-  printf '%s\n' "$VERSION" > "$publish_root/peekaboo-macos-universal/VERSION"
-  terminal_artifact_assert_no_xattrs "$publish_root/peekaboo-macos-universal" || \
+  materialize_committed_file LICENSE "$publish_root/wink-macos-universal/LICENSE"
+  printf '%s\n' "$VERSION" > "$publish_root/wink-macos-universal/VERSION"
+  terminal_artifact_assert_no_xattrs "$publish_root/wink-macos-universal" || \
     fail 'CLI package contains unbound xattrs'
-  terminal_artifact_tree_manifest "$publish_root/peekaboo-macos-universal" "$publish_root/cli-tree.json"
-  /usr/bin/tar -czf "$publish_root/peekaboo-macos-universal.tar.gz" -C "$publish_root" \
-    peekaboo-macos-universal
-  find "$publish_root/peekaboo-macos-universal" -depth -delete
+  terminal_artifact_tree_manifest "$publish_root/wink-macos-universal" "$publish_root/cli-tree.json"
+  /usr/bin/tar -czf "$publish_root/wink-macos-universal.tar.gz" -C "$publish_root" \
+    wink-macos-universal
+  find "$publish_root/wink-macos-universal" -depth -delete
   cp "$CLI_NOTARY_TRANSACTION/tree.json" "$publish_root/cli-notary-tree.json"
 
-  terminal_artifact_zip_app_exact "$NOTARIZED_APP" "$publish_root/Peekaboo-$VERSION.app.zip" \
-    "$publish_root/peekaboo-app-tree.json"
+  terminal_artifact_zip_app_exact "$NOTARIZED_APP" "$publish_root/Wink-$VERSION.app.zip" \
+    "$publish_root/wink-app-tree.json"
   terminal_artifact_zip_app_exact "$NOTARIZED_PLAYGROUND" "$publish_root/Playground-$VERSION.app.zip" \
     "$publish_root/playground-app-tree.json"
   terminal_artifact_zip_app_exact "$NOTARIZED_NODE" \
-    "$publish_root/PeekabooQualificationNode-26.9.0.app.zip" \
+    "$publish_root/WinkQualificationNode-26.9.0.app.zip" \
     "$publish_root/qualification-node-app-tree.json"
-  /usr/bin/cmp -s "$APP_NOTARY_TRANSACTION/tree.json" "$publish_root/peekaboo-app-tree.json" || \
-    fail 'Peekaboo.app notary tree differs from package tree'
+  /usr/bin/cmp -s "$APP_NOTARY_TRANSACTION/tree.json" "$publish_root/wink-app-tree.json" || \
+    fail 'Wink.app notary tree differs from package tree'
   /usr/bin/cmp -s "$PLAYGROUND_NOTARY_TRANSACTION/tree.json" "$publish_root/playground-app-tree.json" || \
     fail 'Playground notary tree differs from package tree'
   /usr/bin/cmp -s "$NODE_NOTARY_TRANSACTION/tree.json" "$publish_root/qualification-node-app-tree.json" || \
     fail 'Node notary tree differs from package tree'
-  cp "$NOTARIZED_DMG" "$publish_root/Peekaboo-$VERSION.dmg"
-  cp "$DMG_PAYLOAD_RECEIPT" "$publish_root/peekaboo-dmg-payload.json"
+  cp "$NOTARIZED_DMG" "$publish_root/Wink-$VERSION.dmg"
+  cp "$DMG_PAYLOAD_RECEIPT" "$publish_root/wink-dmg-payload.json"
   /usr/bin/ditto "$SIGNED_CONTROLLER_ROOT" "$publish_root/qualification"
   terminal_artifact_tree_manifest "$publish_root/qualification" "$publish_root/qualification-tree.json"
   /usr/bin/cmp -s "$CONTROLLER_NOTARY_TRANSACTION/tree.json" "$publish_root/qualification-tree.json" || \
     fail 'controller notary tree differs from retained qualification tree'
   retain_notary_transaction "$CLI_NOTARY_TRANSACTION" cli.json
-  retain_notary_transaction "$APP_NOTARY_TRANSACTION" peekaboo-app.json
+  retain_notary_transaction "$APP_NOTARY_TRANSACTION" wink-app.json
   retain_notary_transaction "$PLAYGROUND_NOTARY_TRANSACTION" playground-app.json
-  retain_notary_transaction "$DMG_NOTARY_TRANSACTION" peekaboo-dmg.json
+  retain_notary_transaction "$DMG_NOTARY_TRANSACTION" wink-dmg.json
   retain_notary_transaction "$NODE_NOTARY_TRANSACTION" qualification-node-app.json
   retain_notary_transaction "$CONTROLLER_NOTARY_TRANSACTION" certification-controller.json
 
-  cli_cdhash="$(terminal_artifact_cdhash "$SIGNED_CLI/peekaboo" arm64)"
-  cli_cdhashes="$(architecture_cdhashes_json "$SIGNED_CLI/peekaboo" boo.peekaboo.peekaboo)"
+  cli_cdhash="$(terminal_artifact_cdhash "$SIGNED_CLI/wink" arm64)"
+  cli_cdhashes="$(architecture_cdhashes_json "$SIGNED_CLI/wink" boo.wink.wink)"
   app_cdhash="$(terminal_artifact_cdhash "$NOTARIZED_APP" arm64)"
   playground_cdhash="$(terminal_artifact_cdhash "$NOTARIZED_PLAYGROUND" arm64)"
   dmg_cdhash="$(terminal_artifact_cdhash "$NOTARIZED_DMG")"
   node_app_cdhash="$(terminal_artifact_cdhash "$NOTARIZED_NODE" arm64)"
   node_binary_cdhashes="$(node_arch_cdhashes_json "$node_binary")" || fail 'signed Node architecture identity drifted'
-  node_source_manifest="$NOTARIZED_NODE/Contents/Resources/PeekabooQualificationNodeSource.json"
+  node_source_manifest="$NOTARIZED_NODE/Contents/Resources/WinkQualificationNodeSource.json"
   node_source_manifest_sha="$(/usr/bin/shasum -a 256 "$node_source_manifest" | /usr/bin/awk '{print $1}')"
-  retained_controller="$publish_root/qualification/peekaboo-certification-controller"
+  retained_controller="$publish_root/qualification/wink-certification-controller"
   retained_monitor="$publish_root/qualification/background-computer-use-probe"
   controller_cdhash="$(terminal_artifact_cdhash "$retained_controller" arm64)"
   controller_cdhashes="$(architecture_cdhashes_json "$retained_controller" \
-    boo.peekaboo.peekaboo-certification-controller)"
+    boo.wink.wink-certification-controller)"
   controller_source="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$retained_controller" \
-    --key PeekabooSourceCommit)"
+    --key WinkSourceCommit)"
   controller_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$retained_controller" \
     --key CFBundleShortVersionString)"
   [[ "$controller_source" == "$SOURCE_COMMIT" && "$controller_version" == "$VERSION" ]] || \
     fail 'retained controller source/version mismatch'
   monitor_cdhash="$(terminal_artifact_cdhash "$retained_monitor" arm64)"
   monitor_cdhashes="$(architecture_cdhashes_json "$retained_monitor" \
-    boo.peekaboo.background-computer-use-probe)"
+    boo.wink.background-computer-use-probe)"
   monitor_source_commit="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$retained_monitor" \
-    --key PeekabooSourceCommit)"
+    --key WinkSourceCommit)"
   monitor_version="$("$ROOT_DIR/scripts/read-macho-info-plist.sh" --binary "$retained_monitor" \
     --key CFBundleShortVersionString)"
   [[ "$monitor_source_commit" == "$SOURCE_COMMIT" && "$monitor_version" == "$VERSION" ]] || \
@@ -1153,30 +1153,30 @@ publish_phase() {
   /usr/bin/cmp -s "$SOURCE_TREE_MANIFEST" "$publish_root/qualification-source-tree.json" || \
     fail 'sealed qualification source snapshot changed during publication'
   playground_manifest_sha="$(/usr/bin/shasum -a 256 \
-    "$NOTARIZED_PLAYGROUND/Contents/Resources/PeekabooPlaygroundSource.json" | /usr/bin/awk '{print $1}')"
+    "$NOTARIZED_PLAYGROUND/Contents/Resources/WinkPlaygroundSource.json" | /usr/bin/awk '{print $1}')"
 
   jq -n \
     --arg sourceCommit "$SOURCE_COMMIT" --arg version "$VERSION" \
     --arg lockPath "$CANONICAL_LOCK_RELATIVE" --arg lockSHA "$DEPENDENCY_LOCK_SHA256" \
     --arg developerDir "$EFFECTIVE_DEVELOPER_DIR" --arg xcodebuildVersion "$XCODEBUILD_VERSION" \
     --arg sdkVersion "$SDK_VERSION" --arg swiftcVersion "$SWIFTC_VERSION" \
-    --arg cliSHA "$(/usr/bin/shasum -a 256 "$publish_root/peekaboo-macos-universal.tar.gz" | /usr/bin/awk '{print $1}')" \
-    --argjson cliSize "$(/usr/bin/stat -f%z "$publish_root/peekaboo-macos-universal.tar.gz")" \
+    --arg cliSHA "$(/usr/bin/shasum -a 256 "$publish_root/wink-macos-universal.tar.gz" | /usr/bin/awk '{print $1}')" \
+    --argjson cliSize "$(/usr/bin/stat -f%z "$publish_root/wink-macos-universal.tar.gz")" \
     --arg cliCDHash "$cli_cdhash" --argjson cliCDHashes "$cli_cdhashes" \
     --arg cliTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/cli-tree.json" | /usr/bin/awk '{print $1}')" \
     --arg cliNotaryTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/cli-notary-tree.json" | /usr/bin/awk '{print $1}')" \
-    --arg appSHA "$(/usr/bin/shasum -a 256 "$publish_root/Peekaboo-$VERSION.app.zip" | /usr/bin/awk '{print $1}')" \
-    --argjson appSize "$(/usr/bin/stat -f%z "$publish_root/Peekaboo-$VERSION.app.zip")" \
-    --arg appCDHash "$app_cdhash" --arg appTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/peekaboo-app-tree.json" | /usr/bin/awk '{print $1}')" \
-    --arg dmgSHA "$(/usr/bin/shasum -a 256 "$publish_root/Peekaboo-$VERSION.dmg" | /usr/bin/awk '{print $1}')" \
-    --argjson dmgSize "$(/usr/bin/stat -f%z "$publish_root/Peekaboo-$VERSION.dmg")" --arg dmgCDHash "$dmg_cdhash" \
-    --arg dmgPayloadSHA "$(/usr/bin/shasum -a 256 "$publish_root/peekaboo-dmg-payload.json" | /usr/bin/awk '{print $1}')" \
+    --arg appSHA "$(/usr/bin/shasum -a 256 "$publish_root/Wink-$VERSION.app.zip" | /usr/bin/awk '{print $1}')" \
+    --argjson appSize "$(/usr/bin/stat -f%z "$publish_root/Wink-$VERSION.app.zip")" \
+    --arg appCDHash "$app_cdhash" --arg appTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/wink-app-tree.json" | /usr/bin/awk '{print $1}')" \
+    --arg dmgSHA "$(/usr/bin/shasum -a 256 "$publish_root/Wink-$VERSION.dmg" | /usr/bin/awk '{print $1}')" \
+    --argjson dmgSize "$(/usr/bin/stat -f%z "$publish_root/Wink-$VERSION.dmg")" --arg dmgCDHash "$dmg_cdhash" \
+    --arg dmgPayloadSHA "$(/usr/bin/shasum -a 256 "$publish_root/wink-dmg-payload.json" | /usr/bin/awk '{print $1}')" \
     --arg playgroundSHA "$(/usr/bin/shasum -a 256 "$publish_root/Playground-$VERSION.app.zip" | /usr/bin/awk '{print $1}')" \
     --argjson playgroundSize "$(/usr/bin/stat -f%z "$publish_root/Playground-$VERSION.app.zip")" \
     --arg playgroundCDHash "$playground_cdhash" --arg playgroundTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/playground-app-tree.json" | /usr/bin/awk '{print $1}')" \
     --arg playgroundManifestSHA "$playground_manifest_sha" \
-    --arg nodeZipSHA "$(/usr/bin/shasum -a 256 "$publish_root/PeekabooQualificationNode-26.9.0.app.zip" | /usr/bin/awk '{print $1}')" \
-    --argjson nodeZipSize "$(/usr/bin/stat -f%z "$publish_root/PeekabooQualificationNode-26.9.0.app.zip")" \
+    --arg nodeZipSHA "$(/usr/bin/shasum -a 256 "$publish_root/WinkQualificationNode-26.9.0.app.zip" | /usr/bin/awk '{print $1}')" \
+    --argjson nodeZipSize "$(/usr/bin/stat -f%z "$publish_root/WinkQualificationNode-26.9.0.app.zip")" \
     --arg nodeAppCDHash "$node_app_cdhash" \
     --arg nodeTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/qualification-node-app-tree.json" | /usr/bin/awk '{print $1}')" \
     --arg nodeSourceManifestSHA "$node_source_manifest_sha" \
@@ -1191,7 +1191,7 @@ publish_phase() {
     --arg controllerTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/qualification-tree.json" | /usr/bin/awk '{print $1}')" \
     --arg controllerSourceAggregate "$controller_source_aggregate" \
     --arg controllerSourceReceiptSHA "$(/usr/bin/shasum -a 256 "$publish_root/controller-source-manifest.json" | /usr/bin/awk '{print $1}')" \
-    --arg cliExecutableSHA "$(/usr/bin/shasum -a 256 "$SIGNED_CLI/peekaboo" | /usr/bin/awk '{print $1}')" \
+    --arg cliExecutableSHA "$(/usr/bin/shasum -a 256 "$SIGNED_CLI/wink" | /usr/bin/awk '{print $1}')" \
     --arg monitorSourceSHA "$(/usr/bin/shasum -a 256 "$publish_root/qualification-source/scripts/support/background-computer-use-probe.swift" | /usr/bin/awk '{print $1}')" \
     --arg monitorExecutableSHA "$(/usr/bin/shasum -a 256 "$retained_monitor" | /usr/bin/awk '{print $1}')" \
     --argjson monitorSize "$(/usr/bin/stat -f%z "$retained_monitor")" \
@@ -1202,9 +1202,9 @@ publish_phase() {
     --arg archivePolicySHA "$(/usr/bin/shasum -a 256 "$publish_root/tools/terminal-archive-policy.mjs" | /usr/bin/awk '{print $1}')" \
     --arg dmgPolicySHA "$(/usr/bin/shasum -a 256 "$publish_root/tools/terminal-dmg-payload.mjs" | /usr/bin/awk '{print $1}')" \
     --arg sourceTreeSHA "$(/usr/bin/shasum -a 256 "$publish_root/qualification-source-tree.json" | /usr/bin/awk '{print $1}')" \
-    --slurpfile cliNotary "$publish_root/notary/cli.json" --slurpfile appNotary "$publish_root/notary/peekaboo-app.json" \
+    --slurpfile cliNotary "$publish_root/notary/cli.json" --slurpfile appNotary "$publish_root/notary/wink-app.json" \
     --slurpfile playgroundNotary "$publish_root/notary/playground-app.json" \
-    --slurpfile dmgNotary "$publish_root/notary/peekaboo-dmg.json" \
+    --slurpfile dmgNotary "$publish_root/notary/wink-dmg.json" \
     --slurpfile nodeNotary "$publish_root/notary/qualification-node-app.json" \
     --slurpfile controllerNotary "$publish_root/notary/certification-controller.json" '
       {schema: 7, phase: "candidate_verified_not_installed", root: ".",
@@ -1222,8 +1222,8 @@ publish_phase() {
          release_helper: {commit: "20ab9a5e6bb1107788366726868f1a9b4c16d953",
            executable_sha256: "e65e06ef89ec90ebfc537d28748a3c4de8ce89bd09b51e4d67ba4bdd95427255",
            library_sha256: "c29d3c46506c2d0bd2db7ab688bd3108d54e8824074a4fe800de6e3fe17284c9"}},
-       notarization: {cli: $cliNotary[0], peekaboo_app: $appNotary[0],
-         playground_app: $playgroundNotary[0], peekaboo_dmg: $dmgNotary[0],
+       notarization: {cli: $cliNotary[0], wink_app: $appNotary[0],
+         playground_app: $playgroundNotary[0], wink_dmg: $dmgNotary[0],
          qualification_node_app: $nodeNotary[0], certification_controller: $controllerNotary[0]},
        cli: {sha256: $cliExecutableSHA, cdhash: $cliCDHash},
        app: {source_commit: $sourceCommit, zip_sha256: $appSHA, cdhash: $appCDHash},
@@ -1233,30 +1233,30 @@ publish_phase() {
          source_sha256: $monitorSourceSHA, relative_path: "qualification/background-computer-use-probe",
          executable_sha256: $monitorExecutableSHA, cdhash: $monitorCDHash},
        controller: {source_commit: $sourceCommit, source_manifest_sha256: $controllerSourceAggregate,
-         relative_path: "qualification/peekaboo-certification-controller",
+         relative_path: "qualification/wink-certification-controller",
          executable_sha256: $controllerSHA, cdhash: $controllerCDHash, team_id: "FWJYW4S8P8",
          authority: "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)",
-         signing_identifier: "boo.peekaboo.peekaboo-certification-controller",
+         signing_identifier: "boo.wink.wink-certification-controller",
          architectures: ["arm64", "x86_64"]},
        verification: {cli_source: true, cli_native_only: true, monitor_source: true,
          monitor_native_only: true, controller_source: true, controller_native_only: true,
          app_source: true, app_native_only: true, playground_native_only: true},
        artifacts: {
-         cli: {path: "peekaboo-macos-universal.tar.gz", sha256: $cliSHA, size: $cliSize,
+         cli: {path: "wink-macos-universal.tar.gz", sha256: $cliSHA, size: $cliSize,
            cdhash: $cliCDHash, cdhashes: $cliCDHashes, source_commit: $sourceCommit,
            tree_manifest: {path: "cli-tree.json", sha256: $cliTreeSHA},
            notarized_tree_manifest: {path: "cli-notary-tree.json", sha256: $cliNotaryTreeSHA}},
-         peekaboo_app_zip: {path: ("Peekaboo-" + $version + ".app.zip"), sha256: $appSHA,
+         wink_app_zip: {path: ("Wink-" + $version + ".app.zip"), sha256: $appSHA,
            size: $appSize, cdhash: $appCDHash, source_commit: $sourceCommit,
-           tree_manifest: {path: "peekaboo-app-tree.json", sha256: $appTreeSHA}},
-         peekaboo_dmg: {path: ("Peekaboo-" + $version + ".dmg"), sha256: $dmgSHA,
+           tree_manifest: {path: "wink-app-tree.json", sha256: $appTreeSHA}},
+         wink_dmg: {path: ("Wink-" + $version + ".dmg"), sha256: $dmgSHA,
            size: $dmgSize, cdhash: $dmgCDHash, source_commit: $sourceCommit,
-           payload_receipt: {path: "peekaboo-dmg-payload.json", sha256: $dmgPayloadSHA}},
+           payload_receipt: {path: "wink-dmg-payload.json", sha256: $dmgPayloadSHA}},
          playground_app_zip: {path: ("Playground-" + $version + ".app.zip"),
            sha256: $playgroundSHA, size: $playgroundSize, cdhash: $playgroundCDHash,
            source_commit: $sourceCommit, embedded_manifest_sha256: $playgroundManifestSHA,
            tree_manifest: {path: "playground-app-tree.json", sha256: $playgroundTreeSHA}},
-         qualification_node_app_zip: {path: "PeekabooQualificationNode-26.9.0.app.zip",
+         qualification_node_app_zip: {path: "WinkQualificationNode-26.9.0.app.zip",
            sha256: $nodeZipSHA, size: $nodeZipSize, cdhash: $nodeAppCDHash,
            source_commit: $sourceCommit, embedded_runtime_manifest_sha256: $nodeSourceManifestSHA,
            tree_manifest: {path: "qualification-node-app-tree.json", sha256: $nodeTreeSHA},
@@ -1271,14 +1271,14 @@ publish_phase() {
          qualification_monitor: {path: "qualification/background-computer-use-probe",
            sha256: $monitorExecutableSHA, size: $monitorSize, cdhash: $monitorCDHash,
            cdhashes: $monitorCDHashes,
-           source_commit: $sourceCommit, identifier: "boo.peekaboo.background-computer-use-probe",
+           source_commit: $sourceCommit, identifier: "boo.wink.background-computer-use-probe",
            architectures: ["arm64", "x86_64"],
            source: {path: "scripts/support/background-computer-use-probe.swift", sha256: $monitorSourceSHA},
            tree_manifest: {path: "qualification-tree.json", sha256: $controllerTreeSHA}},
-         certification_controller: {path: "qualification/peekaboo-certification-controller",
+         certification_controller: {path: "qualification/wink-certification-controller",
            sha256: $controllerSHA, size: $controllerSize, cdhash: $controllerCDHash,
            cdhashes: $controllerCDHashes,
-           source_commit: $sourceCommit, identifier: "boo.peekaboo.peekaboo-certification-controller",
+           source_commit: $sourceCommit, identifier: "boo.wink.wink-certification-controller",
            architectures: ["arm64", "x86_64"],
            source_manifest: {path: "controller-source-manifest.json",
              sha256: $controllerSourceReceiptSHA, aggregate_sha256: $controllerSourceAggregate},
@@ -1287,11 +1287,11 @@ publish_phase() {
   chmod 444 "$publish_root/terminal-artifacts.json" "$publish_root/controller-source-manifest.json" \
     "$publish_root"/*-tree.json "$publish_root/notary"/*.json "$publish_root/tools"/*
   (cd "$publish_root" && /usr/bin/shasum -a 256 \
-    peekaboo-macos-universal.tar.gz "Peekaboo-$VERSION.app.zip" "Peekaboo-$VERSION.dmg" \
-    "Playground-$VERSION.app.zip" PeekabooQualificationNode-26.9.0.app.zip \
-    cli-tree.json cli-notary-tree.json peekaboo-app-tree.json peekaboo-dmg-payload.json \
+    wink-macos-universal.tar.gz "Wink-$VERSION.app.zip" "Wink-$VERSION.dmg" \
+    "Playground-$VERSION.app.zip" WinkQualificationNode-26.9.0.app.zip \
+    cli-tree.json cli-notary-tree.json wink-app-tree.json wink-dmg-payload.json \
     playground-app-tree.json qualification-node-app-tree.json \
-    qualification/peekaboo-certification-controller qualification/background-computer-use-probe \
+    qualification/wink-certification-controller qualification/background-computer-use-probe \
     qualification-tree.json controller-source-manifest.json qualification-source-tree.json \
     tools/validate-terminal-artifact-manifest.mjs tools/artifact-tree-manifest.rb \
     tools/terminal-archive-policy.mjs tools/terminal-dmg-payload.mjs \
@@ -1312,14 +1312,14 @@ run_codesign_phase() {
   expose_service_tokens
   set +e
   /usr/bin/env -u GH_TOKEN -u GITHUB_TOKEN -u NODE_AUTH_TOKEN -u NPM_CONFIG_USERCONFIG -u NPM_TOKEN \
-    -u PEEKABOO_TERMINAL_TEST_MODE \
+    -u WINK_TERMINAL_TEST_MODE \
     MAC_RELEASE_MANIFEST="$ROOT_DIR/.mac-release-terminal.env" \
     "$ROOT_DIR/scripts/mac-release" codesign-run -- \
     /usr/bin/env -u OP_SERVICE_ACCOUNT_TOKEN -u MOLTY_OP_SERVICE_ACCOUNT_TOKEN \
-    -u PEEKABOO_OP_SERVICE_TOKEN_FILE -u PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE \
+    -u WINK_OP_SERVICE_TOKEN_FILE -u WINK_MOLTY_OP_SERVICE_TOKEN_FILE \
     -u BASH_ENV -u ENV -u SHELLOPTS -u BASHOPTS -u CDPATH -u GLOBIGNORE \
     PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin \
-    /bin/bash --noprofile --norc -p -c 'exec "$@"' peekaboo-codesign-phase \
+    /bin/bash --noprofile --norc -p -c 'exec "$@"' wink-codesign-phase \
     "$ROOT_DIR/scripts/build-terminal-artifacts.sh" "$phase" --stage "$STAGE_DIR"
   command_result=$?
   set -e
@@ -1333,14 +1333,14 @@ run_notary_only() {
   expose_service_tokens
   set +e
   /usr/bin/env -u GH_TOKEN -u GITHUB_TOKEN -u NODE_AUTH_TOKEN -u NPM_CONFIG_USERCONFIG -u NPM_TOKEN \
-    -u PEEKABOO_TERMINAL_TEST_MODE \
+    -u WINK_TERMINAL_TEST_MODE \
     MAC_RELEASE_MANIFEST="$ROOT_DIR/.mac-release-terminal.env" \
     "$ROOT_DIR/scripts/mac-release" package-run -- \
     /usr/bin/env -u OP_SERVICE_ACCOUNT_TOKEN -u MOLTY_OP_SERVICE_ACCOUNT_TOKEN \
-    -u PEEKABOO_OP_SERVICE_TOKEN_FILE -u PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE \
+    -u WINK_OP_SERVICE_TOKEN_FILE -u WINK_MOLTY_OP_SERVICE_TOKEN_FILE \
     -u BASH_ENV -u ENV -u SHELLOPTS -u BASHOPTS -u CDPATH -u GLOBIGNORE \
     -u MAC_RELEASE_CODESIGN_KEYCHAIN -u MAC_RELEASE_CODESIGN_KEYCHAIN_PASSWORD -u CODESIGN_KEYCHAIN \
-    PATH=/usr/bin:/bin /bin/bash --noprofile --norc -p -c 'exec "$@"' peekaboo-notary-phase \
+    PATH=/usr/bin:/bin /bin/bash --noprofile --norc -p -c 'exec "$@"' wink-notary-phase \
     "$ROOT_DIR/scripts/notarize-terminal-artifact.sh" --notary-transport "$NOTARY_TRANSPORT" "$@"
   command_result=$?
   set -e
@@ -1370,12 +1370,12 @@ case "$COMMAND" in
     printf 'mac-release helper library sha256: %s\n' "$RELEASE_HELPER_LIBRARY_SHA256"
     ;;
   all)
-    case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in 0|false|no|off|'') ;; *) fail 'all refuses fixture mode' ;; esac
-    if [[ "${PEEKABOO_TERMINAL_ORCHESTRATOR_CLEAN:-0}" != 1 ]]; then
+    case "${WINK_TERMINAL_TEST_MODE:-0}" in 0|false|no|off|'') ;; *) fail 'all refuses fixture mode' ;; esac
+    if [[ "${WINK_TERMINAL_ORCHESTRATOR_CLEAN:-0}" != 1 ]]; then
       args=(all)
       [[ -z "$STAGE_DIR" ]] || args+=(--stage "$STAGE_DIR")
       [[ -z "$OUTPUT_DIR" ]] || args+=(--output "$OUTPUT_DIR")
-      PEEKABOO_TERMINAL_ORCHESTRATOR_CLEAN=1 \
+      WINK_TERMINAL_ORCHESTRATOR_CLEAN=1 \
         terminal_artifact_run_orchestrator /bin/bash --noprofile --norc -p \
           "$ROOT_DIR/scripts/build-terminal-artifacts.sh" "${args[@]}"
       exit $?
@@ -1383,7 +1383,7 @@ case "$COMMAND" in
     require_clean_source
     record_toolchain
     set_stage_paths
-    [[ -n "$OUTPUT_DIR" ]] || OUTPUT_DIR="/tmp/peekaboo-terminal-artifacts-$SOURCE_COMMIT"
+    [[ -n "$OUTPUT_DIR" ]] || OUTPUT_DIR="/tmp/wink-terminal-artifacts-$SOURCE_COMMIT"
     terminal_artifact_run_build /bin/bash --noprofile --norc -p \
       "$ROOT_DIR/scripts/build-terminal-artifacts.sh" build --stage "$STAGE_DIR"
     run_codesign_phase sign-code

@@ -1,17 +1,17 @@
-import PeekabooAgentRuntime
-import PeekabooCore
+import WinkAgentRuntime
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite("Current tool formatter coverage")
 @MainActor
 struct ToolFormatterCoverageTests {
     @Test
     func `current MCP and agent tools use specialized formatters`() throws {
-        let services = PeekabooServices()
+        let services = WinkServices()
         let context = MCPToolContext(services: services)
         let mcpNames = MCPToolCatalog.unfilteredTools(context: context).map(\.name)
-        let agentNames = try PeekabooAgentService(services: services).createAgentTools().map(\.name)
+        let agentNames = try WinkAgentService(services: services).createAgentTools().map(\.name)
         let currentToolNames = Set(mcpNames + agentNames)
         let registry = ToolFormatterRegistry()
 

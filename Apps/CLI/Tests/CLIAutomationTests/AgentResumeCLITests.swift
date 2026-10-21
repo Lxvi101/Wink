@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct AgentResumeCLITests {
@@ -81,6 +81,6 @@ struct AgentResumeCLITests {
     func `Session age uses the production formatter`(_ interval: TimeInterval, _ expected: String) {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
 
-        #expect(PeekabooCLI.formatTimeAgo(now.addingTimeInterval(-interval), from: now) == expected)
+        #expect(WinkCLI.formatTimeAgo(now.addingTimeInterval(-interval), from: now) == expected)
     }
 }

@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification PID-auth Unix attestation")
 struct MonitorAttestationTests {
@@ -407,16 +407,16 @@ struct MonitorAttestationTests {
       "version": 1,
       "execution_nonce": "\(Self.nonce)",
       "monitor_instance_id": "\(Self.monitorID)",
-      "socket_path": "/private/tmp/peekaboo-monitor-attestation.sock",
+      "socket_path": "/private/tmp/wink-monitor-attestation.sock",
       "expected_peer": {
         "pid": 8001,
         "start_identity": "800100",
         "code_signature_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
       },
       "response_kind": "monitor",
-      "artifacts_directory": "/private/tmp/peekaboo-monitor-attestation",
-      "output_path": "/private/tmp/peekaboo-monitor-attestation/response.json",
-      "release_path": "/private/tmp/peekaboo-monitor-attestation/release.json",
+      "artifacts_directory": "/private/tmp/wink-monitor-attestation",
+      "output_path": "/private/tmp/wink-monitor-attestation/response.json",
+      "release_path": "/private/tmp/wink-monitor-attestation/release.json",
       "timeout_milliseconds": 2000,
       "maximum_response_bytes": 65536
     }

@@ -44,7 +44,7 @@ function makeRemoteReport() {
     codeSignatureHash: "89abcdef0123456789abcdef0123456789abcdef",
     pid: 4242,
     startIdentity: "987654321",
-    socketPath: "/tmp/peekaboo-certification/bridge.sock",
+    socketPath: "/tmp/wink-certification/bridge.sock",
     sourceCommit: report.provenance.cli_source_commit,
   };
   report.provenance.event_producer_source = "remote";
@@ -267,7 +267,7 @@ test("source helper evidence is required and bound to the retained helper bytes"
   delete missing.provenance.source_artifacts.source_provenance_sha256;
   assert.ok(rules(validateCertification(catalog, missing)).has("source_artifacts"));
 
-  const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "peekaboo-source-helper-")));
+  const directory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "wink-source-helper-")));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const reporter = path.join(directory, "reporter.mjs");
   const helper = path.join(directory, "source-provenance.sh");

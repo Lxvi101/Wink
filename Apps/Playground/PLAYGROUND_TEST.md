@@ -1,6 +1,6 @@
-# Playground testing with Peekaboo v4
+# Playground testing with Wink v4
 
-This is the current Peekaboo v4 workflow. It replaces the pre-v4 append-only test
+This is the current Wink v4 workflow. It replaces the pre-v4 append-only test
 log that previously lived here. Those dated results remain available in Git
 history, but their commands are historical evidence and must not be copied into
 new runs.
@@ -17,10 +17,10 @@ does not replace that harness.
 - Resolve an exact app, PID, and window before mutation. Prefer a fresh snapshot
   and element ID over a query, and prefer either over coordinates.
 - Re-observe after every mutation. Never replay an indeterminate result or a
-  snapshot that Peekaboo reports as stale.
+  snapshot that Wink reports as stale.
 - Treat the physical cursor as observational: the user may move it at any time.
   A background test must not require its position to remain stable.
-- Use Peekaboo's native app, window, menu, dialog, and Accessibility commands.
+- Use Wink's native app, window, menu, dialog, and Accessibility commands.
   The Playground workflow does not use AppleScript or JXA.
 
 Commands that intentionally move the shared cursor, including `move` and the
@@ -36,26 +36,26 @@ Playground app:
 pnpm run build:swift
 
 xcodebuild \
-  -workspace Apps/Peekaboo.xcworkspace \
+  -workspace Apps/Wink.xcworkspace \
   -scheme Playground \
   -configuration Debug \
-  -derivedDataPath /tmp/peekaboo-playground-derived \
+  -derivedDataPath /tmp/wink-playground-derived \
   build
 
 codesign --verify --deep --strict \
-  /tmp/peekaboo-playground-derived/Build/Products/Debug/Playground.app
+  /tmp/wink-playground-derived/Build/Products/Debug/Playground.app
 ```
 
-Do not launch an unsigned or ad-hoc Peekaboo build against saved TCC state. The
+Do not launch an unsigned or ad-hoc Wink build against saved TCC state. The
 Debug Playground target is configured for the OpenClaw Foundation development
-team. Use the installed signed Peekaboo app as the Bridge host when it owns the
+team. Use the installed signed Wink app as the Bridge host when it owns the
 required permissions:
 
 ```bash
-open -gj -a Peekaboo
-open -gj /tmp/peekaboo-playground-derived/Build/Products/Debug/Playground.app
+open -gj -a Wink
+open -gj /tmp/wink-playground-derived/Build/Products/Debug/Playground.app
 
-PB=./peekaboo
+PB=./wink
 "$PB" --version
 "$PB" bridge status --verbose --json
 "$PB" permissions status --all-sources --json
@@ -63,16 +63,16 @@ PB=./peekaboo
 
 Screen Recording and Accessibility must be granted on the selected runtime
 host. Background keyboard and routed pointer delivery additionally need Event
-Synthesizing. Peekaboo does not need Apple Events Automation permission.
+Synthesizing. Wink does not need Apple Events Automation permission.
 
 ## Run a background smoke
 
-The Debug bundle identifier is `boo.peekaboo.playground.debug`. Open fixture
+The Debug bundle identifier is `boo.wink.playground.debug`. Open fixture
 windows through the native application menu, which remains background-capable:
 
 ```bash
-PB=./peekaboo
-PLAYGROUND=boo.peekaboo.playground.debug
+PB=./wink
+PLAYGROUND=boo.wink.playground.debug
 
 "$PB" app list --include-hidden --include-background --json
 "$PB" menu click --app "$PLAYGROUND" --path "Fixtures > Open Click Fixture" --json
@@ -92,7 +92,7 @@ CLICK_SEE=$("$PB" see \
   --app "$PLAYGROUND" \
   --window-id "$CLICK_WINDOW_ID" \
   --annotate \
-  --path /tmp/peekaboo-playground-see.png \
+  --path /tmp/wink-playground-see.png \
   --json)
 CLICK_SNAPSHOT_ID=$(printf '%s\n' "$CLICK_SEE" | jq -er '.data.snapshot_id')
 SINGLE_CLICK_ID=$(printf '%s\n' "$CLICK_SEE" | jq -er '
@@ -134,7 +134,7 @@ BASIC_TEXT_ID=$(printf '%s\n' "$TEXT_SEE" | jq -er '
 TEXT_FOCUSED_SEE=$("$PB" see --app "$PLAYGROUND" --window-id "$TEXT_WINDOW_ID" --json)
 TEXT_FOCUSED_SNAPSHOT_ID=$(printf '%s\n' "$TEXT_FOCUSED_SEE" | jq -er '.data.snapshot_id')
 
-TEXT_TOKEN='Peekaboo v4 background text'
+TEXT_TOKEN='Wink v4 background text'
 "$PB" type "$TEXT_TOKEN" --window-id "$TEXT_WINDOW_ID" \
   --snapshot "$TEXT_FOCUSED_SNAPSHOT_ID" --clear --json
 TEXT_TYPED_SEE=$("$PB" see --app "$PLAYGROUND" --window-id "$TEXT_WINDOW_ID" --json)
@@ -198,9 +198,9 @@ must remain unchanged.
 
 Do not translate old revisions of this file literally:
 
-| Historical spelling | Peekaboo v4 spelling |
+| Historical spelling | Wink v4 spelling |
 | --- | --- |
-| `polter peekaboo -- ...` | invoke the selected `peekaboo` binary directly |
+| `polter wink -- ...` | invoke the selected `wink` binary directly |
 | `list windows`, `list apps`, `list screens` | `window list`, `app list`, `screen list` |
 | `image` | `see --no-elements` |
 | `hotkey` | `press` |

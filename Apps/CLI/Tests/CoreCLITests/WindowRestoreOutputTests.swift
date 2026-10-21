@@ -1,8 +1,8 @@
 import CoreGraphics
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct WindowRestoreOutputTests {
@@ -26,7 +26,7 @@ struct WindowRestoreOutputTests {
     @Test
     func `transient post-restore inventory failure preserves successful output`() async {
         let selected = await restoredWindowOutputInfo(original: self.original) {
-            throw PeekabooError.windowNotFound(criteria: "windowId 101")
+            throw WinkError.windowNotFound(criteria: "windowId 101")
         }
 
         #expect(selected == self.original)

@@ -79,17 +79,17 @@ final class ActionLogger: ObservableObject {
     @Published var lastAction: String = "Ready"
     @Published var showingLogViewer = false
 
-    private let clickLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Click")
-    private let textLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Text")
-    private let menuLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Menu")
-    private let windowLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Window")
-    private let scrollLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Scroll")
-    private let dragLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Drag")
-    private let keyboardLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Keyboard")
-    private let focusLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Focus")
-    private let gestureLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Gesture")
-    private let dialogLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Dialog")
-    private let controlLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Control")
+    private let clickLogger = Logger(subsystem: "boo.wink.playground", category: "Click")
+    private let textLogger = Logger(subsystem: "boo.wink.playground", category: "Text")
+    private let menuLogger = Logger(subsystem: "boo.wink.playground", category: "Menu")
+    private let windowLogger = Logger(subsystem: "boo.wink.playground", category: "Window")
+    private let scrollLogger = Logger(subsystem: "boo.wink.playground", category: "Scroll")
+    private let dragLogger = Logger(subsystem: "boo.wink.playground", category: "Drag")
+    private let keyboardLogger = Logger(subsystem: "boo.wink.playground", category: "Keyboard")
+    private let focusLogger = Logger(subsystem: "boo.wink.playground", category: "Focus")
+    private let gestureLogger = Logger(subsystem: "boo.wink.playground", category: "Gesture")
+    private let dialogLogger = Logger(subsystem: "boo.wink.playground", category: "Dialog")
+    private let controlLogger = Logger(subsystem: "boo.wink.playground", category: "Control")
 
     private static let exportDateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
@@ -131,7 +131,7 @@ final class ActionLogger: ObservableObject {
 
     func exportLogs() -> String {
         let timestamp = Self.exportDateFormatter.string(from: Date())
-        let header = "Peekaboo Playground Action Log\nGenerated: \(timestamp)\n\n"
+        let header = "Wink Playground Action Log\nGenerated: \(timestamp)\n\n"
         let logLines = self.entries.map { entry in
             let details = entry.details.map { " - \($0)" } ?? ""
             return "[\(entry.formattedTime)] [\(entry.category.rawValue)] \(entry.message)\(details)"

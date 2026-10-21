@@ -87,7 +87,7 @@ jobs:
           python3 scripts/setup-swift-workspace.py setup
 
           xcodebuild \
-            -workspace Apps/Peekaboo.xcworkspace \
+            -workspace Apps/Wink.xcworkspace \
             -scheme CodeQL \
             -configuration Debug \
             -sdk macosx \

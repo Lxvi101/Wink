@@ -1,8 +1,8 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 struct CaptureActionProcessRunnerTests {
@@ -62,7 +62,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `absolute completion deadline charges suspended startup before release`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-startup-deadline-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-startup-deadline-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let marker = root.appendingPathComponent("child-ran")
@@ -122,7 +122,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `runner escalates timeout for TERM ignoring child`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-term-ignore-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-term-ignore-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let ready = root.appendingPathComponent("ready")
@@ -174,7 +174,7 @@ struct CaptureActionProcessRunnerTests {
         // waitUntilExit must not SIGKILL immediately when timedOut becomes true, or the
         // trap never runs and we observe a SIGKILL exit status instead.
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-term-grace-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-term-grace-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -211,7 +211,7 @@ struct CaptureActionProcessRunnerTests {
         // Same grace contract as timeout: cancel sends SIGTERM, then 500 ms before SIGKILL.
         // waitUntilExit must not SIGKILL immediately on forceStop.
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-cancel-grace-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-cancel-grace-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -246,7 +246,7 @@ struct CaptureActionProcessRunnerTests {
     @Test(arguments: [false, true])
     func `TERM grace starts after dispatch`(cancel: Bool) async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-action-delayed-term-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-delayed-term-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let marker = root.appendingPathComponent("graceful-exit")
@@ -277,7 +277,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `cancellation returns quickly for TERM ignoring child with long timeout`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-cancel-ignore-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-cancel-ignore-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -337,7 +337,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `late leader exit cannot grant descendants a fresh drain deadline`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-shared-drain-deadline-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-shared-drain-deadline-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let descendantPIDFile = root.appendingPathComponent("descendant-pid")
@@ -515,7 +515,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `runner terminates a background child that inherits output pipes`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-pipe-child-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-pipe-child-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let ready = root.appendingPathComponent("ready")
@@ -547,7 +547,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `normal child exit cleans descendants before returning`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-normal-exit-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-normal-exit-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -581,7 +581,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `timeout kills descendant processes`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-timeout-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-timeout-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -626,7 +626,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `cancellation kills descendant processes`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-cancel-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
@@ -662,7 +662,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `missing process identity refuses before child release`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-identity-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-identity-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let marker = root.appendingPathComponent("child-ran")
@@ -687,7 +687,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `cancellation during identity capture refuses before child release`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-pre-release-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-pre-release-cancel-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let marker = root.appendingPathComponent("child-ran")
@@ -725,7 +725,7 @@ struct CaptureActionProcessRunnerTests {
     @Test
     func `concurrent runners do not starve cancellation or timeout cleanup`() async throws {
         let root = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-            .appendingPathComponent("peekaboo-action-concurrent-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-action-concurrent-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 

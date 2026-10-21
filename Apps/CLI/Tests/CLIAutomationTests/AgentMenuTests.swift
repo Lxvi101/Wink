@@ -1,8 +1,8 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 
 // MARK: - Test Helpers
 
@@ -10,7 +10,7 @@ private func runCommand(
     _ args: [String],
     allowedExitStatuses: Set<Int32> = [0]
 ) async throws -> String {
-    let result = try ExternalCommandRunner.runPeekabooCLI(args, allowedExitCodes: allowedExitStatuses)
+    let result = try ExternalCommandRunner.runWinkCLI(args, allowedExitCodes: allowedExitStatuses)
     return result.combinedOutput
 }
 

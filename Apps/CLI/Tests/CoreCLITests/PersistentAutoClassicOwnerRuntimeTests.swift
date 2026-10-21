@@ -1,16 +1,16 @@
 import Commander
 import Foundation
 import MCP
-import PeekabooAgentRuntime
-import PeekabooAutomationKitTestSupport
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomationKitTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundation
 import TachikomaMCP
 import Testing
-@testable import PeekabooAutomationKit
-@testable import PeekabooCLI
+@testable import WinkAutomationKit
+@testable import WinkCLI
 
 extension ScreenCaptureKitOwnerRuntimeTests {
     @Test(arguments: ["agent", "mcp"])
@@ -140,7 +140,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         )
     }
 
-    private static func expectToolCapturePolicy(services: any PeekabooServiceProviding) async throws {
+    private static func expectToolCapturePolicy(services: any WinkServiceProviding) async throws {
         let context = MCPToolContext(services: services)
         for engine in ["omitted", "auto", "modern"] {
             var arguments: [String: Value] = ["window_id": .int(77)]
@@ -165,13 +165,13 @@ extension ScreenCaptureKitOwnerRuntimeTests {
     private static func startPersistentClassicHost(
         socket: String,
         observation: PersistentClassicObservationProbe
-    ) async throws -> PeekabooBridgeHost {
+    ) async throws -> WinkBridgeHost {
         try await startHost(
             socketPath: socket,
             processIdentifier: getpid(),
             processStartIdentity: 1,
             codeSignatureHash: "unused-current-identity",
-            maximumProtocolVersion: PeekabooBridgeConstants.protocolVersion,
+            maximumProtocolVersion: WinkBridgeConstants.protocolVersion,
             usesCurrentHostIdentity: true,
             serviceOverride: OwnerPolicyFixtureServices(ownerAware: true, observation: observation),
             windowIdentity: WindowMutationIdentity(

@@ -2,16 +2,16 @@ import Darwin
 import Foundation
 import Tachikoma
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkAgentRuntime
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.serialized, .tags(.safe))
 struct AgentCommandValidationIntegrationTests {
     private struct FailureCase {
         let name: String
         let arguments: [String]
-        let code: PeekabooCLI.ErrorCode
+        let code: WinkCLI.ErrorCode
         let message: String
     }
 
@@ -54,10 +54,10 @@ struct AgentCommandValidationIntegrationTests {
     @MainActor
     func `Terminal agent failures use raw envelopes and nonzero exits`() async throws {
         try await self.withIsolatedAgentEnvironment { sessionDirectory in
-            let services = TestServicesFactory.makePeekabooServices()
+            let services = TestServicesFactory.makeWinkServices()
             let localModel = "ollama/llama3.3"
             let parsedLocalModel = try #require(LanguageModel.parse(from: localModel))
-            let agentService = try PeekabooAgentService(
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: parsedLocalModel,
                 sessionManager: AgentSessionManager(sessionDirectory: sessionDirectory)
@@ -85,7 +85,7 @@ struct AgentCommandValidationIntegrationTests {
                 .init(
                     name: "audio transcription failure",
                     arguments: [
-                        "agent", "run", "--audio-file", "/tmp/peekaboo-missing-audio.wav",
+                        "agent", "run", "--audio-file", "/tmp/wink-missing-audio.wav",
                         "--model", localModel, "--json",
                     ],
                     code: .AGENT_ERROR,
@@ -158,12 +158,12 @@ struct AgentCommandValidationIntegrationTests {
                 options: .init(baseURL: #require(provider.baseURL), apiKey: "test-key"),
                 models: [provider.resolvedModelID: .init(name: "Step Limit Test", supportsTools: true)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
 
-            let services = TestServicesFactory.makePeekabooServices()
+            let services = TestServicesFactory.makeWinkServices()
             let sessionManager = try AgentSessionManager(sessionDirectory: sessionDirectory)
             let model = LanguageModel.custom(provider: provider)
-            let agentService = try PeekabooAgentService(
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: model,
                 sessionManager: sessionManager
@@ -225,12 +225,12 @@ struct AgentCommandValidationIntegrationTests {
                 options: .init(baseURL: #require(provider.baseURL), apiKey: "test-key"),
                 models: [provider.resolvedModelID: .init(name: "Cancellation Test", supportsTools: true)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
 
-            let services = TestServicesFactory.makePeekabooServices()
+            let services = TestServicesFactory.makeWinkServices()
             let sessionManager = try AgentSessionManager(sessionDirectory: sessionDirectory)
             let model = LanguageModel.custom(provider: provider)
-            let agentService = try PeekabooAgentService(
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: model,
                 sessionManager: sessionManager
@@ -290,12 +290,12 @@ struct AgentCommandValidationIntegrationTests {
                 options: .init(baseURL: #require(provider.baseURL), apiKey: "test-key"),
                 models: [provider.resolvedModelID: .init(name: "Cancellation Test", supportsTools: true)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
 
-            let services = TestServicesFactory.makePeekabooServices()
+            let services = TestServicesFactory.makeWinkServices()
             let sessionManager = try AgentSessionManager(sessionDirectory: sessionDirectory)
             let model = LanguageModel.custom(provider: provider)
-            let agentService = try PeekabooAgentService(
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: model,
                 sessionManager: sessionManager
@@ -336,10 +336,10 @@ struct AgentCommandValidationIntegrationTests {
                 options: .init(baseURL: #require(provider.baseURL), apiKey: "test-key"),
                 models: [provider.resolvedModelID: .init(name: "Failure Test", supportsTools: true)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
 
-            let services = TestServicesFactory.makePeekabooServices()
-            let agentService = try PeekabooAgentService(
+            let services = TestServicesFactory.makeWinkServices()
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: .custom(provider: provider),
                 sessionManager: AgentSessionManager(sessionDirectory: sessionDirectory)
@@ -381,10 +381,10 @@ struct AgentCommandValidationIntegrationTests {
                 options: .init(baseURL: #require(provider.baseURL), apiKey: "test-key"),
                 models: [provider.resolvedModelID: .init(name: "Failure Test", supportsTools: true)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(customProvider, id: provider.providerID)
 
-            let services = TestServicesFactory.makePeekabooServices()
-            let agentService = try PeekabooAgentService(
+            let services = TestServicesFactory.makeWinkServices()
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: .custom(provider: provider),
                 sessionManager: AgentSessionManager(sessionDirectory: sessionDirectory)
@@ -414,8 +414,8 @@ struct AgentCommandValidationIntegrationTests {
     func `Fresh task execution preserves CancellationError`() async throws {
         try await self.withIsolatedAgentEnvironment { sessionDirectory in
             let provider = CLICancellingProvider()
-            let services = TestServicesFactory.makePeekabooServices()
-            let agentService = try PeekabooAgentService(
+            let services = TestServicesFactory.makeWinkServices()
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: .custom(provider: provider),
                 sessionManager: AgentSessionManager(sessionDirectory: sessionDirectory)
@@ -442,8 +442,8 @@ struct AgentCommandValidationIntegrationTests {
                 modelId: "safe-model",
                 baseURL: "https://username:password@example.test/v1?token=query-secret"
             )
-            let services = TestServicesFactory.makePeekabooServices()
-            let agentService = try PeekabooAgentService(
+            let services = TestServicesFactory.makeWinkServices()
+            let agentService = try WinkAgentService(
                 services: services,
                 defaultModel: model,
                 sessionManager: AgentSessionManager(sessionDirectory: sessionDirectory)
@@ -473,14 +473,14 @@ struct AgentCommandValidationIntegrationTests {
         _ body: (URL) async throws -> Void
     ) async throws {
         let tempDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-agent-cli-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-agent-cli-\(UUID().uuidString)", isDirectory: true)
         let sessionDirectory = tempDirectory.appendingPathComponent("sessions", isDirectory: true)
         try FileManager.default.createDirectory(at: sessionDirectory, withIntermediateDirectories: true)
 
         let environmentKeys = [
             "PEEKABOO_CONFIG_DIR",
-            "PEEKABOO_CONFIG_NONINTERACTIVE",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION",
+            "WINK_CONFIG_NONINTERACTIVE",
+            "WINK_CONFIG_DISABLE_MIGRATION",
             "GEMINI_API_KEY",
         ]
         let previous = Dictionary(uniqueKeysWithValues: environmentKeys.map { key in
@@ -488,8 +488,8 @@ struct AgentCommandValidationIntegrationTests {
         })
 
         setenv("PEEKABOO_CONFIG_DIR", tempDirectory.path, 1)
-        setenv("PEEKABOO_CONFIG_NONINTERACTIVE", "1", 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
+        setenv("WINK_CONFIG_NONINTERACTIVE", "1", 1)
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
         unsetenv("GEMINI_API_KEY")
         ConfigurationManager.shared.resetForTesting()
 
@@ -529,7 +529,7 @@ struct AgentCommandValidationIntegrationTests {
 
     private func requireFailureEnvelope(
         _ result: CommandRunResult,
-        code: PeekabooCLI.ErrorCode,
+        code: WinkCLI.ErrorCode,
         messageContains: String,
         context: String = #function
     ) throws {
@@ -549,7 +549,7 @@ struct AgentCommandValidationIntegrationTests {
     }
 }
 
-private final class CLIResumableStepLimitProvider: PeekabooCustomProviderIdentityProviding, @unchecked Sendable {
+private final class CLIResumableStepLimitProvider: WinkCustomProviderIdentityProviding, @unchecked Sendable {
     let providerID = "step-limit-test"
     let resolvedModelID = "perpetual-tool"
     let providerTypeIdentity = "openai"
@@ -593,7 +593,7 @@ private final class CLIResumableStepLimitProvider: PeekabooCustomProviderIdentit
     }
 }
 
-private final class CLICancellingProvider: PeekabooCustomProviderIdentityProviding, @unchecked Sendable {
+private final class CLICancellingProvider: WinkCustomProviderIdentityProviding, @unchecked Sendable {
     enum Mode {
         case cancellation
         case providerFailure

@@ -1,9 +1,9 @@
 import CoreGraphics
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct FocusApplicationSelectionTests {
@@ -110,7 +110,7 @@ struct FocusApplicationSelectionTests {
         )
         let windows = Self.service([Self.helper, invalid, Self.window(id: 79)])
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await Self.focus(windows)
         }
 
@@ -123,7 +123,7 @@ struct FocusApplicationSelectionTests {
     func `empty app inventory refuses before focus`() async {
         let windows = Self.service([])
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await Self.focus(windows)
         }
 
@@ -228,7 +228,7 @@ WindowManagementPinnedFocusActionResultProviding {
     @MainActor
     func focusWindowActionResult(target: WindowTarget) async throws -> UIAutomationActionResult<Void> {
         Issue.record("Remote focus must retain the selected window receipt")
-        throw PeekabooError.commandFailed("Unexpected unpinned focus")
+        throw WinkError.commandFailed("Unexpected unpinned focus")
     }
 
     @MainActor

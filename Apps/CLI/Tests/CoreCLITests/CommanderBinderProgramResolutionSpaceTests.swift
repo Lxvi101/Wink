@@ -1,6 +1,6 @@
 import Commander
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderSpaceDialogTests {
     @Test
@@ -9,7 +9,7 @@ struct CommanderBinderSpaceDialogTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "space",
             "list",
             "--detailed",
@@ -24,7 +24,7 @@ struct CommanderBinderSpaceDialogTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "space",
             "switch",
             "--to", "3",
@@ -41,7 +41,7 @@ struct CommanderBinderSpaceDialogTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "space",
             "move-window",
             "--app", "Safari",
@@ -96,7 +96,7 @@ struct CommanderBinderSpaceDialogTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "dialog",
             "click",
             "--button", "OK",
@@ -113,7 +113,7 @@ struct CommanderBinderSpaceDialogTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "dialog",
             "input",
             "--text", "Report generated",

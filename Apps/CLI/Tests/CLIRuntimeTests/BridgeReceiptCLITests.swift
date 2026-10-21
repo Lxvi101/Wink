@@ -5,12 +5,12 @@ import Testing
 struct BridgeReceiptCLITests {
     @Test
     func `incomplete private bundle reports schema failure before socket access`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "peekaboo-receipt-runtime-\(UUID().uuidString)",
+            "wink-receipt-runtime-\(UUID().uuidString)",
             isDirectory: true
         )
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -20,7 +20,7 @@ struct BridgeReceiptCLITests {
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: bundle.path)
         let missingSocket = directory.appendingPathComponent("missing.sock").path
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "bridge", "receipt", "validate",
                 "--bundle", bundle.path,
@@ -44,8 +44,8 @@ struct BridgeReceiptCLITests {
 
     @Test
     func `custom socket trust omission reports exact remedy before bundle or socket access`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
         let missingBundle = FileManager.default.temporaryDirectory
@@ -53,7 +53,7 @@ struct BridgeReceiptCLITests {
         let missingSocket = FileManager.default.temporaryDirectory
             .appendingPathComponent("custom-bridge-\(UUID().uuidString).sock").path
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "bridge", "receipt", "validate",
                 "--bundle", missingBundle,
@@ -77,8 +77,8 @@ struct BridgeReceiptCLITests {
 
     @Test
     func `receipt validation reports bundle file errors before contacting the exact socket`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
         let missingBundle = FileManager.default.temporaryDirectory
@@ -86,7 +86,7 @@ struct BridgeReceiptCLITests {
         let missingSocket = FileManager.default.temporaryDirectory
             .appendingPathComponent("missing-bridge-\(UUID().uuidString).sock").path
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "bridge", "receipt", "validate",
                 "--bundle", missingBundle,

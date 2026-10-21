@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 private struct DialogTextFieldPayload: Codable {
     let title: String?
@@ -39,7 +39,7 @@ private enum TargetedForegroundDialogAction: CaseIterable {
     }
 }
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.automation),
@@ -173,7 +173,7 @@ struct DialogCommandTests {
     @Test
     func `Dialog  error handling`() {
         // Test that DialogError enum values are properly mapped
-        let errorCases: [(PeekabooError, StandardErrorCode, String)] = [
+        let errorCases: [(WinkError, StandardErrorCode, String)] = [
             (.elementNotFound("OK"), .elementNotFound, "Element not found: OK"),
             (.invalidInput("Field index 5 out of range"), .invalidInput, "Invalid input: Field index 5 out of range"),
             (
@@ -192,7 +192,7 @@ struct DialogCommandTests {
     @Test
     @MainActor
     func `Dialog  service integration`() {
-        // Verify that PeekabooServices includes the dialog service
+        // Verify that WinkServices includes the dialog service
         let services = self.makeTestServices()
         _ = services.dialogs // This should compile without errors
     }
@@ -248,7 +248,7 @@ struct DialogCommandTests {
         )
         let snapshots = StubSnapshotManager()
         let latestSnapshotID = try await snapshots.createSnapshot()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             dialogs: StubDialogService(elements: elements),
             snapshots: snapshots
         )
@@ -430,7 +430,7 @@ struct DialogCommandTests {
         ]
 
         for selector in requestedSelectors {
-            #expect(throws: PeekabooError.self) {
+            #expect(throws: WinkError.self) {
                 _ = try DialogCommand.exactResultTargetIdentity(
                     from: result,
                     matching: selector
@@ -467,7 +467,7 @@ struct DialogCommandTests {
             windowTitle: "Alert"
         )
 
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             _ = try DialogCommand.exactResultTargetIdentity(
                 from: result,
                 matching: selector
@@ -737,7 +737,7 @@ extension DialogCommandTests {
             let dialogs = StubDialogService(elements: self.fileDialogElements())
             let services = InputExecutionHostServices(
                 host: .remote,
-                base: TestServicesFactory.makePeekabooServices(windows: windows, dialogs: dialogs)
+                base: TestServicesFactory.makeWinkServices(windows: windows, dialogs: dialogs)
             )
 
             let result = try await InProcessCommandRunner.run(action.arguments, services: services)
@@ -760,7 +760,7 @@ extension DialogCommandTests {
             let dialogs = StubDialogService(elements: self.fileDialogElements())
             let services = InputExecutionHostServices(
                 host: .remote,
-                base: TestServicesFactory.makePeekabooServices(windows: windows, dialogs: dialogs)
+                base: TestServicesFactory.makeWinkServices(windows: windows, dialogs: dialogs)
             )
 
             let result = try await InProcessCommandRunner.run(action.arguments, services: services)
@@ -800,7 +800,7 @@ extension DialogCommandTests {
         ))
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, dialogs: dialogs)
+            base: TestServicesFactory.makeWinkServices(windows: windows, dialogs: dialogs)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -837,14 +837,14 @@ extension DialogCommandTests {
         )
         let applications = StubApplicationService(applications: [application])
 
-        let exactServices = TestServicesFactory.makePeekabooServices(
+        let exactServices = TestServicesFactory.makeWinkServices(
             applications: applications,
             dialogs: DialogService(applicationService: applications)
         )
         let exactHint = try await DialogCommand.resolveDialogAppHint(target: target, services: exactServices)
         #expect(exactHint == "PID:42")
 
-        let legacyServices = TestServicesFactory.makePeekabooServices(
+        let legacyServices = TestServicesFactory.makeWinkServices(
             applications: applications,
             dialogs: StubDialogService()
         )
@@ -864,7 +864,7 @@ extension DialogCommandTests {
         )
         #expect(legacyAppPIDHint == "com.example.LegacyDialogApp")
 
-        let staleLegacyServices = TestServicesFactory.makePeekabooServices(
+        let staleLegacyServices = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: []),
             dialogs: StubDialogService()
         )
@@ -884,7 +884,7 @@ extension DialogCommandTests {
             }
         }
 
-        let nameFallbackServices = TestServicesFactory.makePeekabooServices(
+        let nameFallbackServices = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [ServiceApplicationInfo(
                 processIdentifier: 42,
                 bundleIdentifier: "  ",
@@ -898,7 +898,7 @@ extension DialogCommandTests {
         )
         #expect(nameFallback == "Fallback Name")
 
-        let emptyIdentityServices = TestServicesFactory.makePeekabooServices(
+        let emptyIdentityServices = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [ServiceApplicationInfo(
                 processIdentifier: 42,
                 bundleIdentifier: "",
@@ -1190,7 +1190,7 @@ extension DialogCommandTests {
 
     private func runCommand(
         _ args: [String],
-        services: PeekabooServices
+        services: WinkServices
     ) async throws -> (output: String, status: Int32) {
         let result = try await InProcessCommandRunner.run(args, services: services)
         let output = result.stdout.isEmpty ? result.stderr : result.stdout
@@ -1203,8 +1203,8 @@ extension DialogCommandTests {
     @MainActor
     private func makeTestServices(
         dialogs: any DialogServiceProtocol = StubDialogService()
-    ) -> PeekabooServices {
-        TestServicesFactory.makePeekabooServices(dialogs: dialogs)
+    ) -> WinkServices {
+        TestServicesFactory.makeWinkServices(dialogs: dialogs)
     }
 
     @MainActor
@@ -1227,7 +1227,7 @@ extension DialogCommandTests {
         )
         return InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, dialogs: dialogs)
+            base: TestServicesFactory.makeWinkServices(windows: windows, dialogs: dialogs)
         )
     }
 

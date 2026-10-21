@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-codesign-retry-test.XXXXXX")"
+TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wink-codesign-retry-test.XXXXXX")"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 cat >"$TEST_DIR/codesign" <<'MOCK'

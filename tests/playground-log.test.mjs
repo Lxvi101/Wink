@@ -7,8 +7,8 @@ import { logScriptFixture, streamBeforeRelease, success } from './fixtures/log-s
 
 const script = process.env.PLAYGROUND_LOG_SCRIPT || fileURLToPath(new URL('../Apps/Playground/scripts/playground-log.sh', import.meta.url));
 const fixture = (t) => logScriptFixture(t, script);
-const subsystem = 'subsystem == "boo.peekaboo.playground"';
-const header = (mode) => `\u001b[0;34mPeekaboo Playground Log Viewer\u001b[0m\nSubsystem: boo.peekaboo.playground\n${mode}\n---\n`;
+const subsystem = 'subsystem == "boo.wink.playground"';
+const header = (mode) => `\u001b[0;34mWink Playground Log Viewer\u001b[0m\nSubsystem: boo.wink.playground\n${mode}\n---\n`;
 
 test('literal predicates retain quotes, slashes, shell text and trailing newlines', (t) => {
   const f = fixture(t);
@@ -71,7 +71,7 @@ for (const option of valueOptions) {
     for (const value of ['fixture', '', '-literal']) {
       const result = f.run([option, value, '--help']);
       success(result);
-      assert.match(result.stdout, /^Peekaboo Playground Log Viewer\nUsage:/);
+      assert.match(result.stdout, /^Wink Playground Log Viewer\nUsage:/);
       assert.deepEqual(f.args(), []);
       assert.deepEqual(f.sudoArgs(), []);
     }
@@ -147,7 +147,7 @@ test('category listing remains available without a log query', (t) => {
   const f = fixture(t);
   const result = f.run(['--categories']);
   success(result);
-  assert.match(result.stdout, /^Available log categories for Peekaboo Playground:/);
+  assert.match(result.stdout, /^Available log categories for Wink Playground:/);
   for (const category of ['Click', 'Text', 'Space', 'MCP']) assert.ok(result.stdout.includes(category));
   assert.deepEqual(f.args(), []);
 });

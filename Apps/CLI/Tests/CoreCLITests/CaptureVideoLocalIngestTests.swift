@@ -3,11 +3,11 @@ import Commander
 import CoreGraphics
 import CoreVideo
 import Foundation
-import PeekabooAutomationKit
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -96,7 +96,7 @@ struct CaptureVideoLocalIngestTests {
             dependencies: .init(
                 makeLocalServices: { _ in
                     localFactoryCalls += 1
-                    return PeekabooServices()
+                    return WinkServices()
                 },
                 claimScreenCaptureKitOwner: {
                     claimCalls += 1
@@ -118,9 +118,9 @@ struct CaptureVideoLocalIngestTests {
                     remoteCandidatePlanCalls += 1
                     return RuntimeHostResolver.RemoteCandidatePlan(
                         explicitSocket: nil,
-                        daemonSocketPath: "/tmp/peekaboo-video-ingest-daemon.sock",
+                        daemonSocketPath: "/tmp/wink-video-ingest-daemon.sock",
                         runtimeBuildIdentity: "video-ingest-test",
-                        buildScopedDaemonSocketPath: "/tmp/peekaboo-video-ingest-current.sock",
+                        buildScopedDaemonSocketPath: "/tmp/wink-video-ingest-current.sock",
                         historicalBuildScopedDaemonSocketPaths: [],
                         candidates: []
                     )
@@ -140,7 +140,7 @@ struct CaptureVideoLocalIngestTests {
     private static func runVideoIngest(
         input: URL,
         outputRoot: URL,
-        services: any PeekabooServiceProviding
+        services: any WinkServiceProviding
     ) async throws -> CaptureSessionResult {
         let source = try await VideoFrameSource(
             url: input,
@@ -188,7 +188,7 @@ struct CaptureVideoLocalIngestTests {
 
     private static func makeVideoFixture() async throws -> (root: URL, media: URL) {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-video-ingest-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-video-ingest-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = root.appendingPathComponent("fixture.mp4")
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
@@ -209,18 +209,18 @@ struct CaptureVideoLocalIngestTests {
             ]
         )
         guard writer.canAdd(input) else {
-            throw PeekabooError.captureFailed("Test writer rejected its video input")
+            throw WinkError.captureFailed("Test writer rejected its video input")
         }
         writer.add(input)
         guard writer.startWriting() else {
-            throw writer.error ?? PeekabooError.captureFailed("Test video writer failed to start")
+            throw writer.error ?? WinkError.captureFailed("Test video writer failed to start")
         }
         writer.startSession(atSourceTime: .zero)
 
         for (index, time) in [CMTime.zero, CMTime(seconds: 0.5, preferredTimescale: 600)].enumerated() {
             let buffer = try Self.makePixelBuffer(component: UInt8(48 + index * 96))
             guard adaptor.append(buffer, withPresentationTime: time) else {
-                throw writer.error ?? PeekabooError.captureFailed("Test video writer rejected a frame")
+                throw writer.error ?? WinkError.captureFailed("Test video writer rejected a frame")
             }
         }
         input.markAsFinished()
@@ -228,14 +228,14 @@ struct CaptureVideoLocalIngestTests {
             writer.finishWriting { continuation.resume() }
         }
         guard writer.status == .completed else {
-            throw writer.error ?? PeekabooError.captureFailed("Test video writer failed to finish")
+            throw writer.error ?? WinkError.captureFailed("Test video writer failed to finish")
         }
         return (root, url)
     }
 
     private static func makeAudioOnlyFixture() throws -> (root: URL, media: URL) {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-audio-ingest-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-audio-ingest-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let url = root.appendingPathComponent("fixture.caf")
         let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1))
@@ -260,12 +260,12 @@ struct CaptureVideoLocalIngestTests {
             &buffer
         )
         guard result == kCVReturnSuccess, let buffer else {
-            throw PeekabooError.captureFailed("Test pixel-buffer allocation failed")
+            throw WinkError.captureFailed("Test pixel-buffer allocation failed")
         }
         CVPixelBufferLockBaseAddress(buffer, [])
         defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
         guard let baseAddress = CVPixelBufferGetBaseAddress(buffer) else {
-            throw PeekabooError.captureFailed("Test pixel buffer has no base address")
+            throw WinkError.captureFailed("Test pixel buffer has no base address")
         }
         memset(baseAddress, Int32(component), CVPixelBufferGetDataSize(buffer))
         return buffer

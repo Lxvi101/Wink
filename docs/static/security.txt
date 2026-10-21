@@ -1,4 +1,4 @@
-Contact: https://github.com/openclaw/Peekaboo/security
+Contact: https://github.com/Lxvi101/Wink/security
 Preferred-Languages: en
 Canonical: https://peekaboo.sh/.well-known/security.txt
-Policy: https://github.com/openclaw/Peekaboo/security/policy
+Policy: https://github.com/Lxvi101/Wink/security/policy

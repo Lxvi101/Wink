@@ -1,9 +1,9 @@
 import Commander
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -25,9 +25,9 @@ struct AXOnlySeeRuntimeRoutingTests {
             ),
             commandType: SeeCommand.self
         )
-        func handshake(accessibility: Bool) -> PeekabooBridgeHandshakeResponse {
+        func handshake(accessibility: Bool) -> WinkBridgeHandshakeResponse {
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 hostKind: .onDemand,
                 build: "ax-only-fixture",
                 supportedOperations: [.inspectAccessibilityTree],
@@ -39,7 +39,7 @@ struct AXOnlySeeRuntimeRoutingTests {
                 ),
                 enabledOperations: [.inspectAccessibilityTree],
                 permissionTags: [
-                    PeekabooBridgeOperation.inspectAccessibilityTree.rawValue: [.accessibility],
+                    WinkBridgeOperation.inspectAccessibilityTree.rawValue: [.accessibility],
                 ]
             ).withProducerBoundSnapshotFixture()
         }

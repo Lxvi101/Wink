@@ -1,9 +1,9 @@
 import Commander
 import MCP
-import PeekabooFoundation
+import WinkFoundation
 import TachikomaMCP
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct MCPToolCommandOutputTests {
     @Test(arguments: [false, true])

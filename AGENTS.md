@@ -6,8 +6,8 @@
 
 ## Project Structure & Modules
 - `Apps/CLI` contains the SwiftPM package for the command-line tool; commands live under `Apps/CLI/Sources`, and unit/integration tests under `Apps/CLI/Tests`.
-- `Apps/Mac`, `Apps/PeekabooInspector`, and `Apps/Playground` host the macOS apps and related tooling; open `Apps/Peekaboo.xcworkspace` for Xcode work.
-- Shared logic sits in `Core/PeekabooCore` (automation, agent runtime, visualizer). Keep new utilities there rather than duplicating in apps.
+- `Apps/Mac`, `Apps/WinkInspector`, and `Apps/Playground` host the macOS apps and related tooling; open `Apps/Wink.xcworkspace` for Xcode work.
+- Shared logic sits in `Core/WinkCore` (automation, agent runtime, visualizer). Keep new utilities there rather than duplicating in apps.
 - Git submodules provide foundational pieces: `AXorcist/` (AX automation), `Commander/` (CLI parsing), `Swiftdansi/` (ANSI parsing), `Tachikoma/` (AI providers/MCP), and `TauTUI/`. Update them upstream first, then bump the pointers here.
 - Documentation lives in `docs/`; assets and marketing material are in `assets/`.
 
@@ -18,16 +18,16 @@
 - Rebuild the Mac app while editing Swift: `./scripts/build-mac-debug.sh`.
 - Validate before handoff: `pnpm run lint` (SwiftLint), `pnpm run format` (SwiftFormat fix; `pnpm run format:check` = CI gate), then `pnpm run test:safe`. Full automation/UI tests: `pnpm run test:automation` or `pnpm run test:all`.
 - Tachikoma live provider checks: `pnpm run tachikoma:test:integration`.
-- You may run `peekaboo` CLI commands locally for repros/debugging; be mindful they capture the host desktop (screen recording/accessibility permissions required).
+- You may run `wink` CLI commands locally for repros/debugging; be mindful they capture the host desktop (screen recording/accessibility permissions required).
 
 ## Coding Style & Naming Conventions
 - Swift 6.2, 4-space indent, 120-column wrap; explicit `self` is required (SwiftFormat enforces). Run `pnpm run format` before committing.
 - SwiftLint config lives in `.swiftlint.yml`; keep new code typed (avoid `Any`), prefer small scoped extensions over large files.
-- Follow existing module boundaries: automation APIs in `PeekabooAutomation`, agent glue in `PeekabooAgentRuntime`, UI feedback in `PeekabooVisualizer`.
+- Follow existing module boundaries: automation APIs in `WinkAutomation`, agent glue in `WinkAgentRuntime`, UI feedback in `WinkVisualizer`.
 
 ## Testing Guidelines
-- Add regression tests alongside fixes in `Apps/CLI/Tests` (XCTest naming: `ThingTests`). Use `PEEKABOO_INCLUDE_AUTOMATION_TESTS=true` env only when automation permissions are available.
-- For local end-to-end runs, ensure macOS Screen Recording and Accessibility are granted (`peekaboo permissions status|grant`).
+- Add regression tests alongside fixes in `Apps/CLI/Tests` (XCTest naming: `ThingTests`). Use `WINK_INCLUDE_AUTOMATION_TESTS=true` env only when automation permissions are available.
+- For local end-to-end runs, ensure macOS Screen Recording and Accessibility are granted (`wink permissions status|grant`).
 
 ## Commit & Pull Request Guidelines
 - Conventional Commits (`feat|fix|chore|docs|test|refactor|build|ci|style|perf`); scope optional: `feat(cli): add capture retry`.
@@ -35,7 +35,7 @@
 - Batch git network ops in groups: commit related repo changes first, then push/pull repos together so submodule gitlinks stay coherent.
 - PRs should summarize intent, list test commands executed, mention doc updates, and include screenshots or terminal snippets when behavior changes.
 - Never release or publish without an explicit release command.
-- Peekaboo releases: `docs/RELEASING.md` is the source of truth; `.github/workflows/release.yml` is the only publisher. Merge preparation, wait for green push CI on the exact commit, then rehearse on main with `dry_run=true` and approve the `release` environment. Publication requires a separately authorized annotated SSH-signed tag accepted by `.github/release-allowed-signers` and another environment approval.
+- Wink releases: `docs/RELEASING.md` is the source of truth; `.github/workflows/release.yml` is the only publisher. Merge preparation, wait for green push CI on the exact commit, then rehearse on main with `dry_run=true` and approve the `release` environment. Publication requires a separately authorized annotated SSH-signed tag accepted by `.github/release-allowed-signers` and another environment approval.
 - Hosted Actions owns signing/notarization credentials, npm OIDC publication, Homebrew handoff and the appcast closeout PR. Verify the published assets and exact npm tarball integrity, tap formula and merged appcast PR before closeout. Local terminal/fleet helpers only build or verify qualification artifacts; they do not publish.
 - Published CLI proof: run `npm exec` from `/tmp`; repo cwd may shadow the downloaded package with a local binary.
 - During PR triage, keep moving autonomously: fix defects, add obvious scoped features, and rewrite or land what makes sense.

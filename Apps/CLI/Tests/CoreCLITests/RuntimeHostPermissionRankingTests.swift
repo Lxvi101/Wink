@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -20,9 +20,9 @@ struct RuntimeHostPermissionRankingTests {
         )
             == [.accessibility])
         let resolution = try await fixture.resolve(options)
-        #expect(resolution.selectedRemoteSocketPath == PeekabooBridgeConstants.peekabooSocketPath)
+        #expect(resolution.selectedRemoteSocketPath == WinkBridgeConstants.winkSocketPath)
         #expect(fixture.handshakePaths.filter { $0 == fixture.peer.socketPath }.count == 1)
-        #expect(fixture.handshakePaths.filter { $0 == PeekabooBridgeConstants.peekabooSocketPath }.count == 1)
+        #expect(fixture.handshakePaths.filter { $0 == WinkBridgeConstants.winkSocketPath }.count == 1)
     }
 
     @Test
@@ -36,7 +36,7 @@ struct RuntimeHostPermissionRankingTests {
         )
             == [.accessibility, .postEvent])
         let resolution = try await fixture.resolve(options)
-        #expect(resolution.selectedRemoteSocketPath == PeekabooBridgeConstants.peekabooSocketPath)
+        #expect(resolution.selectedRemoteSocketPath == WinkBridgeConstants.winkSocketPath)
         #expect(fixture.handshakePaths.count == 2)
     }
 
@@ -85,7 +85,7 @@ struct RuntimeHostPermissionRankingTests {
         if !environmentOverride {
             options.bridgeSocketPath = fixture.peer.socketPath
         }
-        let environment = environmentOverride ? ["PEEKABOO_BRIDGE_SOCKET": fixture.peer.socketPath] : [:]
+        let environment = environmentOverride ? ["WINK_BRIDGE_SOCKET": fixture.peer.socketPath] : [:]
         let resolution = try await fixture.resolve(options, environment: environment)
         #expect(resolution.selectedRemoteSocketPath == fixture.peer.socketPath)
         #expect(fixture.handshakePaths == [fixture.peer.socketPath])
@@ -143,7 +143,7 @@ struct RuntimeHostPermissionRankingTests {
         defer { Task { await fixture.peer.stop() } }
         let resolution = try await fixture.resolve(Self.options(PressCommand.self))
         #expect(resolution.selectedRemoteSocketPath == (
-            legacyGUI ? PeekabooBridgeConstants.peekabooSocketPath : fixture.peer.socketPath
+            legacyGUI ? WinkBridgeConstants.winkSocketPath : fixture.peer.socketPath
         ))
         let encodedValue = try JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy))
         let encoded = try #require(encodedValue as? [String: Any])
@@ -151,9 +151,9 @@ struct RuntimeHostPermissionRankingTests {
     }
 
     @Test(arguments: [
-        PeekabooBridgePermissionKind.screenRecording, .accessibility, .postEvent, .appleScript,
+        WinkBridgePermissionKind.screenRecording, .accessibility, .postEvent, .appleScript,
     ])
-    func `only native permission losses affect ranking`(missing: PeekabooBridgePermissionKind) async throws {
+    func `only native permission losses affect ranking`(missing: WinkBridgePermissionKind) async throws {
         let fixture = try Fixture(
             daemonPermissions: .init(
                 screenRecording: missing != .screenRecording,
@@ -166,7 +166,7 @@ struct RuntimeHostPermissionRankingTests {
         defer { Task { await fixture.peer.stop() } }
         let resolution = try await fixture.resolve(Self.options(AppCommand.HideSubcommand.self))
         let expectedSocket = missing == .appleScript
-            ? fixture.peer.socketPath : PeekabooBridgeConstants.peekabooSocketPath
+            ? fixture.peer.socketPath : WinkBridgeConstants.winkSocketPath
         #expect(resolution.selectedRemoteSocketPath == expectedSocket)
     }
 
@@ -175,7 +175,7 @@ struct RuntimeHostPermissionRankingTests {
         let fixture = try Fixture(exactBuild: exactBuild)
         defer { Task { await fixture.peer.stop() } }
         let daemon = Self.candidate(fixture.peer.socketPath, kind: .onDemand, reusable: true)
-        let gui = Self.candidate(PeekabooBridgeConstants.peekabooSocketPath, kind: .gui)
+        let gui = Self.candidate(WinkBridgeConstants.winkSocketPath, kind: .gui)
         let report = try await BridgeDiagnostics(logger: .shared).report(
             runtimeOptions: CommandRuntimeOptions(),
             candidatePlan: .init(
@@ -202,8 +202,8 @@ struct RuntimeHostPermissionRankingTests {
     func `deprioritizing a weaker daemon retains a stronger daemon before GUI`() async throws {
         let weak = Self.candidate("/synthetic/weak.sock", kind: .onDemand)
         let strong = Self.candidate("/synthetic/strong.sock", kind: .onDemand)
-        let gui = Self.candidate(PeekabooBridgeConstants.peekabooSocketPath, kind: .gui)
-        let identity = PeekabooBridgeClientIdentity(
+        let gui = Self.candidate(WinkBridgeConstants.winkSocketPath, kind: .gui)
+        let identity = WinkBridgeClientIdentity(
             bundleIdentifier: nil, teamIdentifier: nil, processIdentifier: 123
         )
         var paths: [String] = []
@@ -212,7 +212,7 @@ struct RuntimeHostPermissionRankingTests {
             handshakeProvider: { candidate, _ in
                 paths.append(candidate.socketPath)
                 return BridgeTestFixtures.handshake(
-                    negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                    negotiatedVersion: WinkBridgeConstants.protocolVersion,
                     hostKind: candidate.requiredHostKind ?? .onDemand,
                     supportedOperations: [],
                     permissions: candidate == weak ? Self.denied : Self.granted
@@ -236,17 +236,17 @@ struct RuntimeHostPermissionRankingTests {
 
     @Test
     func `failed GUI first preserves following daemon order`() async throws {
-        let gui = Self.candidate(PeekabooBridgeConstants.peekabooSocketPath, kind: .gui)
+        let gui = Self.candidate(WinkBridgeConstants.winkSocketPath, kind: .gui)
         let weak = Self.candidate("/synthetic/weak.sock", kind: .onDemand)
         let strong = Self.candidate("/synthetic/strong.sock", kind: .onDemand)
-        let identity = PeekabooBridgeClientIdentity(
+        let identity = WinkBridgeClientIdentity(
             bundleIdentifier: nil, teamIdentifier: nil, processIdentifier: 123
         )
         let cache = RuntimeHostResolver.RemoteHandshakeCache(
             identity: identity,
             handshakeProvider: { candidate, _ in
                 BridgeTestFixtures.handshake(
-                    negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                    negotiatedVersion: WinkBridgeConstants.protocolVersion,
                     hostKind: candidate.requiredHostKind ?? .onDemand,
                     supportedOperations: candidate == gui ? [] : [.invalidateImplicitLatestSnapshot],
                     permissions: candidate == weak ? Self.denied : Self.granted
@@ -271,7 +271,7 @@ struct RuntimeHostPermissionRankingTests {
 
     private static func candidate(
         _ path: String,
-        kind: PeekabooBridgeHostKind,
+        kind: WinkBridgeHostKind,
         reusable: Bool = false
     ) -> RuntimeHostResolver.ImplicitRemoteCandidate {
         .init(
@@ -303,8 +303,8 @@ struct RuntimeHostPermissionRankingTests {
     private final class Fixture {
         let peer: ScriptedBridgePeer
         let exactBuild: Bool
-        let daemonHandshake: PeekabooBridgeHandshakeResponse
-        let guiHandshake: PeekabooBridgeHandshakeResponse
+        let daemonHandshake: WinkBridgeHandshakeResponse
+        let guiHandshake: WinkBridgeHandshakeResponse
         let guiUnavailable: Bool
         var handshakePaths: [String] = []
 
@@ -317,7 +317,7 @@ struct RuntimeHostPermissionRankingTests {
         ) throws {
             self.exactBuild = exactBuild
             self.guiUnavailable = guiUnavailable
-            let operations: [PeekabooBridgeOperation] = [
+            let operations: [WinkBridgeOperation] = [
                 .daemonStatus,
                 .invalidateImplicitLatestSnapshot,
                 .quitApplication,
@@ -332,29 +332,29 @@ struct RuntimeHostPermissionRankingTests {
                 negotiatedVersion: .init(major: 1, minor: 28),
                 supportedOperations: [.daemonStatus]
             )
-            let status = PeekabooDaemonStatus(running: true, pid: 4242, mode: .auto)
+            let status = WinkDaemonStatus(running: true, pid: 4242, mode: .auto)
             self.peer = try ScriptedBridgePeer(responses: (0..<8).flatMap { _ in
                 [.handshake(controlHandshake), .daemonStatus(status)]
             })
             self.daemonHandshake = BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 supportedOperations: operations,
                 permissions: daemonPermissions,
                 enabledOperations: operations,
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.attestedOperationReceipts,
-                    PeekabooBridgeHostCapability.processGenerationPinnedApplicationHide
+                    WinkBridgeHostCapability.attestedOperationReceipts,
+                    WinkBridgeHostCapability.processGenerationPinnedApplicationHide
                 ]
             )
             self.guiHandshake = BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 hostKind: .gui,
                 supportedOperations: guiCapable ? operations : [],
                 permissions: guiPermissions,
                 enabledOperations: guiCapable ? operations : [],
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.attestedOperationReceipts,
-                    PeekabooBridgeHostCapability.processGenerationPinnedApplicationHide
+                    WinkBridgeHostCapability.attestedOperationReceipts,
+                    WinkBridgeHostCapability.processGenerationPinnedApplicationHide
                 ]
             )
         }
@@ -377,7 +377,7 @@ struct RuntimeHostPermissionRankingTests {
                         requiresValidatedHistoricalDaemon: false
                     )
                     let gui = RuntimeHostResolver.ImplicitRemoteCandidate(
-                        socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+                        socketPath: WinkBridgeConstants.winkSocketPath,
                         requireReusableDaemon: false,
                         requiredHostKind: .gui,
                         requiresValidatedHistoricalDaemon: false
@@ -394,7 +394,7 @@ struct RuntimeHostPermissionRankingTests {
                 makeRemoteHandshakeCache: {
                     RuntimeHostResolver.RemoteHandshakeCache(
                         identity: .init(
-                            bundleIdentifier: "boo.peekaboo.test.ranking",
+                            bundleIdentifier: "boo.wink.test.ranking",
                             teamIdentifier: nil,
                             processIdentifier: 123
                         ),

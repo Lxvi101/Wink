@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct ConfigEditorLaunchTests {
@@ -37,7 +37,7 @@ struct ConfigEditorLaunchTests {
     func `CLI print-path does not create configuration or launch an editor`() async throws {
         try await self.withTempConfigDir { dir in
             let resolved = try CommanderRuntimeRouter.resolve(argv: [
-                "peekaboo", "config", "edit", "--print-path",
+                "wink", "config", "edit", "--print-path",
                 "--editor", dir.appendingPathComponent("missing-editor").path,
             ])
             var command = try CommanderCLIBinder.instantiateCommand(
@@ -47,7 +47,7 @@ struct ConfigEditorLaunchTests {
 
             #expect(command.printPath)
             try await command.run(using: self.makeRuntime())
-            #expect(!FileManager.default.fileExists(atPath: PeekabooCore.ConfigurationManager.configPath))
+            #expect(!FileManager.default.fileExists(atPath: WinkCore.ConfigurationManager.configPath))
         }
     }
 
@@ -93,28 +93,28 @@ struct ConfigEditorLaunchTests {
     private func makeRuntime() -> CommandRuntime {
         CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
     }
 
     private func withTempConfigDir(_ body: (URL) async throws -> Void) async throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-config-edit-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-config-edit-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let environmentKeys = [
             "PEEKABOO_CONFIG_DIR",
-            "PEEKABOO_CONFIG_NONINTERACTIVE",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION",
+            "WINK_CONFIG_NONINTERACTIVE",
+            "WINK_CONFIG_DISABLE_MIGRATION",
         ]
         let previous = Dictionary(uniqueKeysWithValues: environmentKeys.map { key in
             (key, getenv(key).map { String(cString: $0) })
         })
 
         setenv("PEEKABOO_CONFIG_DIR", tempDir.path, 1)
-        setenv("PEEKABOO_CONFIG_NONINTERACTIVE", "1", 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
-        PeekabooCore.ConfigurationManager.shared.resetForTesting()
+        setenv("WINK_CONFIG_NONINTERACTIVE", "1", 1)
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
+        WinkCore.ConfigurationManager.shared.resetForTesting()
 
         defer {
             for key in environmentKeys {
@@ -124,7 +124,7 @@ struct ConfigEditorLaunchTests {
                     unsetenv(key)
                 }
             }
-            PeekabooCore.ConfigurationManager.shared.resetForTesting()
+            WinkCore.ConfigurationManager.shared.resetForTesting()
             try? FileManager.default.removeItem(at: tempDir)
         }
 

@@ -1,9 +1,9 @@
 import AppKit
 import Foundation
 
-let logPath = ProcessInfo.processInfo.environment["PEEKABOO_HOTKEY_PROBE_LOG"]
-    ?? "/tmp/peekaboo-background-hotkey-probe-\(ProcessInfo.processInfo.processIdentifier).jsonl"
-let readyPath = ProcessInfo.processInfo.environment["PEEKABOO_HOTKEY_PROBE_READY"]
+let logPath = ProcessInfo.processInfo.environment["WINK_HOTKEY_PROBE_LOG"]
+    ?? "/tmp/wink-background-hotkey-probe-\(ProcessInfo.processInfo.processIdentifier).jsonl"
+let readyPath = ProcessInfo.processInfo.environment["WINK_HOTKEY_PROBE_READY"]
 
 @MainActor
 final class EventLogger {
@@ -82,7 +82,7 @@ let window = NSWindow(
     backing: .buffered,
     defer: false
 )
-window.title = "Peekaboo Background Hotkey Probe"
+window.title = "Wink Background Hotkey Probe"
 window.contentView = NSTextField(labelWithString: "Listening for background hotkeys")
 window.makeKeyAndOrderFront(nil)
 

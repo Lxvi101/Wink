@@ -1,8 +1,8 @@
 import AXorcist
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.localOnly))
 struct LabelExtractionTests {}

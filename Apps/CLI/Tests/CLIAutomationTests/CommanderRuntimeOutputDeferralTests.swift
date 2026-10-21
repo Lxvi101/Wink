@@ -1,10 +1,10 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -131,7 +131,7 @@ struct CommanderRuntimeOutputDeferralTests {
     @Test
     func `JSON success is replayed with one warning when snapshot cleanup fails`() async throws {
         let context = TestServicesFactory.makeAutomationTestContext()
-        context.snapshots.invalidationError = PeekabooError.operationError(
+        context.snapshots.invalidationError = WinkError.operationError(
             message: "invalidation unavailable"
         )
 
@@ -151,7 +151,7 @@ struct CommanderRuntimeOutputDeferralTests {
     @Test
     func `Text success is replayed with one warning when snapshot cleanup fails`() async throws {
         let context = TestServicesFactory.makeAutomationTestContext()
-        context.snapshots.invalidationError = PeekabooError.operationError(
+        context.snapshots.invalidationError = WinkError.operationError(
             message: "invalidation unavailable"
         )
 
@@ -188,7 +188,7 @@ struct CommanderRuntimeOutputDeferralTests {
     func `Failed selected-host catch-up blocks command before side effect`() async throws {
         let context = TestServicesFactory.makeAutomationTestContext()
         context.snapshots.effectiveImplicitLatestInvalidationWatermark = Date()
-        context.snapshots.invalidationError = PeekabooError.operationError(
+        context.snapshots.invalidationError = WinkError.operationError(
             message: "host watermark unavailable"
         )
 
@@ -255,7 +255,7 @@ struct CommanderRuntimeOutputDeferralTests {
     func `Command without snapshot dependency skips selected-host catch-up`() async throws {
         let context = TestServicesFactory.makeAutomationTestContext()
         context.snapshots.effectiveImplicitLatestInvalidationWatermark = Date()
-        context.snapshots.invalidationError = PeekabooError.operationError(
+        context.snapshots.invalidationError = WinkError.operationError(
             message: "must not be consulted"
         )
         let runtime = CommandRuntime(
@@ -274,10 +274,10 @@ struct CommanderRuntimeOutputDeferralTests {
     @Test
     func `Operation error output remains primary when snapshot cleanup also fails`() async throws {
         let context = TestServicesFactory.makeAutomationTestContext()
-        context.automation.clickError = PeekabooError.operationError(
+        context.automation.clickError = WinkError.operationError(
             message: "synthetic click failure"
         )
-        context.snapshots.invalidationError = PeekabooError.operationError(
+        context.snapshots.invalidationError = WinkError.operationError(
             message: "invalidation unavailable"
         )
 

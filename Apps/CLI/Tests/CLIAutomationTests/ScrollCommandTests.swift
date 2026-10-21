@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.safe),
@@ -163,7 +163,7 @@ struct ScrollCommandTests {
         automation.actionOutcome = InputFocusFixtures.typeOutcome
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -368,7 +368,7 @@ struct ScrollCommandTests {
     @Test
     func `stale background scroll reports canonical retry-safe refusal`() async throws {
         let context = await self.makeContext { automation, _ in
-            automation.scrollError = PeekabooError.snapshotStale(
+            automation.scrollError = WinkError.snapshotStale(
                 "target window owner, process generation, or bounds changed"
             )
         }
@@ -402,7 +402,7 @@ struct ScrollCommandTests {
     @Test
     func `unsupported background scroll reports canonical retry-safe refusal`() async throws {
         let context = await self.makeContext { automation, _ in
-            automation.scrollError = PeekabooError.invalidInput(
+            automation.scrollError = WinkError.invalidInput(
                 "Background scroll is unavailable for this target"
             )
         }

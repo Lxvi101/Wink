@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -229,7 +229,7 @@ ApplicationServiceActionResultProviding, ApplicationServiceTargetedActionResultP
     }
 
     func hideApplicationTargetedActionResult(identifier: String) async throws -> UIAutomationActionResult<Void> {
-        throw PeekabooError.notImplemented("Unpinned targeted hide \(identifier)")
+        throw WinkError.notImplemented("Unpinned targeted hide \(identifier)")
     }
 
     func hideApplicationTargetedActionResult(

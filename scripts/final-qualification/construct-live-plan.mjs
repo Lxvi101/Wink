@@ -72,12 +72,12 @@ export function constructLivePlan(bindingsPath, outputPath) {
   const retained = readStableJSON(bindingsPath, 'live-v4 bindings');
   const bindings = retained.value;
   exactKeys(bindings, [
-    'runs_directory', 'peekaboo_executable', 'controller_executable', 'monitor_executable',
+    'runs_directory', 'wink_executable', 'controller_executable', 'monitor_executable',
     'bridge', 'controllers', 'observer', 'monitor',
     'external_foreground_timeout_seconds', 'operation_timeout_seconds',
   ], 'bindings');
   protectedPath(bindings.runs_directory, 'runs_directory', 'directory');
-  for (const key of ['peekaboo_executable', 'controller_executable', 'monitor_executable']) {
+  for (const key of ['wink_executable', 'controller_executable', 'monitor_executable']) {
     protectedPath(bindings[key], key, 'file');
   }
 

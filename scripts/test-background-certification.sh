@@ -24,7 +24,7 @@ if [[ $# -gt 0 ]]; then
 fi
 
 if [[ -z "$ARTIFACT_ROOT" ]]; then
-    ARTIFACT_ROOT="$(mktemp -d /tmp/peekaboo-background-certification.XXXXXX)"
+    ARTIFACT_ROOT="$(mktemp -d /tmp/wink-background-certification.XXXXXX)"
     REMOVE_ARTIFACT_ROOT=true
 else
     if [[ "$ARTIFACT_ROOT" != /* ]]; then
@@ -54,7 +54,7 @@ else
 fi
 
 cleanup() {
-    if $REMOVE_ARTIFACT_ROOT && [[ "$ARTIFACT_ROOT" == /tmp/peekaboo-background-certification.* ]]; then
+    if $REMOVE_ARTIFACT_ROOT && [[ "$ARTIFACT_ROOT" == /tmp/wink-background-certification.* ]]; then
         rm -rf -- "$ARTIFACT_ROOT"
     fi
 }

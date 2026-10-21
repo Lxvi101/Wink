@@ -1,12 +1,12 @@
 import Commander
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -82,7 +82,7 @@ struct DialogDiscoveryCommandTests {
     func `dialog list service timeout is standardized and creates no mutation debt`(targeted: Bool) async throws {
         let dialogs = try StubDiscoveredDialogService()
         dialogs.listHandler = {
-            throw PeekabooError.timeout("Fixture dialog read deadline exceeded")
+            throw WinkError.timeout("Fixture dialog read deadline exceeded")
         }
 
         try await self.expectListFailure(
@@ -97,7 +97,7 @@ struct DialogDiscoveryCommandTests {
     func `dialog list unreadable hierarchy is standardized without claiming absence`(targeted: Bool) async throws {
         let dialogs = try StubDiscoveredDialogService()
         dialogs.listHandler = {
-            throw PeekabooError.accessibilityIncomplete("Fixture dialog hierarchy could not be read completely")
+            throw WinkError.accessibilityIncomplete("Fixture dialog hierarchy could not be read completely")
         }
 
         try await self.expectListFailure(
@@ -121,7 +121,7 @@ struct DialogDiscoveryCommandTests {
 
     @Test func `remote without discovery capability refuses before transport`() async throws {
         let service = RemoteDialogService(
-            client: PeekabooBridgeClient(socketPath: "/nonexistent/item5-dialog.sock"),
+            client: WinkBridgeClient(socketPath: "/nonexistent/item5-dialog.sock"),
             capabilities: .init(
                 prepareAction: true,
                 exactClick: true
@@ -377,7 +377,7 @@ private final class StubDiscoveredDialogService: DialogServiceProtocol {
 }
 
 @MainActor
-private final class DiscoveryCommandServices: PeekabooServiceProviding {
+private final class DiscoveryCommandServices: WinkServiceProviding {
     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("dialog-command-\(UUID())")
     let dialogs: any DialogServiceProtocol
     let snapshots: any SnapshotManagerProtocol = InMemorySnapshotManager()
@@ -395,7 +395,7 @@ private final class DiscoveryCommandServices: PeekabooServiceProviding {
 
     init(dialogs: any DialogServiceProtocol) {
         self.dialogs = dialogs
-        let client = PeekabooBridgeClient(socketPath: "/nonexistent/item5-dialog.sock")
+        let client = WinkBridgeClient(socketPath: "/nonexistent/item5-dialog.sock")
         self.screenCapture = RemoteScreenCaptureService(client: client)
         self.applications = RemoteApplicationService(client: client)
         self.browser = RemoteBrowserMCPClient(client: client)
@@ -405,7 +405,7 @@ private final class DiscoveryCommandServices: PeekabooServiceProviding {
         try? FileManager.default.removeItem(at: self.directory)
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         fatalError("unused")
     }
 

@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 import Testing
-@_spi(Testing) import PeekabooAutomationKit
-@testable import PeekabooCLI
+@_spi(Testing) import WinkAutomationKit
+@testable import WinkCLI
 
 @MainActor
 @Suite(.tags(.safe))

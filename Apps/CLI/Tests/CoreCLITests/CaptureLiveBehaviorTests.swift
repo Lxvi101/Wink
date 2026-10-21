@@ -1,11 +1,11 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CaptureLiveBehaviorTests {
     private enum SelectorSurface: CaseIterable {
@@ -67,13 +67,13 @@ struct CaptureLiveBehaviorTests {
     func `parseRegion rejects malformed or empty dimensions`() {
         var invalid = CaptureLiveCommand()
         invalid.region = "1,2,3"
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             _ = try invalid.parseRegion()
         }
 
         var zero = CaptureLiveCommand()
         zero.region = "1,2,0,4"
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             _ = try zero.parseRegion()
         }
     }
@@ -83,13 +83,13 @@ struct CaptureLiveBehaviorTests {
         for region in ["nan,2,3,4", "1,inf,3,4", "1,2,inf,4", "1,2,3,-inf"] {
             var live = CaptureLiveCommand()
             live.region = region
-            #expect(throws: PeekabooError.self, "live \(region)") {
+            #expect(throws: WinkError.self, "live \(region)") {
                 _ = try live.parseRegion()
             }
 
             var action = CaptureActionCommand()
             action.region = region
-            #expect(throws: PeekabooError.self, "action \(region)") {
+            #expect(throws: WinkError.self, "action \(region)") {
                 _ = try action.parseRegion()
             }
         }

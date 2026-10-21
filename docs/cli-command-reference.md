@@ -1,5 +1,5 @@
 ---
-summary: 'Cheat sheet for every Peekaboo CLI command grouped by category.'
+summary: 'Cheat sheet for every Wink CLI command grouped by category.'
 read_when:
   - 'learning what each CLI subcommand does'
   - 'mapping agent tools to direct CLI usage'
@@ -7,9 +7,9 @@ read_when:
 
 # CLI Command Reference
 
-This source-tree reference covers all 34 root commands in the upcoming v4 registry and is checked against the built binary's `--help` output. Use `peekaboo <command> --help` for every option and `peekaboo tools` for the separate MCP/agent tool catalog.
+This source-tree reference covers all 34 root commands in the upcoming v4 registry and is checked against the built binary's `--help` output. Use `wink <command> --help` for every option and `wink tools` for the separate MCP/agent tool catalog.
 
-The executable can be renamed or invoked through a symlink (for example, `pb see --help` or `peekaboo-4.9 --version`).
+The executable can be renamed or invoked through a symlink (for example, `pb see --help` or `wink-4.9 --version`).
 
 ## Core commands
 
@@ -71,7 +71,7 @@ Durations accept bare milliseconds, `ms`, or `s`: `500`, `500ms`, `2s`, and `1.5
 
 Command-deadline errors retain fractional durations: `200ms` is reported as `200 milliseconds`, and `1.5s` as `1.5 seconds`. Positive subsecond durations are rounded to the nearest millisecond, with a minimum displayed value of one millisecond. This formatting does not change the actual deadline or `TIMEOUT` error code.
 
-Interaction commands share foreground/focus controls where relevant. Background delivery is the default when Peekaboo can resolve an exact process target; physical pointer gestures and intentional global input require `--foreground`.
+Interaction commands share foreground/focus controls where relevant. Background delivery is the default when Wink can resolve an exact process target; physical pointer gestures and intentional global input require `--foreground`.
 
 ## JSON result envelope
 

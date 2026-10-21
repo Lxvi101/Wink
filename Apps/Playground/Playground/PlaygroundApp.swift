@@ -3,9 +3,9 @@ import Combine
 import OSLog
 import SwiftUI
 
-private let logger = Logger(subsystem: "boo.peekaboo.playground", category: "App")
-private let clickLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Click")
-private let keyLogger = Logger(subsystem: "boo.peekaboo.playground", category: "Key")
+private let logger = Logger(subsystem: "boo.wink.playground", category: "App")
+private let clickLogger = Logger(subsystem: "boo.wink.playground", category: "Click")
+private let keyLogger = Logger(subsystem: "boo.wink.playground", category: "Key")
 
 @main
 struct PlaygroundApp: App {
@@ -170,7 +170,7 @@ struct PlaygroundApp: App {
             FixtureCommands()
 
             CommandGroup(replacing: .appInfo) {
-                Button("About Peekaboo Playground") {
+                Button("About Wink Playground") {
                     logger.info("About menu clicked")
                     self.actionLogger.log(.menu, "About menu clicked")
                 }

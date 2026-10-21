@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.safe),
@@ -95,7 +95,7 @@ struct SeeCommandAnnotationIntegrationTests {
         }
 
         // Create a command that will use enhanced detection
-        let services = PeekabooServices()
+        let services = WinkServices()
         let imageData = Data() // Mock data for this test
 
         // Test with explicit window bounds

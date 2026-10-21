@@ -1,5 +1,5 @@
 ---
-title: Peekaboo 4 CLI Redesign Plan
+title: Wink 4 CLI Redesign Plan
 summary: 'Design principles, command map, flag grammar, tool-surface alignment, and phased implementation plan for the v4 CLI break.'
 description: The v4 CLI redesign — what gets removed, merged, renamed, and why; phased PR plan and open questions.
 read_when:
@@ -7,7 +7,7 @@ read_when:
   - 'deciding whether a command or flag belongs in the v4 surface'
 ---
 
-# Peekaboo 4 CLI Redesign Plan
+# Wink 4 CLI Redesign Plan
 
 Status: in implementation · 2026-08-09
 
@@ -19,9 +19,9 @@ mediar-ai/terminator, and clig.dev.
 
 ## 1. Design principles
 
-**P1 — The complementarity razor.** Peekaboo assumes its caller has a shell. Any capability
+**P1 — The complementarity razor.** Wink assumes its caller has a shell. Any capability
 a stock macOS tool already does well (`/usr/bin/open`, `/bin/sleep`, `pbcopy` for plain
-text) is *out of scope for the CLI*. Peekaboo keeps only what the ambient CLI cannot do:
+text) is *out of scope for the CLI*. Wink keeps only what the ambient CLI cannot do:
 UI perception (element maps), focus-aware input synthesis, AX actions, window/space/menu/
 dialog control, typed clipboard payloads, remote-bridge execution. The MCP surface may keep
 a few extra tools (`sleep`, app `open` action) because MCP clients don't always have shell
@@ -79,7 +79,7 @@ must never silently stand in for "the click landed."
 | `drag` | absorbs `swipe` | `--from` / `--to` each accept element ID *or* `x,y` (pattern-disambiguated; IDs never contain commas). Drops `--from-coords`/`--to-coords`. `--no-drop` covers swipe-without-drop if implementations truly differ (verify during implementation; else `swipe` just dies). |
 | `paste` | unchanged shape | Shares payload flags with `clipboard set` exactly; drops `--image-path` alias. |
 | `set-value` | + targeting group | Gains `--app`/`--window-*` targeting like its siblings. Tool: `set_value`. |
-| `action` | renamed from `perform-action` | `peekaboo action AXShowMenu --on B7`. Tool renamed `perform_action` → `action`. (Alternative considered: cua folds AX actions into `click --action`; rejected because `AXIncrement` on a slider is not a click.) |
+| `action` | renamed from `perform-action` | `wink action AXShowMenu --on B7`. Tool renamed `perform_action` → `action`. (Alternative considered: cua folds AX actions into `click --action`; rejected because `AXIncrement` on a slider is not a click.) |
 | `verify` | new (exposes existing tool) | CLI for the already-shipped `verify_state` MCP tool: predicates, `--timeout`, `--stable-samples`, ternary result. This is the principled replacement for blind sleeps. |
 | `open` → **removed** | | `/usr/bin/open` (P1). Ready-wait moves to `app launch --wait-ready`. |
 
@@ -109,7 +109,7 @@ must never silently stand in for "the click landed."
 | `bridge` | `status` (default). Unchanged. |
 | `tools` | Keeps catalog listing; **adds `tools describe <name>`** (cua's `describe` — per-tool schema on demand, the token-cheap discoverability lever). |
 | `learn` | Unchanged (agent usage guide). Regenerate content from the new surface. |
-| `clean` | Unchanged (snapshot cache is Peekaboo-owned state). |
+| `clean` | Unchanged (snapshot cache is Wink-owned state). |
 | `completions` | Unchanged; renderers pick up the registry automatically. |
 | `browser` | Kept at root (Chrome control is not shell-duplicable). Re-described as a first-class command — drop "through the browser MCP tool" phrasing. |
 
@@ -124,11 +124,11 @@ passes the razor.
 - `open` — P1. See `app launch`.
 - `run` — P1 + maintenance. It is a third parallel dispatch switch (13 commands, own
   camelCase param dialect) that exists only because it predates "the agent has bash." A
-  shell script chaining `peekaboo` commands is the automation script. Delete
+  shell script chaining `wink` commands is the automation script. Delete
   `ProcessService.executeStep` script dispatch, `RunCommand`, `docs/commands/run.md`.
 - `commander` — dev diagnostics; delete from the public registry (revive behind a hidden
   `debug` group only if Commander gains `hidden` support later).
-- `visualizer` — **kept**: it exercises Peekaboo's visual-feedback overlays (nothing the
+- `visualizer` — **kept**: it exercises Wink's visual-feedback overlays (nothing the
   shell can do) and is the test harness for the v4 visualizer redesign (§9).
 
 ## 3. Uniform flag grammar
@@ -181,7 +181,7 @@ Shared option groups, identical names and semantics everywhere they appear
    - `AgentSystemPrompt.swift` — prose tool names.
    - `ToolRegistry.convertAgentToolToDefinition` — stale category switch; rebuild from
      the catalog instead of a parallel hard-coded switch.
-   - `skills/peekaboo/SKILL.md` + `docs/commands/*.md` + `docs/cli-command-reference.md`
+   - `skills/wink/SKILL.md` + `docs/commands/*.md` + `docs/cli-command-reference.md`
      + `docs/MCP.md`.
 5. **Dead code deletion**: `ToolDefinitions.swift` (unreferenced), the non-compiling
    `AgentToolsTests.swift`, the `list` tool's `server_status` item type (fold into
@@ -198,7 +198,7 @@ for humans buys little here and costs namespace hygiene. Mitigations instead:
   replacement, including "use `/bin/sleep`" / "use `/usr/bin/open`" rows).
 - Changelog entry per removal.
 - `ToolType` keeps old raw values so persisted agent sessions still format.
-- The `run`-script format dies with `run`; no `.peekaboo.json` compat layer (the format
+- The `run`-script format dies with `run`; no `.wink.json` compat layer (the format
   was never a stable public contract — confirm no external consumers before deleting).
 
 ## 6. Result envelope (phase-able, recommended for 4.0)
@@ -209,7 +209,7 @@ Adopt cua's closed result vocabulary in `--json` output for parsed and classifie
 { "success": true,
   "effect": "confirmed | partial | unverifiable | suspected_noop | refused",
   "data": { ... },
-  "error": { "code": "...", "message": "...", "hint": "Run 'peekaboo see' to refresh." } }
+  "error": { "code": "...", "message": "...", "hint": "Run 'wink see' to refresh." } }
 ```
 
 - `effect` is computed from existing verification machinery (click focus-verification,
@@ -248,14 +248,14 @@ amortization — daemon already mitigates; revisit with data), capability-profil
 
 ## 8. Visualizer redesign (parallel track)
 
-Current state: 14 animation types in `Core/PeekabooVisualizer` (click, type, scroll,
+Current state: 14 animation types in `Core/WinkVisualizer` (click, type, scroll,
 hotkey, swipe path, mouse trail, window op, dialog, menu navigation, space transition,
 app launch/quit, screenshot flash, watch HUD, element highlight). Most are global
 full-screen overlays; the sum is noisy. v4 direction: **fewer, quieter, app-anchored.**
 
 **Keep (redesigned):**
 
-1. **Agent cursor** — the flagship. When Peekaboo drives the mouse, show a distinct
+1. **Agent cursor** — the flagship. When Wink drives the mouse, show a distinct
    cursor overlay moving *naturally* (eased path, cua-style arc/glide) to the target,
    with a subtle pulse on click. Drag/swipe render as the same cursor in a pressed state
    following the path — `SwipePathView` and `MouseTrailView` fold into this.
@@ -293,7 +293,7 @@ without relying on a timing-sensitive visibility test.
 3. `verify` naming: `verify` (matches tool, honest ternary semantics) vs `wait`
    (training-data prior from browser_wait_for). Recommendation: `verify`, with `--timeout`
    giving it wait-for semantics; mention "replaces sleep-polling" in help.
-4. Does anything external consume `.peekaboo.json` scripts? (Determines whether `run`
+4. Does anything external consume `.wink.json` scripts? (Determines whether `run`
    removal needs a deprecation release first.)
 5. `menubar` naming: keep `menubar`, or rename to `statusbar`/`status-item` to end the
    `menu`/`menubar` confusion? Recommendation: keep `menubar` (macOS-native term).

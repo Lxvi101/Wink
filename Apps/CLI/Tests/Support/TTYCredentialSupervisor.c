@@ -19,9 +19,9 @@ int main(int argument_count, char *arguments[]) {
     if (argument_count < 2 || setsid() < 0) {
         return 120;
     }
-    const char *detached_terminal = getenv("PEEKABOO_TEST_DETACHED_TTY");
+    const char *detached_terminal = getenv("WINK_TEST_DETACHED_TTY");
     if (detached_terminal != NULL && strcmp(detached_terminal, "1") == 0) {
-        if (dprintf(STDOUT_FILENO, "PEEKABOO_CHILD_PID=%d\n", getpid()) < 0) {
+        if (dprintf(STDOUT_FILENO, "WINK_CHILD_PID=%d\n", getpid()) < 0) {
             return 121;
         }
         execv(arguments[1], &arguments[1]);
@@ -67,7 +67,7 @@ int main(int argument_count, char *arguments[]) {
     }
 
     close(release_pipe[0]);
-    const char *background_terminal = getenv("PEEKABOO_TEST_BACKGROUND_TTY");
+    const char *background_terminal = getenv("WINK_TEST_BACKGROUND_TTY");
     pid_t foreground_process_group =
         background_terminal != NULL && strcmp(background_terminal, "1") == 0
             ? getpgrp()
@@ -77,7 +77,7 @@ int main(int argument_count, char *arguments[]) {
     if (setpgid(process_identifier, process_identifier) != 0 ||
         signal(SIGTTOU, SIG_IGN) == SIG_ERR ||
         tcsetpgrp(STDIN_FILENO, foreground_process_group) != 0 ||
-        dprintf(STDOUT_FILENO, "PEEKABOO_CHILD_PID=%d\n", process_identifier) < 0 ||
+        dprintf(STDOUT_FILENO, "WINK_CHILD_PID=%d\n", process_identifier) < 0 ||
         write(release_pipe[1], "x", 1) != 1) {
         close(release_pipe[1]);
         terminate_child(process_identifier);
@@ -94,7 +94,7 @@ int main(int argument_count, char *arguments[]) {
         }
         if (wait_result == process_identifier && WIFSTOPPED(child_status)) {
             // Resume only after the parent has consumed the completed stop event.
-            if (dprintf(STDOUT_FILENO, "PEEKABOO_CHILD_STOPPED=%d:%d\n",
+            if (dprintf(STDOUT_FILENO, "WINK_CHILD_STOPPED=%d:%d\n",
                         process_identifier, WSTOPSIG(child_status)) < 0) {
                 terminate_child(process_identifier);
                 return 132;

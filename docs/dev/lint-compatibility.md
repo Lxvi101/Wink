@@ -14,8 +14,8 @@ keep a consumer regression; an exception does not waive compiler, test, security
 
 ## Raw desktop evidence factory
 
-[`DesktopTargetEvidenceAdapter.evidence(processIdentifier:processStartIdentity:windowID:windowIdentity:windowBounds:focusedElement:)`](../../Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Strategy/DesktopTargetEvidenceAdapter.swift)
-shipped in Peekaboo 4.2.2. Its six independent inputs intentionally preserve incomplete or contradictory evidence for
+[`DesktopTargetEvidenceAdapter.evidence(processIdentifier:processStartIdentity:windowID:windowIdentity:windowBounds:focusedElement:)`](../../Core/WinkAutomationKit/Sources/WinkAutomationKit/Strategy/DesktopTargetEvidenceAdapter.swift)
+shipped in Wink 4.2.2. Its six independent inputs intentionally preserve incomplete or contradictory evidence for
 later validation. Grouping or removing those labels would break source callers; replacing them with a validated target
 would also change refusal semantics.
 
@@ -30,8 +30,8 @@ Separately from the SwiftLint factory exception above, three Swift Testing decla
 `@available(*, deprecated)` context to exercise deprecated public APIs shipped in v4.2.2
 (`05675b0b5e2c382146963e19493787d9dac0d45b`):
 
-- [`PeekabooBridgeAppleScriptCompatibilityTests`](../../Core/PeekabooCore/Tests/PeekabooTests/PeekabooBridgeAppleScriptCompatibilityTests.swift).`Legacy client probe API refuses before transport` protects the public client's local refusal before socket transport. Handshake omission and raw wire rejection do not prove this client behavior.
-- [`InMemorySnapshotManagerTests`](../../Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/InMemorySnapshotManagerTests.swift).`legacy seeded initializer remains source compatible and rejects malformed authority` protects the synchronous initializer's callable signature, valid seeding, continued reuse, and empty-manager handling of malformed authority.
+- [`WinkBridgeAppleScriptCompatibilityTests`](../../Core/WinkCore/Tests/WinkTests/WinkBridgeAppleScriptCompatibilityTests.swift).`Legacy client probe API refuses before transport` protects the public client's local refusal before socket transport. Handshake omission and raw wire rejection do not prove this client behavior.
+- [`InMemorySnapshotManagerTests`](../../Core/WinkAutomationKit/Tests/WinkAutomationKitTests/InMemorySnapshotManagerTests.swift).`legacy seeded initializer remains source compatible and rejects malformed authority` protects the synchronous initializer's callable signature, valid seeding, continued reuse, and empty-manager handling of malformed authority.
 - `InMemorySnapshotManagerTests`.`legacy seeded initializer rejects mismatched embedded coordinate authority` protects the same initializer's refusal to seed contradictory snapshot/coordinate authority.
 
 The async `containing` factory uses a different create-before-store path and throws on invalid input; substituting it

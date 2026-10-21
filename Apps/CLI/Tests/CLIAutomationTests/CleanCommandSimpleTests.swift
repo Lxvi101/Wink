@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundationTestSupport
+import WinkCore
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct CleanCommandSimpleTests {
@@ -102,7 +102,7 @@ struct CleanCommandSimpleTests {
     @Test
     @MainActor
     func `Clean snapshot miss reports disk not found in JSON and text`() async throws {
-        let services = TestServicesFactory.makePeekabooServices(files: StubFileService())
+        let services = TestServicesFactory.makeWinkServices(files: StubFileService())
         let missingSnapshotID = SnapshotReferenceFixtures.first.rawValue
 
         let jsonResult = try await InProcessCommandRunner.run(
@@ -130,7 +130,7 @@ struct CleanCommandSimpleTests {
     @Test
     @MainActor
     func `Clean invalid snapshot ID reports validation error`() async throws {
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             files: StubFileService(cleanSpecificError: .invalidSnapshotID)
         )
 
@@ -152,7 +152,7 @@ struct CleanCommandSimpleTests {
     @Test(arguments: ["-1", "0"])
     @MainActor
     func `Clean older-than non-positive hours reports validation error`(_ hours: String) async throws {
-        let services = TestServicesFactory.makePeekabooServices(files: StubFileService())
+        let services = TestServicesFactory.makeWinkServices(files: StubFileService())
 
         let result = try await InProcessCommandRunner.run(
             ["clean", "--older-than", hours, "--json"],

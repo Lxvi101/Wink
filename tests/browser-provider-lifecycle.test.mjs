@@ -6,7 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { devtoolsFixture } from './fixtures/devtools-websocket.mjs';
 
-const swift = readFileSync(new URL('../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift', import.meta.url), 'utf8');
+const swift = readFileSync(new URL('../Core/WinkCore/Sources/WinkAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift', import.meta.url), 'utf8');
 const bootstrap = swift.match(/static let source = #"""\n([\s\S]*?)\n    """#/)[1].replace(/^    /gm, '');
 process.env.PATH = fileURLToPath(new URL('../node_modules/.bin', import.meta.url)) + delimiter + process.env.PATH;
 await import('data:text/javascript,' + encodeURIComponent(bootstrap.split('process.argv =')[0]));
@@ -19,7 +19,7 @@ async function provider(endpoint) {
   const args = { ...defaults, usageStatistics: false, wsEndpoint: endpoint };
   const manager = new BrowserManager(args);
   const server = await McpServer.from(args, {browserManager: manager});
-  return {manager, server, verify: server.server._registeredTools.peekaboo_browser_connect.handler};
+  return {manager, server, verify: server.server._registeredTools.wink_browser_connect.handler};
 }
 
 test('ordinary provider calls retain the initial approval refusal', {timeout: 15_000}, async () => {

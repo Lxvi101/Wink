@@ -7,7 +7,7 @@ export FIXTURE_FORBIDDEN_LOG="$TEST_DIR/forbidden-operations.log"
 export FIXTURE_SIGNATURE_LOG="$TEST_DIR/signature-checks.log"
 export FIXTURE_VERIFY_ONLY=1
 mkdir -p "$TEST_DIR/forbidden-tools"
-for tool in swiftc open security peekaboo codesign xcodebuild; do
+for tool in swiftc open security wink codesign xcodebuild; do
   cat > "$TEST_DIR/forbidden-tools/$tool" <<'EOF'
 #!/bin/bash
 echo "unexpected operation: $0 $*" >> "${FIXTURE_FORBIDDEN_LOG:?}"
@@ -20,14 +20,14 @@ cat > "$TEST_DIR/codesign-verifier" <<'EOF'
 #!/bin/bash
 set -euo pipefail
 printf '%s\n' "$*" >> "${FIXTURE_SIGNATURE_LOG:?}"
-requirement='-R=anchor apple generic and certificate leaf[subject.OU] = "FWJYW4S8P8" and certificate leaf[subject.CN] = "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)" and identifier "boo.peekaboo.playground.debug"'
+requirement='-R=anchor apple generic and certificate leaf[subject.OU] = "FWJYW4S8P8" and certificate leaf[subject.CN] = "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)" and identifier "boo.wink.playground.debug"'
 if [[ $# == 5 && "$1" == --verify && "$2" == --deep && "$3" == --strict && "$4" == "$requirement" ]]; then
   [[ "${FIXTURE_SIGNATURE_FAILURE:-}" != invalid && "${FIXTURE_SIGNATURE_FAILURE:-}" != adhoc ]] || exit 1
   [[ "$(cat "$5/Contents/_CodeSignature/CodeResources")" == 'synthetic signature resource seal' ]] || exit 1
   [[ "$(cat "$5/Contents/Resources/fixture.txt")" == 'fixture resource' ]] || exit 1
 elif [[ $# == 3 && "$1" == -dv && "$2" == --verbose=2 ]]; then
   team=FWJYW4S8P8
-  identifier=boo.peekaboo.playground.debug
+  identifier=boo.wink.playground.debug
   authority='Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)'
   case "${FIXTURE_SIGNATURE_FAILURE:-}" in
     team) team=WRONGTEAM1 ;;
@@ -44,17 +44,17 @@ EOF
 chmod 755 "$TEST_DIR/codesign-verifier"
 
 native_validate() {
-  env PEEKABOO_PLAYGROUND_TEST_MODE=1 \
-    PEEKABOO_PLAYGROUND_CODESIGN_BIN="$TEST_DIR/codesign-verifier" \
-    PEEKABOO_PLAYGROUND_XCODEBUILD_BIN="$TEST_DIR/xcodebuild" \
-    PEEKABOO_PLAYGROUND_XCRUN_BIN="$TEST_DIR/xcrun" \
-    PEEKABOO_PLAYGROUND_XCODE_SELECT_BIN="$TEST_DIR/xcode-select" \
+  env WINK_PLAYGROUND_TEST_MODE=1 \
+    WINK_PLAYGROUND_CODESIGN_BIN="$TEST_DIR/codesign-verifier" \
+    WINK_PLAYGROUND_XCODEBUILD_BIN="$TEST_DIR/xcodebuild" \
+    WINK_PLAYGROUND_XCRUN_BIN="$TEST_DIR/xcrun" \
+    WINK_PLAYGROUND_XCODE_SELECT_BIN="$TEST_DIR/xcode-select" \
     "$FIXTURE_ROOT/scripts/test-background-computer-use.sh" \
     --validate-playground-only --playground-app "$1" --skip-playground-build
 }
 
 shared_validate() {
-  peekaboo_verify_playground_v2_receipt "$1/Contents/Resources/PeekabooPlaygroundSource.json" \
+  wink_verify_playground_v2_receipt "$1/Contents/Resources/WinkPlaygroundSource.json" \
     "$SOURCE_COMMIT" "$(git -C "$FIXTURE_ROOT" rev-parse HEAD:Apps/Playground)" \
     "$CANONICAL_LOCK_RELATIVE" "$DEPENDENCY_LOCK_SHA256" "$VERSION" \
     "$EFFECTIVE_DEVELOPER_DIR" "$XCODEBUILD_VERSION" "$SDK_VERSION" "$SWIFTC_VERSION"
@@ -100,7 +100,7 @@ printf 'producer -> shared validator -> terminal wrapper -> native preflight: un
 new_candidate() {
   candidate="$TEST_DIR/candidate-$1.app"
   /usr/bin/ditto "$OUTPUT_APP" "$candidate"
-  candidate_receipt="$candidate/Contents/Resources/PeekabooPlaygroundSource.json"
+  candidate_receipt="$candidate/Contents/Resources/WinkPlaygroundSource.json"
 }
 
 assert_receipt_refused() {
@@ -245,11 +245,11 @@ DEVELOPER_DIR="$TEST_DIR/DeveloperAlias" assert_native "$OUTPUT_APP" accept
   mkdir "$ARTIFACT_ROOT"
   PLAYGROUND_APP=""
   PLAYGROUND_BUILT_APP=""
-  PLAYGROUND_BUNDLE_ID=boo.peekaboo.playground.debug
+  PLAYGROUND_BUNDLE_ID=boo.wink.playground.debug
   PLAYGROUND_SOURCE_COMMIT="$SOURCE_COMMIT"
   PLAYGROUND_SOURCE_TREE="$(git -C "$ROOT_DIR" rev-parse HEAD:Apps/Playground)"
   PLAYGROUND_CODESIGN_BIN="$TEST_DIR/codesign-verifier"
-  PEEKABOO_PLAYGROUND_SIGN_IDENTITY='Synthetic test identity'
+  WINK_PLAYGROUND_SIGN_IDENTITY='Synthetic test identity'
   xcodebuild() {
     FIXTURE_VERIFY_ONLY=0 "$TEST_DIR/xcodebuild" "$@"
   }
@@ -269,14 +269,14 @@ DEVELOPER_DIR="$TEST_DIR/DeveloperAlias" assert_native "$OUTPUT_APP" accept
   if validate_playground_fixture >/dev/null 2>&1; then fail 'unowned v1 accepted'; fi
 )
 
-if env PEEKABOO_PLAYGROUND_TEST_MODE=1 \
+if env WINK_PLAYGROUND_TEST_MODE=1 \
   "$FIXTURE_ROOT/scripts/test-background-computer-use.sh" --playground-app "$OUTPUT_APP" \
   --skip-playground-build > "$TEST_DIR/live-mode.log" 2>&1; then
   fail 'test mode accepted on live path'
 fi
 grep -Fq 'restricted to --validate-playground-only' "$TEST_DIR/live-mode.log"
-for override in PEEKABOO_PLAYGROUND_CODESIGN_BIN PEEKABOO_PLAYGROUND_XCODEBUILD_BIN \
-  PEEKABOO_PLAYGROUND_XCRUN_BIN PEEKABOO_PLAYGROUND_XCODE_SELECT_BIN; do
+for override in WINK_PLAYGROUND_CODESIGN_BIN WINK_PLAYGROUND_XCODEBUILD_BIN \
+  WINK_PLAYGROUND_XCRUN_BIN WINK_PLAYGROUND_XCODE_SELECT_BIN; do
   if env "$override=/not/a/tool" "$FIXTURE_ROOT/scripts/test-background-computer-use.sh" \
     --playground-app "$OUTPUT_APP" --skip-playground-build > "$TEST_DIR/override.log" 2>&1; then
     fail 'test override accepted on live path'

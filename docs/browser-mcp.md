@@ -3,12 +3,12 @@ summary: 'Browser tool design and Chrome DevTools MCP permission flow'
 read_when:
   - 'working on browser automation'
   - 'debugging Chrome DevTools MCP integration'
-  - 'deciding whether to use Peekaboo native tools or browser page tools'
+  - 'deciding whether to use Wink native tools or browser page tools'
 ---
 
 # Browser Tool (Chrome DevTools MCP)
 
-Peekaboo exposes a native `browser` tool that brokers Chrome DevTools MCP. Agents call it through MCP, and scripts can use the dedicated `peekaboo browser` CLI wrapper. Use it for Chrome page content:
+Wink exposes a native `browser` tool that brokers Chrome DevTools MCP. Agents call it through MCP, and scripts can use the dedicated `wink browser` CLI wrapper. Use it for Chrome page content:
 
 - DOM/accessibility snapshots
 - page-level click/fill/type/navigation
@@ -16,7 +16,7 @@ Peekaboo exposes a native `browser` tool that brokers Chrome DevTools MCP. Agent
 - page screenshots
 - performance traces
 
-Use Peekaboo native tools for macOS UI, browser chrome, menus, dialogs, permissions, window management, and non-browser apps.
+Use Wink native tools for macOS UI, browser chrome, menus, dialogs, permissions, window management, and non-browser apps.
 
 ## Provider update guard
 
@@ -31,7 +31,7 @@ only when `ClearcutLogger.get()` returns an active logger. It verifies the packa
 published `ToolHandler.js` before loading the module, and refuses changed bytes before server startup or browser
 connection. The bootstrap is embedded in the native CLI and GUI host, so the separately downloaded `npx` provider
 receives the fix too. It does not edit npm caches, suppress tool-owned DevTools reads, change Puppeteer user gestures,
-or weaken Peekaboo's foreground policy. Node's module loader registration supports the provider's existing runtime
+or weaken Wink's foreground policy. Node's module loader registration supports the provider's existing runtime
 minimum; no extra dependency is needed.
 
 The same bootstrap verifies `BrowserManager.js` and the bundled dependency module before disabling automatic
@@ -48,41 +48,41 @@ without attaching Chrome. Remove the patch only when an upstream release fixes t
 routing, UID, and user-activation audit. The
 [1.10.1 handler](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/chrome-devtools-mcp-v1.10.1/src/ToolHandler.ts)
 and [page helper](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/chrome-devtools-mcp-v1.10.1/src/McpPage.ts)
-own the behavior; changing Peekaboo's background policy would weaken the existing contract.
+own the behavior; changing Wink's background policy would weaken the existing contract.
 
 The audit covers all 59 upstream tools in the configured catalog, while public raw-call schemas advertise 29 of the 30 tools registered by this
 provider configuration. Optional PWA tools require a category that conflicts with an existing-browser connection;
 those and disabled experimental tools are not advertised as usable capabilities.
 
-The new `get_css_styles` tool remains unavailable through Peekaboo: its nested CSS response references need an
+The new `get_css_styles` tool remains unavailable through Wink: its nested CSS response references need an
 opaque-reference projection before they can safely become caller-facing element references.
 
 ## Permission flow
 
-Peekaboo attaches to an already-running Chrome profile. It requires:
+Wink attaches to an already-running Chrome profile. It requires:
 
 1. Chrome 144 or newer.
 2. Chrome running locally.
 3. Remote debugging enabled at `chrome://inspect/#remote-debugging`.
 4. User approval in Chrome's remote debugging permission prompt.
 
-Peekaboo recognizes running channels by exact Chrome bundle identifier, so app-owned helper or XPC service names cannot
+Wink recognizes running channels by exact Chrome bundle identifier, so app-owned helper or XPC service names cannot
 be mistaken for another browser process. Native channel mode also requires the live process to satisfy Google's
-Apple-anchored code-signing requirement for Team ID `EQHXZ8M8AV`. Peekaboo pins its exact signed channel identifier,
+Apple-anchored code-signing requirement for Team ID `EQHXZ8M8AV`. Wink pins its exact signed channel identifier,
 Team ID, and CDHash to the PID generation before opening the approval-gated WebSocket, then requires the same identity
-after `Browser.getVersion` and around every later listener revalidation. Peekaboo does not approve the prompt
+after `Browser.getVersion` and around every later listener revalidation. Wink does not approve the prompt
 automatically. Once Chrome publishes
 `DevToolsActivePort`, channel connect reads that owner-controlled file without following symlinks, proves that its one
 exact loopback listener belongs to the detected Chrome PID and process generation, and passes the exact published
 WebSocket as `--wsEndpoint` to Chrome DevTools MCP. The provider opens one connection, waits for Chrome's approval,
-and answers a private owner verification request with CDP `Browser.getVersion` on that same connection. Peekaboo
+and answers a private owner verification request with CDP `Browser.getVersion` on that same connection. Wink
 revalidates the process-owned listener and signer before publishing a complete receipt. Approval and provider startup
 share the 90-second connection deadline. Page operations reuse this socket; there is no separate approval probe.
 Exact-WebSocket providers use a 90-second MCP request ceiling so stdio RPC cannot cut off Chrome's 60-second approval
 upgrade. The owner still enforces the shared connection deadline; individual tool timeouts remain provider-controlled.
 Once the child is connected, status, repeated connect, and browser
 execution revalidate the active-port file, kernel listener, PID generation, and bundle without opening another native
-WebSocket or prompting again. Peekaboo never uses legacy HTTP discovery for channel mode or asks the MCP child to
+WebSocket or prompting again. Wink never uses legacy HTTP discovery for channel mode or asks the MCP child to
 rediscover an ambient browser.
 
 Chrome's approval-mode listener deliberately returns HTTP 404 for `/json/version`. This does not mean that the
@@ -98,10 +98,10 @@ client includes epoch authority only in authenticated scoped-session requests, w
 
 ## Privacy defaults
 
-Peekaboo starts Chrome DevTools MCP with:
+Wink starts Chrome DevTools MCP with:
 
 ```bash
-# Effective provider options; Peekaboo's embedded bootstrap applies the audited telemetry fix first.
+# Effective provider options; Wink's embedded bootstrap applies the audited telemetry fix first.
 chrome-devtools-mcp \
   --wsEndpoint=ws://127.0.0.1:<port>/devtools/browser/<id> \
   --page-id-routing \
@@ -110,22 +110,22 @@ chrome-devtools-mcp \
   --no-performance-crux
 ```
 
-Peekaboo pins the verified Chrome DevTools MCP version because direct page-ID routing and the structured response data
+Wink pins the verified Chrome DevTools MCP version because direct page-ID routing and the structured response data
 used to mint opaque page/element capabilities remain version-sensitive upstream contracts. Upgrade the pin only after its
 page-scoped schemas, structured response surfaces, and routing behavior have been revalidated.
 
 For deterministic legacy CLI tests or custom Chrome endpoints:
 
-- `PEEKABOO_BROWSER_MCP_ISOLATED=1` lets the standalone browser CLI launch a temporary Chrome profile. Authenticated
+- `WINK_BROWSER_MCP_ISOLATED=1` lets the standalone browser CLI launch a temporary Chrome profile. Authenticated
   MCP and Agent capability sessions reject this mode before provider startup because the child does not expose a
-  browser identity that Peekaboo can bind to caller-owned opaque references.
-- `PEEKABOO_BROWSER_MCP_HEADLESS=1` makes that launched browser headless.
-- `PEEKABOO_BROWSER_MCP_BROWSER_URL=http://127.0.0.1:9222` connects to an explicit debuggable Chrome endpoint instead of auto-connect.
+  browser identity that Wink can bind to caller-owned opaque references.
+- `WINK_BROWSER_MCP_HEADLESS=1` makes that launched browser headless.
+- `WINK_BROWSER_MCP_BROWSER_URL=http://127.0.0.1:9222` connects to an explicit debuggable Chrome endpoint instead of auto-connect.
 
 The CLI exposes the safer request-carried equivalent:
 
 ```bash
-peekaboo browser connect --browser-url http://127.0.0.1:9222 --foreground --json
+wink browser connect --browser-url http://127.0.0.1:9222 --foreground --json
 ```
 
 Only loopback HTTP endpoints with a port from 1 through 65535 are accepted. Use brackets for IPv6, for example
@@ -140,12 +140,12 @@ profile cannot substitute an arbitrary authority file for a detected GUI browser
 
 The tool can expose page content, cookies/session-backed data visible to the page, console messages, network requests, screenshots, and traces to the active agent/MCP client. Do not enable it for browser profiles containing sensitive data unless that exposure is acceptable.
 
-Browser uploads are host-owned. Peekaboo gives each Chrome DevTools MCP child one private owner-only temporary root and
+Browser uploads are host-owned. Wink gives each Chrome DevTools MCP child one private owner-only temporary root and
 does not pass `--allowUnrestrictedPaths`. Every mapped or raw `upload_file` call is intercepted before dispatch: the
 source must be an absolute, current-user-owned regular file no larger than 100 MiB, opened without following a final
 symlink, and copied from that checked descriptor into a read-only transfer directory under the child root. The copy is
 kept for the exact browser session because Chrome can read an attached file after the upload tool returns; it is removed
-only after the MCP child terminates on disconnect, connection loss, endpoint drift, or cancellation. Peekaboo's public
+only after the MCP child terminates on disconnect, connection loss, endpoint drift, or cancellation. Wink's public
 single-file `filePath` contract is translated to the provider's `filePaths` array only after staging; caller-supplied
 `filePaths` arrays are refused before dispatch. External upload
 authorization remains the caller's responsibility.
@@ -166,7 +166,7 @@ validation.
   evaluation, including internal page-title, stable-DOM, snapshot, and element-geometry work. Background contexts
   therefore expose only source-audited routes that cannot reach that path and refuse the rest before provider I/O.
 - In Bridge-backed MCP mode, an explicit `--browser-handoff <absolute-private-path>` plus one exact `--bridge-socket`
-  opens an authenticated caller-scoped transport. A foreground `peekaboo browser connect --handoff-file` on that same
+  opens an authenticated caller-scoped transport. A foreground `wink browser connect --handoff-file` on that same
   socket first writes the canonical signed receipt. The Bridge consumes it once, validates the caller, listener/host
   generation, exact target receipt, claim, and provider epoch, then creates a distinct scoped Chrome DevTools MCP child.
   Scoped status, execution, disconnect, and terminal end all carry the opaque session ID. Status returns the provider
@@ -179,7 +179,7 @@ validation.
 - Native channel connections and explicit loopback URLs both resolve to an exact WebSocket and are eligible for
   receipt-bound execution. Isolated-profile children remain unbound because the child does not report a pinnable
   browser identity.
-- Child-process loss, PID reuse, endpoint restart, or an attempted retarget fails closed with reconnect guidance. Peekaboo
+- Child-process loss, PID reuse, endpoint restart, or an attempted retarget fails closed with reconnect guidance. Wink
   never silently rediscovers another same-channel profile.
 - Receipt-bound execution resolves a complete WebSocket browser identity and compares that identity inside the browser
   execution gate before the first call. Channel receipts additionally carry the owning PID, process generation, and
@@ -193,7 +193,7 @@ validation.
   whole batch.
 - Active upload cancellation terminates the exact MCP child before deleting its private transfer root; an operation ID
   prevents delayed cancellation cleanup from terminating a newer browser session.
-- Peekaboo enables Chrome DevTools MCP's page-ID routing. Every page-scoped action requires `page_id` and is
+- Wink enables Chrome DevTools MCP's page-ID routing. Every page-scoped action requires `page_id` and is
   routed directly to that page instead of relying on the process-global selected page. The upstream MCP server
   serializes calls with its FIFO tool mutex, so concurrent agents cannot redirect one another between selection
   and execution.
@@ -207,7 +207,7 @@ validation.
   still present in the current document. References copied into another caller session fail before Chrome dispatch.
 - Independently authenticated process-local browser sessions own separate Chrome DevTools MCP children and FIFO
   execution/mutation gates, so one blocked session does not stall another while calls within each session remain
-  ordered. Peekaboo reserves the canonical process/DevTools target before permission-bearing provider setup; two
+  ordered. Wink reserves the canonical process/DevTools target before permission-bearing provider setup; two
   sessions therefore cannot even transiently connect or probe the same exact target. Authenticated sessions refuse
   isolated-profile children before provider startup because their intentionally receiptless browser identity cannot
   support caller-owned opaque references. Launch a separate headless Chrome and connect through its exact loopback
@@ -218,16 +218,16 @@ validation.
   epoch, opaque-reference namespace, and cleanup lifecycle. Ambiguous opens retry only with the same claim and payload;
   ambiguous end cleanup retains the exact handle until confirmed, while wrong-owner or host-generation failures become
   terminal without unsafe replay.
-- On the selected runtime host, each browser-enabled `peekaboo mcp serve` session, or server consuming an explicit
+- On the selected runtime host, each browser-enabled `wink mcp serve` session, or server consuming an explicit
   browser handoff, owns and tears down its own browser child. Without an authenticated
   Bridge handoff, the background-only default starts disconnected and cannot bootstrap browser control. To authorize
   setup for that exact server-owned child,
-  start `peekaboo mcp serve --allow-foreground` and invoke its `browser` `connect` action; user-activating page operations
+  start `wink mcp serve --allow-foreground` and invoke its `browser` `connect` action; user-activating page operations
   require the same explicit server authority and use the resulting caller-owned connection. This scoped connection must use a native Chrome channel or an exact loopback
   `browser_url`; isolated mode is reserved for legacy standalone CLI sessions. With a Bridge handoff, the background
   server instead starts bound to the transferred exact connection and does not expose `connect`.
 
-Use `peekaboo daemon status` to see browser connection state, tool count, and detected Chrome channels.
+Use `wink daemon status` to see browser connection state, tool count, and detected Chrome channels.
 
 ## Actions
 
@@ -255,7 +255,7 @@ Common actions:
 Advanced escape hatch:
 
 - `call` with `mcp_tool` and `mcp_args_json` forwards a raw tool from the audited, pinned Chrome DevTools MCP
-  v1.10.1 catalog. Page-targeted raw tools require the wrapper's top-level `page_id`; Peekaboo validates and injects
+  v1.10.1 catalog. Page-targeted raw tools require the wrapper's top-level `page_id`; Wink validates and injects
   it as upstream `pageId`, overriding any nested value in `mcp_args_json`. Truly global tools such as `list_pages`
   reject `page_id`. UID-bearing raw schemas are resolved only at their audited positions, including
   `evaluate_script.args`, form elements, and third-party singleton `{ "uid": ... }` parameters; unrelated domain
@@ -264,12 +264,12 @@ Advanced escape hatch:
   non-snapshot success, content-item metadata/resources, status-prefixed, structured-message, fallback-page-note, and
   upload responses project their provider-owned fields too, without rewriting page titles, script values, or other
   domain data. Provider page/UID tokens and private staging paths therefore never become caller authority or
-  diagnostics. Provider error payloads are reduced to a safe generic diagnostic while retaining Peekaboo's canonical
+  diagnostics. Provider error payloads are reduced to a safe generic diagnostic while retaining Wink's canonical
   outcome metadata, because arbitrary error objects cannot distinguish provider identifiers from domain data.
   Text-only snapshots never mint element capabilities: without a structured snapshot, page-controlled
-  multiline accessibility text makes line-leading `uid=` rows fundamentally ambiguous, so Peekaboo fails closed.
+  multiline accessibility text makes line-leading `uid=` rows fundamentally ambiguous, so Wink fails closed.
   `trigger_extension_action` is audited but blocked because upstream still resolves its
-  shared selected page internally; Peekaboo will not forward it until upstream supports explicit `pageId` routing.
+  shared selected page internally; Wink will not forward it until upstream supports explicit `pageId` routing.
   Unknown raw tool names fail closed until the routing contract is audited and updated.
   Background schemas advertise only raw routes with a request-provable no-user-activation variant. Any route that can
   reach Puppeteer evaluation—including `evaluate_script`, page-list formatting, snapshots, waits, or element work—is
@@ -298,7 +298,7 @@ sequence, disabled controls may do nothing, and handlers requiring trusted input
 afterward to confirm the handler or navigation actually took effect. Accepted or uncertain dispatch remains
 retry-unsafe; do not blindly replay a click after failure or cancellation.
 
-`type` and `press_key` also require an opaque element reference from the newest snapshot as `uid`. Peekaboo holds one browser execution gate while it
+`type` and `press_key` also require an opaque element reference from the newest snapshot as `uid`. Wink holds one browser execution gate while it
 focuses that exact uid and sends the keyboard operation; concurrent page work cannot interleave between those leaves.
 
 ## Examples
@@ -306,13 +306,13 @@ focuses that exact uid and sends the keyboard operation; concurrent page work ca
 CLI:
 
 ```bash
-peekaboo browser status --json
-peekaboo browser connect --channel stable --foreground
-peekaboo browser connect --browser-url http://127.0.0.1:9222 --foreground
-peekaboo browser new-page --url https://example.com --foreground
-peekaboo browser navigate --page-id 2 --url https://example.com/docs --foreground
-peekaboo browser snapshot --page-id 2 --path /tmp/page.txt --foreground
-peekaboo browser network --page-id 2 --request-id 7 --json
+wink browser status --json
+wink browser connect --channel stable --foreground
+wink browser connect --browser-url http://127.0.0.1:9222 --foreground
+wink browser new-page --url https://example.com --foreground
+wink browser navigate --page-id 2 --url https://example.com/docs --foreground
+wink browser snapshot --page-id 2 --path /tmp/page.txt --foreground
+wink browser network --page-id 2 --request-id 7 --json
 ```
 
 MCP JSON:
@@ -329,14 +329,14 @@ The MCP server is background-only and refuses that `connect` request before disp
 both the explicit foreground CLI connection and the MCP server to the same reusable daemon:
 
 ```bash
-peekaboo daemon start
-peekaboo browser connect --channel stable --foreground \
-  --bridge-socket "$HOME/Library/Application Support/Peekaboo/daemon.sock"
-peekaboo mcp serve \
-  --bridge-socket "$HOME/Library/Application Support/Peekaboo/daemon.sock"
+wink daemon start
+wink browser connect --channel stable --foreground \
+  --bridge-socket "$HOME/Library/Application Support/Wink/daemon.sock"
+wink mcp serve \
+  --bridge-socket "$HOME/Library/Application Support/Wink/daemon.sock"
 ```
 
-A default process-local `peekaboo mcp serve` cannot reuse browser state created by a separate CLI process.
+A default process-local `wink mcp serve` cannot reuse browser state created by a separate CLI process.
 
 ```json
 { "action": "snapshot", "page_id": "bp1_<opaque>" }

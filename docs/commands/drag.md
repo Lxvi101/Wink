@@ -1,11 +1,11 @@
 ---
-summary: 'Execute drag-and-drop flows via peekaboo drag'
+summary: 'Execute drag-and-drop flows via wink drag'
 read_when:
   - 'moving elements/files with precision between apps or coordinates'
   - 'testing multi-step drags (Trash, Dock targets, selection gestures)'
 ---
 
-# `peekaboo drag`
+# `wink drag`
 
 `drag` defaults to one bounded, linear background gesture inside the exact window owned by an explicit fresh `--snapshot`. It routes primer, button-down, drag samples, and button-up to that window without moving the physical cursor, activating an app, or showing an overlay. Coordinates are global logical screen points; both endpoints must remain inside the captured window.
 
@@ -41,23 +41,23 @@ Cross-window/application drops, modifiers, human movement, and shared physical c
 ## Examples
 ```bash
 # Background drag inside one captured exact window (global logical coordinates)
-peekaboo drag --from "120,180" --to "300,180" --snapshot "$SNAPSHOT_ID"
+wink drag --from "120,180" --to "300,180" --snapshot "$SNAPSHOT_ID"
 
 # Drag a file element into the Trash
-peekaboo drag --from file_tile_3 --to-app Trash --foreground
+wink drag --from file_tile_3 --to-app Trash --foreground
 
 # Coordinate → coordinate drag with longer duration
-peekaboo drag --from "120,880" --to "480,220" --duration 1.2s --steps 40 --foreground
+wink drag --from "120,880" --to "480,220" --duration 1.2s --steps 40 --foreground
 
 # Human-style drag with adaptive timing
-peekaboo drag --from "80,80" --to "420,260" --profile human --button right --foreground
+wink drag --from "80,80" --to "420,260" --profile human --button right --foreground
 
 # Range-select items by holding Shift
-peekaboo drag --from row_1 --to row_5 --modifiers shift --foreground
+wink drag --from row_1 --to row_5 --modifiers shift --foreground
 ```
 
 ## Troubleshooting
-- Verify Event Synthesizing permission (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
-- If you see `SNAPSHOT_NOT_FOUND`, observe again with `peekaboo see` and pass its new snapshot explicitly. Only foreground mode may omit `--snapshot` to use the most recent one.
+- Verify Event Synthesizing permission (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
+- If you see `SNAPSHOT_NOT_FOUND`, observe again with `wink see` and pass its new snapshot explicitly. Only foreground mode may omit `--snapshot` to use the most recent one.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

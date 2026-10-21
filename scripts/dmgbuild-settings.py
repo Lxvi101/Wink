@@ -1,4 +1,4 @@
-"""Finder layout for the Peekaboo terminal-qualification disk image.
+"""Finder layout for the Wink terminal-qualification disk image.
 
 The terminal artifact builder supplies absolute artifact paths through dmgbuild's ``-D``
 arguments. dmgbuild writes the volume and .DS_Store metadata directly, so

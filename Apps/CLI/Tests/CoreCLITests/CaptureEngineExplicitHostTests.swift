@@ -1,7 +1,7 @@
 import Commander
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -21,12 +21,12 @@ struct CaptureEngineExplicitHostTests {
                 var options: [String: [String]] = [:]
                 var environment: [String: String] = [:]
                 if engineInEnvironment {
-                    environment["PEEKABOO_CAPTURE_ENGINE"] = engine
+                    environment["WINK_CAPTURE_ENGINE"] = engine
                 } else {
                     options["captureEngine"] = [engine]
                 }
                 if socketInEnvironment {
-                    environment["PEEKABOO_BRIDGE_SOCKET"] = Self.socket
+                    environment["WINK_BRIDGE_SOCKET"] = Self.socket
                 } else {
                     options["bridge-socket"] = [Self.socket]
                 }
@@ -59,9 +59,9 @@ struct CaptureEngineExplicitHostTests {
     @Test(arguments: ["live", "action"])
     func `explicit remote isolation retains precedence over engine and socket`(command: String) throws {
         for isolation in ["flag", "", "0", "false", "1"] {
-            var environment = ["PEEKABOO_CAPTURE_ENGINE": "modern", "PEEKABOO_BRIDGE_SOCKET": Self.socket]
+            var environment = ["WINK_CAPTURE_ENGINE": "modern", "WINK_BRIDGE_SOCKET": Self.socket]
             if isolation != "flag" {
-                environment["PEEKABOO_NO_REMOTE"] = isolation
+                environment["WINK_NO_REMOTE"] = isolation
             }
             let options = try Self.bind(
                 command: command,
@@ -86,7 +86,7 @@ struct CaptureEngineExplicitHostTests {
 
     @Test(arguments: ["live", "action"], ["", " \n "])
     func `empty engine values preserve default remote capture`(command: String, empty: String) throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": empty, "PEEKABOO_BRIDGE_SOCKET": Self.socket]
+        let environment = ["WINK_CAPTURE_ENGINE": empty, "WINK_BRIDGE_SOCKET": Self.socket]
         let options = try Self.bind(
             command: command,
             options: ["captureEngine": [empty]],
@@ -108,7 +108,7 @@ struct CaptureEngineExplicitHostTests {
 
     @Test(arguments: ["live", "action"], ["", " \n "])
     func `empty CLI values do not hide ambient engine or socket`(command: String, empty: String) throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": "auto", "PEEKABOO_BRIDGE_SOCKET": Self.socket]
+        let environment = ["WINK_CAPTURE_ENGINE": "auto", "WINK_BRIDGE_SOCKET": Self.socket]
         let options = try Self.bind(
             command: command,
             options: ["captureEngine": [empty], "bridge-socket": [empty]],
@@ -130,7 +130,7 @@ struct CaptureEngineExplicitHostTests {
         let options = try Self.bind(
             command: command,
             options: ["captureEngine": ["auto"], "bridge-socket": [Self.socket]],
-            environment: ["PEEKABOO_CAPTURE_ENGINE": "invalid-ambient-engine"]
+            environment: ["WINK_CAPTURE_ENGINE": "invalid-ambient-engine"]
         )
 
         #expect(options.captureEnginePreference == "auto")
@@ -147,10 +147,10 @@ struct CaptureEngineExplicitHostTests {
         for engineInEnvironment in [false, true] {
             for socket in [nil, "", " \n "] as [String?] {
                 var arguments = ["captureEngine": [engineInEnvironment ? "" : engine]]
-                var environment = ["PEEKABOO_CAPTURE_ENGINE": engineInEnvironment ? engine : ""]
+                var environment = ["WINK_CAPTURE_ENGINE": engineInEnvironment ? engine : ""]
                 if let socket {
                     arguments["bridge-socket"] = [socket]
-                    environment["PEEKABOO_BRIDGE_SOCKET"] = socket
+                    environment["WINK_BRIDGE_SOCKET"] = socket
                 }
                 let options = try Self.bind(command: command, options: arguments, environment: environment)
 
@@ -178,7 +178,7 @@ struct CaptureEngineExplicitHostTests {
     func `environment socket can opt an already bound CLI engine into inline transport`(command: String) throws {
         let local = try Self.bind(command: command, options: ["captureEngine": ["cg"]])
         let literalSocket = "\(Self.socket) \n"
-        let environment = ["PEEKABOO_BRIDGE_SOCKET": literalSocket, "PEEKABOO_CAPTURE_ENGINE": "invalid"]
+        let environment = ["WINK_BRIDGE_SOCKET": literalSocket, "WINK_CAPTURE_ENGINE": "invalid"]
         let remote = local.applyingEnvironmentOverrides(environment: environment)
         let repeated = remote.applyingEnvironmentOverrides(environment: environment)
 
@@ -200,14 +200,14 @@ struct CaptureEngineExplicitHostTests {
     @Test(arguments: ["/synthetic/host.sock ", "/synthetic/host.sock\n", " \n "])
     func `nonblank socket presence preserves selected path bytes and precedence`(literalSocket: String) {
         var options = CommandRuntimeOptions()
-        let environment = ["PEEKABOO_BRIDGE_SOCKET": literalSocket]
+        let environment = ["WINK_BRIDGE_SOCKET": literalSocket]
         let isNonblank = !literalSocket.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         #expect(BridgeSocketResolver.explicitBridgeSocket(options: options, environment: environment) == literalSocket)
         #expect(BridgeSocketResolver
             .hasNonblankExplicitBridgeSocket(options: options, environment: environment) == isNonblank)
         options.bridgeSocketPath = literalSocket
-        let otherEnvironment = ["PEEKABOO_BRIDGE_SOCKET": Self.socket]
+        let otherEnvironment = ["WINK_BRIDGE_SOCKET": Self.socket]
         #expect(BridgeSocketResolver
             .explicitBridgeSocket(options: options, environment: otherEnvironment) == literalSocket)
         #expect(BridgeSocketResolver
@@ -218,7 +218,7 @@ struct CaptureEngineExplicitHostTests {
     func `CLI socket binding retains its established trimming over a literal environment socket`(
         command: String
     ) throws {
-        let environment = ["PEEKABOO_BRIDGE_SOCKET": "\(Self.socket) "]
+        let environment = ["WINK_BRIDGE_SOCKET": "\(Self.socket) "]
         let options = try Self.bind(
             command: command,
             options: ["captureEngine": ["cg"], "bridge-socket": [" \(Self.socket) \n"]],
@@ -232,7 +232,7 @@ struct CaptureEngineExplicitHostTests {
 
     @Test
     func `transported see engines and local video ingestion remain valid`() throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": "modern", "PEEKABOO_BRIDGE_SOCKET": Self.socket]
+        let environment = ["WINK_CAPTURE_ENGINE": "modern", "WINK_BRIDGE_SOCKET": Self.socket]
         for commandType in [SeeCommand.self, CaptureVideoCommand.self] as [any ParsableCommand.Type] {
             let options = try CommanderCLIBinder.makeRuntimeOptions(
                 from: ParsedValues(positional: [], options: [:], flags: []),
@@ -248,12 +248,12 @@ struct CaptureEngineExplicitHostTests {
     }
 
     @Test(
-        .enabled(if: ProcessInfo.processInfo.environment["PEEKABOO_NO_REMOTE"] == nil),
+        .enabled(if: ProcessInfo.processInfo.environment["WINK_NO_REMOTE"] == nil),
         arguments: ["live", "action"]
     )
     func `selected engine and explicit host reach runtime capability preflight`(command: String) async throws {
         var arguments = [
-            "peekaboo", "capture", command,
+            "wink", "capture", command,
             "--capture-engine", "cg", "--bridge-socket", Self.socket,
             "--capture-focus", "foreground", "--path", "/synthetic/must-not-create",
         ]

@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct MenuBarCommandConsentTests {
@@ -14,7 +14,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item, missing: true, listedItems: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 0)
         #expect(menu.prepareCalls.isEmpty)
@@ -41,7 +41,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item)
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click"] + selectors + ["--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus != 0)
         #expect(menu.prepareCalls.isEmpty && menu.listCallCount == 0)
@@ -54,7 +54,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--pid", "42", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 1)
         #expect(menu.listCallCount == 0)
@@ -70,7 +70,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item(selectionEvidence: evidence))
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--pid", "43", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 1)
         #expect(menu.prepareCalls.count == 1 && menu.listCallCount == 0)
@@ -89,7 +89,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item(selectionEvidence: evidence))
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--pid", "42", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 1)
         #expect(menu.prepareCalls.count == 1 && menu.listCallCount == 0)
@@ -102,7 +102,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item, missing: true)
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Missing", "--app", "Fixture App", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         let payload = try self.decodeResponse(result)
         #expect(result.exitStatus == 1)
@@ -129,7 +129,7 @@ struct MenuBarCommandConsentTests {
         let preparation = try MenuBarItemPreparationRequest(name: "Wi-Fi", applicationScope: scope)
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json"] + ownerFlags,
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 0)
         #expect(menu.prepareCalls == [preparation])
@@ -145,7 +145,7 @@ struct MenuBarCommandConsentTests {
         let menu = PreparingMenuBarService(prepared: Self.item)
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--app", "Fixture App", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
         #expect(result.exitStatus == 1)
         #expect(menu.prepareCalls.isEmpty)
@@ -159,7 +159,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService()
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--verify", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 1)
@@ -181,7 +181,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService()
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "--index", "2", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 1)
@@ -205,7 +205,7 @@ struct MenuBarCommandConsentTests {
 
         let result = try await InProcessCommandRunner.run(
             arguments,
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 1)
@@ -227,13 +227,13 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService()
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 1)
         #expect(result.stdout.isEmpty)
         #expect(result.stderr.contains("Menu bar clicks require --foreground"))
-        #expect(result.stderr.contains("Use 'peekaboo menubar list' for read-only discovery"))
+        #expect(result.stderr.contains("Use 'wink menubar list' for read-only discovery"))
         #expect(menu.listCallCount == 0)
         #expect(menu.namedClickCalls.isEmpty)
         #expect(menu.indexClickCalls.isEmpty)
@@ -245,7 +245,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "list", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 0)
@@ -264,12 +264,12 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "list"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 0)
-        #expect(result.stdout.contains("peekaboo menubar click --index <index> --foreground"))
-        #expect(result.stdout.contains("peekaboo menubar click \"<name>\" --foreground"))
+        #expect(result.stdout.contains("wink menubar click --index <index> --foreground"))
+        #expect(result.stdout.contains("wink menubar click \"<name>\" --foreground"))
         #expect(menu.listCallCount == 1)
         #expect(menu.namedClickCalls.isEmpty)
         #expect(menu.indexClickCalls.isEmpty)
@@ -281,7 +281,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 0)
@@ -296,7 +296,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "--index", "2", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 0)
@@ -312,7 +312,7 @@ struct MenuBarCommandConsentTests {
         let menu = RecordingMenuBarService(items: [Self.item(selectionEvidence: evidence)])
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 0)
@@ -335,7 +335,7 @@ struct MenuBarCommandConsentTests {
         )
         let result = try await InProcessCommandRunner.run(
             ["menubar", "click", "Wi-Fi", "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(menu: menu)
+            services: TestServicesFactory.makeWinkServices(menu: menu)
         )
 
         #expect(result.exitStatus == 1)
@@ -429,7 +429,7 @@ private final class PreparingMenuBarService: RecordingMenuBarService, MenuServic
     func prepareMenuBarItem(_ request: MenuBarItemPreparationRequest) async throws -> MenuBarItemInfo {
         self.prepareCalls.append(request)
         if self.missing {
-            throw PeekabooError.menuItemNotFound(request.name)
+            throw WinkError.menuItemNotFound(request.name)
         }
         return self.prepared
     }
@@ -478,14 +478,14 @@ private class RecordingMenuBarService: MenuServiceExactLeafActionResultProviding
         return self.items
     }
 
-    func clickMenuBarItem(named name: String) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(named name: String) async throws -> WinkCore.ClickResult {
         self.namedClickCalls.append(name)
-        return PeekabooCore.ClickResult(elementDescription: "Menu bar item: \(name)", location: nil)
+        return WinkCore.ClickResult(elementDescription: "Menu bar item: \(name)", location: nil)
     }
 
-    func clickMenuBarItem(at index: Int) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(at index: Int) async throws -> WinkCore.ClickResult {
         self.indexClickCalls.append(index)
-        return PeekabooCore.ClickResult(elementDescription: "Menu bar item [\(index)]", location: nil)
+        return WinkCore.ClickResult(elementDescription: "Menu bar item [\(index)]", location: nil)
     }
 
     func clickMenuItemActionResult(app: String, itemPath: String) async throws -> UIAutomationActionResult<Void> {
@@ -505,7 +505,7 @@ private class RecordingMenuBarService: MenuServiceExactLeafActionResultProviding
     }
 
     func clickMenuBarItemActionResult(named name: String) async throws
-    -> UIAutomationActionResult<PeekabooAutomationKit.ClickResult> {
+    -> UIAutomationActionResult<WinkAutomationKit.ClickResult> {
         try await .init(
             payload: self.clickMenuBarItem(named: name),
             outcome: self.clickOutcome,
@@ -514,7 +514,7 @@ private class RecordingMenuBarService: MenuServiceExactLeafActionResultProviding
     }
 
     func clickMenuBarItemActionResult(at index: Int) async throws
-    -> UIAutomationActionResult<PeekabooAutomationKit.ClickResult> {
+    -> UIAutomationActionResult<WinkAutomationKit.ClickResult> {
         try await .init(
             payload: self.clickMenuBarItem(at: index),
             outcome: self.clickOutcome,
@@ -523,7 +523,7 @@ private class RecordingMenuBarService: MenuServiceExactLeafActionResultProviding
     }
 
     func clickMenuBarItemActionResult(request: MenuBarItemActionRequest) async throws
-    -> UIAutomationActionResult<PeekabooAutomationKit.ClickResult> {
+    -> UIAutomationActionResult<WinkAutomationKit.ClickResult> {
         self.exactRequests.append(request)
         let current = self.liveEvidence ?? request.expectedLeafEvidence
         guard request.expectedLeafEvidence.hasSameResolvedLeaf(as: current) else {

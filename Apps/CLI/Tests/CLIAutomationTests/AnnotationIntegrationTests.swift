@@ -1,9 +1,9 @@
 import AppKit
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.automation),

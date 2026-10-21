@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooBridge
-import PeekabooFoundation
+import WinkBridge
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension ScreenCaptureKitOwnerRuntimeTests {
     @Test(arguments: [true, false])
@@ -18,12 +18,12 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         )
         defer { Task { await host.stop() } }
 
-        let handshake = try await PeekabooBridgeClient(socketPath: socketPath).handshake(
+        let handshake = try await WinkBridgeClient(socketPath: socketPath).handshake(
             client: BridgeDiagnostics.currentClientIdentity()
         )
 
         #expect(handshake.hostCapabilities?.contains(
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership
         ) == ownerAware)
         #expect(handshake.hostIdentity?.processIdentifier == 4242)
         #expect(handshake.hostIdentity?.processStartIdentity == 9001)
@@ -62,7 +62,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         )
 
         #expect(unawareHost == nil)
-        let handshake = try await PeekabooBridgeClient(socketPath: socketPath).handshake(
+        let handshake = try await WinkBridgeClient(socketPath: socketPath).handshake(
             client: .init(bundleIdentifier: "synthetic.client", teamIdentifier: nil, processIdentifier: getpid())
         )
         #expect(handshake.screenCaptureKitReadiness?.state == .unavailable)

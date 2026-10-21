@@ -5,12 +5,12 @@ import Testing
 struct RootEarlyExitRuntimeTests {
     @Test
     func `root version after JSON flag emits the version envelope`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["--json", "--version"],
             isolateFromRemoteHosts: false
         )
@@ -21,17 +21,17 @@ struct RootEarlyExitRuntimeTests {
         let json = try #require(object as? [String: Any])
         let data = try #require(json["data"] as? [String: Any])
         #expect(json["success"] as? Bool == true)
-        #expect((data["current"] as? String)?.hasPrefix("Peekaboo ") == true)
+        #expect((data["current"] as? String)?.hasPrefix("Wink ") == true)
     }
 
     @Test(arguments: ["--help", "-h"])
     func `root help ignores an earlier unknown root option`(helpFlag: String) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["--junk", helpFlag],
             isolateFromRemoteHosts: false
         )
@@ -45,18 +45,18 @@ struct RootEarlyExitRuntimeTests {
 
     @Test
     func `leaf and nested help do not duplicate runtime flags`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let cases = [
-            (["click", "--help"], "peekaboo click"),
-            (["app", "list", "--help"], "peekaboo app list"),
-            (["bridge", "receipt", "validate", "--help"], "peekaboo bridge receipt validate"),
+            (["click", "--help"], "wink click"),
+            (["app", "list", "--help"], "wink app list"),
+            (["bridge", "receipt", "validate", "--help"], "wink bridge receipt validate"),
         ]
         for (arguments, usage) in cases {
-            let result = try await TestChildProcess.runPeekaboo(arguments, isolateFromRemoteHosts: false)
+            let result = try await TestChildProcess.runWink(arguments, isolateFromRemoteHosts: false)
 
             #expect(result.status == .exited(0))
             #expect(result.standardError.isEmpty)
@@ -72,8 +72,8 @@ struct RootEarlyExitRuntimeTests {
 
     @Test
     func `default-subcommand parent help surfaces accepted leaf flags once`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
@@ -83,7 +83,7 @@ struct RootEarlyExitRuntimeTests {
             (["tools", "--help"], ["--no-sort"]),
         ]
         for (arguments, leafFlags) in cases {
-            let result = try await TestChildProcess.runPeekaboo(arguments, isolateFromRemoteHosts: false)
+            let result = try await TestChildProcess.runWink(arguments, isolateFromRemoteHosts: false)
 
             #expect(result.status == .exited(0))
             #expect(result.standardError.isEmpty)
@@ -98,18 +98,18 @@ struct RootEarlyExitRuntimeTests {
 
     @Test
     func `release-style help omits source checkout rebuild advice`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let workingDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-help-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-help-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: workingDirectory) }
 
         for arguments in [[], ["--help"], ["click", "--help"], ["window", "list", "--help"]] {
-            let result = try await TestChildProcess.runPeekaboo(
+            let result = try await TestChildProcess.runWink(
                 arguments,
                 workingDirectory: workingDirectory,
                 isolateFromRemoteHosts: false
@@ -124,18 +124,18 @@ struct RootEarlyExitRuntimeTests {
 
     @Test
     func `unknown command includes current help recovery in text and JSON`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let human = try await TestChildProcess.runPeekaboo(["frobnicate"], isolateFromRemoteHosts: false)
+        let human = try await TestChildProcess.runWink(["frobnicate"], isolateFromRemoteHosts: false)
         #expect(human.status == .exited(1))
         #expect(human.standardOutput.isEmpty)
         #expect(human.standardError.contains("Error: Unknown command 'frobnicate'"))
-        #expect(human.standardError.contains("Hint: Run 'peekaboo --help' to list current commands."))
+        #expect(human.standardError.contains("Hint: Run 'wink --help' to list current commands."))
 
-        let json = try await TestChildProcess.runPeekaboo(
+        let json = try await TestChildProcess.runWink(
             ["frobnicate", "--json"],
             isolateFromRemoteHosts: false
         )
@@ -146,26 +146,26 @@ struct RootEarlyExitRuntimeTests {
         let error = try #require(envelope["error"] as? [String: Any])
         #expect(error["code"] as? String == "INVALID_ARGUMENT")
         #expect(error["message"] as? String == "Unknown command 'frobnicate'")
-        #expect(error["hint"] as? String == "Run 'peekaboo --help' to list current commands.")
+        #expect(error["hint"] as? String == "Run 'wink --help' to list current commands.")
     }
 
     @Test(arguments: [
         ["--log-level", "debug", "--version"],
         ["--logLevel=debug", "-V"],
-        ["--bridge-socket", "/tmp/peekaboo-root-help-missing.sock", "--version"],
+        ["--bridge-socket", "/tmp/wink-root-help-missing.sock", "--version"],
         ["--input-strategy", "actionOnly", "--version"],
     ])
     func `root version consumes documented runtime option values`(arguments: [String]) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(arguments, isolateFromRemoteHosts: false)
+        let result = try await TestChildProcess.runWink(arguments, isolateFromRemoteHosts: false)
 
         #expect(result.status == .exited(0))
         #expect(result.standardError.isEmpty)
-        #expect(result.standardOutput.hasPrefix("Peekaboo "))
+        #expect(result.standardOutput.hasPrefix("Wink "))
         #expect(!result.standardOutput.contains("Bridge"))
     }
 
@@ -175,12 +175,12 @@ struct RootEarlyExitRuntimeTests {
         ["--unknown=1", "app", "list", "--help"],
     ])
     func `option-leading command help stays command scoped`(arguments: [String]) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(arguments, isolateFromRemoteHosts: false)
+        let result = try await TestChildProcess.runWink(arguments, isolateFromRemoteHosts: false)
 
         #expect(result.status == .exited(0))
         #expect(result.standardError.isEmpty)
@@ -191,7 +191,7 @@ struct RootEarlyExitRuntimeTests {
         } else {
             "app"
         }
-        #expect(result.standardOutput.contains("Usage\n  peekaboo \(expectedPath)"))
+        #expect(result.standardOutput.contains("Usage\n  wink \(expectedPath)"))
         #expect(!result.standardOutput.contains("Core Commands"))
     }
 
@@ -204,12 +204,12 @@ struct RootEarlyExitRuntimeTests {
         ["--inputStrategy", "--help"],
     ])
     func `missing runtime option value does not become root help`(arguments: [String]) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(arguments, isolateFromRemoteHosts: false)
+        let result = try await TestChildProcess.runWink(arguments, isolateFromRemoteHosts: false)
 
         #expect(result.status == .exited(1))
         #expect(result.standardOutput.isEmpty)
@@ -218,12 +218,12 @@ struct RootEarlyExitRuntimeTests {
 
     @Test(arguments: ["--log-level=--help", "--logLevel=--help"])
     func `attached help token remains a runtime option value`(argument: String) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo([argument], isolateFromRemoteHosts: false)
+        let result = try await TestChildProcess.runWink([argument], isolateFromRemoteHosts: false)
 
         #expect(result.status == .exited(1))
         #expect(result.standardOutput.isEmpty)
@@ -232,12 +232,12 @@ struct RootEarlyExitRuntimeTests {
 
     @Test(arguments: ["--json", "-j", "--json-output", "--jsonOutput"])
     func `JSON flags after double dash stay ordinary child arguments`(jsonFlag: String) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["--junk", "--", jsonFlag],
             isolateFromRemoteHosts: false
         )

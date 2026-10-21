@@ -1,15 +1,15 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.automation),
     .enabled(if: CLITestEnvironment.runAutomationRead)
 )
 struct ClickCommandFocusTests {
-    private func runPeekabooCommand(
+    private func runWinkCommand(
         _ arguments: [String],
         allowedExitStatuses: Set<Int32> = [0]
     ) async throws -> CommandRunResult {
@@ -18,7 +18,7 @@ struct ClickCommandFocusTests {
 
     @Test
     func `click help shows focus options`() async throws {
-        let result = try await self.runPeekabooCommand(["click", "--help"])
+        let result = try await self.runWinkCommand(["click", "--help"])
         let output = result.combinedOutput
 
         #expect(output.contains("--foreground"))

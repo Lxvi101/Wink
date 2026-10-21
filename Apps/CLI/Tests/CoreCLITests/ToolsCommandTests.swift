@@ -1,10 +1,10 @@
 import Foundation
 import MCP
-import PeekabooAgentRuntime
-import PeekabooCore
+import WinkAgentRuntime
+import WinkCore
 import TachikomaMCP
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Tests for ToolsCommand functionality
 @Suite(.tags(.safe))
@@ -20,7 +20,7 @@ struct ToolsCommandTests {
         #expect(discussion.contains("public Agent catalog is a separate background-first surface"))
         #expect(discussion.contains("never exposes `shell`"))
         #expect(discussion.contains("Examples:"))
-        #expect(discussion.contains("peekaboo tools"))
+        #expect(discussion.contains("wink tools"))
         #expect(discussion.contains("--verbose"))
         #expect(discussion.contains("--json"))
     }
@@ -71,7 +71,7 @@ struct ToolsCommandTests {
         }
         #expect(foundDescribe)
 
-        let services = PeekabooServices()
+        let services = WinkServices()
         let tools = MCPToolCatalog.unfilteredTools(context: MCPToolContext(services: services))
         let payload = try #require(ToolsCommand.DescribeSubcommand.payload(named: "click", tools: tools))
         #expect(payload.name == "click")
@@ -85,7 +85,7 @@ struct ToolsCommandTests {
     @Test
     @MainActor
     func `Default tools catalog exposes only background-safe authority`() throws {
-        let services = PeekabooServices()
+        let services = WinkServices()
         let context = MCPToolContext(services: services)
         let tools = MCPToolCatalog.tools(
             context: context,
@@ -133,7 +133,7 @@ struct ToolsCommandStructureTests {
         #expect(config.discussion != nil)
 
         let discussion = config.discussion ?? ""
-        #expect(discussion.contains("peekaboo tools"))
+        #expect(discussion.contains("wink tools"))
         #expect(discussion.contains("Examples:"))
         #expect(discussion.contains("--verbose"))
         #expect(discussion.contains("--json"))

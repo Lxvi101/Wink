@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkBridge
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -65,7 +65,7 @@ struct ExplicitAutoClassicOwnerRuntimeTests {
         let owner = ScreenCaptureKitOwnerRuntimeTests.ownerReceipt()
         let response = Self.handshake(scenario: scenario, owner: owner)
         let explicitSocket = scenario == "implicit" ? nil : socket
-        let environment = socketSource == "environment" ? ["PEEKABOO_BRIDGE_SOCKET": socket] : [:]
+        let environment = socketSource == "environment" ? ["WINK_BRIDGE_SOCKET": socket] : [:]
         var arguments: [String: [String]] = [:]
         if let explicitSocket, socketSource != "environment" {
             arguments["bridge-socket"] = [explicitSocket]
@@ -100,7 +100,7 @@ struct ExplicitAutoClassicOwnerRuntimeTests {
                     throw CancellationError()
                 }
                 guard candidate.socketPath == socket, scenario != "authenticationFailure" else {
-                    throw PeekabooBridgeErrorEnvelope(
+                    throw WinkBridgeErrorEnvelope(
                         code: .unauthorizedClient,
                         message: "Synthetic selected host authentication failed"
                     )
@@ -213,21 +213,21 @@ struct ExplicitAutoClassicOwnerRuntimeTests {
     private static func handshake(
         scenario: String,
         owner: ScreenCaptureKitOwnerLease.OwnerReceipt
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         var capabilities = [
-            PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
-            PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
-            PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-            PeekabooBridgeHostCapability.hostGenerationIdentity,
-            PeekabooBridgeHostCapability.codeSignatureBuildIdentity,
-            PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
-            PeekabooBridgeHostCapability.attestedOperationReceipts,
+            WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
+            WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+            WinkBridgeHostCapability.desktopObservationCaptureEngine,
+            WinkBridgeHostCapability.hostGenerationIdentity,
+            WinkBridgeHostCapability.codeSignatureBuildIdentity,
+            WinkBridgeHostCapability.producerBoundSnapshotReferences,
+            WinkBridgeHostCapability.attestedOperationReceipts,
         ]
         if scenario == "missingClassicProof" {
-            capabilities.removeAll { $0 == PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit }
+            capabilities.removeAll { $0 == WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit }
         }
         if scenario == "missingEngineTransport" {
-            capabilities.removeAll { $0 == PeekabooBridgeHostCapability.desktopObservationCaptureEngine }
+            capabilities.removeAll { $0 == WinkBridgeHostCapability.desktopObservationCaptureEngine }
         }
         let readiness: ScreenCaptureKitReadiness? = switch scenario {
         case "unknownReadiness": .init(state: .unknown)
@@ -249,7 +249,7 @@ struct ExplicitAutoClassicOwnerRuntimeTests {
         default: 4141
         }
         return .init(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "selected-fixture",
             supportedOperations: [

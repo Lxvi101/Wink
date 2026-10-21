@@ -2,18 +2,18 @@ import CoreGraphics
 import CryptoKit
 import Darwin
 import Foundation
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 @MainActor
 struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action rejects the ad hoc test host identity`() {
-        #expect(PeekabooBridgeAuthenticatedHostIdentity.current() == nil)
+        #expect(WinkBridgeAuthenticatedHostIdentity.current() == nil)
         let command = CaptureActionCommand()
         #expect(command.mapErrorToCode(CaptureActionHostProvenanceError(message: "unsigned")) == .CAPTURE_FAILED)
     }
@@ -74,7 +74,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action runs child and publishes validated artifacts without live screen capture`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-e2e-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-e2e-\(UUID().uuidString)", isDirectory: true)
         let videoOutput = outputDirectory.appendingPathComponent("action.mp4")
         var needsCleanup = true
         defer {
@@ -189,7 +189,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action refuses child special-file replacement of capture-owned artifacts`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-tamper-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-tamper-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -243,7 +243,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action preserves nonzero child result and dispatch semantics`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-nonzero-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-nonzero-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -317,7 +317,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action reports when capture ends before action and post-roll`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-early-end-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-early-end-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -365,7 +365,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action kills delayed descendant before publishing artifacts`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-descendant-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-descendant-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let ready = outputDirectory.appendingPathComponent("descendant-ready")
         let release = outputDirectory.appendingPathComponent("release-descendant")
@@ -431,7 +431,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action refuses a child-created manifest without overwriting it`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-manifest-race-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-manifest-race-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -477,7 +477,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action keeps launch failures retry safe and undispatched`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-launch-failure-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-launch-failure-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -490,7 +490,7 @@ struct CaptureActionCommandEndToEndTests {
         command.activeFps = 15
         command.threshold = 0
         command.path = outputDirectory.path
-        command.command = ["/definitely/missing/peekaboo-action-child"]
+        command.command = ["/definitely/missing/wink-action-child"]
         command.executionDependencies = CaptureActionExecutionDependencies(
             frameSourceFactory: { _ in frameSource },
             processRunner: { childCommand, timeoutSeconds, onLaunch in
@@ -522,7 +522,7 @@ struct CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action refuses incomplete host provenance before child dispatch`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-host-refusal-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-host-refusal-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let marker = outputDirectory.appendingPathComponent("child-ran")
         let frameSource = DeterministicCaptureActionFrameSource()
@@ -541,10 +541,10 @@ struct CaptureActionCommandEndToEndTests {
                 )
             },
             hostIdentityProvider: {
-                PeekabooBridgeAuthenticatedHostIdentity(
+                WinkBridgeAuthenticatedHostIdentity(
                     processIdentifier: getpid(),
                     processStartIdentity: SystemIdentityResolver.processStartIdentity(getpid()) ?? 1,
-                    signingIdentifier: "boo.peekaboo.tests",
+                    signingIdentifier: "boo.wink.tests",
                     teamIdentifier: "Y5PE65HELJ",
                     codeSignatureHash: "",
                     sourceCommit: String(repeating: "b", count: 40),
@@ -606,7 +606,7 @@ struct CaptureActionCommandEndToEndTests {
         #expect(manifest.capture.hostIdentity.processStartIdentity > 0)
         #expect(manifest.capture.hostIdentity.processStartIdentityDecimal ==
             String(manifest.capture.hostIdentity.processStartIdentity))
-        #expect(manifest.capture.hostIdentity.signingIdentifier == "boo.peekaboo.tests")
+        #expect(manifest.capture.hostIdentity.signingIdentifier == "boo.wink.tests")
         #expect(manifest.capture.hostIdentity.teamIdentifier == "Y5PE65HELJ")
         #expect(manifest.capture.hostIdentity.codeSignatureHash == String(repeating: "a", count: 40))
         #expect(manifest.capture.hostIdentity.sourceCommit == String(repeating: "b", count: 40))
@@ -808,7 +808,7 @@ struct CaptureActionCommandEndToEndTests {
     func makeRuntime() -> CommandRuntime {
         CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: true, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
     }
 
@@ -821,14 +821,14 @@ struct CaptureActionCommandEndToEndTests {
         return size.intValue > 0
     }
 
-    static func authenticatedHostIdentity() -> PeekabooBridgeAuthenticatedHostIdentity {
+    static func authenticatedHostIdentity() -> WinkBridgeAuthenticatedHostIdentity {
         guard let processStartIdentity = SystemIdentityResolver.processStartIdentity(getpid()) else {
             preconditionFailure("Test process identity must be available")
         }
-        return PeekabooBridgeAuthenticatedHostIdentity(
+        return WinkBridgeAuthenticatedHostIdentity(
             processIdentifier: getpid(),
             processStartIdentity: processStartIdentity,
-            signingIdentifier: "boo.peekaboo.tests",
+            signingIdentifier: "boo.wink.tests",
             teamIdentifier: "Y5PE65HELJ",
             codeSignatureHash: String(repeating: "a", count: 40),
             sourceCommit: String(repeating: "b", count: 40),
@@ -842,7 +842,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action cancellation with zero post roll cannot publish a manifest`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-cancel-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let processStartIdentity = try #require(SystemIdentityResolver.processStartIdentity(getpid()))
         var command = CaptureActionCommand()
@@ -892,7 +892,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action timeline starts at release and permits omitted engine metadata`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-timeline-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-timeline-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let processStartIdentity = try #require(SystemIdentityResolver.processStartIdentity(getpid()))
         var command = CaptureActionCommand()
@@ -939,7 +939,7 @@ extension CaptureActionCommandEndToEndTests {
     func `Capture action admits post roll from the runner completion boundary`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
             .appendingPathComponent(
-                "peekaboo-capture-action-post-roll-boundary-\(UUID().uuidString)",
+                "wink-capture-action-post-roll-boundary-\(UUID().uuidString)",
                 isDirectory: true
             )
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
@@ -1002,7 +1002,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action refuses host provenance drift before publication`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-host-drift-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-host-drift-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         var identityCallCount: UInt64 = 0
         var command = CaptureActionCommand()
@@ -1024,7 +1024,7 @@ extension CaptureActionCommandEndToEndTests {
             hostIdentityProvider: {
                 let base = Self.authenticatedHostIdentity()
                 defer { identityCallCount += 1 }
-                return PeekabooBridgeAuthenticatedHostIdentity(
+                return WinkBridgeAuthenticatedHostIdentity(
                     processIdentifier: base.processIdentifier,
                     processStartIdentity: base.processStartIdentity + identityCallCount,
                     signingIdentifier: base.signingIdentifier,
@@ -1169,7 +1169,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action rejects reserved video output before child dispatch`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-video-conflict-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-video-conflict-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let reservedOutputs = [
             outputDirectory,
@@ -1227,7 +1227,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action rejects existing video output before child dispatch`() async throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-existing-video-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-existing-video-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let videoOutput = outputDirectory.appendingPathComponent("action.mp4")
@@ -1275,7 +1275,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action preflights atomic no-replace publication`() throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-rename-preflight-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-rename-preflight-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
 
@@ -1295,7 +1295,7 @@ extension CaptureActionCommandEndToEndTests {
     @Test
     func `Capture action preflight preserves a failed-rename destination`() throws {
         let outputDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-capture-action-rename-race-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-capture-action-rename-race-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: outputDirectory) }
         let replacement = Data("replacement".utf8)

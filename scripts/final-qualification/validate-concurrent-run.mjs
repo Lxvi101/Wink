@@ -206,7 +206,7 @@ function signedBundle(filePath, validatorPath, operation, label, authentication)
   const report = authenticatedReport;
   const identity = authenticatedBridgeReceiptIdentity(payload, report, label);
   requireCondition(report?.valid === true
-    && report.validator_id === 'peekaboo-bridge-receipt-validate-v1'
+    && report.validator_id === 'wink-bridge-receipt-validate-v1'
     && report.trust_source === 'authenticated_live_listener'
     && report.minimum_protocol_version === '1.29'
     && isSupportedQualificationHostProtocol(report.host_protocol_version)
@@ -300,7 +300,7 @@ export function validateAgentTraceOperationBinding(entry, signed, family, expect
   requireCondition(false, `${label} has no closed trace/request binding`);
 }
 
-export const AGENT_TASK_KIND = 'peekaboo-concurrent-agent-qualification';
+export const AGENT_TASK_KIND = 'wink-concurrent-agent-qualification';
 export const AGENT_TASK_GOAL = 'two-target-background-mutate-verify-restore-with-concurrent-cu';
 export const AGENT_TASK_CONSTRAINTS = Object.freeze({
   delivery_mode: 'background',
@@ -931,7 +931,7 @@ export function validateConcurrentRunSpec(spec, outputPath, {
     plan,
   );
   const taskText = agentTask.text;
-  const agentExecutable = requireStableExecutable(plan.peekaboo_executable, 'Agent executable', {
+  const agentExecutable = requireStableExecutable(plan.wink_executable, 'Agent executable', {
     allowRootOwner: true,
   });
   const expectedAgentRequest = {

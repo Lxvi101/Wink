@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.unit))
 struct DialogFileJSONOutputTests {
@@ -39,7 +39,7 @@ struct DialogFileJSONOutputTests {
             ]
         )
 
-        let services = TestServicesFactory.makePeekabooServices(dialogs: dialogService)
+        let services = TestServicesFactory.makeWinkServices(dialogs: dialogService)
         let result = try await InProcessCommandRunner.run(
             [
                 "dialog", "file", "--path", "/tmp", "--name", "out.txt", "--select", "Save",
@@ -104,7 +104,7 @@ struct DialogFileJSONOutputTests {
         let dialogService = StubDialogService(elements: elements)
         dialogService.handleFileDialogDelay = 2.0
 
-        let services = TestServicesFactory.makePeekabooServices(dialogs: dialogService)
+        let services = TestServicesFactory.makeWinkServices(dialogs: dialogService)
         let result = try await InProcessCommandRunner.run(
             [
                 "dialog", "file",
@@ -133,7 +133,7 @@ struct DialogFileJSONOutputTests {
             targetBounds: DialogFileFocusWindowService.bounds
         )
         let windows = DialogFileFocusWindowService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             dialogs: dialogService
         )
@@ -172,7 +172,7 @@ struct DialogFileJSONOutputTests {
         let dialogService = Self.successfulDialogService()
         dialogService.handleFileDialogResult = Self.successResult()
         let windows = DialogFileFocusWindowService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             dialogs: dialogService
         )
@@ -207,7 +207,7 @@ struct DialogFileJSONOutputTests {
             )
         )
         let windows = DialogFileFocusWindowService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             dialogs: dialogService
         )

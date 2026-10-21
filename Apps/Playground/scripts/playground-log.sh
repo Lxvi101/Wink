@@ -2,7 +2,7 @@
 
 set -o pipefail
 
-# Peekaboo Playground Log Viewer
+# Wink Playground Log Viewer
 # A pblog-inspired utility for viewing Playground app logs
 
 # Default values
@@ -86,7 +86,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo "Peekaboo Playground Log Viewer"
+            echo "Wink Playground Log Viewer"
             echo "Usage: playground-log.sh [options]"
             echo ""
             echo "Options:"
@@ -138,7 +138,7 @@ done
 
 # Show available categories if requested
 if [[ "$SHOW_ALL_CATEGORIES" == true ]]; then
-    echo "Available log categories for Peekaboo Playground:"
+    echo "Available log categories for Wink Playground:"
     echo ""
     echo -e "${BLUE}Click${NC}     - Button clicks, toggles, click areas"
     echo -e "${GREEN}Text${NC}      - Text input, field changes"
@@ -161,8 +161,8 @@ predicate_literal() {
     PREDICATE_LITERAL="${PREDICATE_LITERAL//\"/\\\"}"
 }
 
-# Build predicate - using PeekabooPlayground's subsystem
-PREDICATE="subsystem == \"boo.peekaboo.playground\""
+# Build predicate - using WinkPlayground's subsystem
+PREDICATE="subsystem == \"boo.wink.playground\""
 
 if [[ -n "$CATEGORY" ]]; then
     predicate_literal "$CATEGORY"
@@ -252,8 +252,8 @@ fi
 
 # Show header unless outputting to file or JSON
 if [[ -z "$OUTPUT" && "$JSON" != true ]]; then
-    echo -e "${BLUE}Peekaboo Playground Log Viewer${NC}"
-    echo "Subsystem: boo.peekaboo.playground"
+    echo -e "${BLUE}Wink Playground Log Viewer${NC}"
+    echo "Subsystem: boo.wink.playground"
     if [[ -n "$CATEGORY" ]]; then
         echo "Category: $CATEGORY"
     fi

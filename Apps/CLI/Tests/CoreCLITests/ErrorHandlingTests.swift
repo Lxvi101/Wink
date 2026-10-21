@@ -1,14 +1,14 @@
 //
 //  ErrorHandlingTests.swift
-//  PeekabooCLI
+//  WinkCLI
 //
 
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooBridge
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkBridge
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe))
 struct FocusErrorMappingTests {
@@ -38,7 +38,7 @@ struct FocusErrorMappingTests {
 
     @Test
     func `bridge timeout maps to TIMEOUT`() {
-        let code = errorCode(for: PeekabooBridgeErrorEnvelope(code: .timeout, message: "Timed out"))
+        let code = errorCode(for: WinkBridgeErrorEnvelope(code: .timeout, message: "Timed out"))
         #expect(code == .TIMEOUT)
     }
 
@@ -49,13 +49,13 @@ struct FocusErrorMappingTests {
         let presentation = splitErrorHint(from: description)
 
         #expect(presentation.message == "Element detection timed out after 200ms.")
-        #expect(presentation.hint?.contains("peekaboo see --timeout 30s") == true)
+        #expect(presentation.hint?.contains("wink see --timeout 30s") == true)
         #expect(presentation.hint?.contains("--timeout-seconds") == false)
     }
 
     @Test
     func `bridge screen recording permission maps to screen recording error`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .permissionDenied,
             message: "Operation captureScreen is not allowed with current permissions",
             permission: .screenRecording
@@ -66,7 +66,7 @@ struct FocusErrorMappingTests {
 
     @Test
     func `legacy AppleScript denial preserves its code but directs users to native hosts`() throws {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .permissionDenied,
             message: "AppleScript permission is required for automation",
             permission: .appleScript
@@ -74,8 +74,8 @@ struct FocusErrorMappingTests {
 
         #expect(errorCode(for: envelope) == .PERMISSION_ERROR_APPLESCRIPT)
         let message = errorMessage(for: envelope)
-        #expect(message.contains("older Peekaboo component"))
-        #expect(message.contains("current native Peekaboo CLI and Bridge host"))
+        #expect(message.contains("older Wink component"))
+        #expect(message.contains("current native Wink CLI and Bridge host"))
         #expect(message.contains("do not grant Automation access"))
         #expect(!message.contains("permission is required"))
 
@@ -84,27 +84,27 @@ struct FocusErrorMappingTests {
         #expect(CaptureError.appleScriptPermissionDenied.exitCode == 33)
 
         let presentation = splitErrorHint(from: message)
-        #expect(presentation.message == "An older Peekaboo component requested AppleScript Automation permission.")
+        #expect(presentation.message == "An older Wink component requested AppleScript Automation permission.")
         #expect(presentation.hint ==
-            "Use a current native Peekaboo CLI and Bridge host; do not grant Automation access.")
+            "Use a current native Wink CLI and Bridge host; do not grant Automation access.")
     }
 
     @Test
     func `bridge envelope message uses actionable bridge message`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .permissionDenied,
             message: "Operation captureArea is not allowed with current permissions",
             permission: .screenRecording
         )
 
         #expect(errorMessage(for: envelope) == "Operation captureArea is not allowed with current permissions")
-        #expect(!errorMessage(for: envelope).contains("PeekabooBridgeErrorEnvelope error"))
+        #expect(!errorMessage(for: envelope).contains("WinkBridgeErrorEnvelope error"))
         #expect(envelope.localizedDescription == envelope.message)
     }
 
     @Test
     func `application launch maps bridge not found to app not found`() {
-        let envelope = PeekabooBridgeErrorEnvelope(code: .notFound, message: "Application not found")
+        let envelope = WinkBridgeErrorEnvelope(code: .notFound, message: "Application not found")
 
         #expect(applicationLaunchErrorCode(for: envelope) == .APP_NOT_FOUND)
         #expect(applicationLaunchErrorCode(for: POSIXError(.ENOENT)) == nil)
@@ -113,7 +113,7 @@ struct FocusErrorMappingTests {
     @Test
     func `application lifecycle refusals project identically locally and through Bridge`() throws {
         let direct = ApplicationLifecycleRefusalError.backgroundLaunch("Cold launch refused")
-        let remote = PeekabooBridgeErrorEnvelope(
+        let remote = WinkBridgeErrorEnvelope(
             code: .internalError,
             message: direct.userMessage,
             context: direct.bridgeContext
@@ -129,7 +129,7 @@ struct FocusErrorMappingTests {
     @Test
     func `read-only lifecycle failures preserve retry-safe zero-dispatch metadata`() throws {
         let direct = ApplicationLifecycleReadOnlyFailureError(.timeout("Window readiness timed out"))
-        let remote = PeekabooBridgeErrorEnvelope(
+        let remote = WinkBridgeErrorEnvelope(
             code: .timeout,
             message: direct.userMessage,
             context: ApplicationLifecycleReadOnlyFailureError.bridgeContext
@@ -149,7 +149,7 @@ struct FocusErrorMappingTests {
 
     @Test
     func `bridge envelope details preserve bridge details and permission`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .internalError,
             message: "Bridge operation failed",
             details: "Screen capture service rejected the request",
@@ -169,21 +169,21 @@ struct FocusErrorMappingTests {
 
     @Test
     func `clickFailed maps to INTERACTION_FAILED`() {
-        #expect(peekabooAutomationErrorCode(for: .clickFailed("miss")) == .INTERACTION_FAILED)
+        #expect(winkAutomationErrorCode(for: .clickFailed("miss")) == .INTERACTION_FAILED)
     }
 
     @Test
     func `typeFailed maps to INTERACTION_FAILED`() {
-        #expect(peekabooAutomationErrorCode(for: .typeFailed("stuck")) == .INTERACTION_FAILED)
+        #expect(winkAutomationErrorCode(for: .typeFailed("stuck")) == .INTERACTION_FAILED)
     }
 
     @Test
     func `captureFailed maps to CAPTURE_FAILED`() {
-        #expect(peekabooAutomationErrorCode(for: .captureFailed("cam")) == .CAPTURE_FAILED)
-        let remote = PeekabooBridgeErrorEnvelope(
+        #expect(winkAutomationErrorCode(for: .captureFailed("cam")) == .CAPTURE_FAILED)
+        let remote = WinkBridgeErrorEnvelope(
             code: .internalError,
             message: "remote capture failed",
-            context: PeekabooBridgeErrorEnvelope.standardizedErrorContextPrefix +
+            context: WinkBridgeErrorEnvelope.standardizedErrorContextPrefix +
                 StandardErrorCode.captureFailed.rawValue
         )
         #expect(errorCode(for: remote) == .CAPTURE_FAILED)
@@ -191,15 +191,15 @@ struct FocusErrorMappingTests {
 
     @Test
     func `incomplete Accessibility evidence maps directly and through Bridge`() {
-        let error = PeekabooError.accessibilityIncomplete("AX tree incomplete")
-        let remote = PeekabooBridgeErrorEnvelope(
+        let error = WinkError.accessibilityIncomplete("AX tree incomplete")
+        let remote = WinkBridgeErrorEnvelope(
             code: .internalError,
             message: "AX tree incomplete",
-            context: PeekabooBridgeErrorEnvelope.standardizedErrorContextPrefix +
+            context: WinkBridgeErrorEnvelope.standardizedErrorContextPrefix +
                 StandardErrorCode.accessibilityIncomplete.rawValue
         )
 
-        #expect(peekabooAutomationErrorCode(for: error) == .ACCESSIBILITY_INCOMPLETE)
+        #expect(winkAutomationErrorCode(for: error) == .ACCESSIBILITY_INCOMPLETE)
         #expect(errorCode(for: remote) == .ACCESSIBILITY_INCOMPLETE)
         #expect(remote.standardizedErrorCode == .accessibilityIncomplete)
     }
@@ -209,12 +209,12 @@ struct FocusErrorMappingTests {
     func `incomplete Accessibility evidence is retry safe and mutation free`() {
         let command = WindowCommand.WindowListSubcommand()
         let direct = command.readOnlyObservationFailureReceipt(
-            for: PeekabooError.accessibilityIncomplete("AX tree incomplete")
+            for: WinkError.accessibilityIncomplete("AX tree incomplete")
         )
-        let remote = command.readOnlyObservationFailureReceipt(for: PeekabooBridgeErrorEnvelope(
+        let remote = command.readOnlyObservationFailureReceipt(for: WinkBridgeErrorEnvelope(
             code: .internalError,
             message: "AX tree incomplete",
-            context: PeekabooBridgeErrorEnvelope.standardizedErrorContextPrefix +
+            context: WinkBridgeErrorEnvelope.standardizedErrorContextPrefix +
                 StandardErrorCode.accessibilityIncomplete.rawValue
         ))
 
@@ -228,12 +228,12 @@ struct FocusErrorMappingTests {
         #expect(errorCode(for: CaptureROIError.outOfBounds) == .INVALID_ARGUMENT)
         #expect(errorCode(for: CaptureROIError.missingExactWindowReceipt) == .SNAPSHOT_STALE)
         #expect(errorCode(for: CaptureROIError.hostDidNotApplyROI) == .CAPTURE_FAILED)
-        #expect(errorCode(for: PeekabooBridgeErrorEnvelope(
+        #expect(errorCode(for: WinkBridgeErrorEnvelope(
             code: .invalidRequest,
             message: "stale",
             context: "capture_roi:missing_exact_window_receipt"
         )) == .SNAPSHOT_STALE)
-        #expect(errorCode(for: PeekabooBridgeErrorEnvelope(
+        #expect(errorCode(for: WinkBridgeErrorEnvelope(
             code: .internalError,
             message: "host mismatch",
             context: "capture_roi:host_did_not_apply_roi"
@@ -242,7 +242,7 @@ struct FocusErrorMappingTests {
 
     @Test
     func `bridge elementNotFound kind maps to ELEMENT_NOT_FOUND`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .notFound,
             message: "No element",
             kind: .elementNotFound,
@@ -253,7 +253,7 @@ struct FocusErrorMappingTests {
 
     @Test
     func `bridge typed notFound kinds map to specific errors`() {
-        let cases: [(PeekabooBridgeErrorKind, ErrorCode)] = [
+        let cases: [(WinkBridgeErrorKind, ErrorCode)] = [
             (.appNotFound, .APP_NOT_FOUND),
             (.windowNotFound, .WINDOW_NOT_FOUND),
             (.elementNotFound, .ELEMENT_NOT_FOUND),
@@ -266,14 +266,14 @@ struct FocusErrorMappingTests {
             (.snapshotNotFound, .SNAPSHOT_NOT_FOUND),
         ]
         for (kind, expectedCode) in cases {
-            let envelope = PeekabooBridgeErrorEnvelope(code: .notFound, message: "Missing", kind: kind)
+            let envelope = WinkBridgeErrorEnvelope(code: .notFound, message: "Missing", kind: kind)
             #expect(errorCode(for: envelope) == expectedCode)
         }
     }
 
     @Test
     func `bridge stale kind wins over invalidRequest transport code`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .invalidRequest,
             message: "Snapshot stale",
             kind: .snapshotStale,
@@ -284,13 +284,13 @@ struct FocusErrorMappingTests {
 
     @Test
     func `bridge unkinded notFound maps to UNKNOWN_ERROR`() {
-        let envelope = PeekabooBridgeErrorEnvelope(code: .notFound, message: "Dock item not found")
+        let envelope = WinkBridgeErrorEnvelope(code: .notFound, message: "Dock item not found")
         #expect(errorCode(for: envelope) == .UNKNOWN_ERROR)
     }
 
     @Test
     func `generic command errors preserve bridge lookup kinds`() {
-        let envelope = PeekabooBridgeErrorEnvelope(
+        let envelope = WinkBridgeErrorEnvelope(
             code: .notFound,
             message: "Dock item not found",
             kind: .dockItemNotFound

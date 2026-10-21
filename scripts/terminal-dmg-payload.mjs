@@ -55,7 +55,7 @@ export async function inspectDMGPayload({ dmgPath = null, mountedRoot = null, ex
       attached = true;
     }
     await requireType(mountPoint, 'directory', 'DMG mount');
-    const requiredEntries = ['.VolumeIcon.icns', '.background', 'Applications', 'Peekaboo.app'].sort();
+    const requiredEntries = ['.VolumeIcon.icns', '.background', 'Applications', 'Wink.app'].sort();
     const entries = (await readdir(mountPoint)).sort();
     const withoutOptionalFinderState = entries.filter((entry) => entry !== '.DS_Store');
     if (JSON.stringify(withoutOptionalFinderState) !== JSON.stringify(requiredEntries)) {
@@ -67,11 +67,11 @@ export async function inspectDMGPayload({ dmgPath = null, mountedRoot = null, ex
     if (!applicationsMetadata.isSymbolicLink() || await readlink(applications) !== '/Applications') {
       throw new Error('DMG Applications link differs');
     }
-    const appPath = path.join(mountPoint, 'Peekaboo.app');
-    await requireType(appPath, 'directory', 'DMG Peekaboo.app');
+    const appPath = path.join(mountPoint, 'Wink.app');
+    await requireType(appPath, 'directory', 'DMG Wink.app');
     const appTree = run('/usr/bin/ruby', [treeGenerator, appPath]);
     const expectedTree = await readFile(expectedAppTree, 'utf8');
-    if (appTree !== expectedTree) throw new Error('DMG Peekaboo.app differs from notarized app tree');
+    if (appTree !== expectedTree) throw new Error('DMG Wink.app differs from notarized app tree');
 
     const background = path.join(mountPoint, '.background');
     await requireType(background, 'directory', 'DMG background');
@@ -86,7 +86,7 @@ export async function inspectDMGPayload({ dmgPath = null, mountedRoot = null, ex
       version: 1,
       root_entries: entries,
       applications_symlink: '/Applications',
-      peekaboo_app_tree_sha256: createHash('sha256').update(expectedTree).digest('hex'),
+      wink_app_tree_sha256: createHash('sha256').update(expectedTree).digest('hex'),
       background_tree_sha256: createHash('sha256').update(backgroundTree).digest('hex'),
       metadata
     };

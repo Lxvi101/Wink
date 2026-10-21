@@ -1,6 +1,6 @@
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct MenuBarItemMatcherTests {
     @Test func `hyphen-folded menu bar title matches`() throws {

@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAgentRuntime
+import WinkAgentRuntime
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -95,11 +95,11 @@ struct AgentCommandJSONOutputTests {
             #expect((legacyArgumentsObject[key] as? [String: Any])?["redacted"] as? Bool == true)
         }
         #expect(
-            (legacyArgumentsObject["__peekaboo_trace_unknown_field_1"] as? [String: Any])?["value_type"]
+            (legacyArgumentsObject["__wink_trace_unknown_field_1"] as? [String: Any])?["value_type"]
                 as? String == "boolean"
         )
         #expect(
-            (legacyArgumentsObject["__peekaboo_trace_unknown_field_2"] as? [String: Any])?["value_type"]
+            (legacyArgumentsObject["__wink_trace_unknown_field_2"] as? [String: Any])?["value_type"]
                 as? String == "integer"
         )
         #expect(!legacyArguments.contains("Tachikoma"))
@@ -119,11 +119,11 @@ struct AgentCommandJSONOutputTests {
             #expect((arguments[key] as? [String: Any])?["redacted"] as? Bool == true)
         }
         #expect(
-            (arguments["__peekaboo_trace_unknown_field_1"] as? [String: Any])?["value_type"] as? String ==
+            (arguments["__wink_trace_unknown_field_1"] as? [String: Any])?["value_type"] as? String ==
                 "boolean"
         )
         #expect(
-            (arguments["__peekaboo_trace_unknown_field_2"] as? [String: Any])?["value_type"] as? String ==
+            (arguments["__wink_trace_unknown_field_2"] as? [String: Any])?["value_type"] as? String ==
                 "integer"
         )
         #expect(resultSummary["success"] as? Bool == true)

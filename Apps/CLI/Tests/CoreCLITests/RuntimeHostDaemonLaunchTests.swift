@@ -1,11 +1,11 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -168,7 +168,7 @@ struct RuntimeHostDaemonLaunchTests {
     @Test
     func `missing daemon handshake is retried after it appears`() async throws {
         var attempts = 0
-        let identity = PeekabooBridgeClientIdentity(
+        let identity = WinkBridgeClientIdentity(
             bundleIdentifier: nil, teamIdentifier: nil, processIdentifier: 123
         )
         let candidate = RuntimeHostResolver.ImplicitRemoteCandidate(
@@ -183,7 +183,7 @@ struct RuntimeHostDaemonLaunchTests {
                 throw POSIXError(.ENOENT)
             }
             return BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 supportedOperations: []
             )
         })
@@ -237,9 +237,9 @@ struct RuntimeHostDaemonLaunchTests {
     private final class Fixture {
         let daemonPath = "/synthetic/absent-daemon.sock"
         let exactPath = "/synthetic/absent-exact-daemon.sock"
-        let guiPath = PeekabooBridgeConstants.peekabooSocketPath
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.launch", teamIdentifier: nil, processIdentifier: 123
+        let guiPath = WinkBridgeConstants.winkSocketPath
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.launch", teamIdentifier: nil, processIdentifier: 123
         )
         var exactBuild = true
         var releaseSigned = true
@@ -248,26 +248,26 @@ struct RuntimeHostDaemonLaunchTests {
         var guiUnavailable = false
         var guiCapable = true
         var guiInvalidationEnabled = true
-        var guiKind: PeekabooBridgeHostKind = .gui
+        var guiKind: WinkBridgeHostKind = .gui
         var launchPaths: [String] = []
         var handshakePaths: [String] = []
         var preflightCount = 0
 
-        var guiHandshake: PeekabooBridgeHandshakeResponse {
-            let operations: [PeekabooBridgeOperation] = self.guiCapable ? [
+        var guiHandshake: WinkBridgeHandshakeResponse {
+            let operations: [WinkBridgeOperation] = self.guiCapable ? [
                 .invalidateImplicitLatestSnapshot, .targetedTypeActions, .targetedHotkey, .targetedClick,
                 .getFocusedElement,
             ] : []
             return BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 hostKind: self.guiKind,
                 supportedOperations: operations,
                 permissions: self.guiPermissions,
                 enabledOperations: self.guiInvalidationEnabled
                     ? operations : operations.filter { $0 != .invalidateImplicitLatestSnapshot },
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.attestedOperationReceipts,
-                    PeekabooBridgeHostCapability.targetedClickAccessibilityValueDelivery,
+                    WinkBridgeHostCapability.attestedOperationReceipts,
+                    WinkBridgeHostCapability.targetedClickAccessibilityValueDelivery,
                 ]
             )
         }
@@ -331,7 +331,7 @@ struct RuntimeHostDaemonLaunchTests {
             )
             return try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: self.releaseSigned ? [:] : ["PEEKABOO_ALLOW_UNSIGNED_DAEMON": "1"],
+                environment: self.releaseSigned ? [:] : ["WINK_ALLOW_UNSIGNED_DAEMON": "1"],
                 configurationInput: nil,
                 dependencies: dependencies
             )

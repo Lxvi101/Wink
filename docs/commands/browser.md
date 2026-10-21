@@ -1,25 +1,25 @@
 ---
-summary: 'Control Chrome page content via peekaboo browser'
+summary: 'Control Chrome page content via wink browser'
 read_when:
   - 'automating Chrome DOM content through the browser MCP bridge'
   - 'inspecting browser console, network, screenshots, or traces'
 ---
 
-# `peekaboo browser`
+# `wink browser`
 
-`browser` is the CLI wrapper around Peekaboo's browser MCP tool. It handles page-level Chrome operations such as connection status, navigation, snapshots, element actions, console/network inspection, screenshots, and performance traces. Use native Peekaboo commands for browser chrome, macOS dialogs, menus, and windows.
+`browser` is the CLI wrapper around Wink's browser MCP tool. It handles page-level Chrome operations such as connection status, navigation, snapshots, element actions, console/network inspection, screenshots, and performance traces. Use native Wink commands for browser chrome, macOS dialogs, menus, and windows.
 
 The action is positional and defaults to `status`.
 
 ```bash
-peekaboo browser status --json
-peekaboo browser connect --channel stable --foreground
-peekaboo browser connect --browser-url http://127.0.0.1:9222 --foreground
-peekaboo browser new-page --url https://example.com --foreground
-peekaboo browser snapshot --page-id 2 --path /tmp/page.txt --foreground
+wink browser status --json
+wink browser connect --channel stable --foreground
+wink browser connect --browser-url http://127.0.0.1:9222 --foreground
+wink browser new-page --url https://example.com --foreground
+wink browser snapshot --page-id 2 --path /tmp/page.txt --foreground
 ```
 
-Use `peekaboo browser --help` for the complete action-specific option set. Page-scoped automation should retain the returned page ID and pass `--page-id` on later calls so concurrent browser work cannot redirect it.
+Use `wink browser --help` for the complete action-specific option set. Page-scoped automation should retain the returned page ID and pass `--page-id` on later calls so concurrent browser work cannot redirect it.
 
 The CLI is background-only by default. Chrome DevTools MCP 1.10.1's bundled Puppeteer grants browser user activation to
 every page evaluation, including evaluation used internally for page titles, stable-DOM waits, snapshots, and element
@@ -75,11 +75,11 @@ reports general host availability; it does not select a browser connection for l
 that fail local host-signature authentication are excluded from the mutation inventory, without authorizing them or
 treating an authenticated host's timeout as absence. An explicitly selected untrusted host still fails closed.
 Channel connection requires exactly
-one running official Google-signed Chrome process (Team ID `EQHXZ8M8AV`). Peekaboo pins the signed channel identifier,
+one running official Google-signed Chrome process (Team ID `EQHXZ8M8AV`). Wink pins the signed channel identifier,
 Team ID, and CDHash to its PID generation, safely reads that channel's standard `DevToolsActivePort`, proves its unique
 loopback listener belongs to the detected PID/process generation, and gives Chrome DevTools MCP that exact WebSocket.
 The provider retains one connection through Chrome's approval prompt, `Browser.getVersion` verification, and all page
-operations. Peekaboo rechecks signer and listener ownership before publishing the receipt. When more than one process
+operations. Wink rechecks signer and listener ownership before publishing the receipt. When more than one process
 shares a channel, use `--browser-url` with one loopback
 DevTools HTTP endpoint. That explicit URL is also the compatibility path for custom or non-Google-signed debuggable
 browsers and does not claim native channel signer authority. Connection output includes the combined process and
@@ -101,7 +101,7 @@ is a separate Chrome approval/endpoint failure: inspect `browser status` on the 
 `chrome://inspect/#remote-debugging`, verify the intended profile, and explicitly reconnect after resolving approval.
 That failure does not establish a usable connection receipt and is never retried automatically.
 
-Browser `type` and `press-key` require `--uid` from a fresh snapshot. Peekaboo focuses that exact page element and sends
+Browser `type` and `press-key` require `--uid` from a fresh snapshot. Wink focuses that exact page element and sends
 the keyboard operation as one daemon-owned sequence rather than inheriting whichever control another caller focused.
 Persistent MCP and Agent callers, including Bridge-routed Agents, receive opaque, session-owned page and element
 references instead of these raw CLI compatibility values. Those references bind the exact provider child and cannot
@@ -109,9 +109,9 @@ cross caller sessions. A newer snapshot or navigation expires the affected page'
 expires that page's namespace; disconnect, connection replacement, or session end expires the complete caller
 namespace. A current Bridge host also supports caller-scoped opaque-reference MCP sessions through an explicit
 authenticated handoff. First run
-`peekaboo browser connect --foreground --bridge-socket <socket> --handoff-file <absolute-private-path>` to connect the exact
+`wink browser connect --foreground --bridge-socket <socket> --handoff-file <absolute-private-path>` to connect the exact
 browser and atomically write its signed one-shot receipt. Then start
-`peekaboo mcp serve --bridge-socket <same-socket> --browser-handoff <same-path>`. The Bridge validates the caller, listener
+`wink mcp serve --bridge-socket <same-socket> --browser-handoff <same-path>`. The Bridge validates the caller, listener
 generation, exact target receipt, claim, and provider epoch before creating a separate scoped child; status, execution,
 disconnect, and end stay bound to that namespace, and no request can fall back to the Bridge's root browser connection.
 Older or incompatible hosts refuse the handoff before MCP serving begins.
@@ -126,7 +126,7 @@ parent is refused before connect runtime construction; an unsafe newly created r
 the existing reserved-target disconnect. MCP receipt loading fails before runtime construction, with no fallback.
 
 `browser upload-file` requires `--page-id`, a fresh file-input `--uid`, and an absolute `--path` to a current-user
-regular file no larger than 100 MiB. Peekaboo never grants Chrome DevTools MCP unrestricted filesystem access. The daemon
+regular file no larger than 100 MiB. Wink never grants Chrome DevTools MCP unrestricted filesystem access. The daemon
 copies the already-open source into its private browser-session temporary root, preserves only the source basename, and
 retains that read-only copy until disconnect so delayed page reads and form submission remain valid. Symlinks,
 directories, special files, traversal paths, ownership changes, and size or identity races fail before browser dispatch.

@@ -1,5 +1,5 @@
 ---
-summary: 'Grand refactor plan for unifying Peekaboo screenshot, AX detection, OCR, annotations, and desktop observation architecture.'
+summary: 'Grand refactor plan for unifying Wink screenshot, AX detection, OCR, annotations, and desktop observation architecture.'
 read_when:
   - 'planning major refactors to see, image, capture, or element detection'
   - 'changing screenshot performance, AX traversal, or capture target selection'
@@ -11,11 +11,11 @@ read_when:
 # Desktop Observation Refactor
 
 > **Historical record:** Commands and outputs are preserved as observed when this document was written. See the
-> [Peekaboo 4 migration guide](../v4-migration.md) for current CLI syntax.
+> [Wink 4 migration guide](../v4-migration.md) for current CLI syntax.
 
 ## Thesis
 
-Peekaboo should have one product-level answer to this question:
+Wink should have one product-level answer to this question:
 
 > What is visible on the desktop, where did it come from, what pixels represent it, and what can I do with it?
 
@@ -45,7 +45,7 @@ This plan is active and partially landed.
 Landed:
 
 - `DesktopObservationRequest`, target, capture, detection, output, timeout, timing, diagnostic, and result models.
-- `DesktopObservationService` facade in `PeekabooAutomationKit`.
+- `DesktopObservationService` facade in `WinkAutomationKit`.
 - `ObservationTargetResolver` for core targets.
 - Request-scoped `DesktopStateSnapshot` for target resolution and diagnostics.
 - `ObservationOutputWriter` and `ObservationOutputPathResolver` for raw screenshot persistence, directory-aware output path planning, annotated companion-path planning, basic annotation rendering, and snapshot registration.
@@ -87,7 +87,7 @@ Landed:
 - Dialog service keeps construction/errors, public operations, button action resolution, element extraction, target resolution, classification, and file-dialog flows in focused files.
 - Process command models keep enum cases, interaction parameters, system parameters, and output DTOs in focused files.
 - Observation-backed CLI/MCP structured timings and diagnostics.
-- `peekaboo image --json` includes per-file observation diagnostics with timing spans, state snapshot summaries, warnings, and resolved target metadata.
+- `wink image --json` includes per-file observation diagnostics with timing spans, state snapshot summaries, warnings, and resolved target metadata.
 - Observation target selection for remaining CLI app-window filtering in `image`, live `capture`, and `window list`.
 - Observation-backed menu-bar strip capture for CLI `image --app menubar` and MCP `image`.
 - Observation-backed menu-bar popover window-list resolution and capture.
@@ -97,9 +97,9 @@ Landed:
 - Observation output reports artifact subspans for raw screenshot writes, annotation rendering, and snapshot registration.
 - Desktop observation now has first-class OCR results, a `detection.ocr` timing span, OCR-only detection for `preferOCR`, and shared OCR-to-element mapping used by menu-bar helpers.
 - Desktop observation now reports a total `desktop.observe` timing span after component capture, detection, OCR, and output spans.
-- `peekaboo see --app menubar` now routes through the shared observation `.menubar` target while keeping tiny strip annotations disabled.
+- `wink see --app menubar` now routes through the shared observation `.menubar` target while keeping tiny strip annotations disabled.
 - ScreenCaptureKit area captures now use the single-shot frame source because fast-stream display sessions returned full-display frames for area source rectangles.
-- `peekaboo see --mode area` now fails during command binding/target selection instead of silently entering the legacy capture bridge; area capture remains an `image`/service-level feature until `see` exposes rectangle inputs.
+- `wink see --mode area` now fails during command binding/target selection instead of silently entering the legacy capture bridge; area capture remains an `image`/service-level feature until `see` exposes rectangle inputs.
 - CLI `see` no longer carries legacy window/frontmost capture fallback code; observation-backed targets now own those paths, and the remaining fallback handles only all-screen/multi capture plus menu-bar popover recovery.
 - Commander binding now wires `see --capture-engine`, `image --capture-engine`, and `see --timeout-seconds` into the command structs that build observation requests.
 - CLI `image --mode area --region x,y,width,height` now routes explicit desktop-region capture through observation-backed area targets.
@@ -111,38 +111,38 @@ Landed:
 - Popover-specific OCR selection now lives in observation via shared candidate-window, preferred-area, and AX-menu-frame matching helpers.
 - Menu-bar popover click-to-open capture now lives behind the typed observation target option `openIfNeeded`.
 - Menu-bar strip and popover observation diagnostics now share typed target-resolution metadata for source, bounds, hints, window IDs, and click-open fallbacks.
-- `peekaboo menubar list` and `peekaboo list menubar` now share the same JSON payload and text list formatting.
+- `wink menubar list` and `wink list menubar` now share the same JSON payload and text list formatting.
 - CLI `see` all-screens capture now uses the shared screen inventory instead of command-local ScreenCaptureKit display enumeration.
-- `peekaboo image` builds desktop observation requests through a dedicated command-support adapter.
-- `peekaboo see` builds desktop observation requests through a dedicated command-support adapter.
-- `peekaboo see --mode screen --screen-index <n>` and screen analysis captures now route through desktop observation; all-screen capture remains on the legacy multi-file path until observation grows multi-artifact output.
-- `peekaboo see --json` now reports an annotated screenshot path only when an annotated file actually exists.
-- `peekaboo see` support types, output rendering, and screen helpers are split out of the primary command file.
-- `peekaboo see` legacy capture/detection fallback now lives in a dedicated detection-pipeline adapter, putting the main command shell under the target size.
-- `peekaboo image` capture orchestration, output models, analysis rendering, filename planning, and focus helpers are split out of the primary command file.
-- `peekaboo app` launch, quit, and relaunch implementations now live in focused support files, leaving `AppCommand.swift` under the target size.
-- `peekaboo menu` list output filtering, typed JSON conversion, and text rendering now share one command-support helper.
-- `peekaboo menu` subcommands now share one error-output mapper for JSON error codes and stderr rendering.
-- `peekaboo menu` click, click-extra, and list implementations now live in focused extension files, leaving `MenuCommand.swift` as registration and shared types.
-- `peekaboo dialog` click, input, file, dismiss, and list implementations now live in focused extension files, leaving `DialogCommand.swift` as registration, bindings, and shared error handling.
-- `peekaboo space` list, switch, and move-window implementations now live in focused extension files, leaving `SpaceCommand.swift` as registration, service wiring, and shared response types.
-- `peekaboo dock` launch, right-click, visibility, and list implementations now live in focused extension files, leaving `DockCommand.swift` as registration, bindings, and shared error handling.
-- `peekaboo daemon` start, stop, status, and run implementations now live in focused extension files, leaving `DaemonCommand.swift` as registration and shared daemon status support.
-- `peekaboo click`, `type`, `move`, `scroll`, `drag`, `swipe`, `hotkey`, and `press` now use a shared interaction observation context for explicit/latest snapshot selection and focus snapshot policy.
+- `wink image` builds desktop observation requests through a dedicated command-support adapter.
+- `wink see` builds desktop observation requests through a dedicated command-support adapter.
+- `wink see --mode screen --screen-index <n>` and screen analysis captures now route through desktop observation; all-screen capture remains on the legacy multi-file path until observation grows multi-artifact output.
+- `wink see --json` now reports an annotated screenshot path only when an annotated file actually exists.
+- `wink see` support types, output rendering, and screen helpers are split out of the primary command file.
+- `wink see` legacy capture/detection fallback now lives in a dedicated detection-pipeline adapter, putting the main command shell under the target size.
+- `wink image` capture orchestration, output models, analysis rendering, filename planning, and focus helpers are split out of the primary command file.
+- `wink app` launch, quit, and relaunch implementations now live in focused support files, leaving `AppCommand.swift` under the target size.
+- `wink menu` list output filtering, typed JSON conversion, and text rendering now share one command-support helper.
+- `wink menu` subcommands now share one error-output mapper for JSON error codes and stderr rendering.
+- `wink menu` click, click-extra, and list implementations now live in focused extension files, leaving `MenuCommand.swift` as registration and shared types.
+- `wink dialog` click, input, file, dismiss, and list implementations now live in focused extension files, leaving `DialogCommand.swift` as registration, bindings, and shared error handling.
+- `wink space` list, switch, and move-window implementations now live in focused extension files, leaving `SpaceCommand.swift` as registration, service wiring, and shared response types.
+- `wink dock` launch, right-click, visibility, and list implementations now live in focused extension files, leaving `DockCommand.swift` as registration, bindings, and shared error handling.
+- `wink daemon` start, stop, status, and run implementations now live in focused extension files, leaving `DaemonCommand.swift` as registration and shared daemon status support.
+- `wink click`, `type`, `move`, `scroll`, `drag`, `swipe`, `hotkey`, and `press` now use a shared interaction observation context for explicit/latest snapshot selection and focus snapshot policy.
 - Element-targeted interaction commands now share one stale-snapshot refresh helper instead of maintaining command-local refresh loops.
-- `peekaboo click`, `type`, `scroll`, `drag`, and `swipe` now centrally invalidate implicitly reused latest snapshots after successful UI mutations.
+- `wink click`, `type`, `scroll`, `drag`, and `swipe` now centrally invalidate implicitly reused latest snapshots after successful UI mutations.
 - Element-targeted actions now receive stale-window diagnostics when a snapshot window disappears or changes size.
 - Element-targeted move, drag, swipe, click output, and scroll targeting now share the core moved-window point adjustment.
 - Disk and in-memory snapshot stores now preserve typed detection window context so observation-backed snapshots keep bundle ID, PID, window ID, and bounds.
 - App launch/switch, window mutation, hotkey, press, and paste commands now invalidate the implicit latest snapshot after UI changes.
-- `peekaboo click --on/--id`, `click <query>`, `move --on/--id`, `move --to <query>`, `scroll --on`, `drag --from/--to`, and `swipe --from/--to` now refresh the implicit observation snapshot once when cached element targets are missing.
-- `peekaboo scroll --smooth --json` now reports the actual smooth scroll tick count used by the automation service.
-- `peekaboo scroll --on --json` now reports the same moved-window-adjusted target point used by the automation service.
-- `peekaboo window focus --snapshot` now focuses the captured window context while preserving explicit snapshots during focus-cache invalidation.
+- `wink click --on/--id`, `click <query>`, `move --on/--id`, `move --to <query>`, `scroll --on`, `drag --from/--to`, and `swipe --from/--to` now refresh the implicit observation snapshot once when cached element targets are missing.
+- `wink scroll --smooth --json` now reports the actual smooth scroll tick count used by the automation service.
+- `wink scroll --on --json` now reports the same moved-window-adjusted target point used by the automation service.
+- `wink window focus --snapshot` now focuses the captured window context while preserving explicit snapshots during focus-cache invalidation.
 - Element-targeted `click`, `move`, `scroll`, `drag`, and `swipe` JSON results now report target-point diagnostics with original snapshot point, resolved point, snapshot ID, and moved-window adjustment.
 - `ElementDetectionService` now owns only detection/result building; snapshot persistence moved up to orchestration.
 - Exact CoreGraphics window-ID metadata lookup now lives in `WindowCGInfoLookup`, keeping `WindowManagementService` focused on window operations and fallback orchestration.
-- Shared `peekaboo window` target, display-name, action-result, and snapshot-invalidation helpers now live in `WindowCommand+Support`, leaving the primary command file focused on subcommand wiring.
+- Shared `wink window` target, display-name, action-result, and snapshot-invalidation helpers now live in `WindowCommand+Support`, leaving the primary command file focused on subcommand wiring.
 - Watch capture frame diffing now lives in `WatchFrameDiffer`, keeping luma scaling, bounding-box extraction, and SSIM away from session orchestration.
 - Watch capture artifact writing now lives in `WatchCaptureArtifactWriter`, keeping PNG encoding, contact sheets, resizing, and change highlighting away from session orchestration.
 - Watch capture session filesystem duties now live in `WatchCaptureSessionStore`, keeping output directory setup, managed autoclean, and metadata JSON writing out of session orchestration.
@@ -151,25 +151,25 @@ Landed:
 - Watch capture frame acquisition now lives in `WatchCaptureFrameProvider`, keeping live/video source selection, region-target capture, and resolution capping out of session orchestration.
 - Watch capture active/idle hysteresis now lives in `WatchCaptureActivityPolicy`; the unused private motion-interval accumulator was removed from session state.
 - Window operation orchestration now stays in `WindowManagementService`; target resolution, title search, and close-presence polling moved into dedicated service extension files.
-- `peekaboo window` response models and Commander binding/conformance wiring now live in `WindowCommand+Bindings`, leaving the primary command file closer to behavior-only subcommands.
-- `peekaboo window close`, `minimize`, and `maximize` implementations now live in `WindowCommand+State`.
-- `peekaboo window move`, `resize`, and `set-bounds` implementations now live in `WindowCommand+Geometry`.
-- `peekaboo window focus` and `list` implementations now live in `WindowCommand+Focus` and `WindowCommand+List`, leaving `WindowCommand.swift` as the command shell.
+- `wink window` response models and Commander binding/conformance wiring now live in `WindowCommand+Bindings`, leaving the primary command file closer to behavior-only subcommands.
+- `wink window close`, `minimize`, and `maximize` implementations now live in `WindowCommand+State`.
+- `wink window move`, `resize`, and `set-bounds` implementations now live in `WindowCommand+Geometry`.
+- `wink window focus` and `list` implementations now live in `WindowCommand+Focus` and `WindowCommand+List`, leaving `WindowCommand.swift` as the command shell.
 - Interaction snapshot invalidation now lives in `InteractionObservationInvalidator`, leaving `InteractionObservationContext` focused on snapshot selection and refresh.
 - Observation label placement geometry and candidate generation now live in `ObservationLabelPlacementGeometry`, leaving `ObservationLabelPlacer` focused on scoring/orchestration.
 - Desktop observation target diagnostics and trace timing now live in focused helpers, leaving `DesktopObservationService` focused on the observe pipeline.
-- `peekaboo move` result and movement-resolution types now live in `MoveCommand+Types`.
-- `peekaboo move` Commander wiring and cursor movement parameter policy now live in focused support files.
+- `wink move` result and movement-resolution types now live in `MoveCommand+Types`.
+- `wink move` Commander wiring and cursor movement parameter policy now live in focused support files.
 - Drag destination-app/Dock AX lookup now lives in a focused CLI helper, `swipe` no longer carries stale platform imports, and `move --center` uses the shared screen service instead of command-local AppKit.
 - `image --app` auto focus now skips forced activation when a renderable target window already exists, fixing SwiftPM GUI captures that timed out while activation never completed.
 - Observation app-target resolution now fails with a typed window-not-found error when known windows exist but none are renderable/shareable, instead of falling back to generic app capture.
 - MCP `image` and `see` now share one observation target parser, including screen, frontmost, menubar, PID/window-index, app/window-index, and app/window-title targets; MCP `image` also maps `scale: native` and `retina: true` to native capture scale.
-- `peekaboo type` text escape processing and result DTOs now live in focused support files.
+- `wink type` text escape processing and result DTOs now live in focused support files.
 - Drag/swipe element-or-coordinate point resolution now uses `InteractionTargetPointResolver.elementOrCoordinateResolution`, and gesture result DTOs live in focused type files.
-- `peekaboo click` validation/helpers and Commander wiring now live in focused support files.
-- `peekaboo click` coordinate focus verification now uses the application service boundary instead of command-local `NSWorkspace` frontmost-app reads.
-- `peekaboo app switch --to` activation and `--cycle` input now use shared service boundaries instead of command-local `NSWorkspace`/`CGEvent` calls.
-- `peekaboo menu click/list` frontmost-app fallback now uses the application service boundary instead of command-local `NSWorkspace` reads.
+- `wink click` validation/helpers and Commander wiring now live in focused support files.
+- `wink click` coordinate focus verification now uses the application service boundary instead of command-local `NSWorkspace` frontmost-app reads.
+- `wink app switch --to` activation and `--cycle` input now use shared service boundaries instead of command-local `NSWorkspace`/`CGEvent` calls.
+- `wink menu click/list` frontmost-app fallback now uses the application service boundary instead of command-local `NSWorkspace` reads.
 - Command utility, menubar, open, and space command files no longer carry stale `AppKit` imports when only Foundation/CoreGraphics APIs are used.
 - The menu-bar popover detector helper no longer depends on `AppKit` for CoreGraphics-only window metadata filtering.
 - Smart capture now receives frontmost-app and screen-bounds state through shared application and screen service boundaries instead of direct `AppKit` calls.
@@ -197,7 +197,7 @@ Landed:
 - AI image-file reads now use Cocoa home-directory expansion instead of replacing every literal `~` in the path.
 - Shared file-service image writes now expand home-directory paths before creating output directories.
 - CLI command utilities now keep error handling, output formatting, service bridge wrappers, cursor movement policy, and menu-bar list output in focused files instead of one shared grab-bag.
-- `peekaboo agent` command orchestration now keeps terminal/chat rendering, session resume/listing, execution output, and model parsing in focused extension files.
+- `wink agent` command orchestration now keeps terminal/chat rendering, session resume/listing, execution output, and model parsing in focused extension files.
 - `AgentOutputDelegate` now keeps event handling separate from tool/result formatting helpers.
 - Core configuration management now keeps loading/migration, JSONC/env parsing, credentials, typed accessors, persistence/default templates, and custom-provider HTTP checks in focused files.
 - Bridge client request adapters now keep status, capture, interaction, window/app, menu/dock/dialog, snapshot, and socket transport responsibilities in focused files.
@@ -225,7 +225,7 @@ Landed:
 - Command runtime daemon/remote selection now lives in focused socket, launch, capability, input-policy, service-factory, and host-resolver helpers instead of the primary runtime shell.
 - Bridge server request handling now keeps service-domain handlers in a focused companion file, leaving the primary handler file as routing plus core/capture/automation/window operations.
 - Remote service adapters now live in focused files instead of one aggregate service-provider implementation.
-- `PeekabooServices` now keeps agent refresh/model selection and high-level automation helpers in focused companion files.
+- `WinkServices` now keeps agent refresh/model selection and high-level automation helpers in focused companion files.
 - `WindowToolFormatter` now keeps base dispatch, window/screen result rendering, and Spaces result rendering in focused files.
 - Agent tool formatting now routes Dock, shell/wait, and clipboard tools through dedicated formatters, with menu/dialog rendering split into focused companion files.
 - `UIAutomationToolFormatter` now keeps pointer and keyboard result rendering in focused companion files, and `move`/`drag`/`swipe` summaries use current pointer metadata instead of blank base summaries.
@@ -235,19 +235,19 @@ Landed:
 - `TypeService` now keeps target resolution, typing cadence, and special-key synthesis in focused helper files; special-key synthesis now honors the documented `SpecialKey` raw values for keypad Enter, forward delete, caps lock, clear, and help.
 - Gesture service internals now keep path generation and humanized mouse-movement synthesis in a focused companion while swipe/drag/move orchestration stays in the primary service.
 - Snapshot management now keeps screenshot persistence, element lookup, and the JSON storage actor in focused support files while the primary manager owns lifecycle, listing, cleanup, and detection-result conversion.
-- `peekaboo image` capture orchestration now keeps saved-file/path planning and app-focus policy in focused command-support files.
-- `peekaboo capture live` now keeps scope resolution, option normalization, output rendering, focus policy, and Commander binding in focused command-support files.
-- `peekaboo capture live` now applies the resolution cap consistently to live frames whose source images lack reusable color-space metadata.
-- `peekaboo see --mode screen --json` now suppresses human screen-summary lines so stdout remains a single JSON document.
+- `wink image` capture orchestration now keeps saved-file/path planning and app-focus policy in focused command-support files.
+- `wink capture live` now keeps scope resolution, option normalization, output rendering, focus policy, and Commander binding in focused command-support files.
+- `wink capture live` now applies the resolution cap consistently to live frames whose source images lack reusable color-space metadata.
+- `wink see --mode screen --json` now suppresses human screen-summary lines so stdout remains a single JSON document.
 - Exact PID/window observations skip broad application inventory when WindowServer supplies a matching owner and live process-generation receipt; capture metadata then hydrates the bundle identity, while generationless hosts retain the read-only inventory fallback.
-- Screen capture operations now keep ScreenCaptureKit permission probing inside the same serialized transaction as capture work; `peekaboo capture live` now honors `--capture-engine`, and live area capture defaults to the native `screencapture -R` path so it stays fast during concurrent `see` commands.
+- Screen capture operations now keep ScreenCaptureKit permission probing inside the same serialized transaction as capture work; `wink capture live` now honors `--capture-engine`, and live area capture defaults to the native `screencapture -R` path so it stays fast during concurrent `see` commands.
 - Legacy window capture now tries the private ScreenCaptureKit window-ID lookup behind `screencapture -l <windowID>` before falling back to the system `screencapture` binary and public ScreenCaptureKit enumeration.
 - Legacy window capture fallbacks now live in focused private-ScreenCaptureKit and system-screencapture operator companions; `LegacyScreenCaptureOperator+Support.swift` is back to shared scale/display/configuration helpers.
-- Private ScreenCaptureKit window-ID lookup can be disabled globally at compile time with `PEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP`, or per run with `PEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1` / `PEEKABOO_USE_PRIVATE_SCK_WINDOW_LOOKUP=false`; disabled, quarantined, contended, or failed private lookup continues through the bounded system `screencapture` fallback. The legacy attempt never re-enters public ScreenCaptureKit after that isolated fallback fails.
+- Private ScreenCaptureKit window-ID lookup can be disabled globally at compile time with `WINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP`, or per run with `WINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1` / `WINK_USE_PRIVATE_SCK_WINDOW_LOOKUP=false`; disabled, quarantined, contended, or failed private lookup continues through the bounded system `screencapture` fallback. The legacy attempt never re-enters public ScreenCaptureKit after that isolated fallback fails.
 - `InMemorySnapshotManager` now keeps lifecycle, screenshot access, pruning, and detection mapping in focused helper files; writes now enforce the LRU cap immediately and artifact cleanup also applies to pruned entries.
 - Agent desktop context gathering now reads focused application/window state, cursor position, and recent apps through application/window/automation service boundaries instead of direct `NSWorkspace`/CoreGraphics event/window scans.
 - MCP app cycling and move-center resolution now use injected automation/screen services instead of direct AXorcist/AppKit calls.
-- Agent runtime visualizer bounds resolution now uses screen-service snapshots, and action verification PNG encoding uses ImageIO; `PeekabooAgentRuntime` no longer imports AppKit directly.
+- Agent runtime visualizer bounds resolution now uses screen-service snapshots, and action verification PNG encoding uses ImageIO; `WinkAgentRuntime` no longer imports AppKit directly.
 - CLI app quit/relaunch now use application-service lookup, termination, and running-state polling; command code no longer scans `NSWorkspace.runningApplications` for those paths.
 - CLI visualizer smoke geometry now uses the injected screen service instead of `NSScreen.main`.
 - Application service protocol models now avoid importing AppKit; platform activation policy is carried as a service enum.
@@ -255,21 +255,21 @@ Landed:
 - Window list mapping now avoids AppKit for CoreGraphics and ScreenCaptureKit-only metadata caching.
 - CLI move/scroll result telemetry now reads the current cursor position through the automation service boundary instead of direct CoreGraphics event calls.
 - Menu extra handling now keeps public orchestration, open-menu state probing, WindowServer enumeration, AX fallback enumeration, and title cleanup in focused service files.
-- `peekaboo config` custom-provider add/list/test/remove/model commands are split into focused provider files.
+- `wink config` custom-provider add/list/test/remove/model commands are split into focused provider files.
 - MCP `WindowTool` action handlers now live in a focused companion file, and target validation uses the tool's normal argument-error path.
 - MCP `AppTool` action handlers now live in a focused companion file, leaving the primary tool file as request parsing and dispatch.
 - MCP `SpaceTool` action handlers now live in a focused companion file, leaving the primary tool file as schema, request parsing, and dispatch.
 - MCP `DialogTool` input parsing and response formatting now live in focused companion files, leaving the primary tool to own schema, targeting, and service dispatch.
-- `peekaboo list screens` implementation and screen payload models are split out of the primary list command file.
-- `peekaboo list apps` and `peekaboo list windows` implementations are split out of the primary list command shell.
-- `peekaboo clipboard` Commander binding and output DTOs are split from clipboard action logic.
-- `peekaboo bridge status` diagnostics and report DTOs are split from the command UI shell.
+- `wink list screens` implementation and screen payload models are split out of the primary list command file.
+- `wink list apps` and `wink list windows` implementations are split out of the primary list command shell.
+- `wink clipboard` Commander binding and output DTOs are split from clipboard action logic.
+- `wink bridge status` diagnostics and report DTOs are split from the command UI shell.
 - Commander runtime help rendering and theming are split from command resolution and alias routing.
-- `peekaboo capture live` orchestration and `capture watch` alias wiring are split from the root capture command shell.
-- `peekaboo capture video` is split out of the primary capture command file.
-- `peekaboo agent permission` status and request flows are split into focused companion files.
-- `peekaboo agent permission ...` now resolves as nested permission subcommands before the agent free-form task argument.
-- Interactive `peekaboo agent --chat` TUI code now keeps chat shell, input/loader components, and event translation in focused files.
+- `wink capture live` orchestration and `capture watch` alias wiring are split from the root capture command shell.
+- `wink capture video` is split out of the primary capture command file.
+- `wink agent permission` status and request flows are split into focused companion files.
+- `wink agent permission ...` now resolves as nested permission subcommands before the agent free-form task argument.
+- Interactive `wink agent --chat` TUI code now keeps chat shell, input/loader components, and event translation in focused files.
 
 Current status:
 
@@ -378,18 +378,18 @@ ConfigurationManager+Credentials.swift: 98 lines
 ConfigurationManager+Accessors.swift: 202 lines
 ConfigurationManager+Persistence.swift: 74 lines
 ConfigurationManager+CustomProviders.swift: 249 lines
-PeekabooBridgeClient.swift: 85 lines
-PeekabooBridgeClient+Status.swift: 53 lines
-PeekabooBridgeClient+Capture.swift: 101 lines
-PeekabooBridgeClient+Interaction.swift: 101 lines
-PeekabooBridgeClient+WindowsApplications.swift: 157 lines
-PeekabooBridgeClient+MenusDockDialogs.swift: 228 lines
-PeekabooBridgeClient+Snapshots.swift: 91 lines
-PeekabooBridgeClient+Transport.swift: 162 lines
-PeekabooBridgeModels.swift: 254 lines
-PeekabooBridgeOperation+Policy.swift: 121 lines
-PeekabooBridgePayloads.swift: 332 lines
-PeekabooBridgeRequestResponse.swift: 192 lines
+WinkBridgeClient.swift: 85 lines
+WinkBridgeClient+Status.swift: 53 lines
+WinkBridgeClient+Capture.swift: 101 lines
+WinkBridgeClient+Interaction.swift: 101 lines
+WinkBridgeClient+WindowsApplications.swift: 157 lines
+WinkBridgeClient+MenusDockDialogs.swift: 228 lines
+WinkBridgeClient+Snapshots.swift: 91 lines
+WinkBridgeClient+Transport.swift: 162 lines
+WinkBridgeModels.swift: 254 lines
+WinkBridgeOperation+Policy.swift: 121 lines
+WinkBridgePayloads.swift: 332 lines
+WinkBridgeRequestResponse.swift: 192 lines
 CaptureTool.swift: 122 lines
 CaptureTool+Arguments.swift: 91 lines
 CaptureTool+Request.swift: 231 lines
@@ -444,15 +444,15 @@ VisualizerCoordinator+InputDisplays.swift: 286 lines
 VisualizerCoordinator+SystemDisplays.swift: 277 lines
 SnapshotManager.swift: 394 lines
 SnapshotManager+Helpers.swift: 264 lines
-PeekabooAgentService.swift: 336 lines
-PeekabooAgentService+Execution.swift: 219 lines
-PeekabooAgentService+SessionLifecycle.swift: 140 lines
-PeekabooAgentService+Toolset.swift: 198 lines
-PeekabooBridgeServer.swift: 202 lines
-PeekabooBridgeServer+Handlers.swift: 241 lines
-PeekabooBridgeServer+Handshake.swift: 157 lines
-PeekabooBridgeServer+ServiceHandlers.swift: 232 lines
-RemotePeekabooServices.swift: 94 lines
+WinkAgentService.swift: 336 lines
+WinkAgentService+Execution.swift: 219 lines
+WinkAgentService+SessionLifecycle.swift: 140 lines
+WinkAgentService+Toolset.swift: 198 lines
+WinkBridgeServer.swift: 202 lines
+WinkBridgeServer+Handlers.swift: 241 lines
+WinkBridgeServer+Handshake.swift: 157 lines
+WinkBridgeServer+ServiceHandlers.swift: 232 lines
+RemoteWinkServices.swift: 94 lines
 RemoteScreenCaptureService.swift: 69 lines
 RemoteUIAutomationService.swift: 185 lines
 RemoteWindowManagementService.swift: 52 lines
@@ -461,9 +461,9 @@ RemoteDockService.swift: 52 lines
 RemoteDialogService.swift: 65 lines
 RemoteSnapshotManager.swift: 91 lines
 RemoteApplicationService.swift: 79 lines
-PeekabooServices.swift: 404 lines
-PeekabooServices+Agent.swift: 138 lines
-PeekabooServices+Automation.swift: 136 lines
+WinkServices.swift: 404 lines
+WinkServices+Agent.swift: 138 lines
+WinkServices+Automation.swift: 136 lines
 WindowToolFormatter.swift: 128 lines
 WindowToolFormatter+WindowResults.swift: 379 lines
 WindowToolFormatter+SpaceResults.swift: 129 lines
@@ -473,8 +473,8 @@ SpaceCGSPrivateAPI.swift: 121 lines
 SpaceModels.swift: 68 lines
 SpaceTool.swift: 196 lines
 SpaceTool+Handlers.swift: 260 lines
-PeekabooAgentService+Tools.swift: 267 lines
-PeekabooAgentService+ToolSchema.swift: 92 lines
+WinkAgentService+Tools.swift: 267 lines
+WinkAgentService+ToolSchema.swift: 92 lines
 AgentToolMCPBridge.swift: 93 lines
 ObservationOutputPathResolver.swift: 56 lines
 UIAutomationServiceProtocol.swift: 155 lines
@@ -681,9 +681,9 @@ Purpose: split packages after boundaries are stable.
 
 Order:
 
-1. `PeekabooObservation`
-2. `PeekabooCapture`
-3. `PeekabooElementDetection`
+1. `WinkObservation`
+2. `WinkCapture`
+3. `WinkElementDetection`
 4. optional CLI command-support package
 
 Exit criteria:
@@ -1119,9 +1119,9 @@ Goal: split packages only after behavior boundaries are boring.
 
 Order:
 
-1. `PeekabooObservation`
-2. `PeekabooCapture`
-3. `PeekabooElementDetection`
+1. `WinkObservation`
+2. `WinkCapture`
+3. `WinkElementDetection`
 4. optional CLI command-support package
 
 Do not extract modules while command, capture, and detection code still disagree about target semantics.
@@ -1145,16 +1145,16 @@ Work:
 Gate:
 
 ```bash
-swift test --package-path Core/PeekabooAutomationKit --filter DesktopObservationServiceTests
-swift test --package-path Core/PeekabooCore --filter MCPToolExecutionTests
-swift test --package-path Apps/CLI -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --filter SeeCommandAnnotationTests
+swift test --package-path Core/WinkAutomationKit --filter DesktopObservationServiceTests
+swift test --package-path Core/WinkCore --filter MCPToolExecutionTests
+swift test --package-path Apps/CLI -Xswiftc -DWINK_SKIP_AUTOMATION --filter SeeCommandAnnotationTests
 pnpm run test:safe
 ```
 
 Manual checks:
 
 ```bash
-peekaboo see --window-id <id> --annotate --path /tmp/see.png --json-output
+wink see --window-id <id> --annotate --path /tmp/see.png --json-output
 sips -g pixelWidth -g pixelHeight /tmp/see.png /tmp/see_annotated.png
 ```
 
@@ -1174,15 +1174,15 @@ Work:
 Gate:
 
 ```bash
-swift test --package-path Core/PeekabooAutomationKit --filter DesktopObservationServiceTests
+swift test --package-path Core/WinkAutomationKit --filter DesktopObservationServiceTests
 pnpm run test:safe
 ```
 
 Manual checks:
 
 ```bash
-peekaboo see --menubar --json-output --verbose
-peekaboo see --app menubar --path /tmp/menubar.png --json-output
+wink see --menubar --json-output --verbose
+wink see --app menubar --path /tmp/menubar.png --json-output
 ```
 
 ### Group 3: Capture Service Cleanup
@@ -1213,20 +1213,20 @@ Recommended order:
 Live check, May 7, 2026:
 
 ```bash
-./Apps/CLI/.build/debug/peekaboo list windows --app Ghostty --json-output
-./Apps/CLI/.build/debug/peekaboo image --window-id 7565 --path /tmp/peekaboo-live-no-retina.png --json-output
-./Apps/CLI/.build/debug/peekaboo image --window-id 7565 --retina --path /tmp/peekaboo-live-retina.png --json-output
-screencapture -l 7565 -o -x /tmp/peekaboo-live-native.png
-sips -g pixelWidth -g pixelHeight /tmp/peekaboo-live-no-retina.png /tmp/peekaboo-live-retina.png /tmp/peekaboo-live-native.png
+./Apps/CLI/.build/debug/wink list windows --app Ghostty --json-output
+./Apps/CLI/.build/debug/wink image --window-id 7565 --path /tmp/wink-live-no-retina.png --json-output
+./Apps/CLI/.build/debug/wink image --window-id 7565 --retina --path /tmp/wink-live-retina.png --json-output
+screencapture -l 7565 -o -x /tmp/wink-live-native.png
+sips -g pixelWidth -g pixelHeight /tmp/wink-live-no-retina.png /tmp/wink-live-retina.png /tmp/wink-live-native.png
 ```
 
-Result on the current host: all three files were `802x1250`, so this machine/session does not reproduce a Retina 2x delta. `image --app Ghostty` selected the real `802x1250` titled window `Peekaboo` instead of the visible `3008x30` auxiliary strip windows, matching the intended #113 app-window behavior.
+Result on the current host: all three files were `802x1250`, so this machine/session does not reproduce a Retina 2x delta. `image --app Ghostty` selected the real `802x1250` titled window `Wink` instead of the visible `3008x30` auxiliary strip windows, matching the intended #113 app-window behavior.
 
 Gate:
 
 ```bash
-swift test --package-path Core/PeekabooCore --filter ScreenCaptureService
-swift test --package-path Core/PeekabooCore --filter CaptureEngineResolverTests
+swift test --package-path Core/WinkCore --filter ScreenCaptureService
+swift test --package-path Core/WinkCore --filter CaptureEngineResolverTests
 pnpm run test:safe
 ```
 ```
@@ -1234,8 +1234,8 @@ pnpm run test:safe
 Manual Retina check:
 
 ```bash
-peekaboo see --window-id <id> --path /tmp/no-retina.png --json-output
-peekaboo see --window-id <id> --retina --path /tmp/retina.png --json-output
+wink see --window-id <id> --path /tmp/no-retina.png --json-output
+wink see --window-id <id> --retina --path /tmp/retina.png --json-output
 sips -g pixelWidth -g pixelHeight /tmp/no-retina.png /tmp/retina.png
 ```
 
@@ -1254,8 +1254,8 @@ Work:
 Gate:
 
 ```bash
-swift test --package-path Core/PeekabooAutomationKit --filter ElementDetectionServiceTests
-swift test --package-path Core/PeekabooAutomationKit --filter ElementDetectionTraversalPolicyTests
+swift test --package-path Core/WinkAutomationKit --filter ElementDetectionServiceTests
+swift test --package-path Core/WinkAutomationKit --filter ElementDetectionTraversalPolicyTests
 pnpm run test:safe
 ```
 
@@ -1284,17 +1284,17 @@ Work:
 Gate:
 
 ```bash
-swift test --package-path Apps/CLI -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --filter ClickCommandTests
-swift test --package-path Apps/CLI -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --filter TypeCommandTests
+swift test --package-path Apps/CLI -Xswiftc -DWINK_SKIP_AUTOMATION --filter ClickCommandTests
+swift test --package-path Apps/CLI -Xswiftc -DWINK_SKIP_AUTOMATION --filter TypeCommandTests
 pnpm run test:safe
 ```
 
 Manual checks:
 
 ```bash
-peekaboo see --app TextEdit --json-output --path /tmp/textedit.png
-peekaboo click --snapshot <snapshot-id> --on <element-id> --json-output
-peekaboo type "observation smoke test" --snapshot <snapshot-id> --json-output
+wink see --app TextEdit --json-output --path /tmp/textedit.png
+wink click --snapshot <snapshot-id> --on <element-id> --json-output
+wink type "observation smoke test" --snapshot <snapshot-id> --json-output
 ```
 
 ### Group 6: Command and Module Cleanup
@@ -1376,13 +1376,13 @@ Verify:
 Run only when Screen Recording and Accessibility are granted.
 
 ```bash
-peekaboo permissions status --json-output
-peekaboo window list --app TextEdit --json-output
-peekaboo see --window-id <id> --path /tmp/textedit.png --json-output
-peekaboo see --window-id <id> --retina --path /tmp/textedit-retina.png --json-output
-peekaboo see --window-id <id> --annotate --path /tmp/textedit-see.png --json-output --verbose
-peekaboo see --app "Google Chrome" --json-output --verbose
-peekaboo see --app "Peekaboo Inspector" --json-output --verbose
+wink permissions status --json-output
+wink window list --app TextEdit --json-output
+wink see --window-id <id> --path /tmp/textedit.png --json-output
+wink see --window-id <id> --retina --path /tmp/textedit-retina.png --json-output
+wink see --window-id <id> --annotate --path /tmp/textedit-see.png --json-output --verbose
+wink see --app "Google Chrome" --json-output --verbose
+wink see --app "Wink Inspector" --json-output --verbose
 ```
 
 Record:
@@ -1401,22 +1401,22 @@ Record:
 Live verification, May 7, 2026:
 
 ```bash
-./Apps/CLI/.build/debug/peekaboo permissions status --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app TextEdit --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app "Google Chrome" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app PeekabooInspector --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13441 --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app TextEdit --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-app-fixed.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 12438 --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-app-fixed.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13665 --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app PeekabooInspector --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-app-fixed.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --window-id 13441 --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-see-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-see-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --window-id 12438 --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-see-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-see-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --window-id 13665 --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-see-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app PeekabooInspector --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-see-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink permissions status --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app TextEdit --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app "Google Chrome" --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app WinkInspector --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13441 --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app TextEdit --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-app-fixed.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 12438 --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-app-fixed.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13665 --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app WinkInspector --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-app-fixed.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 13441 --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-see-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --app TextEdit --path .artifacts/live-e2e/2026-05-07T1118Z/textedit-see-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 12438 --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-see-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T1118Z/chrome-see-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 13665 --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-see-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --app WinkInspector --path .artifacts/live-e2e/2026-05-07T1118Z/inspector-see-app.png --json --no-remote
 ```
 
 Results:
@@ -1425,8 +1425,8 @@ Results:
 - display scale: 1x, so Retina 2x behavior remains not reproducible on this host;
 - TextEdit `--app` and `--window-id` captured the same `656x422` window; app image wall time improved from `0.72s` to `0.57s`;
 - Chrome `--app` and `--window-id` captured the same `1672x1297` window; app image wall time improved from `0.75s` to `0.55s`;
-- PeekabooInspector `image --window-id 13665` captured `450x732` in `0.39s`; before the fix, `image --app PeekabooInspector` timed out after `3.30s`, and after the fix it captured the same `450x732` window in `0.57s`;
-- `see --app` and `see --window-id` succeeded for TextEdit, Chrome, and PeekabooInspector with matching screenshot dimensions; Inspector `see --app` recorded `84` elements, `74` interactables, and desktop observation spans `state.snapshot=93ms`, `target.resolve=30ms`, `capture.window=155ms`, `detection.ax=129ms`.
+- WinkInspector `image --window-id 13665` captured `450x732` in `0.39s`; before the fix, `image --app WinkInspector` timed out after `3.30s`, and after the fix it captured the same `450x732` window in `0.57s`;
+- `see --app` and `see --window-id` succeeded for TextEdit, Chrome, and WinkInspector with matching screenshot dimensions; Inspector `see --app` recorded `84` elements, `74` interactables, and desktop observation spans `state.snapshot=93ms`, `target.resolve=30ms`, `capture.window=155ms`, `detection.ax=129ms`.
 
 Live verification after smart-capture service cleanup, May 7, 2026:
 
@@ -1434,21 +1434,21 @@ Live verification after smart-capture service cleanup, May 7, 2026:
 pnpm run format
 pnpm run lint
 pnpm run test:safe
-./Apps/CLI/.build/debug/peekaboo permissions status --json
-./Apps/CLI/.build/debug/peekaboo list apps --json
-./Apps/CLI/.build/debug/peekaboo list screens --json
-./Apps/CLI/.build/debug/peekaboo list windows --app Finder --json
-./Apps/CLI/.build/debug/peekaboo image --mode screen --path /tmp/peekaboo-live-screen.png --json
-./Apps/CLI/.build/debug/peekaboo see --app frontmost --path /tmp/peekaboo-live-see-frontmost.png --annotate --json
-./Apps/CLI/.build/debug/peekaboo click --coords 500,1000 --no-auto-focus --json
-./Apps/CLI/.build/debug/peekaboo move --coords 520,1000 --json
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path /tmp/peekaboo-live-textedit-before.png --annotate --json
-./Apps/CLI/.build/debug/peekaboo click --on elem_2 --snapshot 1ACF34FD-8EA8-4419-B0FA-73689AA4936B --app TextEdit --json
-./Apps/CLI/.build/debug/peekaboo type PEEKABOO_LIVE_TYPE_1778155880 --clear --app TextEdit --delay 0 --profile linear --json
-./Apps/CLI/.build/debug/peekaboo image --app TextEdit --path /tmp/peekaboo-live-textedit-after.png --json
-./Apps/CLI/.build/debug/peekaboo image --app "Google Chrome" --path /tmp/peekaboo-live-chrome-app.png --json
-./Apps/CLI/.build/debug/peekaboo image --window-id 12438 --path /tmp/peekaboo-live-chrome-window.png --json
-./Apps/CLI/.build/debug/peekaboo see --app "Google Chrome" --path /tmp/peekaboo-live-chrome-see.png --annotate --json
+./Apps/CLI/.build/debug/wink permissions status --json
+./Apps/CLI/.build/debug/wink list apps --json
+./Apps/CLI/.build/debug/wink list screens --json
+./Apps/CLI/.build/debug/wink list windows --app Finder --json
+./Apps/CLI/.build/debug/wink image --mode screen --path /tmp/wink-live-screen.png --json
+./Apps/CLI/.build/debug/wink see --app frontmost --path /tmp/wink-live-see-frontmost.png --annotate --json
+./Apps/CLI/.build/debug/wink click --coords 500,1000 --no-auto-focus --json
+./Apps/CLI/.build/debug/wink move --coords 520,1000 --json
+./Apps/CLI/.build/debug/wink see --app TextEdit --path /tmp/wink-live-textedit-before.png --annotate --json
+./Apps/CLI/.build/debug/wink click --on elem_2 --snapshot 1ACF34FD-8EA8-4419-B0FA-73689AA4936B --app TextEdit --json
+./Apps/CLI/.build/debug/wink type WINK_LIVE_TYPE_1778155880 --clear --app TextEdit --delay 0 --profile linear --json
+./Apps/CLI/.build/debug/wink image --app TextEdit --path /tmp/wink-live-textedit-after.png --json
+./Apps/CLI/.build/debug/wink image --app "Google Chrome" --path /tmp/wink-live-chrome-app.png --json
+./Apps/CLI/.build/debug/wink image --window-id 12438 --path /tmp/wink-live-chrome-window.png --json
+./Apps/CLI/.build/debug/wink see --app "Google Chrome" --path /tmp/wink-live-chrome-see.png --annotate --json
 ```
 
 Results:
@@ -1459,7 +1459,7 @@ Results:
 - screen capture wrote a nonblank `3008x1632` PNG in `0.54s`; observation capture span `323ms`, output raw write `1.5ms`;
 - `see --app frontmost --annotate` on Ghostty produced `241` interactables in `1.09s`; spans included `capture.window=166ms`, `detection.ax=290ms`, `annotation.render=216ms`;
 - coordinate `click` and `move` on the already-frontmost Ghostty window succeeded without hitting destructive controls; JSON execution times were `54ms` and `37ms`;
-- controlled TextEdit fixture `see` found `393` elements and `301` interactables in `1.06s`; element click targeted `elem_2`, `type --clear` entered `PEEKABOO_LIVE_TYPE_1778155880`, and visual verification confirmed the marker in the captured `656x422` TextEdit image;
+- controlled TextEdit fixture `see` found `393` elements and `301` interactables in `1.06s`; element click targeted `elem_2`, `type --clear` entered `WINK_LIVE_TYPE_1778155880`, and visual verification confirmed the marker in the captured `656x422` TextEdit image;
 - Chrome `image --app` and `image --window-id 12438` both captured the same real `1672x1297` browser window rather than auxiliary `3008x30` or `1x1` windows; app image wall time `0.55s`, window-id wall time `0.83s`;
 - Chrome `see --app --annotate` produced `59` elements and `54` interactables in `1.02s`; spans included `capture.window=191ms`, `detection.ax=97ms`, `annotation.render=269ms`;
 - screenshots were inspected with local image vision; no blank captures observed.
@@ -1467,20 +1467,20 @@ Results:
 CLI JSON envelope sweep, May 7, 2026:
 
 ```bash
-./Apps/CLI/.build/debug/peekaboo permissions status --json
-./Apps/CLI/.build/debug/peekaboo list apps --json
-./Apps/CLI/.build/debug/peekaboo list screens --json
-./Apps/CLI/.build/debug/peekaboo list menubar --json
-./Apps/CLI/.build/debug/peekaboo list windows --app Finder --json
-./Apps/CLI/.build/debug/peekaboo dock list --json
-./Apps/CLI/.build/debug/peekaboo dialog list --json
-./Apps/CLI/.build/debug/peekaboo space list --json
-./Apps/CLI/.build/debug/peekaboo window list --app Finder --json
-./Apps/CLI/.build/debug/peekaboo tools --json
-./Apps/CLI/.build/debug/peekaboo commander --json
-./Apps/CLI/.build/debug/peekaboo sleep 1 --json
-./Apps/CLI/.build/debug/peekaboo image --app frontmost --path /tmp/peekaboo-sweep-frontmost.png --json
-./Apps/CLI/.build/debug/peekaboo see --app frontmost --path /tmp/peekaboo-sweep-see.png --json
+./Apps/CLI/.build/debug/wink permissions status --json
+./Apps/CLI/.build/debug/wink list apps --json
+./Apps/CLI/.build/debug/wink list screens --json
+./Apps/CLI/.build/debug/wink list menubar --json
+./Apps/CLI/.build/debug/wink list windows --app Finder --json
+./Apps/CLI/.build/debug/wink dock list --json
+./Apps/CLI/.build/debug/wink dialog list --json
+./Apps/CLI/.build/debug/wink space list --json
+./Apps/CLI/.build/debug/wink window list --app Finder --json
+./Apps/CLI/.build/debug/wink tools --json
+./Apps/CLI/.build/debug/wink commander --json
+./Apps/CLI/.build/debug/wink sleep 1 --json
+./Apps/CLI/.build/debug/wink image --app frontmost --path /tmp/wink-sweep-frontmost.png --json
+./Apps/CLI/.build/debug/wink see --app frontmost --path /tmp/wink-sweep-see.png --json
 ```
 
 Results:
@@ -1493,27 +1493,27 @@ Results:
 Live verification after service split cleanup, May 7, 2026:
 
 ```bash
-./Apps/CLI/.build/debug/peekaboo permissions status --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list apps --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list screens --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app TextEdit --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app "Google Chrome" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13441 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app TextEdit --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-retina.png --json --no-remote
+./Apps/CLI/.build/debug/wink permissions status --json --no-remote
+./Apps/CLI/.build/debug/wink list apps --json --no-remote
+./Apps/CLI/.build/debug/wink list screens --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app TextEdit --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app "Google Chrome" --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13441 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app TextEdit --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-retina.png --json --no-remote
 screencapture -l 13441 -o -x .artifacts/live-e2e/2026-05-07T174032Z/textedit-native.png
-./Apps/CLI/.build/debug/peekaboo see --window-id 13441 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-see-window.png --annotate --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-see-app.png --annotate --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13977 --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-window.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-retina.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 13441 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-see-window.png --annotate --json --no-remote
+./Apps/CLI/.build/debug/wink see --app TextEdit --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-see-app.png --annotate --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13977 --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-window.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-retina.png --json --no-remote
 screencapture -l 13977 -o -x .artifacts/live-e2e/2026-05-07T174032Z/chrome-native.png
-./Apps/CLI/.build/debug/peekaboo see --window-id 13977 --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-see-window.png --annotate --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-see-app.png --annotate --json --no-remote
-./Apps/CLI/.build/debug/peekaboo click --coords 536,293 --no-auto-focus --json --no-remote
-./Apps/CLI/.build/debug/peekaboo type PEEKABOO_E2E_174150 --clear --app TextEdit --delay 0 --profile linear --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13983 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-controlled-after.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --window-id 13983 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-controlled-see-after.png --annotate --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 13977 --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-see-window.png --annotate --json --no-remote
+./Apps/CLI/.build/debug/wink see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T174032Z/chrome-see-app.png --annotate --json --no-remote
+./Apps/CLI/.build/debug/wink click --coords 536,293 --no-auto-focus --json --no-remote
+./Apps/CLI/.build/debug/wink type WINK_E2E_174150 --clear --app TextEdit --delay 0 --profile linear --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13983 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-controlled-after.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --window-id 13983 --path .artifacts/live-e2e/2026-05-07T174032Z/textedit-controlled-see-after.png --annotate --json --no-remote
 ```
 
 Results:
@@ -1525,26 +1525,26 @@ Results:
 - Chrome `image --window-id` completed in `0.39s`; `image --app` selected the same real `1672x1297` titled browser window in `0.63s`, not the auxiliary `3008x30` or `1x1` helper windows;
 - Chrome `--retina` and native `screencapture -l` both produced `1672x1297` on this 1x host;
 - Chrome `see --window-id` completed in `1.56s` with `546` elements and `436` interactables; `see --app` completed in `1.66s` against the same window ID with `547` elements and `436` interactables;
-- controlled TextEdit interaction used a temp document under the artifact directory, clicked inside the document in `0.16s`, typed `PEEKABOO_E2E_174150` in `0.55s`, and recaptured the marker in a `656x422` screenshot;
+- controlled TextEdit interaction used a temp document under the artifact directory, clicked inside the document in `0.16s`, typed `WINK_E2E_174150` in `0.55s`, and recaptured the marker in a `656x422` screenshot;
 - follow-up `see` on the controlled TextEdit window completed in `0.93s`, found the marker in JSON, and reported `395` elements / `303` interactables;
 - screenshots were inspected with local image vision: TextEdit marker visible, Chrome annotated screenshot nonblank with labels aligned to visible UI.
-- `peekaboo image --app TextEdit --path . --json` was run from `/tmp/peekaboo-path-dot.51XoMS` and wrote `TextEdit_2026-05-07T17:53:30Z.png` inside that directory, verifying the directory-like output path fix.
-- `peekaboo see --app TextEdit --path . --json` was run from `/tmp/peekaboo-see-path-dot.ZPHsAQ` and wrote `peekaboo_see_1778176668.png` inside that directory in `0.89s`, verifying the same policy for `see`.
+- `wink image --app TextEdit --path . --json` was run from `/tmp/wink-path-dot.51XoMS` and wrote `TextEdit_2026-05-07T17:53:30Z.png` inside that directory, verifying the directory-like output path fix.
+- `wink see --app TextEdit --path . --json` was run from `/tmp/wink-see-path-dot.ZPHsAQ` and wrote `wink_see_1778176668.png` inside that directory in `0.89s`, verifying the same policy for `see`.
 
 Live verification after path/span cleanup, May 7, 2026:
 
 ```bash
-./Apps/CLI/.build/debug/peekaboo permissions status --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list apps --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list screens --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app TextEdit --json --no-remote
-./Apps/CLI/.build/debug/peekaboo list windows --app "Google Chrome" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app frontmost --path "$TMPDIR/frontmost.png" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app TextEdit --path "$TMPDIR/textedit.png" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app "Google Chrome" --path "$TMPDIR/chrome.png" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path "$TMPDIR/textedit-see.png" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app "Google Chrome" --path "$TMPDIR/chrome-see.png" --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path /tmp/peekaboo-span-check.png --json --no-remote
+./Apps/CLI/.build/debug/wink permissions status --json --no-remote
+./Apps/CLI/.build/debug/wink list apps --json --no-remote
+./Apps/CLI/.build/debug/wink list screens --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app TextEdit --json --no-remote
+./Apps/CLI/.build/debug/wink list windows --app "Google Chrome" --json --no-remote
+./Apps/CLI/.build/debug/wink image --app frontmost --path "$TMPDIR/frontmost.png" --json --no-remote
+./Apps/CLI/.build/debug/wink image --app TextEdit --path "$TMPDIR/textedit.png" --json --no-remote
+./Apps/CLI/.build/debug/wink image --app "Google Chrome" --path "$TMPDIR/chrome.png" --json --no-remote
+./Apps/CLI/.build/debug/wink see --app TextEdit --path "$TMPDIR/textedit-see.png" --json --no-remote
+./Apps/CLI/.build/debug/wink see --app "Google Chrome" --path "$TMPDIR/chrome-see.png" --json --no-remote
+./Apps/CLI/.build/debug/wink see --app TextEdit --path /tmp/wink-span-check.png --json --no-remote
 ```
 
 Results:
@@ -1561,27 +1561,27 @@ Live verification after private ScreenCaptureKit fallback controls, May 7, 2026:
 
 ```bash
 swift build --package-path Apps/CLI
-swift build --package-path Apps/CLI -Xswiftc -DPEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP
+swift build --package-path Apps/CLI -Xswiftc -DWINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP
 swift build --package-path Apps/CLI
-./Apps/CLI/.build/debug/peekaboo image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-private-on.png --json --no-remote
-PEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1 ./Apps/CLI/.build/debug/peekaboo image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-private-off.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app TextEdit --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-see.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-private-on.png --json --no-remote
-PEEKABOO_USE_PRIVATE_SCK_WINDOW_LOOKUP=false ./Apps/CLI/.build/debug/peekaboo image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-private-off.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-app.png --json --no-remote
-./Apps/CLI/.build/debug/peekaboo see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-see.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-private-on.png --json --no-remote
+WINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1 ./Apps/CLI/.build/debug/wink image --window-id 13441 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-private-off.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app TextEdit --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --app TextEdit --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-see.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-private-on.png --json --no-remote
+WINK_USE_PRIVATE_SCK_WINDOW_LOOKUP=false ./Apps/CLI/.build/debug/wink image --window-id 13977 --retina --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-private-off.png --json --no-remote
+./Apps/CLI/.build/debug/wink image --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-app.png --json --no-remote
+./Apps/CLI/.build/debug/wink see --app "Google Chrome" --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-see.png --json --no-remote
 screencapture -l 13441 -o -x .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/text-native.png
 screencapture -l 13977 -o -x .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/chrome-native.png
-./Apps/CLI/.build/debug/peekaboo capture live --mode area --region 100,100,320,220 --capture-engine cg --duration 2 --max-frames 4 --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/concurrent/live --json --no-remote &
-./Apps/CLI/.build/debug/peekaboo see --app TextEdit --capture-engine modern --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/concurrent/text-modern-see.png --json --no-remote
+./Apps/CLI/.build/debug/wink capture live --mode area --region 100,100,320,220 --capture-engine cg --duration 2 --max-frames 4 --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/concurrent/live --json --no-remote &
+./Apps/CLI/.build/debug/wink see --app TextEdit --capture-engine modern --path .artifacts/live-e2e/2026-05-07T221125Z-fallback-switch/concurrent/text-modern-see.png --json --no-remote
 ```
 
 Results:
 
-- normal and `-DPEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP` CLI builds both completed successfully;
+- normal and `-DWINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP` CLI builds both completed successfully;
 - runtime private lookup enabled and disabled both captured nonblank TextEdit and Chrome window-ID screenshots in `0.41-0.42s`;
-- `PEEKABOO_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1` and `PEEKABOO_USE_PRIVATE_SCK_WINDOW_LOOKUP=false` both continued through the fallback ladder instead of failing capture;
+- `WINK_DISABLE_PRIVATE_SCK_WINDOW_LOOKUP=1` and `WINK_USE_PRIVATE_SCK_WINDOW_LOOKUP=false` both continued through the fallback ladder instead of failing capture;
 - TextEdit `image --app` selected the `656x422` titled document window instead of the visible `3008x30` auxiliary strips; Chrome `image --app` selected the `1672x1297` titled browser window instead of helper windows;
 - TextEdit and Chrome `--retina` captures matched native `screencapture -l` dimensions on this 1x host: `656x422` and `1672x1297`;
 - `see --app TextEdit` completed in `0.60s` wall / `0.493s` JSON execution time; `see --app "Google Chrome"` completed in `1.03s` wall / `0.926s` JSON execution time;
@@ -1660,7 +1660,7 @@ Preserve snapshot behavior unless deliberately migrated:
 - Interaction commands can reuse observation state or explain why they cannot.
 - `pnpm run format`, `pnpm run lint`, and `pnpm run test:safe` pass.
 - Targeted Core observation, capture, and element detection tests pass.
-- Live TextEdit, Chrome, and Peekaboo Inspector E2E runs are recorded with screenshots and timings.
+- Live TextEdit, Chrome, and Wink Inspector E2E runs are recorded with screenshots and timings.
 
 ## Changelog Discipline
 

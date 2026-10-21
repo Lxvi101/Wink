@@ -480,15 +480,15 @@ const AGENT_EXECUTION_ENVIRONMENT_KEYS = new Set([
   'SSL_CERT_FILE', 'TMPDIR', 'TZ', 'USER', 'ANTHROPIC_API_KEY', 'GEMINI_API_KEY',
   'GOOGLE_API_KEY', 'GROK_API_KEY', 'MINIMAX_API_KEY', 'MOONSHOT_API_KEY',
   'OPENAI_API_KEY', 'OPENROUTER_API_KEY', 'X_AI_API_KEY', 'XAI_API_KEY',
-  'PEEKABOO_OPERATION_RECEIPT_DIRECTORY', 'PEEKABOO_AGENT_EXECUTION_GATE_FD',
-  'PEEKABOO_AGENT_EXECUTION_GATE_CHALLENGE', 'PEEKABOO_AGENT_EXECUTION_LOCKDOWN_FD',
-  'PEEKABOO_AGENT_EXECUTION_PROCESS_LIMIT',
+  'WINK_OPERATION_RECEIPT_DIRECTORY', 'WINK_AGENT_EXECUTION_GATE_FD',
+  'WINK_AGENT_EXECUTION_GATE_CHALLENGE', 'WINK_AGENT_EXECUTION_LOCKDOWN_FD',
+  'WINK_AGENT_EXECUTION_PROCESS_LIMIT',
 ]);
 
 const AGENT_EXECUTION_MANDATORY_ENVIRONMENT_KEYS = [
-  'PATH', 'PEEKABOO_OPERATION_RECEIPT_DIRECTORY', 'PEEKABOO_AGENT_EXECUTION_GATE_FD',
-  'PEEKABOO_AGENT_EXECUTION_GATE_CHALLENGE', 'PEEKABOO_AGENT_EXECUTION_LOCKDOWN_FD',
-  'PEEKABOO_AGENT_EXECUTION_PROCESS_LIMIT',
+  'PATH', 'WINK_OPERATION_RECEIPT_DIRECTORY', 'WINK_AGENT_EXECUTION_GATE_FD',
+  'WINK_AGENT_EXECUTION_GATE_CHALLENGE', 'WINK_AGENT_EXECUTION_LOCKDOWN_FD',
+  'WINK_AGENT_EXECUTION_PROCESS_LIMIT',
 ];
 
 const AGENT_EXECUTION_REQUEST_KEYS = [
@@ -770,7 +770,7 @@ export function authenticateAgentExecutionTerminalBundle({
     `${label} canonical response`,
   );
   requireCondition(report?.valid === true
-    && report.validator_id === 'peekaboo-bridge-receipt-validate-v1'
+    && report.validator_id === 'wink-bridge-receipt-validate-v1'
     && report.trust_source === 'authenticated_live_listener'
     && report.minimum_protocol_version === '1.29'
     && isSupportedQualificationHostProtocol(report.host_protocol_version)
@@ -1046,7 +1046,7 @@ export function controlledFixtureBindings(plan, label) {
 
 export function multiTargetAggregateSHA256(name, value) {
   return sha256(Buffer.concat([
-    Buffer.from(`peekaboo.multi-target-certification.${name}.v2\0`, 'utf8'),
+    Buffer.from(`wink.multi-target-certification.${name}.v2\0`, 'utf8'),
     canonicalBytes(value),
   ]));
 }
@@ -1164,7 +1164,7 @@ export function fileReceipt(filePath, label) {
 
 export function aggregateSHA256(domain, value) {
   return sha256(Buffer.concat([
-    Buffer.from(`peekaboo.final-qualification.${domain}.v2\0`, 'utf8'),
+    Buffer.from(`wink.final-qualification.${domain}.v2\0`, 'utf8'),
     canonicalBytes(value),
   ]));
 }

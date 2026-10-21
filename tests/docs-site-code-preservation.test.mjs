@@ -32,8 +32,8 @@ test('syntax highlighting preserves blocks with more than 6400 highlighted token
 });
 
 test('source text and existing highlighting survive ordered pattern passes', (t) => {
-  const shell = renderCode(t, 'bash', 'peekaboo --app "Finder" 42 # npm <example>');
-  assert.match(shell, /class="hl-cmd">peekaboo/);
+  const shell = renderCode(t, 'bash', 'wink --app "Finder" 42 # npm <example>');
+  assert.match(shell, /class="hl-cmd">wink/);
   assert.match(shell, /class="hl-f">--app/);
   assert.match(shell, /class="hl-s">&quot;Finder&quot;/);
   assert.match(shell, /class="hl-n">42/);

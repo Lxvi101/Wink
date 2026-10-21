@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -43,7 +43,7 @@ struct BridgeExplicitSocketUnavailableErrorTests {
         } else {
             #expect(error.errorDescription ==
                 "Explicit Bridge socket '/synthetic/selected.sock' is unavailable: " +
-                "the host did not satisfy Peekaboo runtime requirements")
+                "the host did not satisfy Wink runtime requirements")
             #expect(error.envelopeHint ==
                 "Start or relaunch the requested Bridge host, correct --bridge-socket, " +
                 "or pass --no-remote to explicitly use the local runtime.")

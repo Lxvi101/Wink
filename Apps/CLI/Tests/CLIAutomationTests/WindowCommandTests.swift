@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 private enum WindowCommandLocalIntegrationTestConfig {
     @preconcurrency
     nonisolated static func enabled() -> Bool {
@@ -16,7 +16,7 @@ private enum WindowCommandLocalIntegrationTestConfig {
 struct WindowCommandTests {
     @Test
     func `window command help`() async throws {
-        let output = try await runPeekabooCommand(["window", "--help"])
+        let output = try await runWinkCommand(["window", "--help"])
 
         #expect(output.contains("Manipulate application windows"))
         #expect(output.contains("close"))
@@ -368,7 +368,7 @@ struct WindowCommandTests {
 
     @Test
     func `window close help`() async throws {
-        let output = try await runPeekabooCommand(["window", "close", "--help"])
+        let output = try await runWinkCommand(["window", "close", "--help"])
 
         #expect(output.contains("Close a window"))
         #expect(output.contains("--app"))
@@ -468,7 +468,7 @@ struct WindowCommandTests {
 
         for command in commands {
             await #expect(throws: (any Error).self) {
-                _ = try await self.runPeekabooCommand(["window", command])
+                _ = try await self.runWinkCommand(["window", command])
             }
         }
     }
@@ -476,21 +476,21 @@ struct WindowCommandTests {
     @Test
     func `window move requires coordinates`() async throws {
         await #expect(throws: (any Error).self) {
-            _ = try await self.runPeekabooCommand(["window", "move", "--app", "Finder"])
+            _ = try await self.runWinkCommand(["window", "move", "--app", "Finder"])
         }
     }
 
     @Test
     func `window resize requires dimensions`() async throws {
         await #expect(throws: (any Error).self) {
-            _ = try await self.runPeekabooCommand(["window", "resize", "--app", "Finder"])
+            _ = try await self.runWinkCommand(["window", "resize", "--app", "Finder"])
         }
     }
 
     @Test
     func `window set bounds requires all parameters`() async throws {
         await #expect(throws: (any Error).self) {
-            _ = try await self.runPeekabooCommand([
+            _ = try await self.runWinkCommand([
                 "window",
                 "set-bounds",
                 "--app",
@@ -690,8 +690,8 @@ struct WindowCommandTests {
         ])
     }
 
-    /// Helper function to run peekaboo commands
-    private func runPeekabooCommand(
+    /// Helper function to run wink commands
+    private func runWinkCommand(
         _ arguments: [String],
         allowedExitStatuses: Set<Int32> = [0, 64]
     ) async throws -> String {
@@ -716,7 +716,7 @@ struct WindowCommandTests {
             case let .commandFailed(status, output):
                 "Command failed with exit status: \(status). Output: \(output)"
             case .binaryMissing:
-                "Peekaboo binary missing"
+                "Wink binary missing"
             }
         }
     }
@@ -746,7 +746,7 @@ struct WindowCommandTests {
         }
         let applicationService = StubApplicationService(applications: [appInfo], windowsByApp: pinnedWindows)
         let windowService = OutcomeStubWindowService(windowsByApp: pinnedWindows)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applicationService,
             windows: windowService
         )
@@ -780,7 +780,7 @@ struct WindowCommandTests {
     }
 
     private struct WindowHarnessContext {
-        let services: PeekabooServices
+        let services: WinkServices
         let windowService: OutcomeStubWindowService
         let applicationService: StubApplicationService
     }
@@ -799,7 +799,7 @@ struct WindowCommandLocalIntegrationTests {
         // This test requires TextEdit to be running and local permissions
 
         // First, ensure TextEdit is running and has a window
-        let launchResult = try await runPeekabooCommand(["image", "--app", "TextEdit", "--json"])
+        let launchResult = try await runWinkCommand(["image", "--app", "TextEdit", "--json"])
         let launchData = try JSONDecoder().decode(JSONResponse.self, from: Data(launchResult.utf8))
 
         guard launchData.success else {
@@ -808,7 +808,7 @@ struct WindowCommandLocalIntegrationTests {
         }
 
         // Try to minimize TextEdit window
-        let result = try await runPeekabooCommand(["window", "minimize", "--app", "TextEdit", "--json"])
+        let result = try await runWinkCommand(["window", "minimize", "--app", "TextEdit", "--json"])
         let data = try JSONDecoder().decode(JSONResponse.self, from: Data(result.utf8))
 
         if let error = data.error {
@@ -829,7 +829,7 @@ struct WindowCommandLocalIntegrationTests {
         // This test requires TextEdit to be running and local permissions
 
         // Try to move TextEdit window
-        let result = try await runPeekabooCommand([
+        let result = try await runWinkCommand([
             "window", "move",
             "--app", "TextEdit",
             "--x", "200",
@@ -862,7 +862,7 @@ struct WindowCommandLocalIntegrationTests {
         // This test requires TextEdit to be running
 
         // Try to focus TextEdit window
-        let result = try await runPeekabooCommand([
+        let result = try await runWinkCommand([
             "window", "focus",
             "--app", "TextEdit",
             "--json",
@@ -881,7 +881,7 @@ struct WindowCommandLocalIntegrationTests {
     }
 
     /// Helper function for local tests
-    private func runPeekabooCommand(
+    private func runWinkCommand(
         _ arguments: [String],
         allowedExitStatuses: Set<Int32> = [0, 1, 64]
     ) async throws -> String {
@@ -906,7 +906,7 @@ struct WindowCommandLocalIntegrationTests {
             case let .commandFailed(status, _):
                 "Exit status: \(status)"
             case .binaryMissing:
-                "Peekaboo binary missing"
+                "Wink binary missing"
             }
         }
     }

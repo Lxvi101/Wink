@@ -1,18 +1,18 @@
 ---
-summary: 'Drive Peekaboo’s autonomous agent via peekaboo agent'
+summary: 'Drive Wink’s autonomous agent via wink agent'
 read_when:
   - 'testing natural-language automation end-to-end'
   - 'resuming or debugging cached agent sessions'
 ---
 
-# `peekaboo agent`
+# `wink agent`
 
-`agent` hands a natural-language task to `PeekabooAgentService`, which in turn orchestrates the full toolset (see, click, type, menu, etc.). The command handles session caching, terminal capability detection, progress spinners, and audio capture so you can run the exact same agent loop the macOS app uses.
+`agent` hands a natural-language task to `WinkAgentService`, which in turn orchestrates the full toolset (see, click, type, menu, etc.). The command handles session caching, terminal capability detection, progress spinners, and audio capture so you can run the exact same agent loop the macOS app uses.
 
 ## Subcommands and options
 | Command or flag | Description |
 | --- | --- |
-| `run [task]` | Run a task. `run` is the default, so `peekaboo agent "task"` remains valid. |
+| `run [task]` | Run a task. `run` is the default, so `wink agent "task"` remains valid. |
 | `resume [session-id]` | Resume the most recent session, or the exact full session ID, in chat mode. |
 | `sessions` | Print cached sessions with full IDs, tasks, lifecycle status, and stored policy maximum; accepts only the global `--json` output switch. |
 | `chat [initial-prompt]` | Start the interactive chat loop. |
@@ -41,7 +41,7 @@ read_when:
 - Compatible-provider streams assemble indexed tool-argument fragments before the Agent validates and executes them.
   Complete batches are delivered at a successful terminal; incomplete or malformed arguments fail before dispatch,
   while explicit empty no-argument calls remain supported. Agent schema and background-authority checks still apply.
-- Session metadata lives inside `agentService` (PeekabooCore). `agent resume` grabs the most recent session, `agent sessions` prints the cached list, and `--no-cache` keeps a run in memory.
+- Session metadata lives inside `agentService` (WinkCore). `agent resume` grabs the most recent session, `agent sessions` prints the cached list, and `--no-cache` keeps a run in memory.
 - Automatic desktop context is enabled by default. Before model turns it reads the frontmost application/window,
   cursor position, and running-application names; it also reads a clipboard preview when the clipboard tool is available.
   `--no-desktop-context` skips this new collection and injection for every turn of the current invocation, including
@@ -80,7 +80,7 @@ read_when:
 - Each execution tailors actionable system-prompt guidance to its acquired, filtered tool catalog. Disabled tools no
   longer contribute recipes; authority, outcome-evidence and fresh-observation rules remain unconditional. Both
   streaming and nonstreaming execution preserve message identity/history and use the same prompt in failure checkpoints.
-  `peekaboo learn` similarly describes its filtered catalog. Tool availability never grants additional authority.
+  `wink learn` similarly describes its filtered catalog. Tool availability never grants additional authority.
 - Background-only Agent typing requires an explicit fresh exact non-dialog snapshot; an optional element ID must come
   from that snapshot. Snapshot typing cannot include competing app/PID/window selectors. Direct-text paste
   remains available through a generation-pinned app/PID/window authorization with a canonical background result.
@@ -92,7 +92,7 @@ read_when:
   keeps its existing app/PID/window route and does not use the clipboard. A remote rich-paste host must negotiate
   protocol 1.41 and prepared clipboard-guarded delivery; there is no fallback to a weaker route.
 - Temporary clipboard permission briefly changes the General clipboard and requires silent read permission and a
-  complete prior snapshot. Cleanup restores only while Peekaboo still owns the write generation and preserves a
+  complete prior snapshot. Cleanup restores only while Wink still owns the write generation and preserves a
   newer copy. Prepared input remains unverified and retry-unsafe, even after cleanup; observe the exact receiver
   before continuing and never blindly replay it. A failure after claiming the clipboard may truthfully retain a
   global/foreground-mode `clipboard_transaction` outcome without any input target or count. The UI authority remains
@@ -104,10 +104,10 @@ read_when:
 - Foreground permission never exposes the Shell tool. Normal Agent toolsets omit `shell`, and the execution boundary
   still refuses it after `--allow-foreground`. Foreground UI authority is not a process sandbox: a trusted prompt can
   operate terminal or scripting apps through their UI, so grant `--allow-foreground` only to trusted prompts. Use
-  Peekaboo's native app/window/Accessibility/browser tools for UI automation.
+  Wink's native app/window/Accessibility/browser tools for UI automation.
 - Agent execution stays in the caller process by default. Pass the global `--bridge-socket <path>` option to route its tools through one specific Bridge host; `--no-remote` keeps the run strictly caller-local.
-- An explicit nonempty `PEEKABOO_ALLOW_TOOLS` containing only known tools that cannot reach native capture (after
-  `PEEKABOO_DISABLE_TOOLS`) skips capture-owner startup checks when automatic visual enhancements are disabled.
+- An explicit nonempty `WINK_ALLOW_TOOLS` containing only known tools that cannot reach native capture (after
+  `WINK_DISABLE_TOOLS`) skips capture-owner startup checks when automatic visual enhancements are disabled.
   For example, `inspect_ui,click,type,set_value,press` needs no capture-owner probe. Unknown tools, nested `agent`,
   native pixel-producing tools, and absent or blank allow-lists remain conservative. `--no-desktop-context` alone does
   not disable capture safety. Browser-provider screenshots use their existing transport without native capture-owner
@@ -118,7 +118,7 @@ read_when:
   remain isolated. Opens and ends coalesce under bounded capacity. Session deletion and ephemeral completion end the
   exact child; unconfirmed cleanup is retained as retryable debt and blocks session reuse until the host confirms it. A
   remote provider without scoped-session support refuses before browser dispatch instead of falling back to shared state.
-- Protocol 1.31 qualification can instead ask an eligible Bridge host to launch the exact authenticated Peekaboo CLI
+- Protocol 1.31 qualification can instead ask an eligible Bridge host to launch the exact authenticated Wink CLI
   peer for one fixed background-only `agent run --no-cache --bridge-socket <serving-host> --json` execution. This is one
   long request through terminal `waitpid`, not a public two-call Agent lifecycle. The host accepts the task but no
   executable, shell, AppleScript, JXA, arbitrary argv, or environment input. The CLI blocks at its earliest entry point
@@ -128,7 +128,7 @@ read_when:
   sandbox against a compromised signed CLI or native code that deliberately detaches. A pre-1.31 or
   capability-disabled host refuses before launch, and a response lost after pipe release is retry-unsafe. Its
   qualification-only CLI adapter emits the canonical signed receipt bundle and is deliberately absent from help and
-  shell completions; ordinary users should invoke `peekaboo agent` directly.
+  shell completions; ordinary users should invoke `wink agent` directly.
 - An unrelated legacy owner-unaware Bridge does not block Agent startup or non-capturing app/window/Accessibility
   tools through an explicitly selected current Bridge. Pixel-producing calls remain refused before dispatch for that
   process lifetime; after fixing the owner, start a fresh Agent process before retrying capture.
@@ -166,7 +166,7 @@ read_when:
 `--json` retains the legacy `result.toolCalls` array for compatibility and adds
 `result.executionTrace`. The trace correlates each provider-emitted call ID with its runtime result and reports one of
 four dispositions: `executed/succeeded`, `executed/failed`, `skipped-before-dispatch`, or `missing-result`. This lets a
-validator distinguish a model's attempted calls from mutations Peekaboo actually dispatched.
+validator distinguish a model's attempted calls from mutations Wink actually dispatched.
 
 `result.content` is unchanged model-generated narrative, and `success: true` reports Agent-run completion, not
 confirmation of every action. When the bounded trace contains non-confirmed action outcomes or incomplete outcome
@@ -189,7 +189,7 @@ bounded and allowlist only audit-relevant targeting, delivery modes, action enum
 boolean controls. Content-bearing and unknown values are represented by typed redaction summaries, including typed or
 pasted text, expected values, messages, prompts, shell commands, URLs, open targets, queries, labels, paths, and binary
 image data. Field names also follow one closed policy at the top level and inside allowed containers; unknown
-provider-authored names become deterministic `__peekaboo_trace_unknown_field_<n>` placeholders in sorted order. Each
+provider-authored names become deterministic `__wink_trace_unknown_field_<n>` placeholders in sorted order. Each
 `result` is a bounded status summary, not the raw tool payload; screenshot bytes and arbitrary output
 text are intentionally omitted. The trace is capped at 512 entries and reports `totalCallCount` plus `truncated` when
 calls were omitted.
@@ -203,7 +203,7 @@ Tool results blocked by pending snapshot cleanup retain `snapshot_invalidation.t
 `snapshot_invalidation.retry_tool: true` in Agent metadata. These describe the blocked tool, not permission to replay
 an earlier mutation; inspect current state and distinguish cleanup retries from newly dispatched input.
 Browser-provider metadata is filtered and namespaced before projection, including results from legacy read-only
-clients, so provider-authored cleanup or action claims cannot become Peekaboo-owned receipts.
+clients, so provider-authored cleanup or action claims cannot become Wink-owned receipts.
 
 Authorized paste errors retain the content-free `clipboard_cleanup_status` in model-facing tool-error results and
 structured failure metadata: `restored`, `preserved_newer_contents`, or `not_needed`. The final JSON execution trace
@@ -212,14 +212,14 @@ or change its retry safety, and prior clipboard contents are not included.
 
 Mutating trace entries expose `mutationDispatch` as `dispatched`, `not_dispatched`, or `possibly_dispatched`.
 `mutation_dispatched` is retained in the bounded result summary only when the tool explicitly reported the legacy
-boolean (or Peekaboo itself skipped the call before dispatch). Older or opaque results are `possibly_dispatched`, omit
+boolean (or Wink itself skipped the call before dispatch). Older or opaque results are `possibly_dispatched`, omit
 the legacy boolean, and report `retry_safe: false` so clients do not replay a mutation whose dispatch is unknown.
 
 ## Chat mode
 
-Peekaboo now ships a dependency-free interactive chat loop described in detail in `docs/agent-chat.md`. Key behaviors:
+Wink now ships a dependency-free interactive chat loop described in detail in `docs/agent-chat.md`. Key behaviors:
 
-- Running `peekaboo agent` without a task automatically enters chat mode when stdout is a TTY. `agent resume [session-id]` also enters chat so piped prompts can continue the saved session.
+- Running `wink agent` without a task automatically enters chat mode when stdout is a TTY. `agent resume [session-id]` also enters chat so piped prompts can continue the saved session.
 - `agent chat` forces the loop even when piped or redirected, making it easy for other agents to seed prompts programmatically.
 - `/help` is available inside the loop at any time and is printed the moment the loop starts. `/help` is also mentioned in the initial “Type /help…” banner so operators know what to do.
 - Pressing `Esc` during an active turn cancels the run immediately and brings you back to the prompt; Ctrl+C still works as a fallback.
@@ -231,48 +231,48 @@ For automation flows that cannot attach to a TTY, use `agent chat` with standard
 ## Examples
 ```bash
 # Let the agent sign into Slack using GPT-5.6 with verbose tracing
-peekaboo agent "Check Slack mentions" --model gpt-5.6 --verbose
+wink agent "Check Slack mentions" --model gpt-5.6 --verbose
 
 # Use GPT-6 Astra, Sol, or Luna (the gpt-6 shortcut selects Astra)
-peekaboo agent "Check the current window" --model gpt-6-astra
-peekaboo agent "Check the current window" --model gpt-6-sol
-peekaboo agent "Check the current window" --model gpt-6-luna
+wink agent "Check the current window" --model gpt-6-astra
+wink agent "Check the current window" --model gpt-6-sol
+wink agent "Check the current window" --model gpt-6-luna
 
 # Use GPT-6.1 Sol (the gpt-6.1 shortcut selects Sol 6.1)
-peekaboo agent "Check the current window" --model gpt-6.1-sol
+wink agent "Check the current window" --model gpt-6.1-sol
 
 # Use GPT-5.6 Sol (the gpt-5.6 shortcut selects Sol)
-peekaboo agent "Check the current window" --model gpt-5.6
+wink agent "Check the current window" --model gpt-5.6
 
 # Use Claude Sonnet 5
-peekaboo agent "Check the current window" --model claude-sonnet-5
+wink agent "Check the current window" --model claude-sonnet-5
 
 # Keep the agent loop local through Ollama
-peekaboo agent "Check the current window" --model ollama/llama3.3
+wink agent "Check the current window" --model ollama/llama3.3
 
 # Run ephemerally without automatically collecting unrelated desktop context
-peekaboo agent run "Inspect the Playground window" --no-cache --no-desktop-context --no-remote
+wink agent run "Inspect the Playground window" --no-cache --no-desktop-context --no-remote
 
 # Use an OpenRouter-hosted model
-peekaboo agent "Check the current window" --model openrouter/xiaomi/mimo-v2.5-pro
+wink agent "Check the current window" --model openrouter/xiaomi/mimo-v2.5-pro
 
 # Explicitly authorize foreground/global UI for this new resumable session
-peekaboo agent "Demonstrate the workflow visibly" --allow-foreground
+wink agent "Demonstrate the workflow visibly" --allow-foreground
 
 # Dry-run the same task without executing any tools
-peekaboo agent "Install the nightly build" --dry-run
+wink agent "Install the nightly build" --dry-run
 
 # Resume the most recent session
-peekaboo agent resume
+wink agent resume
 
 # Resume one exact session from the full ID printed by `agent sessions`
-peekaboo agent resume 12345678-1234-1234-1234-123456789abc
+wink agent resume 12345678-1234-1234-1234-123456789abc
 
 # List cached sessions as JSON
-peekaboo agent sessions --json
+wink agent sessions --json
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

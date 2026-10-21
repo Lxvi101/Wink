@@ -1,31 +1,31 @@
 import Darwin
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
+import WinkAgentRuntime
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommandRuntimeInjectionTests {
     @Test
     @MainActor
     func `uses the injected service provider`() {
-        let services = RecordingPeekabooServices()
+        let services = RecordingWinkServices()
         let runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
             services: services
         )
         #expect(services.ensureVisualizerConnectionCallCount == 1)
-        #expect(runtime.services is RecordingPeekabooServices)
+        #expect(runtime.services is RecordingWinkServices)
     }
 
     @Test
     @MainActor
     func `installs MCP/tool defaults when constructed`() {
-        let services = RecordingPeekabooServices()
+        let services = RecordingWinkServices()
         _ = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
             services: services
@@ -42,8 +42,8 @@ struct CommandRuntimeInjectionTests {
     @Test
     @MainActor
     func `learn resolves tools from its injected service provider`() {
-        let injectedServices = RecordingPeekabooServices()
-        let fallbackServices = RecordingPeekabooServices()
+        let injectedServices = RecordingWinkServices()
+        let fallbackServices = RecordingWinkServices()
         var fallbackRequests = 0
         ToolRegistry.configureDefaultServices {
             fallbackRequests += 1
@@ -58,24 +58,24 @@ struct CommandRuntimeInjectionTests {
 
     @Test
     @MainActor
-    func `aligns Tachikoma profile directory with Peekaboo`() {
+    func `aligns Tachikoma profile directory with Wink`() {
         let previousProfile = TachikomaConfiguration.profileDirectoryName
         defer { TachikomaConfiguration.profileDirectoryName = previousProfile }
 
         TachikomaConfiguration.profileDirectoryName = ".tachikoma"
-        let services = RecordingPeekabooServices()
+        let services = RecordingWinkServices()
         _ = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: false, logLevel: nil),
             services: services
         )
 
-        #expect(TachikomaConfiguration.profileDirectoryPath == PeekabooCore.ConfigurationManager.baseDir)
+        #expect(TachikomaConfiguration.profileDirectoryPath == WinkCore.ConfigurationManager.baseDir)
     }
 
     @Test
     func `targeted hotkey support requires enabled bridge operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 1),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 1),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedHotkey],
@@ -86,12 +86,12 @@ struct CommandRuntimeInjectionTests {
             ),
             enabledOperations: [.captureScreen],
             permissionTags: [
-                PeekabooBridgeOperation.targetedHotkey.rawValue: [.postEvent],
+                WinkBridgeOperation.targetedHotkey.rawValue: [.postEvent],
             ]
         )
 
         let enabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 1),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 1),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedHotkey],
@@ -109,7 +109,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `targeted hotkey availability does not require accessibility`() {
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 1),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 1),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.targetedHotkey],
@@ -120,7 +120,7 @@ struct CommandRuntimeInjectionTests {
             ),
             enabledOperations: [.targetedHotkey],
             permissionTags: [
-                PeekabooBridgeOperation.targetedHotkey.rawValue: [.postEvent],
+                WinkBridgeOperation.targetedHotkey.rawValue: [.postEvent],
             ]
         )
 
@@ -134,7 +134,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `targeted type support requires protocol 1_8 and enabled bridge operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 8),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 8),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedTypeActions],
@@ -145,12 +145,12 @@ struct CommandRuntimeInjectionTests {
             ),
             enabledOperations: [.captureScreen],
             permissionTags: [
-                PeekabooBridgeOperation.targetedTypeActions.rawValue: [.postEvent],
+                WinkBridgeOperation.targetedTypeActions.rawValue: [.postEvent],
             ]
         )
 
         let enabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 8),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 8),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedTypeActions],
@@ -158,7 +158,7 @@ struct CommandRuntimeInjectionTests {
         )
 
         let oldProtocol = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 7),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 7),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedTypeActions],
@@ -177,7 +177,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `targeted click support requires enabled bridge operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 6),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 6),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -188,12 +188,12 @@ struct CommandRuntimeInjectionTests {
             ),
             enabledOperations: [.captureScreen],
             permissionTags: [
-                PeekabooBridgeOperation.targetedClick.rawValue: [.postEvent],
+                WinkBridgeOperation.targetedClick.rawValue: [.postEvent],
             ]
         )
 
         let enabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 6),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 6),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -211,14 +211,14 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `exact window click support requires protocol 1_17 capability`() {
         let oldHost = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 16),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 16),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.targetedClick],
             enabledOperations: [.targetedClick]
         )
         let currentHost = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 17),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 17),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.targetedClick, .exactWindowTargetedClick],
@@ -232,7 +232,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `request-aware targeted click capability reports its Accessibility requirement`() {
         let accessibilityOnly = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 9),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 9),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -242,10 +242,10 @@ struct CommandRuntimeInjectionTests {
                 postEvent: false
             ),
             enabledOperations: [.captureScreen, .targetedClick],
-            permissionTags: [PeekabooBridgeOperation.targetedClick.rawValue: []]
+            permissionTags: [WinkBridgeOperation.targetedClick.rawValue: []]
         )
         let unavailable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 9),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 9),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .targetedClick],
@@ -255,7 +255,7 @@ struct CommandRuntimeInjectionTests {
                 postEvent: false
             ),
             enabledOperations: [.captureScreen],
-            permissionTags: [PeekabooBridgeOperation.targetedClick.rawValue: []]
+            permissionTags: [WinkBridgeOperation.targetedClick.rawValue: []]
         )
 
         let accessibilityAvailability = CommandRuntime.targetedClickAvailability(for: accessibilityOnly)
@@ -271,19 +271,19 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `post event permission request support requires advertised protocol operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 2),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 2),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .requestPostEventPermission]
         )
         let older = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 1),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 1),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .requestPostEventPermission]
         )
         let hidden = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 2),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 2),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen]
@@ -297,25 +297,25 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `desktop observation support requires advertised protocol operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 5),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 5),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .desktopObservation]
         )
         let older = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 4),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 4),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .desktopObservation]
         )
         let hidden = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 5),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 5),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen]
         )
         let disabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 5),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 5),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .desktopObservation],
@@ -331,19 +331,19 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `inspect UI support requires advertised protocol operation`() {
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 7),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 7),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .inspectAccessibilityTree]
         )
         let older = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 6),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 6),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .inspectAccessibilityTree]
         )
         let hidden = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 7),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 7),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen]
@@ -359,13 +359,13 @@ struct CommandRuntimeInjectionTests {
         var options = CommandRuntimeOptions()
         options.requiresInspectAccessibilityTree = true
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 7),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 7),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .inspectAccessibilityTree]
         )
         let unsupported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 6),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 6),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .inspectAccessibilityTree]
@@ -380,34 +380,34 @@ struct CommandRuntimeInjectionTests {
         var options = CommandRuntimeOptions()
         options.requiresBrowserMCP = true
         let supported = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.browserConnectionReceiptVersion,
+            negotiatedVersion: WinkBridgeConstants.browserConnectionReceiptVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .browserStatus, .browserConnect, .browserDisconnect, .browserExecute],
-            hostCapabilities: [PeekabooBridgeHostCapability.browserConnectionReceipts]
+            hostCapabilities: [WinkBridgeHostCapability.browserConnectionReceipts]
         )
         let older = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 3),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 3),
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .browserStatus, .browserConnect, .browserDisconnect, .browserExecute]
         )
         let missingExecute = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.browserConnectionReceiptVersion,
+            negotiatedVersion: WinkBridgeConstants.browserConnectionReceiptVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .browserStatus, .browserConnect, .browserDisconnect],
-            hostCapabilities: [PeekabooBridgeHostCapability.browserConnectionReceipts]
+            hostCapabilities: [WinkBridgeHostCapability.browserConnectionReceipts]
         )
         let gui = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.browserConnectionReceiptVersion,
+            negotiatedVersion: WinkBridgeConstants.browserConnectionReceiptVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .browserStatus, .browserConnect, .browserDisconnect, .browserExecute],
-            hostCapabilities: [PeekabooBridgeHostCapability.browserConnectionReceipts]
+            hostCapabilities: [WinkBridgeHostCapability.browserConnectionReceipts]
         )
         let missingReceiptCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.browserConnectionReceiptVersion,
+            negotiatedVersion: WinkBridgeConstants.browserConnectionReceiptVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .browserStatus, .browserConnect, .browserDisconnect, .browserExecute]
@@ -428,7 +428,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `environment bridge socket disables daemon auto start`() {
         let options = CommandRuntimeOptions()
-        let environment = ["PEEKABOO_BRIDGE_SOCKET": "/tmp/explicit.sock"]
+        let environment = ["WINK_BRIDGE_SOCKET": "/tmp/explicit.sock"]
 
         #expect(CommandRuntime.explicitBridgeSocket(options: options, environment: environment) == "/tmp/explicit.sock")
         #expect(!CommandRuntime.shouldAutoStartDaemon(options: options, environment: environment))
@@ -438,7 +438,7 @@ struct CommandRuntimeInjectionTests {
     func `cli bridge socket takes precedence over environment bridge socket`() {
         var options = CommandRuntimeOptions()
         options.bridgeSocketPath = "/tmp/cli.sock"
-        let environment = ["PEEKABOO_BRIDGE_SOCKET": "/tmp/env.sock"]
+        let environment = ["WINK_BRIDGE_SOCKET": "/tmp/env.sock"]
 
         #expect(CommandRuntime.explicitBridgeSocket(options: options, environment: environment) == "/tmp/cli.sock")
         #expect(!CommandRuntime.shouldAutoStartDaemon(options: options, environment: environment))
@@ -447,7 +447,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `daemon socket environment configures auto start target without becoming explicit bridge socket`() {
         let options = CommandRuntimeOptions()
-        let environment = ["PEEKABOO_DAEMON_SOCKET": "/tmp/daemon.sock"]
+        let environment = ["WINK_DAEMON_SOCKET": "/tmp/daemon.sock"]
 
         #expect(CommandRuntime.explicitBridgeSocket(options: options, environment: environment) == nil)
         #expect(CommandRuntime.daemonSocketPath(environment: environment) == "/tmp/daemon.sock")
@@ -456,10 +456,10 @@ struct CommandRuntimeInjectionTests {
 
     @Test
     func `daemon defaults to its dedicated socket`() {
-        #expect(CommandRuntime.daemonSocketPath(environment: [:]) == PeekabooBridgeConstants.daemonSocketPath)
-        #expect(CommandRuntime.daemonSocketPath(environment: [:]) != PeekabooBridgeConstants.peekabooSocketPath)
+        #expect(CommandRuntime.daemonSocketPath(environment: [:]) == WinkBridgeConstants.daemonSocketPath)
+        #expect(CommandRuntime.daemonSocketPath(environment: [:]) != WinkBridgeConstants.winkSocketPath)
         #expect(DaemonLaunchPolicy.shouldMigrateLegacyDaemon(
-            targetSocketPath: PeekabooBridgeConstants.daemonSocketPath
+            targetSocketPath: WinkBridgeConstants.daemonSocketPath
         ))
         #expect(!DaemonLaunchPolicy.shouldMigrateLegacyDaemon(targetSocketPath: "/tmp/custom-daemon.sock"))
     }
@@ -467,23 +467,23 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `rejected default daemon uses a stable build-scoped auto-start socket`() {
         let firstSocketPath = DaemonLaunchPolicy.autoStartSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             defaultSocketWasOccupiedAndRejected: true,
             runtimeBuildIdentity: "build-a"
         )
         let repeatedSocketPath = DaemonLaunchPolicy.autoStartSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             defaultSocketWasOccupiedAndRejected: true,
             runtimeBuildIdentity: "build-a"
         )
         let nextBuildSocketPath = DaemonLaunchPolicy.autoStartSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             defaultSocketWasOccupiedAndRejected: true,
             runtimeBuildIdentity: "build-b"
         )
 
         #expect(URL(fileURLWithPath: firstSocketPath).deletingLastPathComponent() ==
-            URL(fileURLWithPath: PeekabooBridgeConstants.daemonSocketPath).deletingLastPathComponent())
+            URL(fileURLWithPath: WinkBridgeConstants.daemonSocketPath).deletingLastPathComponent())
         #expect(firstSocketPath == repeatedSocketPath)
         #expect(firstSocketPath != nextBuildSocketPath)
         #expect(URL(fileURLWithPath: firstSocketPath).lastPathComponent.hasPrefix("daemon-"))
@@ -491,7 +491,7 @@ struct CommandRuntimeInjectionTests {
 
     @Test
     func `runtime build identity is independent of the loaded universal slice`() {
-        let executableURL = URL(fileURLWithPath: "/tmp/peekaboo-universal")
+        let executableURL = URL(fileURLWithPath: "/tmp/wink-universal")
         let nativeIdentity = DaemonLaunchPolicy.runtimeBuildIdentity(executableURL: executableURL) { _ in
             ["bbbbbbbb", "aaaaaaaa"]
         }
@@ -559,10 +559,10 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `auto-start keeps unoccupied and custom daemon sockets`() {
         #expect(DaemonLaunchPolicy.autoStartSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             defaultSocketWasOccupiedAndRejected: false,
             runtimeBuildIdentity: "build-a"
-        ) == PeekabooBridgeConstants.daemonSocketPath)
+        ) == WinkBridgeConstants.daemonSocketPath)
         #expect(DaemonLaunchPolicy.autoStartSocketPath(
             daemonSocketPath: "/tmp/custom-daemon.sock",
             defaultSocketWasOccupiedAndRejected: true,
@@ -573,25 +573,25 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `implicit runtime candidates preserve the default app fallback only`() throws {
         let buildScopedPath = DaemonLaunchPolicy.buildScopedDaemonSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             runtimeBuildIdentity: DaemonLaunchPolicy.runtimeBuildIdentity()
         )
         #expect(DaemonLaunchPolicy.implicitRuntimeCandidateRole(
-            socketPath: PeekabooBridgeConstants.daemonSocketPath,
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            socketPath: WinkBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             buildScopedDaemonSocketPath: buildScopedPath
         ) == .reusableDaemon)
         #expect(try DaemonLaunchPolicy.implicitRuntimeCandidateRole(
             socketPath: #require(buildScopedPath),
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             buildScopedDaemonSocketPath: buildScopedPath
         ) == .reusableDaemon)
         #expect(DaemonLaunchPolicy.implicitRuntimeCandidateRole(
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath
+            socketPath: WinkBridgeConstants.winkSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath
         ) == .defaultAppFallback)
         #expect(DaemonLaunchPolicy.implicitRuntimeCandidateRole(
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            socketPath: WinkBridgeConstants.winkSocketPath,
             daemonSocketPath: "/tmp/custom-daemon.sock"
         ) == nil)
     }
@@ -599,24 +599,24 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `default app fallback accepts GUI hosts and legacy daemons`() {
         let guiHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen]
         )
         let daemonHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen]
         )
         let embeddedHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .inProcess,
             build: nil,
             supportedOperations: [.captureScreen]
         )
-        let daemonStatus = PeekabooDaemonStatus(running: true, mode: .auto)
+        let daemonStatus = WinkDaemonStatus(running: true, mode: .auto)
 
         #expect(DaemonLaunchPolicy.isSelectableImplicitRuntimeCandidate(
             role: .defaultAppFallback,
@@ -643,7 +643,7 @@ struct CommandRuntimeInjectionTests {
     @Test
     func `bridge diagnostics select only runtime-routed sockets`() {
         let options = CommandRuntimeOptions()
-        let environment = ["PEEKABOO_DAEMON_SOCKET": "/tmp/custom-daemon.sock"]
+        let environment = ["WINK_DAEMON_SOCKET": "/tmp/custom-daemon.sock"]
 
         #expect(BridgeDiagnostics.runtimeCandidateSocketPaths(
             runtimeOptions: options,
@@ -655,8 +655,8 @@ struct CommandRuntimeInjectionTests {
             environment: environment
         )
         #expect(diagnosticPaths.first == "/tmp/custom-daemon.sock")
-        #expect(diagnosticPaths.contains(PeekabooBridgeConstants.peekabooSocketPath))
-        #expect(diagnosticPaths.contains(PeekabooBridgeConstants.claudeSocketPath))
+        #expect(diagnosticPaths.contains(WinkBridgeConstants.winkSocketPath))
+        #expect(diagnosticPaths.contains(WinkBridgeConstants.claudeSocketPath))
     }
 
     @Test
@@ -666,24 +666,24 @@ struct CommandRuntimeInjectionTests {
             environment: [:]
         )
         let buildScopedPath = DaemonLaunchPolicy.buildScopedDaemonSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             runtimeBuildIdentity: DaemonLaunchPolicy.runtimeBuildIdentity()
         )
 
         #expect(try runtimePaths == [
             #require(buildScopedPath),
-            PeekabooBridgeConstants.daemonSocketPath,
-            PeekabooBridgeConstants.peekabooSocketPath,
+            WinkBridgeConstants.daemonSocketPath,
+            WinkBridgeConstants.winkSocketPath,
         ])
         #expect(try DaemonControlResolver.defaultSocketPaths() == [
-            PeekabooBridgeConstants.daemonSocketPath,
+            WinkBridgeConstants.daemonSocketPath,
             #require(buildScopedPath),
         ])
     }
 
     @Test
     func `bridge diagnostics preserve runtime ordering for validated historical daemons`() throws {
-        let historicalPath = "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock"
+        let historicalPath = "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock"
         let options = CommandRuntimeOptions()
         let runtimePaths = BridgeDiagnostics.runtimeCandidateSocketPaths(
             runtimeOptions: options,
@@ -696,22 +696,22 @@ struct CommandRuntimeInjectionTests {
             historicalBuildScopedDaemonSocketPaths: [historicalPath]
         )
         let buildScopedPath = try #require(DaemonLaunchPolicy.buildScopedDaemonSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             runtimeBuildIdentity: DaemonLaunchPolicy.runtimeBuildIdentity()
         ))
 
         #expect(runtimePaths == [
             buildScopedPath,
-            PeekabooBridgeConstants.daemonSocketPath,
+            WinkBridgeConstants.daemonSocketPath,
             historicalPath,
-            PeekabooBridgeConstants.peekabooSocketPath,
+            WinkBridgeConstants.winkSocketPath,
         ])
         #expect(Array(diagnosticPaths.prefix(runtimePaths.count)) == runtimePaths)
     }
 
     @Test
     func `bridge diagnostics use GUI-first runtime ordering for host inventory`() throws {
-        let historicalPath = "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock"
+        let historicalPath = "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock"
         var options = CommandRuntimeOptions()
         options.requiresHostApplicationInventory = true
         let runtimePaths = BridgeDiagnostics.runtimeCandidateSocketPaths(
@@ -720,14 +720,14 @@ struct CommandRuntimeInjectionTests {
             historicalBuildScopedDaemonSocketPaths: [historicalPath]
         )
         let buildScopedPath = try #require(DaemonLaunchPolicy.buildScopedDaemonSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             runtimeBuildIdentity: DaemonLaunchPolicy.runtimeBuildIdentity()
         ))
 
         #expect(runtimePaths == [
-            PeekabooBridgeConstants.peekabooSocketPath,
+            WinkBridgeConstants.winkSocketPath,
             buildScopedPath,
-            PeekabooBridgeConstants.daemonSocketPath,
+            WinkBridgeConstants.daemonSocketPath,
             historicalPath,
         ])
     }
@@ -739,7 +739,7 @@ struct CommandRuntimeInjectionTests {
 
         #expect(BridgeDiagnostics.diagnosticSocketPaths(
             runtimeOptions: options,
-            environment: ["PEEKABOO_DAEMON_SOCKET": "/tmp/ignored.sock"]
+            environment: ["WINK_DAEMON_SOCKET": "/tmp/ignored.sock"]
         ) == ["/tmp/explicit.sock"])
     }
 }
@@ -772,17 +772,17 @@ extension CommandRuntimeInjectionTests {
 
     @Test
     func `automatic daemon migration preserves live settings`() {
-        let status = PeekabooDaemonStatus(
+        let status = WinkDaemonStatus(
             running: true,
             mode: .auto,
-            windowTracker: PeekabooDaemonWindowTrackerStatus(
+            windowTracker: WinkDaemonWindowTrackerStatus(
                 trackedWindows: 1,
                 lastEventAt: nil,
                 lastPollAt: nil,
                 axObserverCount: 1,
                 cgPollIntervalMs: 425
             ),
-            activity: PeekabooDaemonActivityStatus(
+            activity: WinkDaemonActivityStatus(
                 activeRequests: 0,
                 lastActivityAt: nil,
                 idleTimeoutSeconds: 47.5,
@@ -804,7 +804,7 @@ extension CommandRuntimeInjectionTests {
 
     @Test
     func `daemon startup waits for a draining lease`() async throws {
-        let socketPath = "/tmp/peekaboo-daemon-wait-\(UUID().uuidString).sock"
+        let socketPath = "/tmp/wink-daemon-wait-\(UUID().uuidString).sock"
         let leasePath = "\(socketPath).lock"
         let leaseFD = open(
             leasePath,
@@ -837,7 +837,7 @@ extension CommandRuntimeInjectionTests {
     @Test
     @MainActor
     func `on-demand daemon startup propagates launcher cancellation`() async {
-        let socketPath = "/tmp/peekaboo-daemon-cancel-wrapper-\(UUID().uuidString).sock"
+        let socketPath = "/tmp/wink-daemon-cancel-wrapper-\(UUID().uuidString).sock"
         defer {
             unlink(socketPath)
             unlink("\(socketPath).lock")
@@ -891,12 +891,12 @@ extension CommandRuntimeInjectionTests {
     @Test
     @MainActor
     func `replacement rollback retries after active work drains`() async throws {
-        let socketPath = "/tmp/peekaboo-daemon-rollback-\(UUID().uuidString).sock"
+        let socketPath = "/tmp/wink-daemon-rollback-\(UUID().uuidString).sock"
         defer {
             unlink(socketPath)
             unlink("\(socketPath).lock")
         }
-        let daemon = PeekabooDaemon(configuration: .init(
+        let daemon = WinkDaemon(configuration: .init(
             mode: .manual,
             bridgeSocketPath: socketPath,
             allowlistedTeams: [],
@@ -923,12 +923,12 @@ extension CommandRuntimeInjectionTests {
     @Test
     @MainActor
     func `canceled migration rolls back its replacement in an uncanceled task`() async throws {
-        let socketPath = "/tmp/peekaboo-daemon-canceled-rollback-\(UUID().uuidString).sock"
+        let socketPath = "/tmp/wink-daemon-canceled-rollback-\(UUID().uuidString).sock"
         defer {
             unlink(socketPath)
             unlink("\(socketPath).lock")
         }
-        let daemon = PeekabooDaemon(configuration: .init(
+        let daemon = WinkDaemon(configuration: .init(
             mode: .manual,
             bridgeSocketPath: socketPath,
             allowlistedTeams: [],
@@ -960,17 +960,17 @@ extension CommandRuntimeInjectionTests {
         #expect(CommandRuntime.daemonIdleTimeoutSeconds(environment: [:]) ==
             CommandRuntime.defaultDaemonIdleTimeoutSeconds)
         #expect(CommandRuntime.daemonIdleTimeoutSeconds(environment: [
-            "PEEKABOO_DAEMON_IDLE_TIMEOUT_SECONDS": "0",
+            "WINK_DAEMON_IDLE_TIMEOUT_SECONDS": "0",
         ]) == CommandRuntime.defaultDaemonIdleTimeoutSeconds)
         #expect(CommandRuntime.daemonIdleTimeoutSeconds(environment: [
-            "PEEKABOO_DAEMON_IDLE_TIMEOUT_SECONDS": "42.5",
+            "WINK_DAEMON_IDLE_TIMEOUT_SECONDS": "42.5",
         ]) == 42.5)
     }
 
     @Test
     func `daemon log helper creates missing file and appends`() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-daemon-log-\(UUID().uuidString)")
+            .appendingPathComponent("wink-daemon-log-\(UUID().uuidString)")
         let logURL = directory.appendingPathComponent("daemon.log")
 
         let firstHandle = try #require(DaemonPaths.openFileForAppend(at: logURL))
@@ -989,28 +989,28 @@ extension CommandRuntimeInjectionTests {
 extension CommandRuntimeInjectionTests {
     @Test
     func `composite type delivery support requires protocol and raw capability`() {
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .targetedTypeActions,
             .exactWindowTargetedTypeActions,
             .exactWindowPixelFocusType,
         ]
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.compositeTypeDeliveryVersion,
+            negotiatedVersion: WinkBridgeConstants.compositeTypeDeliveryVersion,
             supportedOperations: operations,
             enabledOperations: operations,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.compositeTypeDelivery,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.compositeTypeDelivery,
             ]
         )
         let receiptless = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.compositeTypeDeliveryVersion,
+            negotiatedVersion: WinkBridgeConstants.compositeTypeDeliveryVersion,
             supportedOperations: operations,
             enabledOperations: operations,
-            hostCapabilities: [PeekabooBridgeHostCapability.compositeTypeDelivery]
+            hostCapabilities: [WinkBridgeHostCapability.compositeTypeDelivery]
         )
         let missingCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.compositeTypeDeliveryVersion,
+            negotiatedVersion: WinkBridgeConstants.compositeTypeDeliveryVersion,
             supportedOperations: operations,
             enabledOperations: operations
         )
@@ -1018,7 +1018,7 @@ extension CommandRuntimeInjectionTests {
             negotiatedVersion: .init(major: 1, minor: 35),
             supportedOperations: operations,
             enabledOperations: operations,
-            hostCapabilities: [PeekabooBridgeHostCapability.compositeTypeDelivery]
+            hostCapabilities: [WinkBridgeHostCapability.compositeTypeDelivery]
         )
 
         #expect(BridgeCapabilityPolicy.supportsCompositeTypeDelivery(for: current))
@@ -1029,8 +1029,8 @@ extension CommandRuntimeInjectionTests {
 }
 
 @MainActor
-final class RecordingPeekabooServices: PeekabooServiceProviding {
-    private let base = PeekabooServices()
+final class RecordingWinkServices: WinkServiceProviding {
+    private let base = WinkServices()
     private(set) var ensureVisualizerConnectionCallCount = 0
 
     func ensureVisualizerConnection() {
@@ -1081,7 +1081,7 @@ final class RecordingPeekabooServices: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         self.base.configuration
     }
 

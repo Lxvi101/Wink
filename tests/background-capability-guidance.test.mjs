@@ -13,7 +13,7 @@ test('every Agent execution entry forwards the invocation desktop-context option
     ['AgentCommand+Chat.swift', 3],
   ];
   for (const [file, count] of expectedCalls) {
-    const source = read(`Apps/CLI/Sources/PeekabooCLI/Commands/AI/${file}`);
+    const source = read(`Apps/CLI/Sources/WinkCLI/Commands/AI/${file}`);
     const calls = [...source.matchAll(/agentService\.(?:executeTask|continueSession)\([\s\S]*?\n\s*\)/g)];
     assert.equal(calls.length, count, `${file}: update the complete entry-point inventory when calls change`);
     for (const [call] of calls) {
@@ -34,7 +34,7 @@ test('cold-launch Agent examples carry explicit foreground authority', () => {
     const source = read(path);
     assert.match(
       source,
-      /peekaboo agent "[^"]*open Safari[^"]*" --allow-foreground/i,
+      /wink agent "[^"]*open Safari[^"]*" --allow-foreground/i,
       `${path} must not advertise a cold Safari launch under the default background-only ceiling`
     );
   }
@@ -53,26 +53,26 @@ test('press guidance preserves the snapshot-pinned background route', () => {
   assert.match(press, /Background-only Agent\/MCP.*explicit fresh exact non-dialog snapshot/s);
 });
 
-const isTargetedRawPress = (line) => /^(?:peekaboo|"\$PB") press\b.*--(?:app|pid)\b/.test(line);
+const isTargetedRawPress = (line) => /^(?:wink|"\$PB") press\b.*--(?:app|pid)\b/.test(line);
 const hasSafeRawPressRoute = (line) =>
   /--(?:foreground|snapshot|window-(?:id|title|index))\b/.test(line);
 
 test('primary app automation examples stay exact-window and background-only', () => {
   for (const path of ['README.md', 'docs/quickstart.md']) {
     const source = read(path);
-    assert.match(source, /^peekaboo window list --app Safari --json$/m);
-    assert.match(source, /^peekaboo click .*--app Safari --window-id 12345$/m);
-    assert.match(source, /^peekaboo type .*--app Safari --window-id 12345$/m);
-    assert.match(source, /^peekaboo press Return --app Safari --window-id 12345$/m);
-    assert.doesNotMatch(source, /^peekaboo press Return --app Safari --foreground$/m);
+    assert.match(source, /^wink window list --app Safari --json$/m);
+    assert.match(source, /^wink click .*--app Safari --window-id 12345$/m);
+    assert.match(source, /^wink type .*--app Safari --window-id 12345$/m);
+    assert.match(source, /^wink press Return --app Safari --window-id 12345$/m);
+    assert.doesNotMatch(source, /^wink press Return --app Safari --foreground$/m);
   }
 
   assert.match(read('README.md'), /Raw CLI `press` chords.*exact window selector/s);
   assert.match(read('README.md'), /snapshot.*required by background-only Agent\/MCP policy/s);
 
   const automation = read('docs/automation.md');
-  assert.match(automation, /^peekaboo click .*--app Safari --window-id 12345$/m);
-  assert.match(automation, /^peekaboo type .*--app Safari --window-id 12345$/m);
+  assert.match(automation, /^wink click .*--app Safari --window-id 12345$/m);
+  assert.match(automation, /^wink type .*--app Safari --window-id 12345$/m);
 });
 
 test('Playground examples use fresh snapshots and owned v4 targets', () => {
@@ -82,9 +82,9 @@ test('Playground examples use fresh snapshots and owned v4 targets', () => {
     .join('\n');
 
   assert.match(commands, /window list --pid "\$PLAYGROUND_PID" --json/);
-  assert.doesNotMatch(commands, /"\$PEEKABOO_BIN" list\b/);
+  assert.doesNotMatch(commands, /"\$WINK_BIN" list\b/);
   assert.match(commands, /click --on "\$BUTTON_ID" --snapshot "\$SNAPSHOT_ID" --json/);
-  assert.doesNotMatch(commands, /"\$PEEKABOO_BIN" window focus\b/);
+  assert.doesNotMatch(commands, /"\$WINK_BIN" window focus\b/);
   assert.match(commands, /app quit --pid "\$PLAYGROUND_PID"\s+--expected-process-start-identity/);
   assert.match(guide, /type "Hello World" --snapshot "\$FOCUSED_SNAPSHOT_ID" --json/);
   assert.match(guide, /may already have changed the receiver, even if the command exits nonzero/);
@@ -96,7 +96,7 @@ test('Playground examples use fresh snapshots and owned v4 targets', () => {
 });
 
 test('bundled skill never advertises app/PID-only background press', () => {
-  const skill = read('skills/peekaboo/SKILL.md');
+  const skill = read('skills/wink/SKILL.md');
   const targetedPressExamples = skill
     .split('\n')
     .filter(isTargetedRawPress);
@@ -110,7 +110,7 @@ test('bundled skill never advertises app/PID-only background press', () => {
     );
   }
 
-  for (const binary of ['peekaboo', '"$PB"']) {
+  for (const binary of ['wink', '"$PB"']) {
     for (const target of ['--app TextEdit', '--pid 1234']) {
       const unsafe = `${binary} press return ${target}`;
       assert.equal(isTargetedRawPress(unsafe), true);
@@ -121,14 +121,14 @@ test('bundled skill never advertises app/PID-only background press', () => {
 });
 
 test('bundled skill keeps routine management examples read-only', () => {
-  const skill = read('skills/peekaboo/SKILL.md');
+  const skill = read('skills/wink/SKILL.md');
 
-  assert.doesNotMatch(skill, /^(?:peekaboo|"\$PB") clipboard (?:set|clear|restore)\b/m);
-  assert.doesNotMatch(skill, /^(?:peekaboo|"\$PB") permissions request\b/m);
-  assert.doesNotMatch(skill, /^(?:peekaboo|"\$PB") app focus\b/m);
-  assert.match(skill, /^(?:peekaboo|"\$PB") clipboard get --json$/m);
-  assert.match(skill, /^(?:peekaboo|"\$PB") permissions status --all-sources --json$/m);
-  assert.match(skill, /^(?:peekaboo|"\$PB") app list --include-hidden --include-background --json$/m);
+  assert.doesNotMatch(skill, /^(?:wink|"\$PB") clipboard (?:set|clear|restore)\b/m);
+  assert.doesNotMatch(skill, /^(?:wink|"\$PB") permissions request\b/m);
+  assert.doesNotMatch(skill, /^(?:wink|"\$PB") app focus\b/m);
+  assert.match(skill, /^(?:wink|"\$PB") clipboard get --json$/m);
+  assert.match(skill, /^(?:wink|"\$PB") permissions status --all-sources --json$/m);
+  assert.match(skill, /^(?:wink|"\$PB") app list --include-hidden --include-background --json$/m);
 });
 
 test('background Agent type guidance requires an explicit non-dialog snapshot', () => {
@@ -202,19 +202,19 @@ test('focus and Space examples never imply an implicit foreground switch', () =>
   const focus = read('docs/focus.md');
   assert.match(focus, /Keep targeted interaction in the background/);
   assert.match(focus, /Focus the target window only after explicit foreground consent/);
-  assert.doesNotMatch(focus, /^peekaboo space switch --to 2$/m);
+  assert.doesNotMatch(focus, /^wink space switch --to 2$/m);
   assert.equal(
-    focus.match(/^peekaboo space switch --to 2 --foreground$/gm)?.length,
+    focus.match(/^wink space switch --to 2 --foreground$/gm)?.length,
     2
   );
-  assert.match(focus, /peekaboo type "Hello" --foreground --bring-to-current-space/);
+  assert.match(focus, /wink type "Hello" --foreground --bring-to-current-space/);
 });
 
 test('foreground-exposing action examples include consent', () => {
   const action = read('docs/commands/action.md');
   const exposingExamples = action
     .split('\n')
-    .filter((line) => /^peekaboo action .*(AXPress|AXShowMenu)/.test(line));
+    .filter((line) => /^wink action .*(AXPress|AXShowMenu)/.test(line));
   assert.ok(exposingExamples.length >= 2);
   for (const example of exposingExamples) {
     assert.match(example, /--foreground$/, `missing foreground consent: ${example}`);
@@ -223,15 +223,15 @@ test('foreground-exposing action examples include consent', () => {
 });
 
 test('generated guidance sources retain CLI and policy distinctions', () => {
-  const learn = read('Apps/CLI/Sources/PeekabooCLI/Commands/Core/LearnCommand.swift');
+  const learn = read('Apps/CLI/Sources/WinkCLI/Commands/Core/LearnCommand.swift');
   const toolRegistry = read(
-    'Core/PeekabooCore/Sources/PeekabooAgentRuntime/ToolRegistry/ToolRegistry.swift'
+    'Core/WinkCore/Sources/WinkAgentRuntime/ToolRegistry/ToolRegistry.swift'
   );
   const typeTool = read(
-    'Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/TypeTool.swift'
+    'Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/TypeTool.swift'
   );
   const pressMetadata = read(
-    'Apps/CLI/Sources/PeekabooCLI/Commands/Interaction/PressCommand+CommanderMetadata.swift'
+    'Apps/CLI/Sources/WinkCLI/Commands/Interaction/PressCommand+CommanderMetadata.swift'
   );
 
   assert.match(learn, /fresh exact non-dialog snapshot form/);
@@ -242,7 +242,7 @@ test('generated guidance sources retain CLI and policy distinctions', () => {
   assert.match(learn, /categoryTools\.map\(\\\.name\)\.sorted\(\)/);
   assert.doesNotMatch(learn, /\*\*System\*\*:\s*shell/);
   assert.doesNotMatch(learn, /type --app/);
-  assert.doesNotMatch(toolRegistry, /peekaboo type .*--app/);
+  assert.doesNotMatch(toolRegistry, /wink type .*--app/);
   assert.doesNotMatch(toolRegistry, /ToolOverride|toolOverrides/);
   assert.match(toolRegistry, /publicAgentTools\(\)/);
   assert.match(typeTool, /explicit fresh exact non-dialog snapshot receipt/);
@@ -252,7 +252,7 @@ test('generated guidance sources retain CLI and policy distinctions', () => {
 
 test('drag guidance exposes bounded background delivery without implying effect verification', () => {
   for (const path of [
-    'skills/peekaboo/SKILL.md',
+    'skills/wink/SKILL.md',
     'docs/quickstart.md',
     'docs/focus.md',
     'docs/security.md',

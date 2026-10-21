@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -154,7 +154,7 @@ struct AgentCommandTests {
         do {
             _ = try command.validatedModelSelection()
             Issue.record("expected a validation error for a tool-incapable model")
-        } catch let error as PeekabooError {
+        } catch let error as WinkError {
             let message = error.localizedDescription
             #expect(message.contains("does not support tool calling"))
             #expect(message.contains("--analyze"))
@@ -167,7 +167,7 @@ struct AgentCommandTests {
         do {
             _ = try unknown.validatedModelSelection()
             Issue.record("expected a validation error for an unknown model")
-        } catch let error as PeekabooError {
+        } catch let error as WinkError {
             #expect(error.localizedDescription.contains("Allowed values"))
         }
     }
@@ -205,10 +205,10 @@ struct AgentCommandTests {
 
             do {
                 _ = try command.validatedModelSelection(
-                    configuration: PeekabooCore.ConfigurationManager.shared
+                    configuration: WinkCore.ConfigurationManager.shared
                 )
                 Issue.record("expected a validation error for a configured tool-incapable model")
-            } catch let error as PeekabooError {
+            } catch let error as WinkError {
                 let message = error.localizedDescription
                 #expect(message.contains("configured with supportsTools: false"))
                 #expect(message.contains("requires tool calling"))
@@ -309,7 +309,7 @@ struct AgentCommandTests {
             let command = try AgentCommand.parse([])
             let model = try #require(command.parseModelString(
                 "local-proxy/mini",
-                configuration: PeekabooCore.ConfigurationManager.shared
+                configuration: WinkCore.ConfigurationManager.shared
             ))
 
             #expect(model.modelId == "local-proxy/mini")
@@ -353,7 +353,7 @@ struct AgentCommandTests {
             ]
         ) {
             let command = try AgentCommand.parse([])
-            let configuration = PeekabooCore.ConfigurationManager.shared
+            let configuration = WinkCore.ConfigurationManager.shared
 
             #expect(command.parseModelString("openai/mini", configuration: configuration)?.modelId == "openai/mini")
             #expect(command.parseModelString("openai/gpt-5.5", configuration: configuration) == nil)
@@ -373,7 +373,7 @@ struct AgentCommandTests {
             environment: ["ANTHROPIC_API_KEY": "test-anthropic-key"]
         ) {
             let command = try AgentCommand.parse([])
-            let service = PeekabooAIService(configuration: PeekabooCore.ConfigurationManager.shared)
+            let service = WinkAIService(configuration: WinkCore.ConfigurationManager.shared)
 
             #expect(command.firstAvailableToolModel(from: service) == .anthropic(.fable5))
         }
@@ -403,10 +403,10 @@ struct AgentCommandTests {
             environment: ["PB_KEY": "resolved-value"]
         ) {
             let command = try AgentCommand.parse([])
-            let service = PeekabooAIService(configuration: PeekabooCore.ConfigurationManager.shared)
+            let service = WinkAIService(configuration: WinkCore.ConfigurationManager.shared)
             let model = try #require(command.configuredDefaultToolModel(
                 from: service,
-                configuration: PeekabooCore.ConfigurationManager.shared
+                configuration: WinkCore.ConfigurationManager.shared
             ))
 
             #expect(model.modelId == "local-proxy/mini")
@@ -448,8 +448,8 @@ struct AgentCommandTests {
             environment: ["PB_KEY": "resolved-value"]
         ) {
             let command = try AgentCommand.parse([])
-            let configuration = PeekabooCore.ConfigurationManager.shared
-            let service = PeekabooAIService(configuration: configuration)
+            let configuration = WinkCore.ConfigurationManager.shared
+            let service = WinkAIService(configuration: configuration)
 
             #expect(!configuration.hasExplicitAIProviderList())
             #expect(command
@@ -517,8 +517,8 @@ struct AgentCommandTests {
             environment: ["PB_KEY": "resolved-value"]
         ) {
             let command = try AgentCommand.parse([])
-            let configuration = PeekabooCore.ConfigurationManager.shared
-            let service = PeekabooAIService(configuration: configuration)
+            let configuration = WinkCore.ConfigurationManager.shared
+            let service = WinkAIService(configuration: configuration)
 
             let error = try #require(command.unavailableImplicitCustomModelToolCapabilityError(
                 from: service,
@@ -564,8 +564,8 @@ struct AgentCommandTests {
             environment: ["PB_KEY": "resolved-value"]
         ) {
             let command = try AgentCommand.parse([])
-            let configuration = PeekabooCore.ConfigurationManager.shared
-            let service = PeekabooAIService(configuration: configuration)
+            let configuration = WinkCore.ConfigurationManager.shared
+            let service = WinkAIService(configuration: configuration)
 
             #expect(configuration.hasExplicitAIProviderList())
             #expect(command
@@ -610,8 +610,8 @@ struct AgentCommandTests {
             environment: ["PB_KEY": "resolved-value"]
         ) {
             let command = try AgentCommand.parse([])
-            let configuration = PeekabooCore.ConfigurationManager.shared
-            let service = PeekabooAIService(configuration: configuration)
+            let configuration = WinkCore.ConfigurationManager.shared
+            let service = WinkAIService(configuration: configuration)
 
             #expect(configuration.hasExplicitAIProviderList())
             #expect(command.configuredDefaultToolModel(from: service, configuration: configuration)?
@@ -627,7 +627,7 @@ struct AgentCommandTests {
         body: () throws -> Void
     ) throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-config-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-config-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         try configurationJSON.write(
             to: tempDir.appendingPathComponent("config.json"),
@@ -637,8 +637,8 @@ struct AgentCommandTests {
 
         let keys = [
             "PEEKABOO_CONFIG_DIR",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION",
-            "PEEKABOO_AI_PROVIDERS",
+            "WINK_CONFIG_DISABLE_MIGRATION",
+            "WINK_AI_PROVIDERS",
             "OPENAI_API_KEY",
             "ANTHROPIC_API_KEY",
             "GEMINI_API_KEY",
@@ -666,15 +666,15 @@ struct AgentCommandTests {
         })
 
         setenv("PEEKABOO_CONFIG_DIR", tempDir.path, 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
-        for key in keys where key != "PEEKABOO_CONFIG_DIR" && key != "PEEKABOO_CONFIG_DISABLE_MIGRATION" {
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
+        for key in keys where key != "PEEKABOO_CONFIG_DIR" && key != "WINK_CONFIG_DISABLE_MIGRATION" {
             unsetenv(key)
         }
         for (key, value) in environment {
             setenv(key, value, 1)
         }
-        PeekabooCore.ConfigurationManager.shared.resetForTesting()
-        _ = PeekabooCore.ConfigurationManager.shared.loadConfiguration()
+        WinkCore.ConfigurationManager.shared.resetForTesting()
+        _ = WinkCore.ConfigurationManager.shared.loadConfiguration()
 
         defer {
             for key in keys {
@@ -684,7 +684,7 @@ struct AgentCommandTests {
                     unsetenv(key)
                 }
             }
-            PeekabooCore.ConfigurationManager.shared.resetForTesting()
+            WinkCore.ConfigurationManager.shared.resetForTesting()
             try? FileManager.default.removeItem(at: tempDir)
         }
 
@@ -772,7 +772,7 @@ struct ModelSelectionIntegrationTests {
         var command = try AgentCommand.parse([])
         command.model = "gpt-4o"
 
-        let error = #expect(throws: PeekabooError.self) {
+        let error = #expect(throws: WinkError.self) {
             try command.validatedModelSelection()
         }
 

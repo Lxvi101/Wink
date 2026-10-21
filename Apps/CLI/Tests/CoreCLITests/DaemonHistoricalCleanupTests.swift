@@ -1,13 +1,13 @@
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct DaemonHistoricalCleanupTests {
     @Test
     func `only automatic build scoped daemons own deferred historical cleanup`() {
-        let defaultSocketURL = URL(fileURLWithPath: PeekabooBridgeConstants.daemonSocketPath)
+        let defaultSocketURL = URL(fileURLWithPath: WinkBridgeConstants.daemonSocketPath)
         let buildSocketPath = defaultSocketURL.deletingLastPathComponent()
             .appendingPathComponent("daemon-aaaaaaaaaaaaaaaa.sock").path
 
@@ -18,7 +18,7 @@ struct DaemonHistoricalCleanupTests {
             bridgeSocketPath: buildSocketPath
         )))
         #expect(!DaemonCommand.Run.shouldScheduleHistoricalCleanup(.auto(
-            bridgeSocketPath: PeekabooBridgeConstants.daemonSocketPath
+            bridgeSocketPath: WinkBridgeConstants.daemonSocketPath
         )))
         #expect(!DaemonCommand.Run.shouldScheduleHistoricalCleanup(.auto(
             bridgeSocketPath: "/tmp/daemon-aaaaaaaaaaaaaaaa.sock"

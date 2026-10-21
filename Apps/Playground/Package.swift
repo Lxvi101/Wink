@@ -21,13 +21,13 @@ let package = Package(
             targets: ["Playground"]),
     ],
     dependencies: [
-        .package(path: "../../Core/PeekabooCore"),
+        .package(path: "../../Core/WinkCore"),
     ],
     targets: [
         .target(
             name: "Playground",
             dependencies: [
-                .product(name: "PeekabooCore", package: "PeekabooCore"),
+                .product(name: "WinkCore", package: "WinkCore"),
             ],
             path: "Playground",
             exclude: ["PlaygroundApp.swift", "Info.plist", "AppIcon.icon-source"],

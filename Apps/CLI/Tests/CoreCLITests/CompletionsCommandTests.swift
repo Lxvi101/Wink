@@ -1,7 +1,7 @@
 import Commander
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite("CompletionsCommand")
 struct CompletionsCommandTests {
@@ -59,7 +59,7 @@ struct CompletionsCommandTests {
     @Test
     func `Document is generated from Commander descriptors`() {
         let document = CompletionScriptDocument.make(descriptors: CommanderRegistryBuilder.buildDescriptors())
-        #expect(document.commandName == "peekaboo")
+        #expect(document.commandName == "wink")
         #expect(document.commands.contains(where: { $0.name == "click" }))
         #expect(document.commands.contains(where: { $0.name == "completions" }))
         #expect(document.commands.contains(where: { $0.name == "help" }))
@@ -115,10 +115,10 @@ struct CompletionsCommandTests {
             for: .bash
         )
 
-        #expect(script.contains("__peekaboo_bash_subcommands"))
-        #expect(script.contains("__peekaboo_bash_options"))
-        #expect(script.contains("__peekaboo_bash_argument_values"))
-        #expect(script.contains("complete -F __peekaboo_bash_complete peekaboo"))
+        #expect(script.contains("__wink_bash_subcommands"))
+        #expect(script.contains("__wink_bash_options"))
+        #expect(script.contains("__wink_bash_argument_values"))
+        #expect(script.contains("complete -F __wink_bash_complete wink"))
         #expect(!script.contains("_init_completion"))
     }
 
@@ -129,10 +129,10 @@ struct CompletionsCommandTests {
             for: .zsh
         )
 
-        #expect(script.contains("#compdef peekaboo"))
-        #expect(script.contains("__peekaboo_zsh_subcommands"))
-        #expect(script.contains("__peekaboo_zsh_compadd_with_help"))
-        #expect(script.contains("compdef _peekaboo peekaboo"))
+        #expect(script.contains("#compdef wink"))
+        #expect(script.contains("__wink_zsh_subcommands"))
+        #expect(script.contains("__wink_zsh_compadd_with_help"))
+        #expect(script.contains("compdef _wink wink"))
     }
 
     @Test
@@ -142,9 +142,9 @@ struct CompletionsCommandTests {
             for: .fish
         )
 
-        #expect(script.contains("function __peekaboo_fish_complete"))
+        #expect(script.contains("function __wink_fish_complete"))
         #expect(script.contains("commandline -opc"))
-        #expect(script.contains("complete -c peekaboo -f -a '(__peekaboo_fish_complete)'"))
+        #expect(script.contains("complete -c wink -f -a '(__wink_fish_complete)'"))
     }
 
     @Test

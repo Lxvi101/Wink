@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import PeekabooAgentRuntime
+@testable import WinkAgentRuntime
 
 struct AgentEnhancementOptionsTests {
     // MARK: - Default Preset Tests

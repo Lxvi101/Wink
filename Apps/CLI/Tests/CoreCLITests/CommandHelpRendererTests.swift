@@ -1,7 +1,7 @@
 import Commander
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct CommandHelpRendererTests {
@@ -89,7 +89,7 @@ struct CommandHelpRendererTests {
     func `learn drag guidance carries explicit foreground consent`() {
         #expect(
             LearnCommand.foregroundDragExample ==
-                "peekaboo drag --from <id|x,y> --to <id|x,y> --foreground"
+                "wink drag --from <id|x,y> --to <id|x,y> --foreground"
         )
     }
 
@@ -105,13 +105,13 @@ struct CommandHelpRendererTests {
         ].joined(separator: "\n")
 
         for removed in [
-            "peekaboo image",
-            "peekaboo list apps",
-            "peekaboo list windows",
-            "peekaboo hotkey",
-            "peekaboo inspect-ui",
-            "peekaboo perform-action",
-            "peekaboo swipe",
+            "wink image",
+            "wink list apps",
+            "wink list windows",
+            "wink hotkey",
+            "wink inspect-ui",
+            "wink perform-action",
+            "wink swipe",
         ] {
             #expect(!help.contains(removed), "Generated help contains removed CLI form: \(removed)")
         }
@@ -127,15 +127,15 @@ struct CommandHelpRendererTests {
             .joined(separator: " ")
 
         #expect(help.contains(
-            "Most automation commands first reuse a healthy Peekaboo daemon, then try a capable " +
-                "Peekaboo.app Bridge host, and otherwise start a daemon on demand."
+            "Most automation commands first reuse a healthy Wink daemon, then try a capable " +
+                "Wink.app Bridge host, and otherwise start a daemon on demand."
         ))
         #expect(help.contains(
-            "Application inventory and launch prefer Peekaboo.app; relaunch and quit require a reusable daemon."
+            "Application inventory and launch prefer Wink.app; relaunch and quit require a reusable daemon."
         ))
         #expect(help.contains("Claude.app and ClawdBot.app sockets are diagnostic-only unless selected explicitly."))
-        #expect(!help.contains("dedicated Peekaboo daemon and fall back to local execution"))
-        #expect(!help.contains("Peekaboo.app, Claude.app, and ClawdBot.app sockets are shown for diagnostics"))
+        #expect(!help.contains("dedicated Wink daemon and fall back to local execution"))
+        #expect(!help.contains("Wink.app, Claude.app, and ClawdBot.app sockets are shown for diagnostics"))
     }
 
     @Test
@@ -163,7 +163,7 @@ struct CommandHelpRendererTests {
                 theme: HelpTheme(useColors: false)
             )
 
-            #expect(help.contains("Usage\n  peekaboo \(path.joined(separator: " "))"))
+            #expect(help.contains("Usage\n  wink \(path.joined(separator: " "))"))
             #expect(!help.contains("Global Runtime Flags"))
             #expect(self.helpEntryCount("--bridge-socket <bridge-socket>", in: help) == 1)
             #expect(self.helpEntryCount("--input-strategy <input-strategy>", in: help) == 1)
@@ -216,8 +216,8 @@ struct CommandHelpRendererTests {
 
         #expect(help.contains("Background coordinates require `--snapshot` from a fresh exact-window `see`"))
         #expect(help.contains("background coordinates require an explicit fresh exact-window snapshot"))
-        #expect(help.contains("peekaboo see --window-id 12345 --no-elements --json"))
-        #expect(help.contains("peekaboo click --window-id 12345 --at 20,40 --snapshot SNAPSHOT_ID"))
+        #expect(help.contains("wink see --window-id 12345 --no-elements --json"))
+        #expect(help.contains("wink click --window-id 12345 --at 20,40 --snapshot SNAPSHOT_ID"))
     }
 
     @Test

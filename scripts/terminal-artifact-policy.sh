@@ -74,7 +74,7 @@ terminal_artifact_zip_app_exact() {
     return 1
   fi
 
-  verify_dir="$(mktemp -d /tmp/peekaboo-terminal-zip-verify.XXXXXX)" || return 1
+  verify_dir="$(mktemp -d /tmp/wink-terminal-zip-verify.XXXXXX)" || return 1
   extracted_app="$verify_dir/$(basename "$app")"
   verify_tree="$verify_dir/tree.json"
   if ! /usr/bin/ditto -x -k "$zip_path" "$verify_dir" || \

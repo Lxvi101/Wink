@@ -28,7 +28,7 @@ thread = threading.Thread(target=server.serve_forever, daemon=True)
 thread.start()
 owned_download = None
 try:
-    with tempfile.TemporaryDirectory(prefix="peekaboo-download-failure.") as directory:
+    with tempfile.TemporaryDirectory(prefix="wink-download-failure.") as directory:
         proxy = f"http://127.0.0.1:{server.server_port}"
         environment = dict(os.environ, HTTPS_PROXY=proxy, https_proxy=proxy,
                            ALL_PROXY="", all_proxy="", NO_PROXY="", no_proxy="")
@@ -44,7 +44,7 @@ try:
         ]
         result = subprocess.run(command, capture_output=True, text=True,
                                 env=environment, timeout=10)
-        match = re.search(r"^\+ download_root=(/tmp/peekaboo-node-download\.[A-Za-z0-9]+)$",
+        match = re.search(r"^\+ download_root=(/tmp/wink-node-download\.[A-Za-z0-9]+)$",
                           result.stderr, re.MULTILINE)
         assert match, "builder must reach the real download allocation"
         owned_download = Path(match.group(1))

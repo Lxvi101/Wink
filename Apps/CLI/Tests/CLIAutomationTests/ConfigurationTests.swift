@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.unit), .serialized)
 struct ConfigurationTests {
@@ -165,7 +165,7 @@ struct ConfigurationTests {
             },
             "logging": {
                 "level": "debug",
-                "path": "/tmp/peekaboo.log"
+                "path": "/tmp/wink.log"
             }
         }
         """
@@ -183,7 +183,7 @@ struct ConfigurationTests {
         #expect(config.defaults?.captureFocus == "auto")
 
         #expect(config.logging?.level == "debug")
-        #expect(config.logging?.path == "/tmp/peekaboo.log")
+        #expect(config.logging?.path == "/tmp/wink.log")
     }
 
     @Test(.tags(.fast))
@@ -232,10 +232,10 @@ struct ConfigurationTests {
         #expect(cliProviders == "openai/gpt-5.5")
 
         // Test with environment variable
-        setenv("PEEKABOO_AI_PROVIDERS", "env_provider", 1)
+        setenv("WINK_AI_PROVIDERS", "env_provider", 1)
         let envProviders = manager.getAIProviders(cliValue: nil)
         #expect(envProviders == "env_provider")
-        unsetenv("PEEKABOO_AI_PROVIDERS")
+        unsetenv("WINK_AI_PROVIDERS")
 
         // After clearing env override, manager should return to baseline
         let restoredProviders = manager.getAIProviders(cliValue: nil)

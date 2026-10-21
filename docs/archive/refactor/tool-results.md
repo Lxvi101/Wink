@@ -31,13 +31,13 @@ _Status: Archived · Focus: richer ToolResponse formatting and summaries._
 
 ## Constraints & Challenges
 - `ToolResponse.meta` is currently dropped when converting to `AnyAgentToolValue`; formatters only see whatever plain text the tool returned.
-- MCP tools live in `PeekabooAgentRuntime` while the agent runtime/CLI sits elsewhere, so the metadata schema must be shared via Tachikoma types.
+- MCP tools live in `WinkAgentRuntime` while the agent runtime/CLI sits elsewhere, so the metadata schema must be shared via Tachikoma types.
 - We must not break existing MCP integrations; the new summary data needs a backwards-compatible wire format.
 
 ## Phase 1 – Plumbing
 1. Introduce a typed `ToolEventSummary` struct (in Tachikoma) with optional fields for app/window, element, coordinates, scroll/move vectors, command strings, durations, etc.
 2. Extend `ToolResponse` to carry an optional `summary: ToolEventSummary` (or replace `meta` entirely) and ensure the MCP adapter serializes/deserializes it.
-3. Update the agent streaming pipeline (`PeekabooAgentService+Streaming`, `AnyAgentToolValue`, CLI event payloads) so the summary is delivered alongside the existing text result.
+3. Update the agent streaming pipeline (`WinkAgentService+Streaming`, `AnyAgentToolValue`, CLI event payloads) so the summary is delivered alongside the existing text result.
 
 ## Phase 2 – Tool Implementations
 1. Audit every MCP tool (click/type/scroll/see/shell/sleep/window/app/menu/dialog/drag/move/swipe/list/etc.).

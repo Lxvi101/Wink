@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -142,7 +142,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -199,7 +199,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Local command installs durable barrier before mutation dispatch`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-command-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-command-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: store)
@@ -212,7 +212,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         let started = AsyncTestGate()
@@ -244,7 +244,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Local command can resolve its own pre-mutation implicit latest snapshot`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-visible-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-visible-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(
@@ -259,7 +259,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         let original = try await snapshots.createSnapshot()
@@ -277,12 +277,12 @@ struct InteractionMutationInvalidatorTests {
         #expect(await snapshots.getMostRecentSnapshot() == nil)
     }
 
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["WINK_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))
     func `Remote-selected local mutation installs a caller barrier`() async throws {
         // Ambient opt-in: the caller-local SnapshotManager advances the effective-UID desktop watermark and
         // target ledger despite this test's injected tracker and in-memory snapshots.
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-remote-caller-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-remote-caller-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -294,7 +294,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: InMemorySnapshotManager()),
+            services: WinkServices(snapshotManager: InMemorySnapshotManager()),
             selectedRemoteSocketPath: "/tmp/selected.sock",
             interactionMutationTracker: tracker
         )
@@ -322,7 +322,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Per-tool coordinator closes its local barrier before fresh observation publication`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-tool-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-tool-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: store)
@@ -335,7 +335,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         let coordinator = runtime.toolSnapshotMutationCoordinator
@@ -365,7 +365,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Per-tool coordinator cancels pre-dispatch refusal without advancing watermark`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-tool-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-tool-cancel-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: store)
@@ -378,7 +378,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         let snapshotID = try await snapshots.createSnapshot()
@@ -398,7 +398,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Remote ordinary tools retain a caller barrier while remote observations use host certificate`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-remote-tool-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-remote-tool-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -410,7 +410,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: InMemorySnapshotManager()),
+            services: WinkServices(snapshotManager: InMemorySnapshotManager()),
             selectedRemoteSocketPath: "/tmp/selected.sock",
             interactionMutationTracker: tracker
         )
@@ -433,7 +433,7 @@ struct InteractionMutationInvalidatorTests {
     @Test
     func `Only mutation-capable observation timeouts borrow local or existing caller barriers`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-timeout-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-timeout-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let localTracker = InteractionMutationTracker(
             desktopMutationWatermarkStore: DesktopMutationWatermarkStore(directoryURL: root)
@@ -487,7 +487,7 @@ struct InteractionMutationInvalidatorTests {
         try remoteTracker.cancelDurableMutation()
     }
 
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["WINK_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))
     func `Remote coordinator rejects a host observation certificate that forbids preservation`() async throws {
         // Ambient opt-in: the owned tracker does not isolate caller-local invalidation of the effective-UID
         // desktop watermark and target ledger.
@@ -502,7 +502,7 @@ struct InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             selectedRemoteSocketPath: "/tmp/selected.sock",
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
@@ -542,7 +542,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -578,7 +578,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -599,7 +599,7 @@ extension InteractionMutationInvalidatorTests {
     @Test
     func `Existing failed barrier is completed rather than canceled by a no-op retry`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-existing-barrier-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-existing-barrier-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -612,7 +612,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         #expect(try await tracker.beginDurableMutation())
@@ -641,7 +641,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -683,7 +683,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -716,7 +716,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -748,7 +748,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -784,7 +784,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -815,7 +815,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -852,7 +852,7 @@ extension InteractionMutationInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: InteractionMutationTracker(
                 desktopMutationWatermarkStore: desktop.watermarkStore
             )
@@ -1096,11 +1096,11 @@ extension InteractionMutationInvalidatorTests {
         }
         for await _ in started {}
         #expect(tracker.hasPendingDurableMutation)
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             _ = try await tracker.beginDurableMutation()
         }
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await tracker.retainDurableMutationLease()
         }
         flock(holder, LOCK_UN)

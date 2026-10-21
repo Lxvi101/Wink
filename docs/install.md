@@ -1,15 +1,15 @@
 ---
-title: Install Peekaboo
-summary: 'Install Peekaboo through Homebrew, npm/MCP, the Mac app, or a source checkout.'
-description: Install the Peekaboo CLI, MCP server, or Mac app. Homebrew, npm, and source paths.
+title: Install Wink
+summary: 'Install Wink through Homebrew, npm/MCP, the Mac app, or a source checkout.'
+description: Install the Wink CLI, MCP server, or Mac app. Homebrew, npm, and source paths.
 read_when:
-  - 'setting up Peekaboo for the first time'
+  - 'setting up Wink for the first time'
   - 'choosing between Homebrew, npm, Mac app, and source builds'
 ---
 
 # Install
 
-Peekaboo ships in three flavors. They all use the same Swift core and the same toolset — pick whichever surface fits your workflow.
+Wink ships in three flavors. They all use the same Swift core and the same toolset — pick whichever surface fits your workflow.
 
 ## Homebrew (recommended)
 
@@ -17,30 +17,30 @@ The CLI is signed, notarized, and lives in [openclaw/homebrew-tap](https://githu
 
 ```bash
 brew install openclaw/tap/peekaboo
-peekaboo --version
+wink --version
 ```
 
 Update with `brew upgrade openclaw/tap/peekaboo`.
 
-`brew install peekaboo` installs Homebrew core's source-built formula without release signing.
+`brew install wink` installs Homebrew core's source-built formula without release signing.
 Local in-process commands still work. For normal Bridge and daemon use, install the notarized CLI:
-install it with `brew install openclaw/tap/peekaboo` or `npm i -g @steipete/peekaboo`.
+install it with `brew install openclaw/tap/peekaboo` or `npm i -g wink`.
 
 ## npm (for MCP clients)
 
 The npm package wraps the same CLI plus an MCP shim, so you can launch the server with `npx`:
 
 ```bash
-npx -y @steipete/peekaboo mcp
+npx -y wink mcp
 ```
 
 This is the form you point Codex, Claude Code, and Cursor at. See [MCP.md](MCP.md).
 
 ## Mac app
 
-The full menu-bar app (visualizer, permission flows, status item) ships as a drag-to-Applications DMG on the [Releases](https://github.com/openclaw/Peekaboo/releases/latest) page. The app and CLI are separate installs; use Homebrew or npm above when you also need the `peekaboo` command on your `PATH`.
+The full menu-bar app (visualizer, permission flows, status item) ships as a drag-to-Applications DMG on the [Releases](https://github.com/Lxvi101/Wink/releases/latest) page. The app and CLI are separate installs; use Homebrew or npm above when you also need the `wink` command on your `PATH`.
 
-In Settings, **Show Peekaboo in → Menu bar only** keeps Peekaboo out of the Dock and Command-Tab,
+In Settings, **Show Wink in → Menu bar only** keeps Wink out of the Dock and Command-Tab,
 even while Settings, Inspector, or an enabled Sessions window is open. Use the menu-bar item or
 configured keyboard shortcuts to return to those windows. **Menu bar and Dock** keeps the Dock
 and Command-Tab entry available even after all windows are closed. Launch starts in accessory mode until
@@ -57,8 +57,8 @@ Requires macOS 15.0+ and a Swift 6.2+ toolchain. See [platform-support.md](platf
 for the support matrix across the CLI, app, Swift packages, and pnpm helper scripts.
 
 ```bash
-git clone --recurse-submodules https://github.com/openclaw/Peekaboo.git
-cd Peekaboo
+git clone --recurse-submodules https://github.com/Lxvi101/Wink.git
+cd Wink
 pnpm install
 pnpm run build:cli         # debug build
 pnpm run build:swift:all   # universal release
@@ -66,7 +66,7 @@ pnpm run build:swift:all   # universal release
 
 The output binary lives under `Apps/CLI/.build/...`. See [building.md](building.md) for signing and notarization.
 
-For local daemon development, set `PEEKABOO_ALLOW_UNSIGNED_DAEMON=1` on both the unsigned CLI and daemon (CLI auto-start
+For local daemon development, set `WINK_ALLOW_UNSIGNED_DAEMON=1` on both the unsigned CLI and daemon (CLI auto-start
 and `daemon start` propagate it). This permits only an on-demand daemon/client pair with the same effective UID and
 exact same live kernel CDHash. It does not enable unsigned GUI Bridge access, and release-signed binaries ignore it.
 Status labels the connection as `unsigned same-binary developer opt-in`. Ad-hoc builds lack the hardened runtime,
@@ -74,10 +74,10 @@ so injected code can run under the same binary; enable only on machines you cont
 See [unsigned developer builds](daemon.md#unsigned-developer-builds) for details.
 
 Raw SwiftPM and manual unstamped Xcode builds use stable `unknown` placeholders for source and build-time metadata.
-Use the repository's debug or release build scripts from a clean checkout when `peekaboo --version --json` must
+Use the repository's debug or release build scripts from a clean checkout when `wink --version --json` must
 include immutable provenance. Dirty or unverifiable debug builds remain available but report `sourceCommit: unknown`;
-release builds and debug builds with `PEEKABOO_REQUIRE_SOURCE_PROVENANCE=1` refuse that source state.
-`peekaboo --version --json` exposes the canonical 40-hex `sourceCommit`; background certification requires it and
+release builds and debug builds with `WINK_REQUIRE_SOURCE_PROVENANCE=1` refuse that source state.
+`wink --version --json` exposes the canonical 40-hex `sourceCommit`; background certification requires it and
 pins one exact Bridge socket for remote execution, requiring that host to advertise the same source commit.
 Raw builds remain available for ordinary CLI development, but `capture action` is deliberately stricter because its
 manifest claims end-to-end artifact and execution-host provenance around an arbitrary child command. That subcommand
@@ -87,9 +87,9 @@ unstamped local build refuses before focus or child dispatch instead of publishi
 ## Verify
 
 ```bash
-peekaboo --version
-peekaboo permissions status
-peekaboo app list
+wink --version
+wink permissions status
+wink app list
 ```
 
 If any of those error out, jump to [permissions.md](permissions.md).

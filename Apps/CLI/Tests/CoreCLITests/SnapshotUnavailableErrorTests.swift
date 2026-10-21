@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Regression tests for the honest, actionable errors when implicit "latest snapshot" resolution
 /// comes back empty. Previously both cases collapsed into the misleading
@@ -25,8 +25,8 @@ struct SnapshotUnavailableErrorTests {
         do {
             _ = try observation.requireSnapshot()
             Issue.record("Expected requireSnapshot to throw")
-        } catch let PeekabooError.snapshotNotAvailable(message) {
-            #expect(message.contains("peekaboo see"))
+        } catch let WinkError.snapshotNotAvailable(message) {
+            #expect(message.contains("wink see"))
         }
     }
 
@@ -46,14 +46,14 @@ struct SnapshotUnavailableErrorTests {
         do {
             _ = try observation.requireSnapshot()
             Issue.record("Expected requireSnapshot to throw")
-        } catch let error as PeekabooError {
+        } catch let error as WinkError {
             guard case let .snapshotStale(reason) = error else {
                 Issue.record("Expected snapshotStale, got \(error)")
                 return
             }
             #expect(reason.contains("invalidated"))
             let description = try #require(error.errorDescription)
-            #expect(description.contains("Re-run peekaboo see"))
+            #expect(description.contains("Re-run wink see"))
         }
     }
 }
@@ -151,7 +151,7 @@ private final class WatermarkAwareSnapshotManagerStub: SnapshotManagerProtocol {
     }
 
     func getSnapshotStoragePath() -> String {
-        "/tmp/peekaboo-unavailable-error-stub"
+        "/tmp/wink-unavailable-error-stub"
     }
 
     func storeScreenshot(_: SnapshotScreenshotRequest) async throws {}

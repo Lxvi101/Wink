@@ -1,7 +1,7 @@
 ---
 summary: 'Index of AI provider docs (OpenAI, Anthropic, Gemini, MiniMax, Kimi, Grok, Ollama).'
 read_when:
-  - 'choosing or configuring AI providers for Peekaboo'
+  - 'choosing or configuring AI providers for Wink'
   - 'looking for provider-specific plans or status'
 ---
 

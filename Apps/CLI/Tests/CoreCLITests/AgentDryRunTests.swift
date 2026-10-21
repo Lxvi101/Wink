@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAgentRuntimeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntimeTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), AuthorityTestIsolation())
 @MainActor
@@ -105,7 +105,7 @@ struct AgentDryRunTests {
 
         for command in [shorthand, explicitRun] {
             for _ in terminalContexts {
-                let caught = #expect(throws: PeekabooError.self) {
+                let caught = #expect(throws: WinkError.self) {
                     try command.validateDryRunRequest()
                 }
                 let error = try #require(caught)
@@ -119,7 +119,7 @@ struct AgentDryRunTests {
         var command = try AgentCommand.parse(["Inspect audio", "--dry-run"])
         command.audio = true
 
-        let caught = #expect(throws: PeekabooError.self) {
+        let caught = #expect(throws: WinkError.self) {
             try command.validateDryRunRequest()
         }
         let error = try #require(caught)

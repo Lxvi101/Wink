@@ -7,7 +7,7 @@ struct DialogFixtureView: View {
 
     @State private var owningWindow: NSWindow?
     @State private var filename: String = "playground-dialog-fixture.rtf"
-    @State private var content: String = "Peekaboo Playground Dialog Fixture"
+    @State private var content: String = "Wink Playground Dialog Fixture"
 
     @State private var lastSavedPath: String = "(none)"
     @State private var lastOpenedPath: String = "(none)"
@@ -232,7 +232,7 @@ struct DialogFixtureView: View {
         }
 
         let alert = NSAlert()
-        alert.messageText = "Peekaboo Playground Alert"
+        alert.messageText = "Wink Playground Alert"
         alert.informativeText = withTextField
             ? "This alert includes a text field so `dialog input` can be exercised."
             : "Use `dialog click` to press buttons without needing TextEdit."

@@ -1,6 +1,6 @@
 import Commander
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderProgramResolutionTests {
     @Test
@@ -31,15 +31,15 @@ struct CommanderBinderProgramResolutionTests {
     func `Commander path failures retain current help recovery`() {
         #expect(
             commanderErrorHint(.unknownCommand("frobnicate")) ==
-                "Run 'peekaboo --help' to list current commands."
+                "Run 'wink --help' to list current commands."
         )
         #expect(
             commanderErrorHint(.missingSubcommand(command: "window")) ==
-                "Run 'peekaboo help window' to list current subcommands."
+                "Run 'wink help window' to list current subcommands."
         )
         #expect(
             commanderErrorHint(.unknownSubcommand(command: "window", name: "frobnicate")) ==
-                "Run 'peekaboo help window' to list current subcommands."
+                "Run 'wink help window' to list current subcommands."
         )
         #expect(commanderErrorHint(.duplicateCommand("see")) == nil)
     }
@@ -50,7 +50,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "see",
             "--no-elements",
             "--app", "Safari",
@@ -74,7 +74,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "see",
             "--app", "Mail",
             "--annotate",
@@ -95,7 +95,7 @@ struct CommanderBinderProgramResolutionTests {
         let program = Program(descriptors: descriptors.map(\.metadata))
         for alias in ["--path", "--save", "--output", "-o"] {
             let invocation = try program.resolve(argv: [
-                "peekaboo",
+                "wink",
                 "see",
                 alias, "/tmp/see.png",
                 "--depth", "8",
@@ -138,7 +138,7 @@ struct CommanderBinderProgramResolutionTests {
             signature: descriptor.metadata.signature
         )
         let invocation = try Program(descriptors: descriptors.map(\.metadata)).resolve(argv: [
-            "peekaboo", "press", "cmd+c", "Return", "--foreground",
+            "wink", "press", "cmd+c", "Return", "--foreground",
         ])
         let snapshotHelp = PressCommand.commanderSignature().options.first { $0.label == "snapshot" }?.help
         let typeSnapshotHelp = TypeCommand.commanderSignature().options.first { $0.label == "snapshot" }?.help
@@ -157,7 +157,7 @@ struct CommanderBinderProgramResolutionTests {
         let program = Program(descriptors: descriptors.map(\.metadata))
 
         #expect(throws: CommanderProgramError.parsingError(.unexpectedArgument("extra"))) {
-            _ = try program.resolve(argv: ["peekaboo", "type", "Hello", "extra", "--foreground"])
+            _ = try program.resolve(argv: ["wink", "type", "Hello", "extra", "--foreground"])
         }
     }
 
@@ -167,17 +167,17 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let listInvocation = try program.resolve(argv: [
-            "peekaboo", "window", "list", "--app", "Finder", "--group-by-space",
+            "wink", "window", "list", "--app", "Finder", "--group-by-space",
         ])
         #expect(listInvocation.parsedValues.flags.contains("groupBySpace"))
 
         let resizeInvocation = try program.resolve(argv: [
-            "peekaboo", "window", "resize", "--app", "Finder", "-w", "800", "--height", "600",
+            "wink", "window", "resize", "--app", "Finder", "-w", "800", "--height", "600",
         ])
         #expect(resizeInvocation.parsedValues.options["width"] == ["800"])
 
         let boundsInvocation = try program.resolve(argv: [
-            "peekaboo", "window", "set-bounds", "--app", "Finder",
+            "wink", "window", "set-bounds", "--app", "Finder",
             "--x", "0", "--y", "0", "-w", "800", "--height", "600",
         ])
         #expect(boundsInvocation.parsedValues.options["width"] == ["800"])
@@ -193,7 +193,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo", "app", "launch", "--bundle-id", "com.apple.TextEdit",
+            "wink", "app", "launch", "--bundle-id", "com.apple.TextEdit",
         ])
         #expect(invocation.parsedValues.positional.isEmpty)
         #expect(invocation.parsedValues.options["bundleId"] == ["com.apple.TextEdit"])
@@ -205,7 +205,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "browser",
             "navigate",
             "--url", "https://example.com",
@@ -226,7 +226,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "see",
             "--tree",
             "--no-screenshot",
@@ -247,7 +247,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "see",
             "--tree",
             "--no-screenshot",
@@ -262,7 +262,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "capture",
             "action",
             "--duration-limit", "3",
@@ -282,7 +282,7 @@ struct CommanderBinderProgramResolutionTests {
     @MainActor
     func `Commander program keeps natural-language agent tasks positional`() throws {
         let invocation = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo",
+            "wink",
             "agent",
             "list files",
             "--dry-run",
@@ -293,11 +293,11 @@ struct CommanderBinderProgramResolutionTests {
         #expect(invocation.parsedValues.flags.contains("dryRun"))
     }
 
-    @Test(arguments: ["/tmp/peekaboo-before", "pb", "peekaboo-4.9", "peekaboo", "/usr/local/bin/peekaboo"])
+    @Test(arguments: ["/tmp/wink-before", "pb", "wink-4.9", "wink", "/usr/local/bin/wink"])
     @MainActor
     func `Runtime router normalizes agent tasks for any executable name`(executable: String) throws {
         let full = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo",
+            "wink",
             "agent",
             "list files",
             "--dry-run",
@@ -321,19 +321,19 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
 
-        #expect(try program.resolve(argv: ["peekaboo", "clipboard", "set", "--text", "hi"]).path == [
+        #expect(try program.resolve(argv: ["wink", "clipboard", "set", "--text", "hi"]).path == [
             "clipboard", "set",
         ])
-        #expect(try program.resolve(argv: ["peekaboo", "menubar", "click", "Wi-Fi"]).path == [
+        #expect(try program.resolve(argv: ["wink", "menubar", "click", "Wi-Fi"]).path == [
             "menubar", "click",
         ])
-        #expect(try program.resolve(argv: ["peekaboo", "config", "provider", "models", "local"]).path == [
+        #expect(try program.resolve(argv: ["wink", "config", "provider", "models", "local"]).path == [
             "config", "provider", "models",
         ])
-        #expect(try program.resolve(argv: ["peekaboo", "agent", "sessions", "--json"]).path == [
+        #expect(try program.resolve(argv: ["wink", "agent", "sessions", "--json"]).path == [
             "agent", "sessions",
         ])
-        #expect(try program.resolve(argv: ["peekaboo", "permissions", "request", "accessibility"]).path == [
+        #expect(try program.resolve(argv: ["wink", "permissions", "request", "accessibility"]).path == [
             "permissions", "request",
         ])
     }
@@ -344,10 +344,10 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let removed = [
-            ["peekaboo", "clipboard", "-a", "get"],
-            ["peekaboo", "config", "add-provider"],
-            ["peekaboo", "agent", "--list-sessions"],
-            ["peekaboo", "permissions", "request-screen-recording"],
+            ["wink", "clipboard", "-a", "get"],
+            ["wink", "config", "add-provider"],
+            ["wink", "agent", "--list-sessions"],
+            ["wink", "permissions", "request-screen-recording"],
         ]
 
         for argv in removed {
@@ -363,7 +363,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "click",
             "\"Submit\"",
             "--snapshot", "abc",
@@ -389,7 +389,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "click",
             "--at", "10,10",
             "--app", "Safari",
@@ -407,7 +407,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "type",
             "Hello",
             "--snapshot", "xyz",
@@ -433,7 +433,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "press",
             "cmd+c",
             "--count", "3",
@@ -457,7 +457,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "capture",
             "video",
             "/tmp/demo.mov",
@@ -474,7 +474,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "screen",
             "list",
             "--json"
@@ -489,7 +489,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "scroll",
             "--direction", "down",
             "--amount", "7",
@@ -517,7 +517,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "move",
             "--at", "120,240",
             "--on", "B2",
@@ -542,7 +542,7 @@ struct CommanderBinderProgramResolutionTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "drag",
             "--from", "A1",
             "--to", "300,400",

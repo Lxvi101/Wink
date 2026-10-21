@@ -34,15 +34,15 @@ test("hosted dialog metadata proof runs owner and output contracts without live 
     "DialogHierarchyAttributeTests", "DialogOperationDeadlineTests", "ElementDetectionDetachedRunnerTests",
     "DetachedAXObservationWorkerTests", "AXDescriptorReaderPolicyTests",
   ];
-  assert.match(step, /working-directory: Core\/PeekabooAutomationKit/);
-  assert.match(step, /PEEKABOO_INCLUDE_AUTOMATION_TESTS: "false"/);
-  assert.match(step, /PEEKABOO_RUN_INPUT_AUTOMATION_TESTS: "false"/);
+  assert.match(step, /working-directory: Core\/WinkAutomationKit/);
+  assert.match(step, /WINK_INCLUDE_AUTOMATION_TESTS: "false"/);
+  assert.match(step, /WINK_RUN_INPUT_AUTOMATION_TESTS: "false"/);
   assert.doesNotMatch(step, /(?:RUN_AUTOMATION_ACTIONS|RUN_AUTOMATION_TESTS): "true"/);
   assert.match(step, /swift test --no-parallel/);
   assert.equal(step.match(/--filter '([^']+)'/)?.[1], suites.join("|"));
   for (const suite of suites) {
     const source = readFileSync(
-      `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/${suite}.swift`, "utf8",
+      `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/${suite}.swift`, "utf8",
     );
     assert.match(source, new RegExp(`(?:class|struct) ${suite}\\b`), `${suite} must exist in this checkout`);
   }
@@ -58,15 +58,15 @@ test("hosted dialog metadata proof runs owner and output contracts without live 
 test("safe suite forces ambient-state tests off", () => {
   assert.match(
     packageJSON.scripts["test:safe"],
-    /PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS=false swift test/,
+    /WINK_INCLUDE_AMBIENT_STATE_TESTS=false swift test/,
   );
 });
 
 test("application running-state CI executes both production and Bridge suites with nonempty guards", () => {
   const workflow = readFileSync(`${repositoryRoot}/.github/workflows/macos-ci.yml`, "utf8");
   for (const [name, packagePath, suite] of [
-    ["Run application running-state contracts", "Core/PeekabooAutomationKit", "ApplicationRunningStateTests"],
-    ["Run Bridge application running-state contracts", "Core/PeekabooCore", "PeekabooBridgeApplicationRunningStateTests"],
+    ["Run application running-state contracts", "Core/WinkAutomationKit", "ApplicationRunningStateTests"],
+    ["Run Bridge application running-state contracts", "Core/WinkCore", "WinkBridgeApplicationRunningStateTests"],
   ]) {
     const step = workflow.split(`      - name: ${name}\n`)[1]?.split("\n      - ")[0];
     assert.ok(step, `Missing CI step: ${name}`);
@@ -75,7 +75,7 @@ test("application running-state CI executes both production and Bridge suites wi
     assert.ok(step.includes(`swift test --no-parallel --filter ${suite} 2>&1 | tee "$test_log"`));
     assert.ok(step.includes(`grep -Fq 'Suite ${suite} passed after ' "$test_log"`));
     assert.ok(step.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' \"$test_log\""));
-    assert.doesNotMatch(step, /(?:RUN_AUTOMATION_ACTIONS|PEEKABOO_INCLUDE_AUTOMATION_TESTS): "true"/);
+    assert.doesNotMatch(step, /(?:RUN_AUTOMATION_ACTIONS|WINK_INCLUDE_AUTOMATION_TESTS): "true"/);
   }
   assert.ok(workflow.includes("node --test tests/ambient-state-test-policy.test.mjs"));
 });
@@ -83,7 +83,7 @@ test("application running-state CI executes both production and Bridge suites wi
 test("ambient-state tests require the exact shared opt-in", () => {
   assert.match(
     runtimeTests,
-    /environment\["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS"\] == "true"/,
+    /environment\["WINK_INCLUDE_AMBIENT_STATE_TESTS"\] == "true"/,
   );
   assert.match(
     runtimeTests,
@@ -94,7 +94,7 @@ test("ambient-state tests require the exact shared opt-in", () => {
 test("live visualizer smoke requires ambient consent while disabled-feedback proof stays safe", () => {
   const lines = runtimeTests.split("\n");
   const declaration = lines.indexOf(
-    "    func `peekaboo visualizer emits JSON (success or error)`() async throws {",
+    "    func `wink visualizer emits JSON (success or error)`() async throws {",
   );
   assert.notEqual(declaration, -1, "Missing live visualizer smoke test");
   assert.equal(
@@ -104,16 +104,16 @@ test("live visualizer smoke requires ambient consent while disabled-feedback pro
   );
 
   const disabledDeclaration = lines.indexOf(
-    "    func `peekaboo visualizer fails fast when visual feedback is disabled`() async throws {",
+    "    func `wink visualizer fails fast when visual feedback is disabled`() async throws {",
   );
   assert.notEqual(disabledDeclaration, -1, "Missing deterministic disabled-feedback proof");
   assert.equal(lines[disabledDeclaration - 1].trim(), "@Test");
   const disabledBody = lines.slice(disabledDeclaration).join("\n").split("\n    }")[0];
-  assert.match(disabledBody, /environment: \["PEEKABOO_VISUAL_FEEDBACK": "false"\]/);
+  assert.match(disabledBody, /environment: \["WINK_VISUAL_FEEDBACK": "false"\]/);
 });
 
 test("visualizer log helper includes receiver diagnostics and preserves explicit filters", () => {
-  const directory = mkdtempSync(join(tmpdir(), "peekaboo-visualizer-log-policy-"));
+  const directory = mkdtempSync(join(tmpdir(), "wink-visualizer-log-policy-"));
   const capture = join(directory, "arguments");
   const script = `${repositoryRoot}/scripts/visualizer-logs.sh`;
   // Capture argv through a PATH stub: this test never reads native system logs.
@@ -130,7 +130,7 @@ test("visualizer log helper includes receiver diagnostics and preserves explicit
     return result;
   };
   const loggedArguments = () => readFileSync(capture, "utf8").split("\0").slice(0, -1);
-  const defaultPredicate = '(subsystem == "boo.peekaboo.core" && category CONTAINS "Visualization") || subsystem == "boo.peekaboo.visualizer"';
+  const defaultPredicate = '(subsystem == "boo.wink.core" && category CONTAINS "Visualization") || subsystem == "boo.wink.visualizer"';
   const customPredicate = 'processID == 42 && eventMessage CONTAINS "one two"';
 
   try {
@@ -152,7 +152,7 @@ test("visualizer log helper includes receiver diagnostics and preserves explicit
     }
     const help = run(["--help"]);
     assert.equal(help.status, 0);
-    assert.ok(help.stdout.includes("boo.peekaboo.visualizer"));
+    assert.ok(help.stdout.includes("boo.wink.visualizer"));
     assert.throws(loggedArguments, {code: "ENOENT"});
   } finally {
     rmSync(directory, {recursive: true, force: true});
@@ -166,7 +166,7 @@ test("real daemon smoke requires ambient consent and cannot run in skip-automati
   );
   assert.match(
     daemonTests,
-    /nonisolated static var isEnabled: Bool \{\s*#if PEEKABOO_SKIP_AUTOMATION\s*false\s*#else\s*CLIRuntimeEnvironment\.runAmbientStateTests &&\s*ProcessInfo\.processInfo\.environment\["PEEKABOO_INCLUDE_AUTOMATION_TESTS"\]\?\.lowercased\(\) == "true"\s*#endif\s*\}/,
+    /nonisolated static var isEnabled: Bool \{\s*#if WINK_SKIP_AUTOMATION\s*false\s*#else\s*CLIRuntimeEnvironment\.runAmbientStateTests &&\s*ProcessInfo\.processInfo\.environment\["WINK_INCLUDE_AUTOMATION_TESTS"\]\?\.lowercased\(\) == "true"\s*#endif\s*\}/,
   );
   assert.match(
     daemonTests,
@@ -187,7 +187,7 @@ for (const name of [
     assert.notEqual(declaration, -1, `Missing test declaration: ${name}`);
     assert.equal(
       lines[declaration - 1].trim(),
-      '@Test(.enabled(if: ProcessInfo.processInfo.environment["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))',
+      '@Test(.enabled(if: ProcessInfo.processInfo.environment["WINK_INCLUDE_AMBIENT_STATE_TESTS"] == "true"))',
       `The declaration must be immediately governed by the ambient-state gate: ${name}`,
     );
   });
@@ -198,12 +198,12 @@ test("hosted text route proof runs isolated SDK and background contracts with no
   const body = workflow.split("      - name: Run SDK and background text route regressions\n")[1];
   assert.ok(body, "Missing SDK and background text route CI step");
   const step = body.split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooAutomationKit/);
-  assert.ok(step.includes("PEEKABOO_INCLUDE_AUTOMATION_TESTS: \"false\""));
-  assert.ok(step.includes("PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: \"false\""));
+  assert.match(step, /working-directory: Core\/WinkAutomationKit/);
+  assert.ok(step.includes("WINK_INCLUDE_AUTOMATION_TESTS: \"false\""));
+  assert.ok(step.includes("WINK_INCLUDE_AMBIENT_STATE_TESTS: \"false\""));
   assert.ok(step.includes("set -euo pipefail"));
-  assert.ok(step.includes("filter='^PeekabooAutomationKitTests[.](TextInputRouteTests|TypeServiceForegroundPolicyTests|UIInputPolicyDefaultTests|BackgroundTextInputDeliveryTests|BackgroundTextRouteRefusalTests|BackgroundTextInputReceiverTests)/'"));
-  assert.ok(step.includes("filter+='|^PeekabooAutomationKitTests[.]TypeServiceTargetResolutionTests/`(targeted printable characters preserve their exact Unicode payload|literal Unicode events discard inherited modifiers without changing text or destination)`\\('"));
+  assert.ok(step.includes("filter='^WinkAutomationKitTests[.](TextInputRouteTests|TypeServiceForegroundPolicyTests|UIInputPolicyDefaultTests|BackgroundTextInputDeliveryTests|BackgroundTextRouteRefusalTests|BackgroundTextInputReceiverTests)/'"));
+  assert.ok(step.includes("filter+='|^WinkAutomationKitTests[.]TypeServiceTargetResolutionTests/`(targeted printable characters preserve their exact Unicode payload|literal Unicode events discard inherited modifiers without changing text or destination)`\\('"));
   assert.ok(step.includes('--filter "$filter"'));
   assert.ok(step.includes("--disable-xctest --enable-swift-testing --no-parallel"));
   assert.ok(step.includes("Suite TextInputRouteTests passed after "));
@@ -221,7 +221,7 @@ test("hosted coordinate scroll AX proof excludes only the audited live declarati
   const workflow = readFileSync(`${repositoryRoot}/.github/workflows/macos-ci.yml`, "utf8");
   const step = workflow.split("      - name: Run SDK and background text route regressions\n")[1]
     .split("\n      - name:")[0];
-  const filterText = "^PeekabooAutomationKitTests[.](AutomationElementResolverTests|ScrollServiceTargetResolutionTests|ActionInputDriverTests)/";
+  const filterText = "^WinkAutomationKitTests[.](AutomationElementResolverTests|ScrollServiceTargetResolutionTests|ActionInputDriverTests)/";
   assert.ok(step.includes(`--filter '${filterText}'`));
   const skipParts = [...step.matchAll(/scroll_skip(?:\+)?='([^']+)'/g)].map((match) => match[1]);
   assert.equal(skipParts.length, 4, "Keep the audited exclusions literal and grouped by exact declaration signatures");
@@ -253,12 +253,12 @@ test("hosted coordinate scroll AX proof excludes only the audited live declarati
   };
   for (const [suite, names] of Object.entries(excluded)) {
     const source = readFileSync(
-      `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/${suite}.swift`, "utf8",
+      `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/${suite}.swift`, "utf8",
     );
     for (const name of names) {
       assert.ok(source.includes("func `" + name + "`"), `Audit stale: ${name}`);
       const signature = name.startsWith("unsupported AX container") ? "(role:coordinates:)" : "()";
-      const id = `PeekabooAutomationKitTests.${suite}/\`${name}\`${signature}`;
+      const id = `WinkAutomationKitTests.${suite}/\`${name}\`${signature}`;
       assert.ok(filter.test(id) && skip.test(id), id);
       assert.ok(skip.test(`${id}/Fixture.swift:1:1`), "Source suffix must not bypass the exclusion");
       assert.ok(!skip.test(id.replace(`\`${name}\``, `\`${name} extra\``)), "Do not skip similarly named tests");
@@ -277,12 +277,12 @@ test("hosted coordinate scroll AX proof excludes only the audited live declarati
     "ScrollServiceTargetResolutionTests/`coordinate scroll refuses owning scroller drift before delivery`(duringResolution:)",
     "ScrollServiceTargetResolutionTests/`typed AX prefix failure never falls through to exact window wheel`(coordinates:)",
   ]) {
-    assert.ok(filter.test(`PeekabooAutomationKitTests.${id}`) && !skip.test(`PeekabooAutomationKitTests.${id}`), id);
+    assert.ok(filter.test(`WinkAutomationKitTests.${id}`) && !skip.test(`WinkAutomationKitTests.${id}`), id);
     assert.ok(!filter.test(`OtherTests.${id}`));
     const suite = id.split("/")[0];
     const name = id.split("`")[1];
     const sources = [suite, ...(suite === "ActionInputDriverTests" ? ["ActionInputDriverScrollTests"] : [])]
-      .map((file) => readFileSync(`${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/${file}.swift`, "utf8"))
+      .map((file) => readFileSync(`${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/${file}.swift`, "utf8"))
       .join("\n");
     assert.ok(sources.includes("func `" + name + "`"), `Missing safe regression: ${id}`);
   }
@@ -293,8 +293,8 @@ test("hosted coordinate scroll AX proof excludes only the audited live declarati
   ]) {
     assert.ok(step.includes(`Test "${name}"`), "The partially excluded resolver suite needs declaration pass guards");
   }
-  for (const variable of ["PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
+  for (const variable of ["WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
     "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS"]) {
     assert.ok(step.includes(`${variable}: "false"`));
   }
@@ -307,18 +307,18 @@ test("hosted coordinate scroll Bridge proof uses the existing graph and injected
   const workflow = readFileSync(`${repositoryRoot}/.github/workflows/macos-ci.yml`, "utf8");
   const step = workflow.split("      - name: Run Bridge negotiation and cancellation contracts\n")[1]
     .split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooCore/);
+  assert.match(step, /working-directory: Core\/WinkCore/);
   assert.match(step, /set -euo pipefail/);
-  assert.ok(step.includes("--filter '^PeekabooTests[.]PeekabooBridgeScrollReceiptTests/'"));
-  assert.ok(step.includes("grep -Fq 'Suite PeekabooBridgeScrollReceiptTests passed after ' \"$scroll_log\""));
+  assert.ok(step.includes("--filter '^WinkTests[.]WinkBridgeScrollReceiptTests/'"));
+  assert.ok(step.includes("grep -Fq 'Suite WinkBridgeScrollReceiptTests passed after ' \"$scroll_log\""));
   assert.ok(step.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' \"$scroll_log\""));
-  for (const variable of ["PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
+  for (const variable of ["WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
     "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS"]) {
     assert.ok(step.includes(`${variable}: "false"`));
   }
   const source = readFileSync(
-    `${repositoryRoot}/Core/PeekabooCore/Tests/PeekabooTests/PeekabooBridgeScrollReceiptTests.swift`, "utf8",
+    `${repositoryRoot}/Core/WinkCore/Tests/WinkTests/WinkBridgeScrollReceiptTests.swift`, "utf8",
   );
   assert.match(source, /SystemIdentityResolver\.processStartIdentity\(getpid\(\)\)/);
   assert.match(source, /let services = StubServices\(\)/);
@@ -332,10 +332,10 @@ test("hosted typed element mutation proof includes exact selection suites and pa
   const marker = "      - name: Run typed set-value and text-selection verification contracts\n";
   assert.equal(workflow.split(marker).length, 2, "Extend the existing typed mutation step exactly once");
   const step = workflow.split(marker)[1].split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooCore/);
+  assert.match(step, /working-directory: Core\/WinkCore/);
   assert.match(step, /set -euo pipefail/);
-  for (const variable of ["PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS"]) {
+  for (const variable of ["WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS"]) {
     assert.ok(step.includes(`${variable}: "false"`));
   }
   assert.equal((step.match(/swift test /g) ?? []).length, 2);
@@ -344,16 +344,16 @@ test("hosted typed element mutation proof includes exact selection suites and pa
   const filters = [...step.matchAll(/--filter '([^']+)'/g)].map((match) => new RegExp(match[1]));
   assert.equal(filters.length, 2);
   for (const [index, module, suite, log] of [
-    [0, "PeekabooAutomationKitTests", "SetValueVerificationTests", "native_log"],
-    [0, "PeekabooAutomationKitTests", "TextSelectionRequestTests", "native_log"],
-    [0, "PeekabooAutomationKitTests", "TextSelectionMutationTests", "native_log"],
-    [0, "PeekabooAutomationKitTests", "AXMutationObservationReaderTests", "native_log"],
-    [1, "PeekabooBridgeTests", "PeekabooBridgeSetValueVerificationTests", "bridge_log"],
-    [1, "PeekabooBridgeTests", "PeekabooBridgeSetValueVerificationWireTests", "bridge_log"],
-    [1, "PeekabooBridgeTests", "PeekabooBridgeTextSelectionTests", "bridge_log"],
-    [1, "PeekabooTests", "PeekabooBridgeSetValueHostClientTests", "bridge_log"],
-    [1, "PeekabooTests", "PeekabooBridgeTextSelectionHostTests", "bridge_log"],
-    [1, "PeekabooTests", "MCPTextSelectionTests", "bridge_log"],
+    [0, "WinkAutomationKitTests", "SetValueVerificationTests", "native_log"],
+    [0, "WinkAutomationKitTests", "TextSelectionRequestTests", "native_log"],
+    [0, "WinkAutomationKitTests", "TextSelectionMutationTests", "native_log"],
+    [0, "WinkAutomationKitTests", "AXMutationObservationReaderTests", "native_log"],
+    [1, "WinkBridgeTests", "WinkBridgeSetValueVerificationTests", "bridge_log"],
+    [1, "WinkBridgeTests", "WinkBridgeSetValueVerificationWireTests", "bridge_log"],
+    [1, "WinkBridgeTests", "WinkBridgeTextSelectionTests", "bridge_log"],
+    [1, "WinkTests", "WinkBridgeSetValueHostClientTests", "bridge_log"],
+    [1, "WinkTests", "WinkBridgeTextSelectionHostTests", "bridge_log"],
+    [1, "WinkTests", "MCPTextSelectionTests", "bridge_log"],
   ]) {
     assert.ok(filters[index].test(`${module}.${suite}/example()`), suite);
     assert.ok(!filters[index].test(`${module}.${suite}Extra/example()`), `${suite} must stay exactly scoped`);
@@ -373,22 +373,22 @@ test("hosted Agent diagnostics runs observation projection and provider retentio
   const marker = "      - name: Run Agent execution diagnostics contracts\n";
   assert.equal(workflow.split(marker).length, 2, "Extend the existing Agent diagnostics step exactly once");
   const step = workflow.split(marker)[1].split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooCore/);
+  assert.match(step, /working-directory: Core\/WinkCore/);
   for (const name of [
-    "PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
+    "WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
     "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS",
   ]) {
     assert.ok(step.includes(`${name}: "false"`), `${name} must be disabled`);
   }
-  assert.match(step, /PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"/);
+  assert.match(step, /WINK_CONFIG_DISABLE_MIGRATION: "1"/);
   assert.ok(step.includes("set -euo pipefail"));
   assert.ok(step.includes("swift test --disable-xctest --enable-swift-testing --no-parallel"));
   assert.equal(step.match(/\bswift test\b/g)?.length, 1);
   assert.equal(step.match(/--filter /g)?.length, 1);
   const groups = [
-    ["PeekabooTests", ["PeekabooAgentStepLimitTests", "AgentObservationProviderContextTests"]],
-    ["PeekabooAgentRuntimeTests", [
+    ["WinkTests", ["WinkAgentStepLimitTests", "AgentObservationProviderContextTests"]],
+    ["WinkAgentRuntimeTests", [
       "AgentExecutionTraceTests", "AgentRecordedOutcomeNoticeTests", "SnapshotInvalidationMetadataTests",
       "AgentObservationProjectionTests",
     ]],
@@ -402,7 +402,7 @@ test("hosted Agent diagnostics runs observation projection and provider retentio
       assert.ok(!selection.test(`${module}.${suite}Extra/example()`), `${suite} must stay exactly scoped`);
       assert.ok(!selection.test(`OtherTests.${suite}/example()`), `${suite} must select its owning module`);
       assert.ok(step.includes(`grep -Fq 'Suite ${suite} passed after ' "$test_log"`));
-      const source = readFileSync(`${repositoryRoot}/Core/PeekabooCore/Tests/${module}/${suite}.swift`, "utf8");
+      const source = readFileSync(`${repositoryRoot}/Core/WinkCore/Tests/${module}/${suite}.swift`, "utf8");
       assert.match(source, new RegExp(`(?:class|struct) ${suite}\\b`), `${suite} must exist in this checkout`);
     }
   }
@@ -416,8 +416,8 @@ test("hosted CI runs exact hotkey receipt Core guards", () => {
   const body = workflow.split("      - name: Run exact hotkey receipt regressions\n")[1];
   assert.ok(body, "Missing exact hotkey receipt CI step");
   const step = body.split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooCore/);
-  assert.ok(step.includes("--filter '^PeekabooTests[.](HotkeySelectAllReceiptTests|MCPExactWindowKeyboardToolTests|TypeServiceAXFailureReceiptTests|TypingFinalReceiverBindingTests|MCPTypeTargetMetadataTests)/'"));
+  assert.match(step, /working-directory: Core\/WinkCore/);
+  assert.ok(step.includes("--filter '^WinkTests[.](HotkeySelectAllReceiptTests|MCPExactWindowKeyboardToolTests|TypeServiceAXFailureReceiptTests|TypingFinalReceiverBindingTests|MCPTypeTargetMetadataTests)/'"));
   assert.ok(step.includes("Suite HotkeySelectAllReceiptTests passed after "));
   assert.ok(step.includes("Suite MCPExactWindowKeyboardToolTests passed after "));
   assert.ok(step.includes("Suite TypeServiceAXFailureReceiptTests passed after "));
@@ -434,34 +434,34 @@ test("hosted foreground keyboard release CI selects only its isolated suites", (
   assert.equal(workflow.split(marker).length, 2, "Expected exactly one foreground hotkey release step");
   const step = workflow.split(marker)[1].split("\n      - name:")[0];
   const suites = ["HotkeyServiceForegroundReleaseTests", "ForegroundKeyboardEventPairTests"];
-  assert.match(step, /working-directory: Core\/PeekabooAutomationKit/);
+  assert.match(step, /working-directory: Core\/WinkAutomationKit/);
   for (const name of [
-    "PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
+    "WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_READ", "RUN_AUTOMATION_TESTS",
     "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS",
   ]) {
     assert.ok(step.includes(`${name}: "false"`), `${name} must be disabled`);
   }
-  assert.match(step, /PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"/);
+  assert.match(step, /WINK_CONFIG_DISABLE_MIGRATION: "1"/);
   assert.match(step, /set -euo pipefail/);
   assert.ok(step.includes("swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 4"));
   assert.equal(step.match(/\bswift test\b/g)?.length, 1);
   const filter = step.match(/--filter '([^']+)'/)?.[1];
-  assert.equal(filter, `^PeekabooAutomationKitTests[.](${suites.join("|")})/`);
+  assert.equal(filter, `^WinkAutomationKitTests[.](${suites.join("|")})/`);
   const selection = new RegExp(filter);
   for (const suite of suites) {
-    assert.ok(selection.test(`PeekabooAutomationKitTests.${suite}/normalRelease()`));
-    assert.ok(!selection.test(`PeekabooAutomationKitTests.${suite}Extra/unsafe()`));
+    assert.ok(selection.test(`WinkAutomationKitTests.${suite}/normalRelease()`));
+    assert.ok(!selection.test(`WinkAutomationKitTests.${suite}Extra/unsafe()`));
     assert.ok(!selection.test(`OtherTests.${suite}/normalRelease()`));
     assert.ok(step.includes(`grep -Fq 'Suite ${suite} passed after ' "$test_log"`));
     const source = readFileSync(
-      `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/${suite}.swift`, "utf8",
+      `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/${suite}.swift`, "utf8",
     );
-    assert.doesNotMatch(source, /\.post\(|\.postToPid\(|Task\.sleep|NSWorkspace|NSApplication|executePeekabooCLI/);
+    assert.doesNotMatch(source, /\.post\(|\.postToPid\(|Task\.sleep|NSWorkspace|NSApplication|executeWinkCLI/);
   }
   for (const id of [
-    "PeekabooAutomationKitTests.HotkeyServiceTargetingTests/targetedInput()",
-    "PeekabooAutomationKitTests.TypeServiceTargetResolutionTests/foregroundInput()",
+    "WinkAutomationKitTests.HotkeyServiceTargetingTests/targetedInput()",
+    "WinkAutomationKitTests.TypeServiceTargetResolutionTests/foregroundInput()",
   ]) {
     assert.ok(!selection.test(id), id);
   }
@@ -469,13 +469,13 @@ test("hosted foreground keyboard release CI selects only its isolated suites", (
   assert.ok(step.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' \"$test_log\""));
   assert.doesNotMatch(step, /continue-on-error|--skip-build/);
   const source = readFileSync(
-    `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/HotkeyServiceForegroundReleaseTests.swift`, "utf8",
+    `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/HotkeyServiceForegroundReleaseTests.swift`, "utf8",
   );
   assert.match(source, /foregroundEventPoster: \{ event in/);
   assert.match(source, /frontmostApplicationResolver: \{ nil \}/);
   assert.match(source, /coordinationRootURL: self\.coordinationRoot/);
   const pairTests = readFileSync(
-    `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/ForegroundKeyboardEventPairTests.swift`, "utf8",
+    `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/ForegroundKeyboardEventPairTests.swift`, "utf8",
   );
   assert.match(pairTests, /TypeServiceSpecialKeyMapping\.postKey\(/);
   assert.match(pairTests, /makeEvent: \{/);
@@ -488,14 +488,14 @@ test("hosted focus observation and accounting use exact non-native suites with n
   const body = workflow.split("      - name: Run focus observation and accounting contracts\n")[1];
   assert.ok(body, "Missing focus observation and accounting CI step");
   const step = body.split("\n      - name:")[0];
-  assert.match(step, /working-directory: Core\/PeekabooAutomationKit/);
+  assert.match(step, /working-directory: Core\/WinkAutomationKit/);
   for (const name of [
-    "PEEKABOO_INCLUDE_AUTOMATION_TESTS", "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS",
-    "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS",
+    "WINK_INCLUDE_AUTOMATION_TESTS", "WINK_INCLUDE_AMBIENT_STATE_TESTS",
+    "WINK_RUN_INPUT_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS",
   ]) {
     assert.ok(step.includes(`${name}: "false"`));
   }
-  assert.ok(step.includes("--filter '^PeekabooAutomationKitTests[.](FocusDispatchAccountingTests|FocusRaiseDispatchAccountingTests|FocusedElementReceiptResolverTests|ObservedFocusCorroborationTests|DetachedExactWindowFocusWindowTests|HotkeyServiceBackgroundPreparationTests)/'"));
+  assert.ok(step.includes("--filter '^WinkAutomationKitTests[.](FocusDispatchAccountingTests|FocusRaiseDispatchAccountingTests|FocusedElementReceiptResolverTests|ObservedFocusCorroborationTests|DetachedExactWindowFocusWindowTests|HotkeyServiceBackgroundPreparationTests)/'"));
   assert.ok(step.includes("--disable-xctest --enable-swift-testing --no-parallel"));
   for (const suite of [
     "FocusDispatchAccountingTests", "FocusRaiseDispatchAccountingTests",
@@ -511,7 +511,7 @@ test("hosted focus observation and accounting use exact non-native suites with n
 
 test("initial observed focus probe reserves the existing traversal deadline through its pure read seam", () => {
   const worker = readFileSync(
-    `${repositoryRoot}/Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/DetachedAXObservationWorker.swift`, "utf8",
+    `${repositoryRoot}/Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/DetachedAXObservationWorker.swift`, "utf8",
   );
   const initialProbe = worker.split("        let initialFocus: AXUIElement? = ")[1]?.split("        var state = TraversalState()")[0];
   assert.ok(initialProbe, "Missing initial observed focus probe");
@@ -523,14 +523,14 @@ test("initial observed focus probe reserves the existing traversal deadline thro
   assert.match(worker, /if request\.includeMenuBarElements, request\.appIsActive,\s*let menuBar = self\.readApplicationReference\(\s*deadline: deadline,\s*applyTimeout: \{ AXUIElementSetMessagingTimeout\(application, \$0\) == \.success \},\s*read: \{ self\.elementAttribute\(kAXMenuBarAttribute, of: application\) \}\)/);
   assert.match(worker, /private static func focusedReference\(\s*application: AXUIElement,\s*deadline: ContinuousClock\.Instant\) -> AXUIElement\?\s*\{\s*self\.readApplicationReference\(/);
   const proof = readFileSync(
-    `${repositoryRoot}/Core/PeekabooAutomationKit/Tests/PeekabooAutomationKitTests/ObservedFocusCorroborationTests.swift`, "utf8",
+    `${repositoryRoot}/Core/WinkAutomationKit/Tests/WinkAutomationKitTests/ObservedFocusCorroborationTests.swift`, "utf8",
   );
   assert.match(proof, /stalled optional focus read leaves short deadline available for ordinary traversal/);
   assert.match(proof, /hardTimeoutSeconds: 0\.05/);
   assert.match(proof, /initialFocusedReference\(deadline: deadline, now: now\)/);
   assert.match(proof, /menu read replaces initial focus timeout with current remaining budget/);
   assert.match(proof, /menu read skips expired deadline without reusing initial focus timeout/);
-  assert.doesNotMatch(proof, /DetachedAXObservationWorker\.inspect\(|AXUIElement|Task\.sleep|Thread\.sleep|NSWorkspace|NSApplication|executePeekabooCLI/);
+  assert.doesNotMatch(proof, /DetachedAXObservationWorker\.inspect\(|AXUIElement|Task\.sleep|Thread\.sleep|NSWorkspace|NSApplication|executeWinkCLI/);
 });
 
 test("hosted mocked interaction CI enables only its exact injected-service suites", () => {
@@ -539,8 +539,8 @@ test("hosted mocked interaction CI enables only its exact injected-service suite
   assert.ok(body, "Missing mocked interaction receipt CI step");
   const step = body.split(/\n(?:      - |  \S)/)[0];
   assert.match(step, /working-directory: Apps\/CLI/);
-  assert.match(step, /PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"/);
-  assert.match(step, /PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
+  assert.match(step, /WINK_INCLUDE_AUTOMATION_TESTS: "true"/);
+  assert.match(step, /WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
   assert.match(step, /RUN_AUTOMATION_READ: "true"/);
   for (const name of ["RUN_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS"]) {
     assert.ok(step.includes(`${name}: "false"`));
@@ -561,24 +561,24 @@ test("hosted mocked interaction CI enables only its exact injected-service suite
   assert.ok(step.includes("--disable-xctest --enable-swift-testing --no-parallel"));
   assert.ok(step.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after '"));
   assert.equal(step.match(/\bswift test\b/g)?.length, 2);
-  assert.doesNotMatch(step.split('scroll_log=')[0], /-DPEEKABOO_SKIP_AUTOMATION/);
+  assert.doesNotMatch(step.split('scroll_log=')[0], /-DWINK_SKIP_AUTOMATION/);
 
   const source = readFileSync(`${repositoryRoot}/Apps/CLI/Tests/CLIAutomationTests/PressCommandTests.swift`, "utf8");
   assert.match(source, /automation: StubAutomationService = StubAutomationService\(\)/);
   assert.match(source, /windows: any WindowManagementServiceProtocol = StubWindowService/);
-  assert.doesNotMatch(source, /executePeekabooCLI|NSWorkspace|NSApplication|BackgroundInputDriver/);
+  assert.doesNotMatch(source, /executeWinkCLI|NSWorkspace|NSApplication|BackgroundInputDriver/);
   const selectionSource = readFileSync(`${repositoryRoot}/Apps/CLI/Tests/CLIAutomationTests/SelectTextCommandTests.swift`, "utf8");
   assert.match(selectionSource, /SelectionAutomation: StubAutomationService/);
-  assert.match(selectionSource, /TestServicesFactory\.makePeekabooServices\(snapshots: snapshots, automation: automation\)/);
-  assert.doesNotMatch(selectionSource, /executePeekabooCLI|NSWorkspace|NSApplication|BackgroundInputDriver|AXUIElement|NSPasteboard/);
+  assert.match(selectionSource, /TestServicesFactory\.makeWinkServices\(snapshots: snapshots, automation: automation\)/);
+  assert.doesNotMatch(selectionSource, /executeWinkCLI|NSWorkspace|NSApplication|BackgroundInputDriver|AXUIElement|NSPasteboard/);
   // The same file hosts the real-desktop DialogCommandIntegrationTests, which stays behind RUN_AUTOMATION_ACTIONS.
   const dialogSections = readFileSync(`${repositoryRoot}/Apps/CLI/Tests/CLIAutomationTests/DialogCommandTests.swift`, "utf8")
     .split("\nstruct DialogCommandIntegrationTests {");
   assert.equal(dialogSections.length, 2, "Keep the stub dialog suite ahead of its real-desktop integration suite");
   const [dialogSource] = dialogSections;
   assert.match(dialogSource, /StubDialogService\(/);
-  assert.match(dialogSource, /TestServicesFactory\.makePeekabooServices\(/);
-  assert.doesNotMatch(dialogSource, /executePeekabooCLI|runShared|NSWorkspace|NSApplication|NSPasteboard|AXUIElement|CGEvent/);
+  assert.match(dialogSource, /TestServicesFactory\.makeWinkServices\(/);
+  assert.doesNotMatch(dialogSource, /executeWinkCLI|runShared|NSWorkspace|NSApplication|NSPasteboard|AXUIElement|CGEvent/);
   assert.match(dialogSource, /\.enabled\(if: CLITestEnvironment\.runAutomationActions\)\n\)$/);
 });
 
@@ -588,13 +588,13 @@ test("hosted coordinate scroll CLI proof enters skip-automation mode without amb
     .split("\n      - name:")[0];
   const scroll = step.split('scroll_log=')[1];
   assert.ok(scroll, "Keep coordinate scroll in the existing mocked interaction step");
-  assert.match(step, /PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"/);
-  for (const variable of ["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS", "PEEKABOO_RUN_INPUT_AUTOMATION_TESTS",
+  assert.match(step, /WINK_INCLUDE_AUTOMATION_TESTS: "true"/);
+  for (const variable of ["WINK_INCLUDE_AMBIENT_STATE_TESTS", "WINK_RUN_INPUT_AUTOMATION_TESTS",
     "RUN_AUTOMATION_TESTS", "RUN_AUTOMATION_ACTIONS", "RUN_LOCAL_TESTS"]) {
     assert.ok(step.includes(`${variable}: "false"`));
   }
   assert.match(scroll, /RUN_AUTOMATION_READ=false swift test --disable-xctest --enable-swift-testing --no-parallel --jobs 2/);
-  assert.match(scroll, /-Xswiftc -DPEEKABOO_SKIP_AUTOMATION/);
+  assert.match(scroll, /-Xswiftc -DWINK_SKIP_AUTOMATION/);
   assert.ok(scroll.includes("--filter '^CLIAutomationTests[.]ScrollCoordinateCommandTests/'"));
   assert.ok(scroll.includes("grep -Fq 'Suite ScrollCoordinateCommandTests passed after ' \"$scroll_log\""));
   assert.ok(scroll.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ' \"$scroll_log\""));
@@ -605,7 +605,7 @@ test("hosted coordinate scroll CLI proof enters skip-automation mode without amb
   for (const stub of ["StubSnapshotManager", "StubApplicationService", "StubWindowService", "OutcomeStubAutomationService"]) {
     assert.ok(source.includes(`${stub}(`), stub);
   }
-  assert.doesNotMatch(source, /executePeekabooCLI|NSWorkspace|NSApplication|NSPasteboard|AXUIElement|CGEvent/);
+  assert.doesNotMatch(source, /executeWinkCLI|NSWorkspace|NSApplication|NSPasteboard|AXUIElement|CGEvent/);
 });
 
 test("hosted See proof retains target inclusion without opting into ambient tests", () => {
@@ -613,14 +613,14 @@ test("hosted See proof retains target inclusion without opting into ambient test
   const workflow = readFileSync(`${repositoryRoot}/.github/workflows/macos-ci.yml`, "utf8");
   const step = workflow.split("      - name: Run See configuration environment regressions\n")[1]
     .split(/\n(?:      - |  \S)/)[0];
-  assert.match(step, /PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true"/);
-  assert.match(step, /PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
-  assert.match(step, /PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"/);
+  assert.match(step, /WINK_INCLUDE_AUTOMATION_TESTS: "true"/);
+  assert.match(step, /WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
+  assert.match(step, /WINK_CONFIG_DISABLE_MIGRATION: "1"/);
   assert.match(step, /python3 ..\/..\/scripts\/test-see-config-environment.py/);
   assert.match(manifest, /if includeAutomationTests \{[\s\S]*name: "CLIAutomationTests"/);
   const target = manifest.split('name: "CLIAutomationTests"')[1].split("let package = Package(")[0];
   assert.doesNotMatch(target, /\b(?:exclude|sources):/);
-  assert.doesNotMatch(manifest, /PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS/);
+  assert.doesNotMatch(manifest, /WINK_INCLUDE_AMBIENT_STATE_TESTS/);
 });
 
 test("hosted CLI keeps cold-binary smoke first and groups tests by compiler configuration", () => {
@@ -655,11 +655,11 @@ test("See environment proof uses declaration IDs, including backticks and argume
   const regressions = source.split("struct SeeCommandRuntimeTests {")[1]
     .split("func `tree only See propagates")[0];
   assert.match(regressions, /resetConfiguration: \{ resets.append\(SeeConfigEnvironment\(\)\) \}/);
-  assert.doesNotMatch(regressions, /ConfigurationManager|InProcessCommandRunner|executePeekabooCLI/);
+  assert.doesNotMatch(regressions, /ConfigurationManager|InProcessCommandRunner|executeWinkCLI/);
 });
 
 function runSeeProofFixture(mode, hosted = true) {
-  const directory = mkdtempSync(join(tmpdir(), "peekaboo-see-proof-"));
+  const directory = mkdtempSync(join(tmpdir(), "wink-see-proof-"));
   try {
     const bin = join(directory, "bin");
     mkdirSync(bin);
@@ -708,9 +708,9 @@ sys.exit(1 if mode == "execution-failed" else 0)
         PATH: `${bin}:${process.env.PATH}`,
         GITHUB_ACTIONS: hosted ? "true" : "false",
         RUNNER_ENVIRONMENT: hosted ? "github-hosted" : "self-hosted",
-        PEEKABOO_INCLUDE_AUTOMATION_TESTS: "true",
-        PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false",
-        PEEKABOO_CONFIG_DISABLE_MIGRATION: "1",
+        WINK_INCLUDE_AUTOMATION_TESTS: "true",
+        WINK_INCLUDE_AMBIENT_STATE_TESTS: "false",
+        WINK_CONFIG_DISABLE_MIGRATION: "1",
         SEE_PROOF_CALLS: calls,
         SEE_PROOF_SCENARIO: mode,
       },
@@ -727,12 +727,12 @@ test("hosted See proof selects two declarations from global discovery and execut
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.invocations.length, 2);
   assert.deepEqual(result.invocations[0], [
-    "test", "list", "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DPEEKABOO_SKIP_AUTOMATION",
+    "test", "list", "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DWINK_SKIP_AUTOMATION",
   ]);
   const execution = result.invocations[1];
   const filter = execution[execution.indexOf("--filter") + 1];
   assert.deepEqual(execution, [
-    "test", "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DPEEKABOO_SKIP_AUTOMATION",
+    "test", "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DWINK_SKIP_AUTOMATION",
     "--skip-build", "--no-parallel", "--filter", filter,
   ]);
   const selection = new RegExp(filter);
@@ -765,20 +765,20 @@ test("desktop lane lock CI executes the safe named suite and rejects empty proof
   const marker = "      - name: Run desktop operation lane lock contracts\n";
   assert.equal(workflow.split(marker).length, 2, "Expected exactly one desktop lane proof step");
   const step = workflow.split(marker)[1].split("\n      - name: ")[0];
-  assert.match(step, /working-directory: Core\/PeekabooAutomationKit/);
+  assert.match(step, /working-directory: Core\/WinkAutomationKit/);
   assert.match(step, /set -euo pipefail/);
   assert.ok(step.includes("swift test --no-parallel --filter 'DesktopOperationLaneCoordinatorTests'"));
   assert.ok(step.includes('2>&1 | tee "$test_log"'));
   assert.ok(step.includes("grep -Fq 'Suite DesktopOperationLaneCoordinatorTests passed after '"));
   assert.ok(step.includes("grep -Eq 'Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after '"));
   assert.doesNotMatch(step, /--skip-build/);
-  assert.doesNotMatch(step, /(?:RUN_AUTOMATION_ACTIONS|RUN_AUTOMATION_TESTS|RUN_LOCAL_TESTS|PEEKABOO_INCLUDE_AUTOMATION_TESTS|PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS)\s*(?::|=)\s*["']?(?:true|1)\b/i);
+  assert.doesNotMatch(step, /(?:RUN_AUTOMATION_ACTIONS|RUN_AUTOMATION_TESTS|RUN_LOCAL_TESTS|WINK_INCLUDE_AUTOMATION_TESTS|WINK_INCLUDE_AMBIENT_STATE_TESTS)\s*(?::|=)\s*["']?(?:true|1)\b/i);
 });
 
 test("See proof arguments agree with installed Swift help and parse without running discovery", {
   skip: process.platform !== "darwin",
 }, () => {
-  const directory = mkdtempSync(join(tmpdir(), "peekaboo-see-parser-"));
+  const directory = mkdtempSync(join(tmpdir(), "wink-see-parser-"));
   const swift = (args) => spawnSync("swift", args, {
     cwd: directory, encoding: "utf8", timeout: 20_000,
   });
@@ -814,31 +814,31 @@ const pasteSafetyProofs = [
   {
     name: "Run clipboard paste admission gate contracts",
     next: "Run mutation inventory, selector, and host window contracts",
-    directory: "Core/PeekabooAutomationKit",
+    directory: "Core/WinkAutomationKit",
     suite: "ClipboardPasteTransactionGateTests",
     automation: "false",
-    filter: "^PeekabooAutomationKitTests\\.ClipboardPasteTransactionGateTests/",
-    selected: ["PeekabooAutomationKitTests.ClipboardPasteTransactionGateTests/`Late file-lock admission refuses and releases both gates`(lateness:)"],
-    rejected: ["PeekabooAutomationKitTests.ClipboardPasteTransactionGateTestsExtra/unsafe()"],
+    filter: "^WinkAutomationKitTests\\.ClipboardPasteTransactionGateTests/",
+    selected: ["WinkAutomationKitTests.ClipboardPasteTransactionGateTests/`Late file-lock admission refuses and releases both gates`(lateness:)"],
+    rejected: ["WinkAutomationKitTests.ClipboardPasteTransactionGateTestsExtra/unsafe()"],
     declarations: [],
     countGuard: "Test run with [1-9][0-9]* tests?( in [0-9]+ suites?)? passed after ",
   },
   {
     name: "Run MCP paste admission timeout regressions",
     next: "Run Bridge negotiation and cancellation contracts",
-    directory: "Core/PeekabooCore",
+    directory: "Core/WinkCore",
     suite: "PasteToolTransactionGateTests",
     automation: "false",
-    filter: "^PeekabooTests\\.PasteToolTransactionGateTests/`(paste admission timeout preserves observations and releases the MCP reservation|admitted paste retains prior focus when its input lane times out)`\\(explicitPayload:\\)(/|$)",
+    filter: "^WinkTests\\.PasteToolTransactionGateTests/`(paste admission timeout preserves observations and releases the MCP reservation|admitted paste retains prior focus when its input lane times out)`\\(explicitPayload:\\)(/|$)",
     selected: [
-      "PeekabooTests.PasteToolTransactionGateTests/`paste admission timeout preserves observations and releases the MCP reservation`(explicitPayload:)",
-      "PeekabooTests.PasteToolTransactionGateTests/`admitted paste retains prior focus when its input lane times out`(explicitPayload:)",
+      "WinkTests.PasteToolTransactionGateTests/`paste admission timeout preserves observations and releases the MCP reservation`(explicitPayload:)",
+      "WinkTests.PasteToolTransactionGateTests/`admitted paste retains prior focus when its input lane times out`(explicitPayload:)",
     ],
     rejected: [
-      "PeekabooTests.PasteToolTransactionGateTests/`MCP paste re-resolves its process after shared-lock contention`()",
-      "PeekabooTests.PasteToolTransactionGateTests/`Current clipboard foreground paste can report successful dispatch`()",
+      "WinkTests.PasteToolTransactionGateTests/`MCP paste re-resolves its process after shared-lock contention`()",
+      "WinkTests.PasteToolTransactionGateTests/`Current clipboard foreground paste can report successful dispatch`()",
     ],
-    source: "Core/PeekabooCore/Tests/PeekabooTests/MCP/PasteToolTransactionGateTests.swift",
+    source: "Core/WinkCore/Tests/WinkTests/MCP/PasteToolTransactionGateTests.swift",
     declarations: [
       "paste admission timeout preserves observations and releases the MCP reservation",
       "admitted paste retains prior focus when its input lane times out",
@@ -891,8 +891,8 @@ for (const proof of pasteSafetyProofs) {
     assert.equal(nextStep[1], proof.next, "Keep the safe proof before the named existing step");
     const step = sections[1].slice(0, nextStep.index);
     assert.ok(step.includes(`working-directory: ${proof.directory}\n`));
-    assert.ok(step.includes(`PEEKABOO_INCLUDE_AUTOMATION_TESTS: "${proof.automation}"`));
-    assert.match(step, /PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
+    assert.ok(step.includes(`WINK_INCLUDE_AUTOMATION_TESTS: "${proof.automation}"`));
+    assert.match(step, /WINK_INCLUDE_AMBIENT_STATE_TESTS: "false"/);
     assert.doesNotMatch(step, /\b(?:RUN_AUTOMATION_ACTIONS|RUN_AUTOMATION_TESTS|RUN_LOCAL_TESTS)\s*[:=]/);
     assert.match(step, /set -euo pipefail/);
     assert.equal((step.match(/swift test /g) ?? []).length, 1);
@@ -920,8 +920,8 @@ for (const proof of pasteSafetyProofs) {
     assert.ok(step.includes(`grep -Fq 'Suite ${proof.suite} passed after ' "$test_log"`));
     assert.ok(step.includes(`grep -Eq '${proof.countGuard}' "$test_log"`));
     if (proof.directory === "Apps/CLI") {
-      assert.match(step, /-Xswiftc -DPEEKABOO_SKIP_AUTOMATION/);
-      assert.match(step, /PEEKABOO_CONFIG_DISABLE_MIGRATION: "1"/);
+      assert.match(step, /-Xswiftc -DWINK_SKIP_AUTOMATION/);
+      assert.match(step, /WINK_CONFIG_DISABLE_MIGRATION: "1"/);
     }
   });
 }

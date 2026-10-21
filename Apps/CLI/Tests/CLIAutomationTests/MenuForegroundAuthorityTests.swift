@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -96,7 +96,7 @@ struct MenuForegroundAuthorityTests {
             application: ServiceApplicationInfo(
                 processIdentifier: 42,
                 processStartIdentity: 8,
-                bundleIdentifier: "dev.peekaboo.fixture",
+                bundleIdentifier: "dev.wink.fixture",
                 name: "Replacement"
             ),
             menus: [Menu(title: "Replacement", items: [])]
@@ -119,7 +119,7 @@ struct MenuForegroundAuthorityTests {
     @Test
     func `foreground menu list failure after focus is indeterminate`() async throws {
         let fixture = Self.fixture()
-        fixture.menu.listMenusError = PeekabooError.operationError(message: "Injected menu list failure")
+        fixture.menu.listMenusError = WinkError.operationError(message: "Injected menu list failure")
 
         let result = try await InProcessCommandRunner.run(
             [
@@ -148,7 +148,7 @@ struct MenuForegroundAuthorityTests {
         let application = ServiceApplicationInfo(
             processIdentifier: 42,
             processStartIdentity: 7,
-            bundleIdentifier: "dev.peekaboo.fixture",
+            bundleIdentifier: "dev.wink.fixture",
             name: "Fixture"
         )
         let bounds = CGRect(x: 100, y: 100, width: 800, height: 600)
@@ -177,7 +177,7 @@ struct MenuForegroundAuthorityTests {
             menusByApp: Dictionary(uniqueKeysWithValues: menuIdentifiers.map { ($0, structure) })
         )
         let applications = StubApplicationService(applications: [application])
-        let base = TestServicesFactory.makePeekabooServices(
+        let base = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows,
             menu: menu

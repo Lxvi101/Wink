@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Fake exact-window geometry backend whose frame changes asynchronously across reads.
 @MainActor

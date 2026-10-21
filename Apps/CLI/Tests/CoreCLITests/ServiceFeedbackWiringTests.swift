@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
+import WinkAutomation
+import WinkCore
 import Testing
-@testable import PeekabooAutomationKit
+@testable import WinkAutomationKit
 
 /// The default service composition must route automation feedback to the
 /// visualizer. This wiring was silently missing for a long time — every
@@ -12,7 +12,7 @@ import Testing
 struct ServiceFeedbackWiringTests {
     @Test
     func `Default services emit visualizer feedback`() {
-        let services = PeekabooServices(snapshotManager: InMemorySnapshotManager())
+        let services = WinkServices(snapshotManager: InMemorySnapshotManager())
 
         let automation = services.automation as? UIAutomationService
         #expect(automation?.feedbackClient is VisualizerAutomationFeedbackClient)

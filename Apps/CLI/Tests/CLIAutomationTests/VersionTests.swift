@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct VersionTests {
@@ -8,8 +8,8 @@ struct VersionTests {
     func `Version follows semantic versioning format`() throws {
         let version = Version.current
 
-        // Version should be in format "Peekaboo X.Y.Z" or "Peekaboo X.Y.Z-prerelease"
-        let versionRegex = try NSRegularExpression(pattern: #"^Peekaboo \d+\.\d+\.\d+(-[\w\.]+)?$"#)
+        // Version should be in format "Wink X.Y.Z" or "Wink X.Y.Z-prerelease"
+        let versionRegex = try NSRegularExpression(pattern: #"^Wink \d+\.\d+\.\d+(-[\w\.]+)?$"#)
         let range = NSRange(location: 0, length: version.utf16.count)
         let matches = versionRegex.matches(in: version, range: range)
 
@@ -20,8 +20,8 @@ struct VersionTests {
     func `Version components are valid numbers`() throws {
         let version = Version.current
 
-        // Remove "Peekaboo " prefix
-        let versionNumber = version.replacingOccurrences(of: "Peekaboo ", with: "")
+        // Remove "Wink " prefix
+        let versionNumber = version.replacingOccurrences(of: "Wink ", with: "")
 
         // Split by prerelease identifier first
         let versionParts = versionNumber.split(separator: "-")
@@ -51,14 +51,14 @@ struct VersionTests {
     @Test
     func `Version string is not empty`() {
         #expect(!Version.current.isEmpty)
-        #expect(Version.current.count >= 14) // Minimum: "Peekaboo 0.0.0"
+        #expect(Version.current.count >= 14) // Minimum: "Wink 0.0.0"
     }
 
     @Test
     func `Version can be used in user agent strings`() {
-        let userAgent = "Peekaboo/\(Version.current)"
+        let userAgent = "Wink/\(Version.current)"
 
-        #expect(userAgent.hasPrefix("Peekaboo/"))
-        #expect(userAgent.count > 18) // "Peekaboo/" + "Peekaboo " + at least "0.0.0"
+        #expect(userAgent.hasPrefix("Wink/"))
+        #expect(userAgent.count > 18) // "Wink/" + "Wink " + at least "0.0.0"
     }
 }

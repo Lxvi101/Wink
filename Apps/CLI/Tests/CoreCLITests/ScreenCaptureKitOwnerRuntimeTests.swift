@@ -1,15 +1,15 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomationKit
-@testable import PeekabooCLI
+@testable import WinkAutomationKit
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -220,7 +220,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         let error = await #expect(throws: PreDispatchActionError.self) {
             _ = try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: ["PEEKABOO_DAEMON_SOCKET": missingSocket],
+                environment: ["WINK_DAEMON_SOCKET": missingSocket],
                 configurationInput: nil,
                 dependencies: Self.inertDependencies(
                     makeLocalServices: { _ in
@@ -334,7 +334,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         options.bridgeSocketPath = selectedSocket
         options.autoStartDaemon = false
         let auxiliaryBlocker = RuntimeHostResolver.ScreenCaptureKitOwnerUnawareHost(
-            socketPath: PeekabooBridgeConstants.claudeSocketPath,
+            socketPath: WinkBridgeConstants.claudeSocketPath,
             processIdentifier: 5151,
             processStartIdentity: 6161,
             buildIdentity: "legacy-build"
@@ -380,7 +380,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         options.bridgeSocketPath = selectedSocket
         options.autoStartDaemon = false
         let auxiliaryBlocker = RuntimeHostResolver.ScreenCaptureKitOwnerUnawareHost(
-            socketPath: PeekabooBridgeConstants.claudeSocketPath,
+            socketPath: WinkBridgeConstants.claudeSocketPath,
             processIdentifier: 5151,
             processStartIdentity: 6161,
             buildIdentity: "legacy-build"
@@ -435,7 +435,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         #expect(error.localizedDescription.contains("Selected socket: \(selectedSocket)") == true)
         #expect(error.hint?.contains("Classic capture on this unproven") == true)
         #expect(error.localizedDescription.contains("support cannot be proven") == true)
-        #expect(error.hint?.contains("peekaboo see --capture-engine classic") == false)
+        #expect(error.hint?.contains("wink see --capture-engine classic") == false)
         #expect(error.hint?.contains("retry with its --snapshot") == false)
         #expect(error.hint?.contains("explicitly choose --capture-engine classic") == false)
     }
@@ -582,8 +582,8 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         )
         let resolved = try await RuntimeHostResolver.resolveRemoteServices(
             candidates: [candidate],
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.test.client",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.test.client",
                 teamIdentifier: nil,
                 processIdentifier: getpid()
             ),
@@ -596,7 +596,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         let resolution = try #require(resolved)
         #expect(resolution.selectedRemoteSocketPath == socketPath)
 
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await resolution.services.desktopObservation.observe(DesktopObservationRequest(
                 target: .windowID(77),
                 capture: DesktopCaptureOptions(engine: .legacy),
@@ -628,8 +628,8 @@ struct ScreenCaptureKitOwnerRuntimeTests {
             coordinationRootURL: coordinationRoot
         )
         defer { Task { await host.stop() } }
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -655,7 +655,7 @@ struct ScreenCaptureKitOwnerRuntimeTests {
         )
         let resolution = try #require(resolved)
 
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await resolution.services.desktopObservation.observe(DesktopObservationRequest(
                 target: .screen(index: 0),
                 capture: DesktopCaptureOptions(engine: .legacy),
@@ -829,9 +829,9 @@ struct ScreenCaptureKitOwnerRuntimeTests {
                 remoteCandidatePlan: { _, _ in
                     RuntimeHostResolver.RemoteCandidatePlan(
                         explicitSocket: nil,
-                        daemonSocketPath: "/tmp/peekaboo-dynamic-daemon.sock",
+                        daemonSocketPath: "/tmp/wink-dynamic-daemon.sock",
                         runtimeBuildIdentity: "current-build",
-                        buildScopedDaemonSocketPath: "/tmp/peekaboo-dynamic-current-build.sock",
+                        buildScopedDaemonSocketPath: "/tmp/wink-dynamic-current-build.sock",
                         historicalBuildScopedDaemonSocketPaths: [],
                         candidates: [.init(
                             socketPath: ownerSocket,
@@ -963,7 +963,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         let noBuildCapability = Self.handshake(
             processIdentifier: 4242,
             processStartIdentity: 9001,
-            hostCapabilities: [PeekabooBridgeHostCapability.hostGenerationIdentity]
+            hostCapabilities: [WinkBridgeHostCapability.hostGenerationIdentity]
         )
         let wrongBuild = Self.handshake(
             processIdentifier: 4242,
@@ -1010,9 +1010,9 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         let candidates = RuntimeHostResolver.screenCaptureKitOwnerCandidates(from: [runtime])
 
         #expect(candidates.first?.socketPath == "/tmp/runtime.sock")
-        #expect(candidates.map(\.socketPath).contains(PeekabooBridgeConstants.peekabooSocketPath))
-        #expect(candidates.map(\.socketPath).contains(PeekabooBridgeConstants.claudeSocketPath))
-        #expect(candidates.map(\.socketPath).contains(PeekabooBridgeConstants.clawdbotSocketPath))
+        #expect(candidates.map(\.socketPath).contains(WinkBridgeConstants.winkSocketPath))
+        #expect(candidates.map(\.socketPath).contains(WinkBridgeConstants.claudeSocketPath))
+        #expect(candidates.map(\.socketPath).contains(WinkBridgeConstants.clawdbotSocketPath))
         #expect(Set(candidates.map { NSString(string: $0.socketPath).standardizingPath }).count == candidates.count)
     }
 
@@ -1024,8 +1024,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -1054,7 +1054,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             candidates: [candidate],
             identity: identity,
             handshake: { _, _ in
-                throw PeekabooBridgeErrorEnvelope(code: .unauthorizedClient, message: "fixture")
+                throw WinkBridgeErrorEnvelope(code: .unauthorizedClient, message: "fixture")
             }
         )
         #expect(unauthorized == timeout)
@@ -1123,8 +1123,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -1157,8 +1157,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             requiredHostKind: nil,
             requiresValidatedHistoricalDaemon: false
         )
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -1188,8 +1188,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
 
     @Test
     func `empty remote candidate resolution rechecks cancellation before fallback`() async throws {
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -1259,8 +1259,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                     requiresValidatedHistoricalDaemon: false
                 ),
             ],
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.test.client",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.test.client",
                 teamIdentifier: nil,
                 processIdentifier: getpid()
             ),
@@ -1302,15 +1302,15 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         processIdentifier: pid_t,
         processStartIdentity: UInt64?,
         hostCapabilities: [String] = [
-            PeekabooBridgeHostCapability.hostGenerationIdentity,
-            PeekabooBridgeHostCapability.codeSignatureBuildIdentity,
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.hostGenerationIdentity,
+            WinkBridgeHostCapability.codeSignatureBuildIdentity,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
         ],
         codeSignatureHash: String = "owner-build",
         build: String? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.exactForcedDialogDismissExecutionVersion,
+            negotiatedVersion: WinkBridgeConstants.exactForcedDialogDismissExecutionVersion,
             hostKind: .onDemand,
             build: build,
             supportedOperations: [.captureScreen, .desktopObservation],
@@ -1321,10 +1321,10 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                 postEvent: true
             ),
             enabledOperations: [.captureScreen, .desktopObservation],
-            hostIdentity: PeekabooBridgeHostIdentity(
+            hostIdentity: WinkBridgeHostIdentity(
                 processIdentifier: processIdentifier,
                 processStartIdentity: processStartIdentity,
-                bundleIdentifier: "boo.peekaboo.test",
+                bundleIdentifier: "boo.wink.test",
                 bundleShortVersion: nil,
                 bundleVersion: nil,
                 codeSignatureHash: codeSignatureHash

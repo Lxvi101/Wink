@@ -1,15 +1,15 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkCore
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct ComposedInputParityValidationTests {
-    private typealias Fixture = (services: PeekabooServices, snapshots: StubSnapshotManager, snapshotID: String)
+    private typealias Fixture = (services: WinkServices, snapshots: StubSnapshotManager, snapshotID: String)
     private static let canonicalSnapshotID = SnapshotReferenceFixtures.first.rawValue
 
     @Test(arguments: [

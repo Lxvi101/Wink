@@ -1,11 +1,11 @@
 import Commander
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooCore
+import WinkAgentRuntime
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -99,7 +99,7 @@ struct VerifyCommandTests {
 }
 
 @MainActor
-final class VerifyPreflightServices: PeekabooServiceProviding {
+final class VerifyPreflightServices: WinkServiceProviding {
     let automation: any UIAutomationServiceProtocol = MockAutomationService()
     let windows: any WindowManagementServiceProtocol = MockWindowService(result: [])
     let menu: any MenuServiceProtocol = MockMenuService(barItems: [])
@@ -116,14 +116,14 @@ final class VerifyPreflightServices: PeekabooServiceProviding {
 
     init(directory: URL, screenCapture: (any ScreenCaptureServiceProtocol)? = nil) {
         // These adapters are inert until called; preflight must refuse before any Bridge request.
-        let client = PeekabooBridgeClient(socketPath: directory.appendingPathComponent("absent.sock").path)
+        let client = WinkBridgeClient(socketPath: directory.appendingPathComponent("absent.sock").path)
         self.screenCapture = screenCapture ?? RemoteScreenCaptureService(client: client)
         self.applications = RemoteApplicationService(client: client)
         self.dialogs = RemoteDialogService(client: client)
         self.browser = RemoteBrowserMCPClient(client: client)
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         fatalError("Verification preflight must not load shared configuration")
     }
 

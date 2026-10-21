@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 
-peekaboo_is_exact_source_commit() {
+wink_is_exact_source_commit() {
   [[ "${1:-}" =~ ^[0-9a-f]{40}$ ]]
 }
 
-peekaboo_source_commit_from_repo() {
+wink_source_commit_from_repo() {
   local repository_root="${1:?repository root required}"
   local commit
   commit="$(git -C "$repository_root" rev-parse HEAD 2>/dev/null || true)"
-  if peekaboo_is_exact_source_commit "$commit"; then
+  if wink_is_exact_source_commit "$commit"; then
     printf '%s\n' "$commit"
   else
     printf '%s\n' unknown
   fi
 }
 
-peekaboo_require_source_commit() {
+wink_require_source_commit() {
   local repository_root="${1:?repository root required}"
   local commit
   local checkout_status
-  commit="$(peekaboo_source_commit_from_repo "$repository_root")"
-  if ! peekaboo_is_exact_source_commit "$commit"; then
+  commit="$(wink_source_commit_from_repo "$repository_root")"
+  if ! wink_is_exact_source_commit "$commit"; then
     printf 'Unable to resolve an exact source commit from %s\n' "$repository_root" >&2
     return 1
   fi
@@ -36,33 +36,33 @@ peekaboo_require_source_commit() {
   printf '%s\n' "$commit"
 }
 
-peekaboo_debug_source_commit() {
+wink_debug_source_commit() {
   local repository_root="${1:?repository root required}"
-  local require_provenance="${PEEKABOO_REQUIRE_SOURCE_PROVENANCE:-0}"
+  local require_provenance="${WINK_REQUIRE_SOURCE_PROVENANCE:-0}"
   local commit
   case "$require_provenance" in
     0|false|no|off|'') ;;
     1|true|yes|on)
-      peekaboo_require_source_commit "$repository_root"
+      wink_require_source_commit "$repository_root"
       return
       ;;
     *)
-      printf 'Invalid PEEKABOO_REQUIRE_SOURCE_PROVENANCE value: %s\n' "$require_provenance" >&2
+      printf 'Invalid WINK_REQUIRE_SOURCE_PROVENANCE value: %s\n' "$require_provenance" >&2
       return 1
       ;;
   esac
-  if commit="$(peekaboo_require_source_commit "$repository_root" 2>/dev/null)"; then
+  if commit="$(wink_require_source_commit "$repository_root" 2>/dev/null)"; then
     printf '%s\n' "$commit"
   else
     printf '%s\n' unknown
   fi
 }
 
-peekaboo_verify_source_commit() {
+wink_verify_source_commit() {
   local repository_root="${1:?repository root required}"
   local expected_commit="${2:?expected source commit required}"
   local current_commit
-  current_commit="$(peekaboo_require_source_commit "$repository_root")" || return 1
+  current_commit="$(wink_require_source_commit "$repository_root")" || return 1
   if [[ "$current_commit" != "$expected_commit" ]]; then
     printf 'Source commit changed during the build: expected %s, found %s\n' \
       "$expected_commit" "$current_commit" >&2
@@ -72,7 +72,7 @@ peekaboo_verify_source_commit() {
 
 # A filesystem package is outside Package.resolved. Bind it to the parent gitlink,
 # not an ambient sibling, remapped origin, or SwiftPM's old version checkout.
-peekaboo_verify_workspace_submodules() {
+wink_verify_workspace_submodules() {
   local repository_root="${1:?repository root required}"
   local module expected_url entry revision actual_root
   [[ "$(git -C "$repository_root" rev-parse --show-toplevel 2>/dev/null)" == "$repository_root" ]] || return 1
@@ -91,7 +91,7 @@ peekaboo_verify_workspace_submodules() {
     [[ "$entry" == "160000 commit "* ]] || return 1
     revision="${entry#160000 commit }"
     revision="${revision%%$'\t'*}"
-    peekaboo_is_exact_source_commit "$revision" || return 1
+    wink_is_exact_source_commit "$revision" || return 1
     actual_root="$(git -C "$repository_root/$module" rev-parse --show-toplevel 2>/dev/null)" || return 1
     [[ "$actual_root" == "$repository_root/$module" &&
        "$(git -C "$repository_root/$module" rev-parse HEAD)" == "$revision" ]] || return 1
@@ -100,19 +100,19 @@ peekaboo_verify_workspace_submodules() {
 
 # Validates an embedded artifact stamp independently for verify-only workflows,
 # or against the still-clean build checkout when an expected commit is supplied.
-peekaboo_validate_artifact_source_commit() {
+wink_validate_artifact_source_commit() {
   local repository_root="${1:?repository root required}"
   local artifact_commit="${2:-}"
   local expected_commit="${3:-}"
 
-  peekaboo_is_exact_source_commit "$artifact_commit" || return 2
+  wink_is_exact_source_commit "$artifact_commit" || return 2
   [[ -z "$expected_commit" ]] && return 0
-  peekaboo_is_exact_source_commit "$expected_commit" || return 3
-  peekaboo_verify_source_commit "$repository_root" "$expected_commit" || return 4
+  wink_is_exact_source_commit "$expected_commit" || return 3
+  wink_verify_source_commit "$repository_root" "$expected_commit" || return 4
   [[ "$artifact_commit" == "$expected_commit" ]] || return 5
 }
 
-peekaboo_source_dirty_suffix() {
+wink_source_dirty_suffix() {
   local repository_root="${1:?repository root required}"
   local checkout_status
   if ! checkout_status="$(git -C "$repository_root" status \
@@ -122,9 +122,9 @@ peekaboo_source_dirty_suffix() {
   fi
 }
 
-peekaboo_short_source_commit() {
+wink_short_source_commit() {
   local commit="${1:-}"
-  if peekaboo_is_exact_source_commit "$commit"; then
+  if wink_is_exact_source_commit "$commit"; then
     printf '%.9s\n' "$commit"
   else
     printf '%s\n' unknown
@@ -132,7 +132,7 @@ peekaboo_short_source_commit() {
 }
 
 # Read-only receipts must be regular files, including when the caller owns them.
-peekaboo_is_immutable_receipt() {
+wink_is_immutable_receipt() {
   local receipt="${1:?receipt required}" mode
   [[ -f "$receipt" && ! -L "$receipt" ]] || return 1
   mode="$(/usr/bin/stat -f '%Lp' "$receipt")" || return 1
@@ -141,9 +141,9 @@ peekaboo_is_immutable_receipt() {
 
 # Expected values come from the caller's trusted checkout/build context, never
 # from the candidate receipt. Signing and notarization remain caller-owned.
-peekaboo_verify_playground_v2_receipt() {
+wink_verify_playground_v2_receipt() {
   local receipt="${1:?receipt required}"
-  peekaboo_is_immutable_receipt "$receipt" || return 1
+  wink_is_immutable_receipt "$receipt" || return 1
   jq -se \
     --arg sourceCommit "${2:?source commit required}" \
     --arg sourceTree "${3:?source tree required}" \
@@ -161,8 +161,8 @@ peekaboo_verify_playground_v2_receipt() {
         "source_tree", "swiftc_version", "version", "workspace", "xcodebuild_version"
       ] and .version == 2 and .source_commit == $sourceCommit and .source_tree == $sourceTree and
       .dependency_lock_path == $lockPath and .dependency_lock_sha256 == $lockSHA and
-      .workspace == "Apps/Peekaboo.xcworkspace" and .scheme == "Playground" and
-      .configuration == "Debug" and .bundle_identifier == "boo.peekaboo.playground.debug" and
+      .workspace == "Apps/Wink.xcworkspace" and .scheme == "Playground" and
+      .configuration == "Debug" and .bundle_identifier == "boo.wink.playground.debug" and
       .marketing_version == $marketingVersion and .developer_dir == $developerDir and
       .xcodebuild_version == $xcodebuildVersion and .sdk_version == $sdkVersion and
       .swiftc_version == $swiftcVersion)
@@ -171,9 +171,9 @@ peekaboo_verify_playground_v2_receipt() {
 
 # Check this boundary before general checkout cleanliness so lock failures are
 # actionable, including an ignored/untracked or assume-unchanged resolver file.
-peekaboo_playground_lock_sha256() {
+wink_playground_lock_sha256() {
   local root="${1:?repository root required}"
-  local relative=Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  local relative=Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved
   local lock="$root/$relative" competing digest committed_digest
   [[ -f "$lock" && ! -L "$lock" ]] || {
     echo 'Canonical Playground dependency lock missing or symlinked.' >&2; return 1;

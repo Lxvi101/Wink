@@ -1,10 +1,10 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -40,7 +40,7 @@ struct PasteObservationInvalidationTests {
             textPreview: "prior"
         )
         let windows = PasteFocusWindowService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             snapshots: snapshots,
             clipboard: clipboard,
@@ -134,7 +134,7 @@ struct PasteObservationInvalidationTests {
         command.transactionGate = gate
         command.target.app = "Missing App"
         command.runtimeOptions.jsonOutput = true
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows,
             snapshots: state.snapshots,
@@ -186,7 +186,7 @@ struct PasteObservationInvalidationTests {
         var command = Self.currentClipboardCommand(gate: gate)
         command.dataBase64 = Data("partial payload".utf8).base64EncodedString()
         command.uti = "public.data"
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: state.snapshots,
             clipboard: clipboard,
             automation: automation
@@ -238,7 +238,7 @@ struct PasteObservationInvalidationTests {
         clipboard.getError = envelope
         let gate = AdmittedPasteGate()
         let command = Self.currentClipboardCommand(gate: gate)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: state.snapshots,
             clipboard: clipboard,
             automation: automation
@@ -266,7 +266,7 @@ struct PasteObservationInvalidationTests {
         let clipboard = Self.makeClipboard()
         let gate = AdmittedPasteGate()
         let command = Self.currentClipboardCommand(gate: gate)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: state.snapshots,
             clipboard: clipboard,
             automation: automation
@@ -322,7 +322,7 @@ struct PasteObservationInvalidationTests {
         let windows = PasteFocusWindowService()
         let gate = AdmittedPasteGate()
         let command = Self.currentClipboardCommand(gate: gate)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             snapshots: state.snapshots,
             clipboard: clipboard,
@@ -441,7 +441,7 @@ struct PasteObservationInvalidationTests {
 
     private static func runRefused(
         _ configuredCommand: PasteCommand,
-        services: PeekabooServices,
+        services: WinkServices,
         state: PasteQualificationState
     ) async throws -> JSONResponse {
         var command = configuredCommand
@@ -471,7 +471,7 @@ private struct PasteQualificationState {
 
     init() async throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-paste-body-refusal-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-paste-body-refusal-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(
             at: directory,
             withIntermediateDirectories: false,

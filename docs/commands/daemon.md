@@ -1,24 +1,24 @@
 ---
-summary: 'Start, stop, and inspect the headless Peekaboo daemon'
+summary: 'Start, stop, and inspect the headless Wink daemon'
 read_when:
-  - 'managing the Peekaboo daemon lifecycle'
+  - 'managing the Wink daemon lifecycle'
   - 'checking daemon health, permissions, or tracker status'
 ---
 
-# peekaboo daemon
+# wink daemon
 
-Manage the on-demand headless daemon that keeps Peekaboo state warm, tracks windows live, and serves bridge requests.
+Manage the on-demand headless daemon that keeps Wink state warm, tracks windows live, and serves bridge requests.
 
-The default listener is `~/Library/Application Support/Peekaboo/daemon.sock`, separate from Peekaboo.app's
+The default listener is `~/Library/Application Support/Wink/daemon.sock`, separate from Wink.app's
 `bridge.sock`.
 
 After upgrading from a version that used `bridge.sock` for the daemon, default `status`, `start`, and `stop`
-commands detect that legacy daemon by its daemon status. Peekaboo.app is never treated as a daemon.
+commands detect that legacy daemon by its daemon status. Wink.app is never treated as a daemon.
 
 Normal automation commands migrate legacy auto or manual daemons that advertise atomic conditional stop. The daemon
 keeps its prior lifecycle mode, poll interval, and auto idle timeout, so a manually started daemon remains manual after
 migration. MCP sessions remain process-owned and are never migrated.
-When `bridge.sock` belongs to a healthy Peekaboo.app GUI host instead, commands outside the exact-build preference keep
+When `bridge.sock` belongs to a healthy Wink.app GUI host instead, commands outside the exact-build preference keep
 using that app-held TCC context and start the reusable daemon only if the app host is unavailable or lacks the required
 capability. Implicit commands that require screen capture, inspect the AX tree, use browser MCP, or consume/invalidate
 snapshot state first prefer the current CLI build's deterministic `daemon-<build>.sock` and may auto-start it before
@@ -31,7 +31,7 @@ If an incompatible daemon already owns `daemon.sock`, automation uses a build-sc
 the compatible fallback and warns about the additional daemon; `start` promotes an idle, safely stoppable fallback from
 auto to persistent manual mode on the same socket.
 
-Concrete `ps1_` snapshot references are not routed by these daemon preferences. Peekaboo selects the one authenticated
+Concrete `ps1_` snapshot references are not routed by these daemon preferences. Wink selects the one authenticated
 local, daemon, or GUI Bridge producer that claims the reference and refuses before dispatch if ownership is missing or
 ambiguous. Explicit socket and local-only options remain strict; see
 [Bridge snapshot authority](../bridge-host.md#snapshot-authority).
@@ -40,14 +40,14 @@ ambiguous. Explicit socket and local-only options remain strict; see
 
 ### Start
 ```
-peekaboo daemon start
+wink daemon start
 ```
 Options:
 - `--bridge-socket <path>` override the default daemon socket path.
 - `--poll-interval <duration>` window tracker poll interval (default `1s`; bare values are milliseconds).
 - `--wait <duration>` how long to wait for startup (default `10s`, shared with automatic startup and including Bridge preparation).
 
-All daemon subcommands, including `daemon run`, honor `PEEKABOO_DAEMON_SOCKET` when `--bridge-socket` is absent.
+All daemon subcommands, including `daemon run`, honor `WINK_DAEMON_SOCKET` when `--bridge-socket` is absent.
 An explicit `--bridge-socket` takes precedence; blank environment values use the default socket.
 
 Startup authentication and other non-retryable probe failures report the underlying error and terminate the child
@@ -57,7 +57,7 @@ trust requirements are unchanged.
 
 ### Status
 ```
-peekaboo daemon status
+wink daemon status
 ```
 Shows:
 - running state + PID
@@ -69,7 +69,7 @@ Shows:
 - cached browser MCP state (`observation: "indeterminate"`; human output says `State: unconfirmed`)
 
 Health returns without waiting for browser discovery or connection validation. Cached values, including an initially
-empty browser list, do not confirm current browser absence; use `peekaboo browser status` for a fresh observation.
+empty browser list, do not confirm current browser absence; use `wink browser status` for a fresh observation.
 Missing/refused sockets retain successful `running: false` output. Probe timeouts, authorization failures, and lost or
 invalid replies instead fail nonzero with `success: false` in JSON. Start and stop also refuse unresolved target probes;
 a healthy GUI Bridge is never stopped as a daemon. Stop keeps the existing shutdown deadline and read-only retry/PID
@@ -77,7 +77,7 @@ checks, and does not report successful cleanup while endpoint state remains unkn
 
 ### Stop
 ```
-peekaboo daemon stop
+wink daemon stop
 ```
 Options:
 - `--bridge-socket <path>` override the default daemon socket path.
@@ -94,8 +94,8 @@ the daemon on a timeout.
 - Normal automation commands auto-start the daemon in `auto` mode when the selected reusable socket is unavailable;
   exact-build routing for the command categories above can select `daemon-<build>.sock` before the default socket or
   GUI host.
-- Auto-started daemons exit after an idle timeout (default 300 seconds), while explicit `peekaboo daemon start` remains manual and stays up until stopped.
+- Auto-started daemons exit after an idle timeout (default 300 seconds), while explicit `wink daemon start` remains manual and stays up until stopped.
 - The daemon uses an in-memory snapshot store for speed.
-- Set `PEEKABOO_DAEMON_IDLE_TIMEOUT_SECONDS` to tune the auto-start idle timeout.
-- Set `PEEKABOO_DAEMON_SOCKET` to override the auto-start daemon socket for testing.
-- For local development with unsigned binaries, set `PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS=1`.
+- Set `WINK_DAEMON_IDLE_TIMEOUT_SECONDS` to tune the auto-start idle timeout.
+- Set `WINK_DAEMON_SOCKET` to override the auto-start daemon socket for testing.
+- For local development with unsigned binaries, set `WINK_ALLOW_UNSIGNED_SOCKET_CLIENTS=1`.

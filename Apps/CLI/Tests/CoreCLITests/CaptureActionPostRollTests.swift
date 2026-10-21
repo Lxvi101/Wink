@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension CaptureActionCommandEndToEndTests {
     @Test(.timeLimit(.minutes(1)), arguments: [
@@ -14,7 +14,7 @@ extension CaptureActionCommandEndToEndTests {
         maxFrames: Int, postRollMs: Int, succeeds: Bool, samplesAfterAction: Bool
     ) async throws {
         let output = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-post-roll-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-post-roll-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: output) }
         let source = SlowPostActionFrameSource()
         defer { source.finish() }

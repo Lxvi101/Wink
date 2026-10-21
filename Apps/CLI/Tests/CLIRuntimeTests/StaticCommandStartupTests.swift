@@ -19,13 +19,13 @@ struct StaticCommandStartupTests {
         ["agent", "run", "Inspect nothing", "--dry-run", "--json"],
     ])
     func `static commands do not load malformed configuration`(arguments: [String]) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-static-startup-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-static-startup-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let config = directory.appendingPathComponent("config.json")
@@ -36,13 +36,13 @@ struct StaticCommandStartupTests {
         let invocation = arguments + (isPreview ? [
             "--no-desktop-context", "--bridge-socket", directory.appendingPathComponent("missing.sock").path,
         ] : [])
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             invocation,
             environment: [
                 "PEEKABOO_CONFIG_DIR": directory.path,
-                "PEEKABOO_CONFIG_DISABLE_MIGRATION": "1",
-                "PEEKABOO_CHECK_BUILD_STALENESS": "0",
-                "PEEKABOO_DISABLE_AGENT": "0",
+                "WINK_CONFIG_DISABLE_MIGRATION": "1",
+                "WINK_CHECK_BUILD_STALENESS": "0",
+                "WINK_DISABLE_AGENT": "0",
             ],
             isolateFromRemoteHosts: false
         )

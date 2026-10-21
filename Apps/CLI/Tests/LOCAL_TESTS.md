@@ -1,4 +1,4 @@
-# Local-Only Tests for Peekaboo
+# Local-Only Tests for Wink
 
 This directory contains tests that can only be run locally (not on CI) because they require:
 - Screen recording permissions
@@ -29,23 +29,23 @@ Run the repository-owned local automation entry point from the repository root:
 pnpm run test:automation:local
 ```
 
-The runner builds the current CLI, exports its exact path through `PEEKABOO_CLI_PATH`, includes the automation test target, and enables both local read and action suites. To run only the Playground-backed `see` test manually:
+The runner builds the current CLI, exports its exact path through `WINK_CLI_PATH`, includes the automation test target, and enables both local read and action suites. To run only the Playground-backed `see` test manually:
 
 ```bash
 cli_bin_dir="$(swift build --package-path Apps/CLI --show-bin-path)"
-swift build --package-path Apps/CLI --product peekaboo
-PEEKABOO_INCLUDE_AUTOMATION_TESTS=true RUN_LOCAL_TESTS=true \
-  PEEKABOO_CLI_PATH="$cli_bin_dir/peekaboo" \
+swift build --package-path Apps/CLI --product wink
+WINK_INCLUDE_AUTOMATION_TESTS=true RUN_LOCAL_TESTS=true \
+  WINK_CLI_PATH="$cli_bin_dir/wink" \
   swift test --package-path Apps/CLI --filter SeeCommandPlaygroundTests
 ```
 
-If LaunchServices cannot resolve `Playground` by name, also set `PEEKABOO_PLAYGROUND_APP` to an absolute, team-signed `Playground.app` path. The test launches its own instance and cleans up only the returned PID/process generation.
+If LaunchServices cannot resolve `Playground` by name, also set `WINK_PLAYGROUND_APP` to an absolute, team-signed `Playground.app` path. The test launches its own instance and cleans up only the returned PID/process generation.
 
 `RUN_AUTOMATION_READ=true` and `RUN_AUTOMATION_ACTIONS=true` select the reusable automation suites used by `test:automation:read` and `test:automation:actions`. `RUN_LOCAL_TESTS=true` enables tests that require locally built companion fixtures or an interactive Aqua session. Do not introduce one-off per-test environment flags; route new tests through these shared selectors.
 
-Tests that read or mutate uncontrolled host state use the shared `PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS=true` selector. Ordinary local and automation-action selectors never imply this consent, and `test:safe` explicitly overrides inherited ambient-state opt-ins. The live clipboard smoke test uses this selector and must only be enabled with fresh authorization to read, replace, and restore the ambient clipboard.
+Tests that read or mutate uncontrolled host state use the shared `WINK_INCLUDE_AMBIENT_STATE_TESTS=true` selector. Ordinary local and automation-action selectors never imply this consent, and `test:safe` explicitly overrides inherited ambient-state opt-ins. The live clipboard smoke test uses this selector and must only be enabled with fresh authorization to read, replace, and restore the ambient clipboard.
 
-The live visualizer smoke also requires this opt-in: `--no-remote` isolates CLI runtime selection, not visualizer notifications to an already-running Peekaboo.app. The disabled-feedback JSON smoke remains safe and runs without ambient consent. The real-daemon launch smoke requires both automation-test inclusion and ambient consent because daemon startup observes native windows and connects to shared visualizer storage; `PEEKABOO_SKIP_AUTOMATION` always skips it. These skipped live tests are not covered by a passing `test:safe` run.
+The live visualizer smoke also requires this opt-in: `--no-remote` isolates CLI runtime selection, not visualizer notifications to an already-running Wink.app. The disabled-feedback JSON smoke remains safe and runs without ambient consent. The real-daemon launch smoke requires both automation-test inclusion and ambient consent because daemon startup observes native windows and connects to shared visualizer storage; `WINK_SKIP_AUTOMATION` always skips it. These skipped live tests are not covered by a passing `test:safe` run.
 
 The caller-barrier and rejected-host-certificate tests in `InteractionMutationInvalidatorTests` also require this opt-in: their caller-local `SnapshotManager` advances the effective-UID desktop watermark and target ledger despite injected trackers and in-memory snapshots. These two bodies are intentionally skipped by safe preflight, not counted as passed, and may run only with explicit authorization for those ambient mutations.
 

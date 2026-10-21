@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-playground-log-wrapper.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-playground-log-wrapper.XXXXXX)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 mkdir -p "$TEST_DIR/scripts" "$TEST_DIR/Apps/Playground/scripts"
 cp "$ROOT_DIR/scripts/playground-log.sh" "$TEST_DIR/scripts/"

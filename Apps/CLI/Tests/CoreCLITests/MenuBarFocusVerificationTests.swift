@@ -1,13 +1,13 @@
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct MenuBarFocusVerificationTests {
     @Test
     @MainActor
     func `verification preserves cancellation from focused-window polling`() async throws {
-        let verifier = MenuBarClickVerifier(services: PeekabooServices())
+        let verifier = MenuBarClickVerifier(services: WinkServices())
         let target = MenuBarVerifyTarget(
             title: nil,
             ownerPID: -1,

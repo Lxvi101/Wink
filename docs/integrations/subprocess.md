@@ -1,39 +1,39 @@
 ---
-summary: 'Run background-first Peekaboo subprocess workflows with explicit host ownership and structured failures.'
+summary: 'Run background-first Wink subprocess workflows with explicit host ownership and structured failures.'
 read_when:
-  - 'using Peekaboo from Node.js, OpenClaw, or another subprocess runner'
+  - 'using Wink from Node.js, OpenClaw, or another subprocess runner'
   - 'diagnosing Bridge permissions, snapshot ownership, or failed automation steps'
 ---
 
 # Subprocess Integration Guide
 
-Use the separate `peekaboo` CLI binary, argument arrays, and `--json`. Targeted native interaction is background-first;
+Use the separate `wink` CLI binary, argument arrays, and `--json`. Targeted native interaction is background-first;
 a subprocess wrapper must not silently add `--foreground`, change execution hosts, or replay failed input. Running
 from Node.js or OpenClaw does not require a special capture backend.
 
 ## Choose the execution host deliberately
 
 The process performing the operation needs the relevant macOS grants, not merely the terminal or editor that spawned
-the CLI. A persistent Peekaboo daemon or GUI Bridge host can own those grants and reusable snapshots across successive
-CLI invocations. Peekaboo.app is the permission broker, not a replacement for the CLI executable, and the CLI does not
+the CLI. A persistent Wink daemon or GUI Bridge host can own those grants and reusable snapshots across successive
+CLI invocations. Wink.app is the permission broker, not a replacement for the CLI executable, and the CLI does not
 automatically launch that app.
 
 Start with read-only diagnostics:
 
 ```bash
-peekaboo bridge status --verbose --json
-peekaboo permissions status --all-sources --json
-peekaboo app list --include-hidden --include-background --json
-peekaboo window list --app Safari --json
+wink bridge status --verbose --json
+wink permissions status --all-sources --json
+wink app list --include-hidden --include-background --json
+wink window list --app Safari --json
 ```
 
 Default discovery is operation-dependent: observations prefer the current CLI build's daemon, while other commands
-can reuse a compatible daemon or Peekaboo.app. A concrete snapshot reference resolves its unique live authenticated
+can reuse a compatible daemon or Wink.app. A concrete snapshot reference resolves its unique live authenticated
 producer before normal host preferences. See [Bridge host discovery](../bridge-host.md#hosts-and-discovery) for the
 full ordering.
 
 For a controlled multi-command workflow, select one already-running, authenticated, capable host with
-`--bridge-socket /absolute/path/to/bridge.sock` on every call, or set `PEEKABOO_BRIDGE_SOCKET` in the runner's environment.
+`--bridge-socket /absolute/path/to/bridge.sock` on every call, or set `WINK_BRIDGE_SOCKET` in the runner's environment.
 Check that exact host's permissions and capabilities first. A successful handshake is not proof of capture readiness
 or successful capture. Keep the host running throughout the workflow; a rejected or unavailable host is not permission
 to switch to another host and repeat input.
@@ -44,7 +44,7 @@ wallpaper or redacted pixels despite apparently granted permissions. Only when t
 active Aqua GUI session with the necessary grants should you test a local capture such as:
 
 ```bash
-peekaboo see --mode screen --screen-index 0 --no-remote --capture-engine cg --json
+wink see --mode screen --screen-index 0 --no-remote --capture-engine cg --json
 ```
 
 `--capture-engine cg` selects the backend on the chosen host; it does not itself make execution local or bypass TCC.
@@ -54,24 +54,24 @@ is a blanket subprocess workaround. See [permissions](../permissions.md#bridge-a
 
 ## A Node.js runner with output limits
 
-Save this as `peekaboo-runner.mjs`. Supply the absolute path to the CLI you intend to execute. `execFile` does not invoke
+Save this as `wink-runner.mjs`. Supply the absolute path to the CLI you intend to execute. `execFile` does not invoke
 a shell, so spaces, quotes, Unicode, dollar signs, and other shell metacharacters stay inside their individual
-arguments. Supply the command path separately from its arguments: `peekaboo(['window', 'list'], ['--app', 'Safari'])`.
+arguments. Supply the command path separately from its arguments: `wink(['window', 'list'], ['--app', 'Safari'])`.
 Runtime flags belong after the command path, not before the root command or after the `--` positional delimiter.
 
 ```javascript
 import { execFile } from 'node:child_process';
 import { isAbsolute } from 'node:path';
 
-export function createPeekabooRunner(executable, {
+export function createWinkRunner(executable, {
   bridgeSocket,
   timeoutMs = 30_000,
   maxBuffer = 4 * 1024 * 1024,
 } = {}) {
-  if (!isAbsolute(executable)) throw new Error('Use an absolute Peekaboo CLI path');
+  if (!isAbsolute(executable)) throw new Error('Use an absolute Wink CLI path');
   const route = bridgeSocket ? ['--bridge-socket', bridgeSocket] : [];
 
-  return function peekaboo(commandPath, args = []) {
+  return function wink(commandPath, args = []) {
     return new Promise((resolve, reject) => {
       execFile(executable, [...commandPath, '--json', ...route, ...args], {
         encoding: 'utf8',
@@ -91,7 +91,7 @@ export function createPeekabooRunner(executable, {
           return;
         }
 
-        const failure = new Error('Peekaboo failed; inspect the response and current state before continuing');
+        const failure = new Error('Wink failed; inspect the response and current state before continuing');
         failure.response = response;
         failure.process = {
           exitCode: processError ? (Number.isInteger(processError.code) ? processError.code : null) : 0,
@@ -148,11 +148,11 @@ identifier observed on that field. Save it as `replace-field.mjs` beside the run
 and text you intend to change. It stops on any failure rather than replaying input.
 
 ```javascript
-export async function replaceField(peekaboo, { app, windowId, fieldIdentifier, text }) {
+export async function replaceField(wink, { app, windowId, fieldIdentifier, text }) {
   if (typeof fieldIdentifier !== 'string' || !fieldIdentifier || typeof text !== 'string') {
     throw new Error('Supply a nonempty field identifier and replacement text');
   }
-  const observe = () => peekaboo(['see'], [
+  const observe = () => wink(['see'], [
     '--app', app, '--window-id', String(windowId), '--tree', '--no-screenshot',
   ]);
   const requireSnapshot = (observation) => {
@@ -166,23 +166,23 @@ export async function replaceField(peekaboo, { app, windowId, fieldIdentifier, t
   const before = requireSnapshot(await observe());
   const fields = before.ui_elements.filter((element) => element.identifier === fieldIdentifier);
   if (fields.length !== 1) throw new Error('Expected exactly one observed field');
-  await peekaboo(['click'], ['--on', fields[0].id, '--snapshot', before.snapshot_id]);
+  await wink(['click'], ['--on', fields[0].id, '--snapshot', before.snapshot_id]);
 
   const focused = requireSnapshot(await observe());
   if (focused.focused_element?.identifier !== fieldIdentifier) {
     throw new Error('The fresh observation does not confirm the intended focused field');
   }
   const literalText = text.replaceAll('\\', '\\\\');
-  await peekaboo(['type'], ['--snapshot', focused.snapshot_id, '--clear', '--', literalText]);
+  await wink(['type'], ['--snapshot', focused.snapshot_id, '--clear', '--', literalText]);
   return observe(); // Inspect the final observation against the task's expected state.
 }
 ```
 
-Create the runner with `createPeekabooRunner('/absolute/path/to/peekaboo', { bridgeSocket:
+Create the runner with `createWinkRunner('/absolute/path/to/wink', { bridgeSocket:
 '/absolute/path/to/verified/bridge.sock' })`; omit `bridgeSocket` only when normal discovery is intended. Do not mix
 host-selection modes within the workflow.
 
-`type` takes positional text. The `--` delimiter keeps leading-hyphen text from being parsed as flags. Peekaboo also
+`type` takes positional text. The `--` delimiter keeps leading-hyphen text from being parsed as flags. Wink also
 interprets backslash sequences such as `\n` and `\t` as key actions; the example doubles literal backslashes so arbitrary
 replacement text does not become those actions. See [type](../commands/type.md) before intentionally sending key
 sequences. CLI `type` does not take an element ID: focus the field with `click`, observe again, and use the new snapshot.

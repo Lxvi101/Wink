@@ -1,11 +1,11 @@
 ---
-summary: 'Set accessibility element values directly via peekaboo set-value'
+summary: 'Set accessibility element values directly via wink set-value'
 read_when:
   - 'filling form fields without synthesized typing'
   - 'debugging direct AX value mutation from the CLI'
 ---
 
-# `peekaboo set-value`
+# `wink set-value`
 
 `set-value` writes an accessibility value directly to a settable element. It is the CLI equivalent of the MCP `set_value` tool and avoids keyboard synthesis, cursor movement, input-method timing, and autocomplete side effects when replacement semantics are intended.
 
@@ -14,8 +14,8 @@ read_when:
 | Option | Description |
 | --- | --- |
 | `<value>` | String value to write. |
-| `--on <id-or-query>` | Element ID from `peekaboo see`, or a query used by the automation service. Required. |
-| `--snapshot <id>` | Snapshot ID from `peekaboo see`; uses the latest unmodified UI snapshot when omitted. |
+| `--on <id-or-query>` | Element ID from `wink see`, or a query used by the automation service. Required. |
+| `--snapshot <id>` | Snapshot ID from `wink see`; uses the latest unmodified UI snapshot when omitted. |
 | Target flags | `--app`, `--pid`, `--window-id`, `--window-title`, and `--window-index` scope the mutation without activating the app. |
 | `--foreground` | Explicitly focus the target before mutation and allow web-content discovery to focus the page when required. |
 
@@ -30,14 +30,14 @@ read_when:
   only when they represent an exact in-range integer. Nonzero fractional tails, underflow-to-zero, out-of-range values,
   and hexadecimal forms are rejected before writing. These restrictions do not apply to literal text controls.
 - Every mutation requires a current snapshot. App/PID/window target flags capture one automatically; without target
-  flags, run `peekaboo see` first. A missing snapshot is refused instead of falling through to the frontmost app. Exact
+  flags, run `wink see` first. A missing snapshot is refused instead of falling through to the frontmost app. Exact
   process/window receipts and the final resolved Accessibility element PID are revalidated before the value is written.
 - Remote value mutation requires Bridge protocol 1.37 and `processGenerationBoundElementMutations`; older or
   receiptless hosts are refused before the request is sent.
 - Current clients negotiate typed value-verification evidence with capable hosts. Without that evidence, remote
   results retain the legacy exact-string verification contract.
 - A result with `requires_fresh_observation: true`, or no canonical outcome, makes that snapshot mutation-ineligible.
-  The old evidence stays readable, but another mutation must use a new `peekaboo see` snapshot and otherwise fails
+  The old evidence stays readable, but another mutation must use a new `wink see` snapshot and otherwise fails
   before dispatch.
 - Accepted writes are observed for up to 250 ms to allow apps to publish asynchronous Accessibility updates. Each
   sample revalidates the original field and process generation; the write is never repeated.
@@ -45,7 +45,7 @@ read_when:
   and after reading the value. Unsupported, malformed or generically failed batches retain bounded single-attribute
   reads within the original deadline. The observation budget and security checks are unchanged; batching is not an
   atomic-state guarantee.
-- If the Accessibility write is accepted but its readback cannot be verified, Peekaboo reports an indeterminate,
+- If the Accessibility write is accepted but its readback cannot be verified, Wink reports an indeterminate,
   retry-unsafe result with the exact target receipt. Observe the target again before deciding whether to retry; never
   replay the write against the old snapshot.
 - Post-write native value samples require readable security metadata. If `AXSubrole` is unreadable, the reader skips
@@ -54,15 +54,15 @@ read_when:
   and retry-unsafe. Known absent subroles (`noValue` or `attributeUnsupported`) remain supported; this does not change
   the separate pre-dispatch value-reading policy.
 - Secure/password fields are rejected; use explicit typing flows for those contexts.
-- This is not a replacement for `peekaboo type` when the app needs observable keystrokes, IME handling, autocomplete, or undo grouping.
+- This is not a replacement for `wink type` when the app needs observable keystrokes, IME handling, autocomplete, or undo grouping.
 - JSON and MCP output includes the canonical process-generation `target_identity` and `target_receipt` alongside
   `target`, `actionName`, `oldValue`, `newValue`, and `executionTime`.
 
 ## Examples
 
 ```bash
-peekaboo see --app TextEdit
-peekaboo set-value "hello" --on "$ELEMENT_ID" --snapshot <snapshot-id>
+wink see --app TextEdit
+wink set-value "hello" --on "$ELEMENT_ID" --snapshot <snapshot-id>
 
-peekaboo set-value "42" --on "Search"
+wink set-value "42" --on "Search"
 ```

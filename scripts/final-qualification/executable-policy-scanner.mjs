@@ -17,7 +17,7 @@ import {
   writePrivateExclusive,
 } from './lib.mjs';
 
-const ARTIFACTS = ['openclaw_app', 'peekaboo_app', 'peekaboo_cli'];
+const ARTIFACTS = ['openclaw_app', 'wink_app', 'wink_cli'];
 const HOST_ROLES = ['local', 'studio'];
 const HOST_UUID = /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/;
 const HEX40 = /^[0-9a-f]{40}$/;
@@ -1193,12 +1193,12 @@ function inventory(filePath) {
   const value = retained.value;
   exactKeys(value, [
     'version', 'role', 'host_uuid', 'hostname', 'deployment_envelope_sha256',
-    'peekaboo_source_commit', 'openclaw_source_commit', 'qualification_tools_aggregate_sha256',
+    'wink_source_commit', 'openclaw_source_commit', 'qualification_tools_aggregate_sha256',
     'elevation_receipt_sha256', 'captured_at_milliseconds', 'entries', 'aggregate_sha256',
   ], 'policy scanner installed inventory');
   requireCondition(value.version === 1 && HOST_ROLES.includes(value.role)
     && HOST_UUID.test(value.host_uuid) && HEX64.test(value.deployment_envelope_sha256)
-    && HEX40.test(value.peekaboo_source_commit) && HEX40.test(value.openclaw_source_commit)
+    && HEX40.test(value.wink_source_commit) && HEX40.test(value.openclaw_source_commit)
     && HEX64.test(value.qualification_tools_aggregate_sha256)
     && HEX64.test(value.elevation_receipt_sha256)
     && Number.isSafeInteger(value.captured_at_milliseconds)
@@ -1231,7 +1231,7 @@ function inventory(filePath) {
   'policy scanner installed inventory is not canonical and complete');
   const projection = {
     deployment_envelope_sha256: value.deployment_envelope_sha256,
-    peekaboo_source_commit: value.peekaboo_source_commit,
+    wink_source_commit: value.wink_source_commit,
     openclaw_source_commit: value.openclaw_source_commit,
     qualification_tools_aggregate_sha256: value.qualification_tools_aggregate_sha256,
     entries,

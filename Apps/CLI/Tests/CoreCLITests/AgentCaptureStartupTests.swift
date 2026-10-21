@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooAgentRuntime
+import WinkAgentRuntime
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -16,21 +16,21 @@ struct AgentCaptureStartupTests {
     @Test(arguments: Self.commands)
     func `Agent startup uses the effective explicit tool catalog`(command: [String]) throws {
         let environments: [([String: String], Bool)] = [
-            (["PEEKABOO_ALLOW_TOOLS": "inspect_ui,click,type,set_value,press"], false),
-            (["PEEKABOO_ALLOW_TOOLS": "browser,see", "PEEKABOO_DISABLE_TOOLS": "see"], false),
+            (["WINK_ALLOW_TOOLS": "inspect_ui,click,type,set_value,press"], false),
+            (["WINK_ALLOW_TOOLS": "browser,see", "WINK_DISABLE_TOOLS": "see"], false),
             ([:], true),
-            (["PEEKABOO_ALLOW_TOOLS": ""], true),
-            (["PEEKABOO_ALLOW_TOOLS": " , "], true),
-            (["PEEKABOO_ALLOW_TOOLS": "see"], true),
-            (["PEEKABOO_ALLOW_TOOLS": "image"], true),
-            (["PEEKABOO_ALLOW_TOOLS": "capture"], true),
-            (["PEEKABOO_ALLOW_TOOLS": "verify_state"], true),
-            (["PEEKABOO_ALLOW_TOOLS": "agent"], true),
-            (["PEEKABOO_ALLOW_TOOLS": "future_tool"], true),
+            (["WINK_ALLOW_TOOLS": ""], true),
+            (["WINK_ALLOW_TOOLS": " , "], true),
+            (["WINK_ALLOW_TOOLS": "see"], true),
+            (["WINK_ALLOW_TOOLS": "image"], true),
+            (["WINK_ALLOW_TOOLS": "capture"], true),
+            (["WINK_ALLOW_TOOLS": "verify_state"], true),
+            (["WINK_ALLOW_TOOLS": "agent"], true),
+            (["WINK_ALLOW_TOOLS": "future_tool"], true),
         ]
         for noContext in command.last == "sessions" ? [false] : [false, true] {
             let resolved = try CommanderRuntimeRouter.resolve(
-                argv: ["peekaboo"] + command + (noContext ? ["--no-desktop-context"] : [])
+                argv: ["wink"] + command + (noContext ? ["--no-desktop-context"] : [])
             )
             for (environment, captureReachable) in environments {
                 let options = try CommanderCLIBinder.makeRuntimeOptions(
@@ -63,7 +63,7 @@ struct AgentCaptureStartupTests {
 
     @Test(arguments: Self.commands)
     func `public noncapturing Agent entrypoints skip capture startup probes`(command: [String]) async throws {
-        let names = ["PEEKABOO_ALLOW_TOOLS", "PEEKABOO_DISABLE_TOOLS"]
+        let names = ["WINK_ALLOW_TOOLS", "WINK_DISABLE_TOOLS"]
         let previous = names.map { getenv($0).map { String(cString: $0) } }
         setenv(names[0], "inspect_ui,click,type,set_value,press", 1)
         unsetenv(names[1])
@@ -80,7 +80,7 @@ struct AgentCaptureStartupTests {
             let probe = CaptureStartupProbe()
             await #expect(throws: CaptureStartupProbe.Stop.self) {
                 try await CommanderRuntimeExecutor.resolveAndRun(
-                    arguments: ["peekaboo"] + command + ["--no-remote"] +
+                    arguments: ["wink"] + command + ["--no-remote"] +
                         (noContext ? ["--no-desktop-context"] : []),
                     runtimeFactory: .init { options in
                         Self.expectDynamicSafety(options)
@@ -100,12 +100,12 @@ struct AgentCaptureStartupTests {
     @Test(arguments: ["see", "image", "capture", "verify_state", "agent", "future_tool"])
     func `capturing Agent allowlists retain runtime safety inspection`(tool: String) async throws {
         let resolved = try CommanderRuntimeRouter.resolve(
-            argv: ["peekaboo", "agent", "Inspect", "--no-remote", "--no-desktop-context"]
+            argv: ["wink", "agent", "Inspect", "--no-remote", "--no-desktop-context"]
         )
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: resolved.parsedValues,
             commandType: resolved.type,
-            environment: ["PEEKABOO_ALLOW_TOOLS": tool]
+            environment: ["WINK_ALLOW_TOOLS": tool]
         )
         let probe = CaptureStartupProbe()
         _ = try await probe.resolve(options: options)

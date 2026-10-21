@@ -1,9 +1,9 @@
 parent_config: .swiftlint.yml
 
 included:
-  - Core/PeekabooCore/Sources/PeekabooCore
-  - Core/PeekabooCore/Tests/PeekabooTests
-  - Apps/CLI/Sources/PeekabooCLI
+  - Core/WinkCore/Sources/WinkCore
+  - Core/WinkCore/Tests/WinkTests
+  - Apps/CLI/Sources/WinkCLI
   - Apps/CLI/Tests/CLIAutomationTests
   - Apps/CLI/Tests/CoreCLITests
 

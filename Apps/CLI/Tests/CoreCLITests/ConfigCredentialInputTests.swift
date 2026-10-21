@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.unit))
 struct ConfigCredentialInputTests {
@@ -178,7 +178,7 @@ struct ConfigCredentialInputTests {
     @Test
     func `unterminated interactive input stops at the byte limit`() throws {
         let inputFile = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-limit-\(UUID().uuidString)")
+            .appendingPathComponent("wink-credential-limit-\(UUID().uuidString)")
         try Data(repeating: UInt8(ascii: "x"), count: ConfigCredentialInput.maximumByteCount + 1)
             .write(to: inputFile)
         defer { try? FileManager.default.removeItem(at: inputFile) }
@@ -196,7 +196,7 @@ struct ConfigCredentialInputTests {
     @Test
     func `credential file requires owner only regular file permissions`() throws {
         let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-input-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-credential-input-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
 
@@ -238,7 +238,7 @@ struct ConfigCredentialInputTests {
     @Test
     func `credential file rejects symlinks without reading the target`() throws {
         let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-symlink-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-credential-symlink-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
 
@@ -265,7 +265,7 @@ struct ConfigCredentialInputTests {
     @Test
     func `credential file rejects an extended ACL that widens access`() throws {
         let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-acl-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-credential-acl-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
 
@@ -297,7 +297,7 @@ struct ConfigCredentialInputTests {
     @Test
     func `credential file reads the opened descriptor after a path swap`() throws {
         let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-credential-swap-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-credential-swap-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
 

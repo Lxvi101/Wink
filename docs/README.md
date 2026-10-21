@@ -1,7 +1,7 @@
 ---
-summary: 'Peekaboo documentation map'
+summary: 'Wink documentation map'
 read_when:
-  - 'finding the right Peekaboo doc quickly'
+  - 'finding the right Wink doc quickly'
   - 'onboarding or sharing docs with teammates'
 ---
 

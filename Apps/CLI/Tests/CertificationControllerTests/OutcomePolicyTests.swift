@@ -1,6 +1,6 @@
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller mutation outcome policy")
 struct OutcomePolicyTests {

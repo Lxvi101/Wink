@@ -20,7 +20,7 @@ fail() {
   exit 1
 }
 
-case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in
+case "${WINK_TERMINAL_TEST_MODE:-0}" in
   1|true|yes|on)
     UV_BIN="${TERMINAL_DMG_UV_BIN:?test uv required}"
     CODESIGN_BIN="${TERMINAL_DMG_CODESIGN_BIN:?test codesign required}"
@@ -43,7 +43,7 @@ case "${PEEKABOO_TERMINAL_TEST_MODE:-0}" in
     SIPS_BIN=/usr/bin/sips
     HDIUTIL_BIN=/usr/bin/hdiutil
     ;;
-  *) fail 'PEEKABOO_TERMINAL_TEST_MODE must be boolean' ;;
+  *) fail 'WINK_TERMINAL_TEST_MODE must be boolean' ;;
 esac
 
 while (($# > 0)); do
@@ -82,11 +82,11 @@ terminal_artifact_run_build "$UV_BIN" --no-config run --locked "$ROOT_DIR/script
   --no-hidpi \
   --detach-retries 5 \
   --settings "$ROOT_DIR/scripts/dmgbuild-settings.py" \
-  -D app_name=Peekaboo \
+  -D app_name=Wink \
   -D "app_path=$APP_BUNDLE" \
   -D "background=$BACKGROUND" \
   -D "volume_icon=$volume_icon" \
-  "Peekaboo $VERSION" \
+  "Wink $VERSION" \
   "$OUTPUT_DMG"
 
 [[ -f "$OUTPUT_DMG" ]] || fail 'dmgbuild produced no output'

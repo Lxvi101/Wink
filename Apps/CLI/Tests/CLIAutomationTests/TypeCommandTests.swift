@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct TypeCommandTests {
@@ -571,7 +571,7 @@ struct TypeCommandTests {
         )
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(
+            base: TestServicesFactory.makeWinkServices(
                 windows: windows,
                 automation: automation
             )
@@ -606,7 +606,7 @@ struct TypeCommandTests {
         automation.actionOutcome = InputFocusFixtures.typeOutcome
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(
+            base: TestServicesFactory.makeWinkServices(
                 windows: windows,
                 automation: automation
             )
@@ -636,7 +636,7 @@ struct TypeCommandTests {
         automation.actionOutcomeTargetIdentity = try InputFocusFixtures.targetIdentity()
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(
+            base: TestServicesFactory.makeWinkServices(
                 windows: windows,
                 automation: automation
             )
@@ -674,7 +674,7 @@ struct TypeCommandTests {
         automation.actionOutcomeTargetIdentity = try InputFocusFixtures.targetIdentity(windowID: 902)
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(
+            base: TestServicesFactory.makeWinkServices(
                 windows: windows,
                 automation: automation
             )
@@ -988,7 +988,7 @@ final class InputFocusWindowService: StubWindowService, WindowManagementPinnedFo
     func focusWindowActionResult(target: WindowTarget) async throws -> UIAutomationActionResult<Void> {
         let windows = try await self.listWindows(target: target)
         guard let identity = windows.first?.mutationIdentity else {
-            throw PeekabooError.windowNotFound(criteria: target.description)
+            throw WinkError.windowNotFound(criteria: target.description)
         }
         return try await self.focusWindowActionResult(target: .windowId(identity.windowID), expectedIdentity: identity)
     }
@@ -1008,11 +1008,11 @@ final class InputFocusWindowService: StubWindowService, WindowManagementPinnedFo
 }
 
 @MainActor
-final class InputExecutionHostServices: PeekabooServiceProviding {
-    let executionHost: PeekabooServiceExecutionHost
-    private let base: PeekabooServices
+final class InputExecutionHostServices: WinkServiceProviding {
+    let executionHost: WinkServiceExecutionHost
+    private let base: WinkServices
 
-    init(host: PeekabooServiceExecutionHost, base: PeekabooServices) {
+    init(host: WinkServiceExecutionHost, base: WinkServices) {
         self.executionHost = host
         self.base = base
     }
@@ -1065,7 +1065,7 @@ final class InputExecutionHostServices: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooAutomation.ConfigurationManager {
+    var configuration: WinkAutomation.ConfigurationManager {
         self.base.configuration
     }
 

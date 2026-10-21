@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-swift-target-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-swift-target-test.XXXXXX)"
 trap 'rm -rf -- "$TEST_DIR"' EXIT
 
 fail() {
@@ -96,7 +96,7 @@ for architecture in arm64 x86_64; do
 
   # Keep the four-argument architecture contract, including both CLI products.
   for configuration in release debug; do
-    for binary_name in peekaboo peekaboo-certification-controller; do
+    for binary_name in wink wink-certification-controller; do
       : > "$FAKE_SWIFT_BIN_DIRECTORY/$binary_name"
       actual_path="$(/bin/bash "$ROOT_DIR/scripts/resolve-swift-binary-path.sh" \
         "$SWIFT_PROJECT_PATH" "$architecture" "$configuration" "$binary_name")"
@@ -116,7 +116,7 @@ for architecture in arm64 x86_64; do
 
   result=0
   FAKE_SWIFT_EXIT=37 /bin/bash "$ROOT_DIR/scripts/resolve-swift-binary-path.sh" \
-    "$SWIFT_PROJECT_PATH" "$architecture" release peekaboo \
+    "$SWIFT_PROJECT_PATH" "$architecture" release wink \
     > "$TEST_DIR/stdout" 2> "$TEST_DIR/stderr" || result=$?
   [[ "$result" == 37 && ! -s "$TEST_DIR/stdout" && "$(<"$TEST_DIR/stderr")" == 'synthetic Swift failure' ]] || \
     fail 'failed Swift lookup accepted its output or changed the exit/diagnostic'

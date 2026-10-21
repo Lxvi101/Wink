@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooAutomationKit
-@testable import PeekabooCLI
+@testable import WinkAutomationKit
+@testable import WinkCLI
 
 @Suite("Window JSON metadata")
 struct WindowInfoMetadataTests {

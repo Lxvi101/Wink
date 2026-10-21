@@ -1,13 +1,13 @@
 ---
-summary: 'Run local Peekaboo command microbenchmarks without persistent telemetry.'
+summary: 'Run local Wink command microbenchmarks without persistent telemetry.'
 read_when:
   - 'measuring local command latency before or after a performance change'
-  - 'preparing benchmark evidence for a Peekaboo PR'
+  - 'preparing benchmark evidence for a Wink PR'
 ---
 
 # Local command benchmarks
 
-Peekaboo keeps performance evidence local and explicit. Use the benchmark helper when you need repeatable
+Wink keeps performance evidence local and explicit. Use the benchmark helper when you need repeatable
 numbers for a command, especially after changing capture, observation, targeting, or input paths.
 
 This is not telemetry. It does not install a background collector, write a global database, or send anything
@@ -23,11 +23,11 @@ Build a CLI once:
 
 ```bash
 pnpm run build:cli
-BIN="$(swift build --package-path Apps/CLI --show-bin-path)/peekaboo"
+BIN="$(swift build --package-path Apps/CLI --show-bin-path)/wink"
 ```
 
 Use the same binary for before/after comparisons. Debug and release builds are not comparable; use
-`pnpm run build:cli:release` and the release `peekaboo` path when you need release-build evidence.
+`pnpm run build:cli:release` and the release `wink` path when you need release-build evidence.
 
 Run a UI-free smoke benchmark:
 
@@ -62,7 +62,7 @@ pnpm run benchmark:tools \
   --runs 10 \
   --warmups 1 \
   --bin "$BIN" \
-  -- see --app boo.peekaboo.playground.debug --mode window --window-title "Click Fixture" --json-output
+  -- see --app boo.wink.playground.debug --mode window --window-title "Click Fixture" --json-output
 ```
 
 Example `menu` benchmark:
@@ -73,7 +73,7 @@ pnpm run benchmark:tools \
   --runs 5 \
   --warmups 1 \
   --bin "$BIN" \
-  -- menu list --app boo.peekaboo.playground.debug --json-output
+  -- menu list --app boo.wink.playground.debug --json-output
 ```
 
 ## How to read the summary

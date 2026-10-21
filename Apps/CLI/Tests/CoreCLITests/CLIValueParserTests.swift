@@ -1,6 +1,6 @@
 import Commander
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct CLIValueParserTests {

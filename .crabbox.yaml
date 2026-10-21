@@ -1,4 +1,4 @@
-profile: peekaboo-check
+profile: wink-check
 provider: aws
 class: standard
 capacity:
@@ -19,7 +19,7 @@ actions:
   runnerLabels:
     - crabbox
     - openclaw
-    - peekaboo
+    - wink
   runnerVersion: latest
   ephemeral: true
 aws:

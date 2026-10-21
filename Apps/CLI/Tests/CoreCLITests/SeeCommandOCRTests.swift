@@ -1,7 +1,7 @@
 import Commander
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.fast))
 @MainActor

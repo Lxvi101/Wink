@@ -49,8 +49,8 @@ jobs:
             exit 1
           fi
 
-          request_id="peekaboo-${RELEASE_TAG}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          expected_title="Update peekaboo for ${RELEASE_TAG} (${request_id})"
+          request_id="wink-${RELEASE_TAG}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          expected_title="Update wink for ${RELEASE_TAG} (${request_id})"
 
           if [ -n "$ASSETS_JSON" ]; then
             artifact_args=(-f "assets=$ASSETS_JSON")
@@ -61,7 +61,7 @@ jobs:
           gh workflow run update-formula.yml \
             --repo openclaw/homebrew-tap \
             --ref main \
-            -f formula=peekaboo \
+            -f formula=wink \
             -f tag="$RELEASE_TAG" \
             -f repository="$GITHUB_REPOSITORY" \
             "${artifact_args[@]}" \

@@ -1,4 +1,4 @@
-import PeekabooCore
+import WinkCore
 
 extension StubWindowService {
     func windowsForApplicationTarget(_ app: String) -> [ServiceWindowInfo] {

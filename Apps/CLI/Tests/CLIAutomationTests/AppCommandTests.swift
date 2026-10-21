@@ -1,9 +1,9 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.serialized, .tags(.automation), .enabled(if: CLITestEnvironment.runAutomationRead))
 struct AppCommandTests {
     @Test
@@ -100,8 +100,8 @@ struct AppCommandTests {
             service.applications = [ServiceApplicationInfo(
                 processIdentifier: 4242,
                 processStartIdentity: generation,
-                bundleIdentifier: "boo.peekaboo.mac",
-                name: "Peekaboo",
+                bundleIdentifier: "boo.wink.mac",
+                name: "Wink",
                 activationPolicy: .regular
             )]
         }
@@ -307,7 +307,7 @@ struct AppCommandTests {
     .serialized,
     .tags(.automation, .localOnly),
     .enabled(if: ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] == "true"
-        && !(ProcessInfo.processInfo.environment["PEEKABOO_CLI_PATH"] ?? "").isEmpty)
+        && !(ProcessInfo.processInfo.environment["WINK_CLI_PATH"] ?? "").isEmpty)
 )
 struct AppCommandIntegrationTests {
     @Test
@@ -320,7 +320,7 @@ struct AppCommandIntegrationTests {
             let is_ready: Bool
         }
 
-        let result = try ExternalCommandRunner.runPeekabooCLI(
+        let result = try ExternalCommandRunner.runWinkCLI(
             [
                 "app", "launch",
                 "TextEdit",
@@ -358,7 +358,7 @@ struct AppCommandIntegrationTests {
             let activated: Bool
         }
 
-        let hideResult = try ExternalCommandRunner.runPeekabooCLI(
+        let hideResult = try ExternalCommandRunner.runWinkCLI(
             [
                 "app", "hide",
                 "--app", "Finder",
@@ -377,7 +377,7 @@ struct AppCommandIntegrationTests {
             return
         }
 
-        let unhideResult = try ExternalCommandRunner.runPeekabooCLI(
+        let unhideResult = try ExternalCommandRunner.runWinkCLI(
             [
                 "app", "unhide",
                 "--app", "Finder",
@@ -447,7 +447,7 @@ private func makeAppCommandContext() -> AppCommandContext {
         windowsByApp: data.windowsByApp
     )
     let windowService = StubWindowService(windowsByApp: data.windowsByApp)
-    let services = TestServicesFactory.makePeekabooServices(
+    let services = TestServicesFactory.makeWinkServices(
         applications: applicationService,
         windows: windowService
     )
@@ -464,7 +464,7 @@ private func appServiceState<T: Sendable>(
 }
 
 private struct AppCommandContext {
-    let services: PeekabooServices
+    let services: WinkServices
     let applicationService: StubApplicationService
 }
 

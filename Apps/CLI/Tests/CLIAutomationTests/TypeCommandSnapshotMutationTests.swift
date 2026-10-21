@@ -1,11 +1,11 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension TypeCommandTruthTests {
     @Test

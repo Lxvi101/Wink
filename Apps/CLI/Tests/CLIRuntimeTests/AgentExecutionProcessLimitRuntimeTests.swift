@@ -1,17 +1,17 @@
 #if DEBUG
 import Darwin
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 struct AgentExecutionProcessLimitRuntimeTests {
     @Test
     func `Gated CLI irreversibly denies child processes without affecting its parent`() throws {
-        let binary = try TestChildProcess.peekabooBinaryURL().path
+        let binary = try TestChildProcess.winkBinaryURL().path
         let challenge = String(repeating: "a", count: 64)
         let authorization = try Self.pipePair()
         let readiness = try Self.pipePair()
@@ -101,7 +101,7 @@ struct AgentExecutionProcessLimitRuntimeTests {
     @Test
     func `Real gated Agent refuses receiptless custom Bridge before provider execution`() async throws {
         let bridge = try ConcurrentGatedBridgePeer()
-        let binaryPath = try TestChildProcess.peekabooBinaryURL().path
+        let binaryPath = try TestChildProcess.winkBinaryURL().path
         let challenge = String(repeating: "b", count: 64)
         let releaseGateEnvironment = [
             "\(AgentExecutionReleaseGate.descriptorEnvironmentKey)=198",
@@ -162,7 +162,7 @@ struct AgentExecutionProcessLimitRuntimeTests {
         #expect(result.standardError.isEmpty)
 
         let decodedRequests = try requests.map {
-            try JSONDecoder.peekabooBridgeDecoder().decode(PeekabooBridgeRequest.self, from: $0)
+            try JSONDecoder.winkBridgeDecoder().decode(WinkBridgeRequest.self, from: $0)
         }
         let handshakeCount = decodedRequests.count { request in
             if case .handshake = request {
@@ -171,7 +171,7 @@ struct AgentExecutionProcessLimitRuntimeTests {
                 false
             }
         }
-        let operations = decodedRequests.compactMap { request -> PeekabooBridgeOperation? in
+        let operations = decodedRequests.compactMap { request -> WinkBridgeOperation? in
             if case .handshake = request {
                 return nil
             }
@@ -185,19 +185,19 @@ struct AgentExecutionProcessLimitRuntimeTests {
         #expect(requests.count == 1)
     }
 
-    private static func response(for request: PeekabooBridgeRequest) -> PeekabooBridgeResponse {
+    private static func response(for request: WinkBridgeRequest) -> WinkBridgeResponse {
         switch request {
         case .handshake:
             .handshake(BridgeTestFixtures.handshake(
                 negotiatedVersion: .init(major: 1, minor: 28),
-                supportedOperations: Array(PeekabooBridgeOperation.allCases),
+                supportedOperations: Array(WinkBridgeOperation.allCases),
                 permissions: .init(screenRecording: true, accessibility: true, postEvent: true),
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.hostGenerationIdentity,
-                    PeekabooBridgeHostCapability.codeSignatureBuildIdentity,
-                    PeekabooBridgeHostCapability.backgroundBridgeHost,
-                    PeekabooBridgeHostCapability.safeBackgroundApplicationLaunchNoOp,
-                    PeekabooBridgeHostCapability.processGenerationPinnedApplicationActivation,
+                    WinkBridgeHostCapability.hostGenerationIdentity,
+                    WinkBridgeHostCapability.codeSignatureBuildIdentity,
+                    WinkBridgeHostCapability.backgroundBridgeHost,
+                    WinkBridgeHostCapability.safeBackgroundApplicationLaunchNoOp,
+                    WinkBridgeHostCapability.processGenerationPinnedApplicationActivation,
                 ]
             ))
         case .invalidateImplicitLatestSnapshot:
@@ -220,7 +220,7 @@ struct AgentExecutionProcessLimitRuntimeTests {
         ServiceApplicationInfo(
             processIdentifier: 4242,
             processStartIdentity: 9001,
-            bundleIdentifier: "dev.peekaboo.fixture",
+            bundleIdentifier: "dev.wink.fixture",
             name: "BridgeFixture",
             activationPolicy: .regular
         )
@@ -280,7 +280,7 @@ struct AgentExecutionProcessLimitRuntimeTests {
         var environment = self.cStrings([
             "PATH=/usr/bin:/bin",
             "ANTHROPIC_API_KEY=probe-key",
-            "PEEKABOO_AGENT_EXECUTION_TEST_PROVIDER=permissions-v1",
+            "WINK_AGENT_EXECUTION_TEST_PROVIDER=permissions-v1",
         ] + releaseGateEnvironment)
         defer { self.free(environment) }
 

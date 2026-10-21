@@ -1,11 +1,11 @@
 ---
-summary: 'How to build Peekaboo from source and run release scripts.'
+summary: 'How to build Wink from source and run release scripts.'
 read_when:
   - 'compiling the CLI locally'
   - 'prepping release artifacts'
 ---
 
-# Building Peekaboo
+# Building Wink
 
 ## Prerequisites
 
@@ -30,8 +30,8 @@ parameters. Heading permalinks are unique across the complete page, including ne
 
 ```bash
 # Clone
-git clone --recurse-submodules https://github.com/openclaw/Peekaboo.git
-cd Peekaboo
+git clone --recurse-submodules https://github.com/Lxvi101/Wink.git
+cd Wink
 
 # Install JS deps
 pnpm install
@@ -63,7 +63,7 @@ architectures and the minimum macOS version are unchanged.
 Inspect an embedded source stamp without executing the binary:
 
 ```bash
-scripts/read-macho-info-plist.sh --binary /absolute/path/to/peekaboo --key PeekabooSourceCommit
+scripts/read-macho-info-plist.sh --binary /absolute/path/to/wink --key WinkSourceCommit
 ```
 
 The helper reads both single-architecture and universal Mach-O files. Universal slices must agree on the requested
@@ -82,8 +82,8 @@ pnpm run setup:swift
 
 # Direct commands retain their normal arguments after setup:
 swift build --package-path Apps/CLI
-swift package --package-path Core/PeekabooCore --scratch-path /tmp/peekaboo-core-graph show-dependencies
-open Apps/Peekaboo.xcworkspace
+swift package --package-path Core/WinkCore --scratch-path /tmp/wink-core-graph show-dependencies
+open Apps/Wink.xcworkspace
 ```
 
 The pnpm build/test commands, standalone build helpers, release compilation, and source CI entrypoints perform setup
@@ -94,7 +94,7 @@ visible to development builds; source-stamped release builds still require the e
 The `run` wrapper preserves ordinary command exit statuses and reports signal-terminated children using the shell
 convention (`128 + signal`, such as 143 for SIGTERM). Post-command mapping integrity checks and lock cleanup still run.
 
-AXorcist always declares remote Commander at exact `0.3.0`. Peekaboo's internal package graph already selects the live
+AXorcist always declares remote Commander at exact `0.3.0`. Wink's internal package graph already selects the live
 Commander submodule through explicit filesystem dependencies. The helper aligns the remote URL with that same canonical
 absolute directory using a `file://` URL; it neither changes a dependency requirement nor substitutes SwiftPM's version
 checkout. A bare absolute mirror path is classified as local source control by SwiftPM, whose validation rejects the
@@ -108,9 +108,9 @@ Paths containing `#` remain unsupported by this mapping on SwiftPM 6.4 because i
 Normal paths and paths containing spaces are covered by the real-submodule compilation fixture.
 
 The generated `mirrors.json` files belong to the consuming contexts: `Apps/CLI`, `Apps/Mac`, `Apps/Playground`,
-`Apps/PeekabooInspector`, `Core/PeekabooCore`, `Core/PeekabooExternalDependencies`, and `Core/PeekabooUICore` use
+`Apps/WinkInspector`, `Core/WinkCore`, `Core/WinkExternalDependencies`, and `Core/WinkUICore` use
 `.swiftpm/configuration/`; the shared Xcode workspace and the three projects' embedded `project.xcworkspace` contexts use
-`xcshareddata/swiftpm/configuration/`. `.swiftpm/peekaboo-workspace/` holds the ownership receipt and the build wrapper's
+`xcshareddata/swiftpm/configuration/`. `.swiftpm/wink-workspace/` holds the ownership receipt and the build wrapper's
 mapping. All are ignored source-checkout state and must never be copied into release artifacts or checked in.
 
 Xcode uses the same explicit filesystem dependencies and file-URL mapping without a separate Commander workspace or
@@ -120,7 +120,7 @@ it as another workspace root; the compile-only real-submodule fixture verifies t
 
 The public root `Package.swift` pins AXorcist exact `0.2.2`, matching the internal AXorcist submodule.
 Standalone AutomationKit, Foundation, Protocols, Visualizer, and submodule builds are not given a Commander override:
-those graphs do not select Peekaboo's live Commander package.
+those graphs do not select Wink's live Commander package.
 Adding another consuming package requires adding its explicit context to the helper and qualifying it. A transitive
 `.package(path:)` declaration is not an Xcode workspace-root override.
 
@@ -129,7 +129,7 @@ inherited `SWIFTPM_MIRROR_CONFIG`, Git repository-location overrides, symlinks, 
 files without printing their contents. Preserve and explicitly move conflicting files aside for review before setup;
 there is no force/adopt mode. Other settings, including registry configuration, remain untouched. `remove` deletes only
 verified owned files; it leaves unrelated settings and directories in place. A relocated checkout must run `setup`
-before another direct Swift/Xcode command. If an interrupted operation leaves `.swiftpm/peekaboo-workspace.lock`, verify
+before another direct Swift/Xcode command. If an interrupted operation leaves `.swiftpm/wink-workspace.lock`, verify
 that no setup/build wrapper is running before removing that empty lock directory. Interrupted partial generation without
 an ownership receipt requires explicit inspection and removal of the generated files before retrying.
 
@@ -139,10 +139,10 @@ gate before and after the command. Strict resolution flags and canonical lock ow
 `pnpm run test:swift-workspace` for the offline ownership and fake-tool contracts; real package graphs and Xcode builds
 remain separate qualification gates.
 
-The opt-in `PEEKABOO_TEST_REAL_SWIFT_WORKSPACE=1 python3 scripts/test-swift-workspace.py RealSubmoduleContract`
+The opt-in `WINK_TEST_REAL_SWIFT_WORKSPACE=1 python3 scripts/test-swift-workspace.py RealSubmoduleContract`
 compiles inert SwiftPM and Xcode fixtures created with real absorbed Git submodules. It checks strict resolution and
 compilation against an uncommitted Commander symbol without running a test bundle or built product. It does not qualify
-Peekaboo's production graph or replace its compile, test, and release gates.
+Wink's production graph or replace its compile, test, and release gates.
 
 ## Swift runtime compatibility
 
@@ -162,7 +162,7 @@ replace system libraries. Successful execution on the build host alone does not 
 
 Keep Swift Async Algorithms at 1.1.5 while this constraint remains: 1.1.7 requires Swift Collections 1.7.0.
 The shared consumer locks use SwiftNIO 2.104.0 and Service Lifecycle 2.13.0. The latter retains the Unix signal
-dispatch-source leak fix and now declares the same Swift 6.2 minimum as Peekaboo. Its older-compiler compatibility
+dispatch-source leak fix and now declares the same Swift 6.2 minimum as Wink. Its older-compiler compatibility
 cleanup preserves the locking code selected on supported Swift toolchains.
 
 Runtime verification also audits every strong `libswift*` import per architecture by parsing the
@@ -192,10 +192,10 @@ because the oldest eligible SDK wins.
 ## Tachikoma integration
 
 The internal CLI and Mac app consume the committed Tachikoma submodule revision. The tracked consumer
-locks retain their existing compatible versions, including Swift Crypto 4.5.2 and Peekaboo's pinned MCP SDK revision;
+locks retain their existing compatible versions, including Swift Crypto 4.5.2 and Wink's pinned MCP SDK revision;
 Tachikoma's standalone `Package.resolved` does not replace those consumer locks.
 
-Keep Peekaboo's Agent schema conversion in the integration layer: its recursive union projection preserves structured
+Keep Wink's Agent schema conversion in the integration layer: its recursive union projection preserves structured
 `verify_state` predicate-array items that Tachikoma's legacy parameter projection still treats as strings. Updating the
 dependency does not replace that consumer contract or weaken Agent argument validation.
 
@@ -203,18 +203,18 @@ dependency does not replace that consumer contract or weaken Agent argument vali
 
 The workspace's `CodeQL` scheme builds the CLI, certification controller, Mac app, Playground, and Inspector
 in one graph so shared dependencies are analyzed without separate builds. Its CLI scheme references select
-the public SwiftPM products `peekaboo` and `peekaboo-certification-controller`.
+the public SwiftPM products `wink` and `wink-certification-controller`.
 
-The CLI package's internal project name is `PeekabooCLIPackage`, and the `peekaboo` product uses the
-`PeekabooExec` entry target in `Sources/PeekabooExec`. Keep both internal names distinct from the Mac app's
-`Peekaboo` identity under case folding. Xcode 26 derives executable intermediate directories from the package
-and product names: renaming only the Swift entry target does not separate `peekaboo.build/Debug/peekaboo.build`
-from the app's `Peekaboo.build/Debug/Peekaboo.build` on a case-insensitive volume. Colliding file lists can compile
+The CLI package's internal project name is `WinkCLIPackage`, and the `wink` product uses the
+`WinkExec` entry target in `Sources/WinkExec`. Keep both internal names distinct from the Mac app's
+`Wink` identity under case folding. Xcode 26 derives executable intermediate directories from the package
+and product names: renaming only the Swift entry target does not separate `wink.build/Debug/wink.build`
+from the app's `Wink.build/Debug/Wink.build` on a case-insensitive volume. Colliding file lists can compile
 the app's sources and generated assets as the CLI. The package name separates those directories; the entry
-target name also separates the Swift module where the build system uses it. Public binaries, `PeekabooCLI`
+target name also separates the Swift module where the build system uses it. Public binaries, `WinkCLI`
 imports, source paths, and embedded Info.plist/source stamps remain unchanged.
 
-Normal macOS CI schedules package tests, app builds, and lint independently. The Peekaboo and Inspector builds use
+Normal macOS CI schedules package tests, app builds, and lint independently. The Wink and Inspector builds use
 this same workspace, canonical package lock, and derived-data directory so Inspector can reuse matching dependency
 builds. Each package's tests retain serial execution within their job.
 
@@ -224,13 +224,13 @@ commits can reuse the same cache. Manifest/trait cleanup and the cold CLI build 
 stale trait selections. This cache policy does not change the separate CodeQL or full-safe build graphs.
 
 Run `pnpm run test:codeql-build-graph` to check product coverage, internal ownership, and the CLI's exact
-`PeekabooMain.swift` entrypoint. These structural checks do not replace a successful hosted CodeQL build.
+`WinkMain.swift` entrypoint. These structural checks do not replace a successful hosted CodeQL build.
 
 ## Debug build-staleness checks
 
 Debug CLI builds leave staleness checks disabled unless Git config contains
-`check-build-staleness = true` in a `[peekaboo]` section or `PEEKABOO_CHECK_BUILD_STALENESS` enables them.
-Set `PEEKABOO_CHECK_BUILD_STALENESS=0` to skip both config discovery and staleness checks;
+`check-build-staleness = true` in a `[wink]` section or `WINK_CHECK_BUILD_STALENESS` enables them.
+Set `WINK_CHECK_BUILD_STALENESS=0` to skip both config discovery and staleness checks;
 `1`, `true`, and `yes` enable them (case-insensitive, with surrounding whitespace ignored).
 Any other nonempty override disables them; an unset or blank override falls back to config.
 Config settings are read in system, XDG, home, then nearest repository order, with later settings taking precedence.
@@ -253,9 +253,9 @@ For full release automation (tarballs, npm package, checksums), follow [RELEASIN
 pnpm run prepare-release
 
 # Deterministic metadata/docs/CLI contract only (no registry or artifact checks)
-pnpm run prepare-release -- --dry-run --bin Apps/CLI/.build/debug/peekaboo
+pnpm run prepare-release -- --dry-run --bin Apps/CLI/.build/debug/wink
 
 # Build and verify without publication
-gh workflow run release.yml --repo openclaw/Peekaboo --ref main \
+gh workflow run release.yml --repo Lxvi101/Wink --ref main \
   -f version=<prepared-version> -F dry_run=true
 ```

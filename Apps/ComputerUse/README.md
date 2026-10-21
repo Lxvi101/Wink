@@ -1,8 +1,8 @@
-# peekaboo-cua — fast, Sky-style computer use for agents
+# wink-cua — fast, Sky-style computer use for agents
 
-`peekaboo-cua` is a lean MCP server for driving macOS apps **in the background**. It doesn't take over
+`wink-cua` is a lean MCP server for driving macOS apps **in the background**. It doesn't take over
 the user's mouse or keyboard, and an animated agent cursor shows what it is doing. It is a separate
-fast path inside the Peekaboo fork. It doesn't replace `peekaboo mcp`, and it shares none of that
+fast path inside the Wink fork. It doesn't replace `wink mcp`, and it shares none of that
 server's snapshot, bridge or receipt machinery.
 
 It is a single 400 KB binary with no dependencies beyond system frameworks. It needs no companion
@@ -12,8 +12,8 @@ app and no Codex/ChatGPT install.
 
 ```bash
 cd Apps/ComputerUse
-./scripts/install.sh            # builds release, installs ~/.local/bin/peekaboo-cua
-claude mcp add peekaboo-cua -- ~/.local/bin/peekaboo-cua
+./scripts/install.sh            # builds release, installs ~/.local/bin/wink-cua
+claude mcp add wink-cua -- ~/.local/bin/wink-cua
 ```
 
 Grant **Accessibility** and **Screen Recording** to the app that launches the server (your terminal,
@@ -56,24 +56,27 @@ type_text / press_key / scroll / … → same: every action returns the settled 
 The agent pointer is drawn in a click-through overlay owned by the server process. It is our own
 design, not the system cursor, and it never moves the user's real pointer.
 
+- It is a navigation-style arrow: a black body with a light grey inner rim and a white outer rim,
+  and a soft lavender halo behind it.
+
 - It glides along a gently arced path. The duration scales with distance, and the pointer leans
   into the motion with a small settle overshoot. Short hops get a squash-and-stretch.
 - Moves are interruptible. A new target starts from wherever the pointer currently is.
 - Clicks land with a press squash and a ripple at the hotspot (purple for right clicks, a double
   ripple for double clicks). Typing and scrolling pulse the glow.
 - By default the overlay is ordered **just above the target window**. If another window covers the
-  target, it covers the cursor too. Set `PEEKABOO_CUA_CURSOR_LEVEL=top` to always draw it on top.
+  target, it covers the cursor too. Set `WINK_CUA_CURSOR_LEVEL=top` to always draw it on top.
 - It fades out after about 2.6 s idle. The animation never delays the action, because input is
   dispatched immediately and the effect plays when the pointer arrives.
-- `PEEKABOO_CUA_CURSOR=0` disables it.
+- `WINK_CUA_CURSOR=0` disables it.
 
 ## Performance
 
 Measured on the same Mac and Calculator window, with a persistent MCP process and no model in the loop.
-Sky is OpenAI's computer-use runtime (Codex Computer Use) 0.7.8, and Peekaboo is stock `peekaboo mcp`
+Sky is OpenAI's computer-use runtime (Codex Computer Use) 0.7.8, and Wink is stock `wink mcp`
 4.9.6. Both were measured earlier with the same task (`7 + 8 =`).
 
-| | Sky 0.7.8 | Peekaboo 4.9.6 | **peekaboo-cua** |
+| | Sky 0.7.8 | Wink 4.9.6 | **wink-cua** |
 | --- | ---: | ---: | ---: |
 | Click dispatch | 27 ms | 893 ms (and an MCP error) | **~13 ms** |
 | Click + updated state | 501 ms (two calls) | 1,462 ms (two calls) | **~235 ms (one call, settled diff)** |
@@ -81,18 +84,18 @@ Sky is OpenAI's computer-use runtime (Codex Computer Use) 0.7.8, and Peekaboo is
 | Warm full state + screenshot | 71 ms | 476 ms | ~100 ms |
 | `7 + 8 =` (4 clicks) | 2.0 s | 5.9 s | **~0.95 s** |
 
-Reproduce with `node scripts/bench-calculator.mjs .build/release/peekaboo-cua 5`. Small local
+Reproduce with `node scripts/bench-calculator.mjs .build/release/wink-cua 5`. Small local
 samples are not a general benchmark.
 
 ## Debugging
 
 ```bash
-peekaboo-cua call list_apps
-peekaboo-cua call get_app_state '{"app":"Calculator","screenshot":false}'
-node scripts/mcp-steps.mjs .build/release/peekaboo-cua '[["get_app_state",{"app":"Calculator"}],["click",{"app":"Calculator","element_index":"$id:Seven"}]]'
+wink-cua call list_apps
+wink-cua call get_app_state '{"app":"Calculator","screenshot":false}'
+node scripts/mcp-steps.mjs .build/release/wink-cua '[["get_app_state",{"app":"Calculator"}],["click",{"app":"Calculator","element_index":"$id:Seven"}]]'
 ```
 
-`PEEKABOO_CUA_DEBUG=1` logs the overlay window id (capture just the overlay with `screencapture -l <id>`).
+`WINK_CUA_DEBUG=1` logs the overlay window id (capture just the overlay with `screencapture -l <id>`).
 
 ## Known limits
 

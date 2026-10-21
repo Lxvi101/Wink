@@ -1,19 +1,19 @@
 ---
-summary: 'Review Grok 4 Implementation Guide for Peekaboo guidance'
+summary: 'Review Grok 4 Implementation Guide for Wink guidance'
 read_when:
-  - 'planning work related to grok 4 implementation guide for peekaboo'
+  - 'planning work related to grok 4 implementation guide for wink'
   - 'debugging or extending features described here'
 ---
 
-# Grok 4 Implementation Guide for Peekaboo
+# Grok 4 Implementation Guide for Wink
 
 ## Implementation Status: IMPLEMENTED ✅
 
-**As of 2025-01-27, Grok models are now implemented in Peekaboo!** You can use Grok models by setting your xAI API key.
+**As of 2025-01-27, Grok models are now implemented in Wink!** You can use Grok models by setting your xAI API key.
 
 ## Overview
 
-This document outlines the implementation plan for integrating xAI's Grok 4 model into Peekaboo. Grok 4 is xAI's flagship reasoning model, designed to deliver truthful, insightful answers with native tool use and real-time search integration.
+This document outlines the implementation plan for integrating xAI's Grok 4 model into Wink. Grok 4 is xAI's flagship reasoning model, designed to deliver truthful, insightful answers with native tool use and real-time search integration.
 
 ## API Information
 
@@ -33,9 +33,9 @@ This document outlines the implementation plan for integrating xAI's Grok 4 mode
 - **grok-4.20-0309-reasoning** - Reasoning Grok 4.20 variant
 - **grok-4.20-0309-non-reasoning** - Non-reasoning Grok 4.20 variant
 
-`grok-4.20-multi-agent-0309` requires xAI Responses API routing and is not exposed by Peekaboo's Chat Completions-backed Grok provider yet.
+`grok-4.20-multi-agent-0309` requires xAI Responses API routing and is not exposed by Wink's Chat Completions-backed Grok provider yet.
 
-Model shortcuts in Peekaboo:
+Model shortcuts in Wink:
 - `grok` → resolves to `grok-4.3`
 - `grok-4` → resolves to `grok-4.3`
 - Old `grok-2`, `grok-3`, `grok-4-fast`, and beta IDs are rejected.
@@ -54,7 +54,7 @@ Model shortcuts in Peekaboo:
 
 ### Important Implementation Note
 
-Since xAI's Grok uses the standard OpenAI Chat Completions API (`/v1/chat/completions`) and **NOT** the Responses API (`/v1/responses`), we need to ensure our implementation uses the correct endpoint. The existing `OpenAIModel` class in Peekaboo has been migrated to use only the Responses API, so we have two options:
+Since xAI's Grok uses the standard OpenAI Chat Completions API (`/v1/chat/completions`) and **NOT** the Responses API (`/v1/responses`), we need to ensure our implementation uses the correct endpoint. The existing `OpenAIModel` class in Wink has been migrated to use only the Responses API, so we have two options:
 
 1. **Option A**: Modify `OpenAIModel` to support both endpoints based on the model
 2. **Option B**: Create a standalone `GrokModel` that implements the Chat Completions API
@@ -66,7 +66,7 @@ Given that Grok is fully OpenAI-compatible for Chat Completions, Option B is cle
 We'll create a dedicated Grok implementation that uses the Chat Completions API:
 
 ```swift
-// File: Core/PeekabooCore/Sources/PeekabooCore/AI/Models/GrokModel.swift
+// File: Core/WinkCore/Sources/WinkCore/AI/Models/GrokModel.swift
 
 import Foundation
 import AXorcist
@@ -573,10 +573,10 @@ extension ModelProvider {
 Create comprehensive tests:
 
 ```swift
-// File: Core/PeekabooCore/Tests/PeekabooTests/GrokModelTests.swift
+// File: Core/WinkCore/Tests/WinkTests/GrokModelTests.swift
 
 import Testing
-@testable import PeekabooCore
+@testable import WinkCore
 import Foundation
 
 @Suite("Grok Model Tests")
@@ -619,25 +619,25 @@ Once implemented, Grok can be used like this:
 
 ```bash
 # Set API key with the secure no-echo prompt
-./peekaboo config credential set X_AI_API_KEY
+./wink config credential set X_AI_API_KEY
 
 # Use Grok 4.3 (default)
-./peekaboo agent "analyze this code" --model grok-4.3
-./peekaboo agent "analyze this code" --model grok      # Lenient matching
+./wink agent "analyze this code" --model grok-4.3
+./wink agent "analyze this code" --model grok      # Lenient matching
 
 # Use specific models
-./peekaboo agent "quick task" --model grok-4.20-0309-reasoning
+./wink agent "quick task" --model grok-4.20-0309-reasoning
 
 # Environment variable usage
-PEEKABOO_AI_PROVIDERS="grok/grok-4.3" ./peekaboo analyze image.png "What is shown?"
+WINK_AI_PROVIDERS="grok/grok-4.3" ./wink analyze image.png "What is shown?"
 ```
 
 ## Implementation Steps (COMPLETED)
 
-1. ✅ **Created GrokModel.swift** in `Core/PeekabooCore/Sources/PeekabooCore/AI/Models/`
+1. ✅ **Created GrokModel.swift** in `Core/WinkCore/Sources/WinkCore/AI/Models/`
 2. ✅ **Updated ModelProvider.swift** to register Grok models
 3. ✅ **Added Grok configuration** to ModelProviderConfig
-4. ⏳ **Create tests** in `Core/PeekabooCore/Tests/PeekabooTests/` (pending)
+4. ⏳ **Create tests** in `Core/WinkCore/Tests/WinkTests/` (pending)
 5. ✅ **Updated documentation** with Grok model information
 6. ⏳ **Test with real API key** to ensure compatibility (pending)
 

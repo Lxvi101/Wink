@@ -1,7 +1,7 @@
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
 import UniformTypeIdentifiers
 
@@ -83,8 +83,8 @@ struct DesktopContextServiceClipboardGatingTests {
 }
 
 @MainActor
-private final class ServicesWithStubClipboard: PeekabooServiceProviding {
-    private let base = PeekabooServices(initializeAgentService: false)
+private final class ServicesWithStubClipboard: WinkServiceProviding {
+    private let base = WinkServices(initializeAgentService: false)
     private let stubClipboard: any ClipboardServiceProtocol
     private let stubApplications: any ApplicationServiceProtocol
     private let stubWindows: any WindowManagementServiceProtocol
@@ -147,7 +147,7 @@ private final class ServicesWithStubClipboard: PeekabooServiceProviding {
         self.stubClipboard
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         self.base.configuration
     }
 

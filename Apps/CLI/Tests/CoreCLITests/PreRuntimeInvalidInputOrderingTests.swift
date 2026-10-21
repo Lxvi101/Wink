@@ -1,88 +1,88 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
 struct PreRuntimeInvalidInputOrderingTests {
     @Test(arguments: [
         (
-            ["peekaboo", "type", "alpha", "--json"],
+            ["wink", "type", "alpha", "--json"],
             "Keyboard input requires --app, --pid, --window-id, or --snapshot for background delivery."
         ),
         (
-            ["peekaboo", "browser", "frobnicate", "--json"],
+            ["wink", "browser", "frobnicate", "--json"],
             "Unsupported browser action 'frobnicate'"
         ),
         (
             [
-                "peekaboo", "browser", "connect", "--browser-url", "ftp://127.0.0.1:1", "--json",
+                "wink", "browser", "connect", "--browser-url", "ftp://127.0.0.1:1", "--json",
             ],
             "Invalid --browser-url. Expected http://127.0.0.1:<port>, " +
                 "http://[::1]:<port>, or http://localhost:<port>."
         ),
         (
-            ["peekaboo", "window", "list", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "list", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
-            ["peekaboo", "window", "close", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "close", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
-            ["peekaboo", "window", "minimize", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "minimize", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
-            ["peekaboo", "window", "restore", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "restore", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
-            ["peekaboo", "window", "maximize", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "maximize", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
             [
-                "peekaboo", "window", "move", "--app", "TextEdit", "--pid", "123", "--x", "10", "--y", "20",
+                "wink", "window", "move", "--app", "TextEdit", "--pid", "123", "--x", "10", "--y", "20",
                 "--json",
             ],
             "Use either --app or --pid, not both."
         ),
         (
             [
-                "peekaboo", "window", "resize", "--app", "TextEdit", "--pid", "123", "--width", "100",
+                "wink", "window", "resize", "--app", "TextEdit", "--pid", "123", "--width", "100",
                 "--height", "100", "--json",
             ],
             "Use either --app or --pid, not both."
         ),
         (
             [
-                "peekaboo", "window", "set-bounds", "--app", "TextEdit", "--pid", "123", "--x", "10", "--y",
+                "wink", "window", "set-bounds", "--app", "TextEdit", "--pid", "123", "--x", "10", "--y",
                 "20", "--width", "100", "--height", "100", "--json",
             ],
             "Use either --app or --pid, not both."
         ),
         (
-            ["peekaboo", "window", "focus", "--app", "TextEdit", "--pid", "123", "--json"],
+            ["wink", "window", "focus", "--app", "TextEdit", "--pid", "123", "--json"],
             "Use either --app or --pid, not both."
         ),
         (
             [
-                "peekaboo", "space", "move-window", "--app", "TextEdit", "--pid", "123", "--to", "2", "--json",
+                "wink", "space", "move-window", "--app", "TextEdit", "--pid", "123", "--to", "2", "--json",
             ],
             "Use either --app or --pid, not both."
         ),
         (
             [
-                "peekaboo", "window", "restore", "--app", "TextEdit", "--window-id", "42", "--window-title",
+                "wink", "window", "restore", "--app", "TextEdit", "--window-id", "42", "--window-title",
                 "Document", "--json",
             ],
             "Provide only one of --window-id, --window-title, or --window-index"
         ),
         (
             [
-                "peekaboo", "space", "move-window", "--app", "TextEdit", "--window-id", "42", "--window-index",
+                "wink", "space", "move-window", "--app", "TextEdit", "--window-id", "42", "--window-index",
                 "0", "--to", "2", "--json",
             ],
             "Provide only one of --window-id, --window-title, or --window-index"
@@ -96,10 +96,10 @@ struct PreRuntimeInvalidInputOrderingTests {
     }
 
     @Test(arguments: [
-        ["peekaboo", "agent", "--dry-run", "--no-remote"],
-        ["peekaboo", "agent", "--dry-run", "--json", "--no-remote"],
-        ["peekaboo", "agent", "run", "--dry-run", "--no-remote"],
-        ["peekaboo", "agent", "run", "--dry-run", "--json", "--no-remote"],
+        ["wink", "agent", "--dry-run", "--no-remote"],
+        ["wink", "agent", "--dry-run", "--json", "--no-remote"],
+        ["wink", "agent", "run", "--dry-run", "--no-remote"],
+        ["wink", "agent", "run", "--dry-run", "--json", "--no-remote"],
     ])
     func `taskless agent dry run refuses before runtime construction`(arguments: [String]) async throws {
         try await Self.requirePreRuntimeRefusal(
@@ -111,13 +111,13 @@ struct PreRuntimeInvalidInputOrderingTests {
     @Test
     func `invalid video file and cadence refuse before runtime construction`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-pre-runtime-video-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-pre-runtime-video-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
         let missing = root.appendingPathComponent("missing.mp4")
         try await Self.requirePreRuntimeRefusal(
-            arguments: ["peekaboo", "capture", "video", missing.path, "--json"],
+            arguments: ["wink", "capture", "video", missing.path, "--json"],
             expectedMessage: "Input video file does not exist: \(missing.path)"
         )
 
@@ -125,7 +125,7 @@ struct PreRuntimeInvalidInputOrderingTests {
         try Data().write(to: empty)
         try await Self.requirePreRuntimeRefusal(
             arguments: [
-                "peekaboo", "capture", "video", empty.path, "--sample-fps", "-1", "--json",
+                "wink", "capture", "video", empty.path, "--sample-fps", "-1", "--json",
             ],
             expectedMessage: "Invalid input: sample-fps must be a positive finite value"
         )
@@ -133,7 +133,7 @@ struct PreRuntimeInvalidInputOrderingTests {
         let fifo = root.appendingPathComponent("stream.mp4")
         #expect(mkfifo(fifo.path, mode_t(S_IRUSR | S_IWUSR)) == 0)
         try await Self.requirePreRuntimeRefusal(
-            arguments: ["peekaboo", "capture", "video", fifo.path, "--json"],
+            arguments: ["wink", "capture", "video", fifo.path, "--json"],
             expectedMessage: "Input video path is not a regular file: \(fifo.path)"
         )
 
@@ -169,16 +169,16 @@ struct PreRuntimeInvalidInputOrderingTests {
         ]
         for (options, expectedMessage) in invalidOptions {
             try await Self.requirePreRuntimeRefusal(
-                arguments: ["peekaboo", "capture", "video", empty.path] + options + ["--json"],
+                arguments: ["wink", "capture", "video", empty.path] + options + ["--json"],
                 expectedMessage: expectedMessage
             )
         }
     }
 
     @Test(arguments: [
-        ["peekaboo", "type", "alpha", "--foreground", "--json"],
-        ["peekaboo", "browser", "status", "--json"],
-        ["peekaboo", "window", "list", "--json"],
+        ["wink", "type", "alpha", "--foreground", "--json"],
+        ["wink", "browser", "status", "--json"],
+        ["wink", "window", "list", "--json"],
     ])
     func `valid request shapes continue to runtime construction`(arguments: [String]) async throws {
         let resolved = try CommanderRuntimeRouter.resolve(argv: arguments)
@@ -203,7 +203,7 @@ struct PreRuntimeInvalidInputOrderingTests {
     @Test
     func `valid video request shape continues to runtime construction`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-valid-video-shape-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-valid-video-shape-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let target = root.appendingPathComponent("target.mp4")
@@ -212,7 +212,7 @@ struct PreRuntimeInvalidInputOrderingTests {
         try FileManager.default.createSymbolicLink(at: input, withDestinationURL: target)
 
         let resolved = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo", "capture", "video", input.path, "--sample-fps", "2", "--json",
+            "wink", "capture", "video", input.path, "--sample-fps", "2", "--json",
         ])
         var runtimeConstructionCount = 0
 

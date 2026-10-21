@@ -1,5 +1,5 @@
 ---
-summary: "Borrowed improvements from pi-mono to harden and polish the Peekaboo agent"
+summary: "Borrowed improvements from pi-mono to harden and polish the Wink agent"
 read_when:
   - "planning agent runtime or CLI refactors"
   - "adding streaming/UI affordances to agent chat"
@@ -9,7 +9,7 @@ read_when:
 # Agent Improvements (pi-mono learnings)
 _Status: Archived · Focus: streaming/tool-call UX and queue mode roadmap._
 
-This note captures concrete ideas to port from `pi-mono` (pi-coding-agent, pi-agent, pi-ai, pi-tui) into Peekaboo. Use as a grab-bag when planning the next agent/CLI pass.
+This note captures concrete ideas to port from `pi-mono` (pi-coding-agent, pi-agent, pi-ai, pi-tui) into Wink. Use as a grab-bag when planning the next agent/CLI pass.
 
 ## Runtime & UX
 - Add a **message queue mode** toggle: one-at-a-time vs all-queued injection before the next turn. Surface the current mode in the chat banner.

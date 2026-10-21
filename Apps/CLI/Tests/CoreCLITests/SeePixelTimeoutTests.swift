@@ -1,12 +1,12 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor

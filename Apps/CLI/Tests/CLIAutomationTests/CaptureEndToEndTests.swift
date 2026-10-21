@@ -1,8 +1,8 @@
 import Commander
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// Note: These are lightweight, non-I/O tests—real screen/video IO is not exercised here.
 /// They validate flag validation and MP4 toggle plumbing to replace the removed watch suites

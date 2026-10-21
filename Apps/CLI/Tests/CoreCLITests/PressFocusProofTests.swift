@@ -1,12 +1,12 @@
 import Commander
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 @MainActor
@@ -101,8 +101,8 @@ private final class FocusProofHotkeyRecorder: MockAutomationService, ScriptedUIA
 
 /// No native service graph: any unexpected service access stops the deterministic test.
 @MainActor
-final class FocusProofPressServices: PeekabooServiceProviding {
-    let executionHost: PeekabooServiceExecutionHost = .remote
+final class FocusProofPressServices: WinkServiceProviding {
+    let executionHost: WinkServiceExecutionHost = .remote
     let windows: any WindowManagementServiceProtocol
     let automation: any UIAutomationServiceProtocol
     let snapshots: any SnapshotManagerProtocol
@@ -153,7 +153,7 @@ final class FocusProofPressServices: PeekabooServiceProviding {
         fatalError("Unexpected clipboard")
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         fatalError("Unexpected configuration")
     }
 

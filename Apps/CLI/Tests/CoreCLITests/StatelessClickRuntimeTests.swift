@@ -1,10 +1,10 @@
 import Commander
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct StatelessClickRuntimeTests {
     @Test
@@ -23,24 +23,24 @@ struct StatelessClickRuntimeTests {
             #expect(options.requiresPostEventPermission)
         }
 
-        let operations: [PeekabooBridgeOperation] = [.targetedClick, .exactWindowTargetedClick]
+        let operations: [WinkBridgeOperation] = [.targetedClick, .exactWindowTargetedClick]
         let permissions = PermissionsStatus(screenRecording: false, accessibility: true, postEvent: true)
         let previous = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 29),
             supportedOperations: operations,
             permissions: permissions,
-            hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+            hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
         )
         let missingCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+            negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
             supportedOperations: operations,
             permissions: permissions
         )
         let capable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+            negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
             supportedOperations: operations,
             permissions: permissions,
-            hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+            hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
         )
         var options = CommandRuntimeOptions()
         options.requiresStatelessClickVariants = true
@@ -59,36 +59,36 @@ struct StatelessClickRuntimeTests {
 
     @Test
     func `Held pointer support requires complete enabled protocol 1 30 capability`() {
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .createExactWindowHeldPointerOwner,
             .beginExactWindowHeldPointer,
             .releaseExactWindowHeldPointer,
             .revokeExactWindowHeldPointer,
             .disconnectExactWindowHeldPointerOwner,
         ]
-        let capability = [PeekabooBridgeHostCapability.exactWindowHeldPointerLifecycle]
+        let capability = [WinkBridgeHostCapability.exactWindowHeldPointerLifecycle]
         let previous = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 29),
             supportedOperations: operations,
             hostCapabilities: capability
         )
         let missingCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.exactWindowHeldPointerLifecycleVersion,
+            negotiatedVersion: WinkBridgeConstants.exactWindowHeldPointerLifecycleVersion,
             supportedOperations: operations
         )
         let missingOperation = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.exactWindowHeldPointerLifecycleVersion,
+            negotiatedVersion: WinkBridgeConstants.exactWindowHeldPointerLifecycleVersion,
             supportedOperations: Array(operations.dropLast()),
             hostCapabilities: capability
         )
         let disabledOperation = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.exactWindowHeldPointerLifecycleVersion,
+            negotiatedVersion: WinkBridgeConstants.exactWindowHeldPointerLifecycleVersion,
             supportedOperations: operations,
             enabledOperations: Array(operations.dropLast()),
             hostCapabilities: capability
         )
         let capable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.exactWindowHeldPointerLifecycleVersion,
+            negotiatedVersion: WinkBridgeConstants.exactWindowHeldPointerLifecycleVersion,
             supportedOperations: operations,
             enabledOperations: operations,
             hostCapabilities: capability
@@ -113,8 +113,8 @@ struct StatelessClickRuntimeTests {
         )
         #expect(runtimeOptions.requiresForegroundModifierClickSnapshotLease)
 
-        let operation = PeekabooBridgeOperation.foregroundModifierClick
-        let capability = [PeekabooBridgeHostCapability.foregroundModifierClickSnapshotLease]
+        let operation = WinkBridgeOperation.foregroundModifierClick
+        let capability = [WinkBridgeHostCapability.foregroundModifierClickSnapshotLease]
         let previous = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 32),
             supportedOperations: [operation],
@@ -122,18 +122,18 @@ struct StatelessClickRuntimeTests {
             hostCapabilities: capability
         )
         let missingCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [operation],
             enabledOperations: [operation]
         )
         let disabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [operation],
             enabledOperations: [],
             hostCapabilities: capability
         )
         let capable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [operation],
             enabledOperations: [operation],
             hostCapabilities: capability
@@ -167,24 +167,24 @@ struct StatelessClickRuntimeTests {
         )
         #expect(runtimeOptions.requiresExactWindowPixelFocusTyping)
 
-        let operation = PeekabooBridgeOperation.exactWindowPixelFocusType
+        let operation = WinkBridgeOperation.exactWindowPixelFocusType
         let previous = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 32),
             supportedOperations: [operation],
             enabledOperations: [operation]
         )
         let missing = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [],
             enabledOperations: []
         )
         let disabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [operation],
             enabledOperations: []
         )
         let capable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.composedInputParityVersion,
+            negotiatedVersion: WinkBridgeConstants.composedInputParityVersion,
             supportedOperations: [operation],
             enabledOperations: [operation]
         )

@@ -1,12 +1,12 @@
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct BridgeDiagnosticsConcurrencyTests {
-    private let identity = PeekabooBridgeClientIdentity(
-        bundleIdentifier: "test.peekaboo",
+    private let identity = WinkBridgeClientIdentity(
+        bundleIdentifier: "test.wink",
         teamIdentifier: nil,
         processIdentifier: 42,
         hostname: "test-host"
@@ -88,7 +88,7 @@ struct BridgeDiagnosticsConcurrencyTests {
             maxConcurrentProbes: 2,
             probe: { socketPath, _ in
                 if socketPath == "/slow" {
-                    throw PeekabooBridgeErrorEnvelope(
+                    throw WinkBridgeErrorEnvelope(
                         code: .timeout,
                         message: "diagnostic deadline exceeded"
                     )
@@ -102,7 +102,7 @@ struct BridgeDiagnosticsConcurrencyTests {
             Issue.record("Expected the first diagnostic candidate to fail")
             return
         }
-        #expect(failure.code == PeekabooBridgeErrorCode.timeout.rawValue)
+        #expect(failure.code == WinkBridgeErrorCode.timeout.rawValue)
         #expect(failure.message == "diagnostic deadline exceeded")
         guard case let .success(handshake) = results[1].outcome else {
             Issue.record("Expected the second diagnostic candidate to succeed")
@@ -111,9 +111,9 @@ struct BridgeDiagnosticsConcurrencyTests {
         #expect(handshake.build == "/healthy")
     }
 
-    private nonisolated static func handshake(build: String) -> PeekabooBridgeHandshakeResponse {
+    private nonisolated static func handshake(build: String) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: build,
             supportedOperations: [.permissionsStatus]
@@ -126,14 +126,14 @@ private actor BridgeProbeGate {
     private var startWaiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)] = []
     private(set) var startedPaths: [String] = []
 
-    func probe(_ socketPath: String) async -> PeekabooBridgeHandshakeResponse {
+    func probe(_ socketPath: String) async -> WinkBridgeHandshakeResponse {
         await withCheckedContinuation { continuation in
             self.continuations[socketPath] = continuation
             self.startedPaths.append(socketPath)
             self.resumeSatisfiedStartWaiters()
         }
         return BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: socketPath,
             supportedOperations: [.permissionsStatus]

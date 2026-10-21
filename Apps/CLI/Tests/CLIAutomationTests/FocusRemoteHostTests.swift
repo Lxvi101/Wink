@@ -1,10 +1,10 @@
 import Commander
 import CoreGraphics
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -14,7 +14,7 @@ struct FocusRemoteHostTests {
         let expectedIdentity = try #require(Self.window.mutationIdentity)
         let applications = StubApplicationService(applications: [Self.application])
         let windows = RemoteFocusWindowService(windowsByApp: ["Safari": [Self.window]])
-        let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+        let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         ))
@@ -43,12 +43,12 @@ struct FocusRemoteHostTests {
         let applications = StubApplicationService(applications: [Self.application])
         let windows = RemoteFocusWindowService(windowsByApp: ["Safari": [Self.window]])
         windows.rejectPinnedFocusAsReused = true
-        let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+        let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         ))
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await ensureFocused(
                 windowID: CGWindowID(Self.window.windowID),
                 applicationName: "Safari",
@@ -67,7 +67,7 @@ struct FocusRemoteHostTests {
     func `remote broad selection forwards selected exact receipt`() async throws {
         let expectedIdentity = try #require(Self.window.mutationIdentity)
         let windows = RemoteFocusWindowService(windowsByApp: ["Safari": [Self.window]])
-        let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+        let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [Self.application]),
             windows: windows
         ))
@@ -110,7 +110,7 @@ struct FocusRemoteHostTests {
             "Safari": [Self.window],
             "Other": [otherWindow],
         ])
-        let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+        let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         ))
@@ -147,7 +147,7 @@ struct FocusRemoteHostTests {
             listCallCount += 1
             return listCallCount == 1 ? [Self.window] : [replacement]
         }
-        let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+        let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         ))
@@ -197,7 +197,7 @@ struct FocusRemoteHostTests {
             let applications = StubApplicationService(applications: [Self.application])
             let windows = RemoteFocusWindowService(windowsByApp: ["Safari": [Self.window]])
             windows.focusOutcome = outcome
-            let services = RemoteFocusTestServices(base: TestServicesFactory.makePeekabooServices(
+            let services = RemoteFocusTestServices(base: TestServicesFactory.makeWinkServices(
                 applications: applications,
                 windows: windows
             ))
@@ -272,7 +272,7 @@ struct FocusRemoteHostTests {
         )
     }
 
-    private static func runtime(services: any PeekabooServiceProviding) -> CommandRuntime {
+    private static func runtime(services: any WinkServiceProviding) -> CommandRuntime {
         CommandRuntime(
             configuration: .init(
                 verbose: false,
@@ -309,7 +309,7 @@ private final class RemoteFocusWindowService: StubWindowService, WindowManagemen
     @MainActor
     func focusWindowActionResult(target: WindowTarget) async throws -> UIAutomationActionResult<Void> {
         self.unpinnedFocusCallCount += 1
-        throw PeekabooError.commandFailed("Focus test requires a pinned provider call")
+        throw WinkError.commandFailed("Focus test requires a pinned provider call")
     }
 
     @MainActor
@@ -319,7 +319,7 @@ private final class RemoteFocusWindowService: StubWindowService, WindowManagemen
     ) async throws -> UIAutomationActionResult<Void> {
         self.pinnedFocusCalls.append(.init(target: target, identity: expectedIdentity))
         if self.rejectPinnedFocusAsReused {
-            throw PeekabooError.windowNotFound(criteria: "windowId \(expectedIdentity.windowID) was reused")
+            throw WinkError.windowNotFound(criteria: "windowId \(expectedIdentity.windowID) was reused")
         }
         if let focusFailure {
             throw focusFailure
@@ -328,7 +328,7 @@ private final class RemoteFocusWindowService: StubWindowService, WindowManagemen
               windowID == expectedIdentity.windowID,
               let bounds = expectedIdentity.capturedBounds
         else {
-            throw PeekabooError.windowNotFound(criteria: target.description)
+            throw WinkError.windowNotFound(criteria: target.description)
         }
         return try UIAutomationActionResult(
             payload: (),
@@ -349,11 +349,11 @@ private final class RemoteFocusWindowService: StubWindowService, WindowManagemen
 }
 
 @MainActor
-private final class RemoteFocusTestServices: PeekabooServiceProviding {
-    let executionHost: PeekabooServiceExecutionHost = .remote
-    private let base: PeekabooServices
+private final class RemoteFocusTestServices: WinkServiceProviding {
+    let executionHost: WinkServiceExecutionHost = .remote
+    private let base: WinkServices
 
-    init(base: PeekabooServices) {
+    init(base: WinkServices) {
         self.base = base
     }
 
@@ -405,7 +405,7 @@ private final class RemoteFocusTestServices: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooAutomation.ConfigurationManager {
+    var configuration: WinkAutomation.ConfigurationManager {
         self.base.configuration
     }
 

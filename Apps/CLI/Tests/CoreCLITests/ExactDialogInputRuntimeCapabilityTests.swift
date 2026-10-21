@@ -1,8 +1,8 @@
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -12,9 +12,9 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
         let capable = Self.handshake(
             operations: [.dialogEnterText, .exactDialogEnterText, .exactDialogForceDismiss],
             capabilities: [
-                PeekabooBridgeHostCapability.exactDialogInputExecution,
-                PeekabooBridgeHostCapability.exactForcedDialogDismissExecution,
-                PeekabooBridgeHostCapability.dialogInputFocusPolicy,
+                WinkBridgeHostCapability.exactDialogInputExecution,
+                WinkBridgeHostCapability.exactForcedDialogDismissExecution,
+                WinkBridgeHostCapability.dialogInputFocusPolicy,
             ]
         )
         let missingCapability = Self.handshake(
@@ -23,16 +23,16 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
         )
         let missingOperation = Self.handshake(
             operations: [.dialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.exactDialogInputExecution]
+            capabilities: [WinkBridgeHostCapability.exactDialogInputExecution]
         )
         let disabledOperation = Self.handshake(
             operations: [.dialogEnterText, .exactDialogEnterText],
             enabledOperations: [.dialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.exactDialogInputExecution]
+            capabilities: [WinkBridgeHostCapability.exactDialogInputExecution]
         )
         let legacyFocusOnly = Self.handshake(
             operations: [.dialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.dialogInputFocusPolicy]
+            capabilities: [WinkBridgeHostCapability.dialogInputFocusPolicy]
         )
 
         #expect(RuntimeHostResolver.remoteDialogCapabilities(for: capable).exactInput)
@@ -52,7 +52,7 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
         let oldHost = Self.handshake(
             version: .init(major: 1, minor: 27),
             operations: [.dialogEnterText, .exactDialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.exactDialogInputExecution]
+            capabilities: [WinkBridgeHostCapability.exactDialogInputExecution]
         )
 
         let capabilities = RuntimeHostResolver.remoteDialogCapabilities(for: oldHost)
@@ -63,8 +63,8 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
 
     @Test
     func `exact forced dismiss enablement requires 1 28 operation enablement and capability`() {
-        let operation = PeekabooBridgeOperation.exactDialogForceDismiss
-        let capability = PeekabooBridgeHostCapability.exactForcedDialogDismissExecution
+        let operation = WinkBridgeOperation.exactDialogForceDismiss
+        let capability = WinkBridgeHostCapability.exactForcedDialogDismissExecution
         let protocol127 = Self.handshake(
             version: .init(major: 1, minor: 27),
             operations: [operation],
@@ -105,20 +105,20 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
         let attested = Self.handshake(
             operations: [.exactDialogEnterText],
             capabilities: [
-                PeekabooBridgeHostCapability.exactDialogInputExecution,
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.exactDialogInputExecution,
+                WinkBridgeHostCapability.attestedOperationReceipts,
             ],
             permissions: permissions
         )
         let receiptless129 = Self.handshake(
             operations: [.exactDialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.exactDialogInputExecution],
+            capabilities: [WinkBridgeHostCapability.exactDialogInputExecution],
             permissions: permissions
         )
         let protocol128 = Self.handshake(
             version: .init(major: 1, minor: 28),
             operations: [.exactDialogEnterText],
-            capabilities: [PeekabooBridgeHostCapability.exactDialogInputExecution],
+            capabilities: [WinkBridgeHostCapability.exactDialogInputExecution],
             permissions: permissions
         )
 
@@ -140,12 +140,12 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
     }
 
     private static func handshake(
-        version: PeekabooBridgeProtocolVersion = PeekabooBridgeConstants.protocolVersion,
-        operations: [PeekabooBridgeOperation],
-        enabledOperations: [PeekabooBridgeOperation]? = nil,
+        version: WinkBridgeProtocolVersion = WinkBridgeConstants.protocolVersion,
+        operations: [WinkBridgeOperation],
+        enabledOperations: [WinkBridgeOperation]? = nil,
         capabilities: [String]?,
         permissions: PermissionsStatus? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
             negotiatedVersion: version,
             hostKind: .gui,
@@ -159,8 +159,8 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
 
     @Test
     func `exact file execution requires attestation floor capability and explicit operation enablement`() {
-        let capability = PeekabooBridgeHostCapability.exactFileDialogExecution
-        let attested = PeekabooBridgeHostCapability.attestedOperationReceipts
+        let capability = WinkBridgeHostCapability.exactFileDialogExecution
+        let attested = WinkBridgeHostCapability.attestedOperationReceipts
         let capable = Self.handshake(operations: [.dialogHandleFile], capabilities: [capability, attested])
         let missingCapability = Self.handshake(operations: [.dialogHandleFile], capabilities: [attested])
         let receiptless = Self.handshake(operations: [.dialogHandleFile], capabilities: [capability])
@@ -173,8 +173,8 @@ struct ExactDialogForegroundRuntimeCapabilityTests {
         let disabled = Self.handshake(
             operations: [.dialogHandleFile], enabledOperations: [], capabilities: [capability, attested]
         )
-        let implicitEnablement = PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+        let implicitEnablement = WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.dialogHandleFile],

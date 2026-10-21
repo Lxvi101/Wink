@@ -4,13 +4,13 @@ import Testing
 struct MCPStdioEOFTests {
     @Test(.timeLimit(.minutes(1)))
     func `one-shot stdio request flushes its response before EOF exit`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo (or set PEEKABOO_CLI_BINARY) before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink (or set WINK_CLI_BINARY) before running CLI runtime tests.")
             return
         }
 
         let request = #"{"jsonrpc":"2.0","method":"tools/list","id":1}"# + "\n"
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["mcp", "--no-remote"],
             standardInput: request
         )
@@ -28,13 +28,13 @@ struct MCPStdioEOFTests {
 
     @Test(.timeLimit(.minutes(1)))
     func `one-shot malformed ID request flushes its protocol error before EOF exit`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo (or set PEEKABOO_CLI_BINARY) before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink (or set WINK_CLI_BINARY) before running CLI runtime tests.")
             return
         }
 
         let request = #"{"jsonrpc":"2.0","id":7}"# + "\n"
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["mcp", "--no-remote"],
             standardInput: request
         )
@@ -51,13 +51,13 @@ struct MCPStdioEOFTests {
 
     @Test(.timeLimit(.minutes(1)))
     func `clipboard stdout path refusal preserves JSON-RPC stream and filesystem`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo (or set PEEKABOO_CLI_BINARY) before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink (or set WINK_CLI_BINARY) before running CLI runtime tests.")
             return
         }
 
         let workingDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-mcp-clipboard-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-mcp-clipboard-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: workingDirectory) }
 
@@ -66,7 +66,7 @@ struct MCPStdioEOFTests {
             #""arguments":{"action":"get","outputPath":"-"}},"id":41}"#
         let listRequest = #"{"jsonrpc":"2.0","method":"tools/list","id":42}"#
         let request = "\(callRequest)\n\(listRequest)\n"
-        let child = try await TestChildProcess.runPeekaboo(
+        let child = try await TestChildProcess.runWink(
             ["mcp", "--no-remote"],
             workingDirectory: workingDirectory,
             standardInput: request

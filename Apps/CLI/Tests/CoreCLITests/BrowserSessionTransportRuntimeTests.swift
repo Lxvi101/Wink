@@ -1,17 +1,17 @@
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe))
 @MainActor
 struct BrowserSessionTransportRuntimeTests {
-    @Test(arguments: [PeekabooBridgeHostKind.onDemand, .gui])
+    @Test(arguments: [WinkBridgeHostKind.onDemand, .gui])
     func `runtime injects browser session transport only for exact negotiated capability`(
-        hostKind: PeekabooBridgeHostKind
+        hostKind: WinkBridgeHostKind
     ) throws {
-        let client = PeekabooBridgeClient(
-            socketPath: "/private/tmp/peekaboo-browser-session-transport-test.sock",
+        let client = WinkBridgeClient(
+            socketPath: "/private/tmp/wink-browser-session-transport-test.sock",
             requestTimeoutSec: 0.1
         )
         let supported = Self.handshake(hostKind: hostKind)
@@ -39,10 +39,10 @@ struct BrowserSessionTransportRuntimeTests {
         }
     }
 
-    @Test(arguments: [PeekabooBridgeHostKind.onDemand, .gui], Self.operations)
+    @Test(arguments: [WinkBridgeHostKind.onDemand, .gui], Self.operations)
     func `capability policy requires every scoped browser operation supported and enabled`(
-        hostKind: PeekabooBridgeHostKind,
-        operation: PeekabooBridgeOperation
+        hostKind: WinkBridgeHostKind,
+        operation: WinkBridgeOperation
     ) {
         #expect(BridgeCapabilityPolicy.supportsBrowserConnectionHandoff(for: Self.handshake(hostKind: hostKind)))
         #expect(!BridgeCapabilityPolicy.supportsBrowserConnectionHandoff(
@@ -53,7 +53,7 @@ struct BrowserSessionTransportRuntimeTests {
         ))
     }
 
-    private nonisolated static let operations: [PeekabooBridgeOperation] = [
+    private nonisolated static let operations: [WinkBridgeOperation] = [
         .browserStatus,
         .browserConnect,
         .browserExecute,
@@ -63,20 +63,20 @@ struct BrowserSessionTransportRuntimeTests {
 
     private static func handshake(
         minor: Int = 38,
-        hostKind: PeekabooBridgeHostKind = .onDemand,
+        hostKind: WinkBridgeHostKind = .onDemand,
         includeCapability: Bool = true,
-        omitting operationToOmit: PeekabooBridgeOperation? = nil,
-        disabling disabledOperation: PeekabooBridgeOperation? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+        omitting operationToOmit: WinkBridgeOperation? = nil,
+        disabling disabledOperation: WinkBridgeOperation? = nil
+    ) -> WinkBridgeHandshakeResponse {
         let supported = self.operations.filter { $0 != operationToOmit }
         let enabled = supported.filter { $0 != disabledOperation }
-        return PeekabooBridgeHandshakeResponse(
+        return WinkBridgeHandshakeResponse(
             negotiatedVersion: .init(major: 1, minor: minor),
             hostKind: hostKind,
             build: nil,
             supportedOperations: supported,
             enabledOperations: enabled,
-            hostCapabilities: includeCapability ? [PeekabooBridgeHostCapability.browserConnectionHandoff] : []
+            hostCapabilities: includeCapability ? [WinkBridgeHostCapability.browserConnectionHandoff] : []
         )
     }
 }

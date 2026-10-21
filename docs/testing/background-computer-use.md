@@ -2,7 +2,7 @@
 summary: 'Deterministic end-to-end validation for non-interrupting background computer use'
 read_when:
   - 'changing interaction delivery, focus behavior, snapshots, or overlays'
-  - 'comparing Peekaboo with another computer-use implementation'
+  - 'comparing Wink with another computer-use implementation'
 ---
 
 # Background computer-use validation
@@ -57,7 +57,7 @@ record with exactly `sequence`, `button`, `phase`, and `window_id`; the surround
 exact Playground process ID. The 42-case matrix and live-v4 coordinator do not collect or validate these records. The
 separate final physical-qualification procedure must query them by the exact Playground PID: middle-click evidence is
 one consecutive middle down/up pair with the same window ID. Held-pointer evidence uses the same already-signed,
-source-bound `peekaboo-certification-controller` built for live-v4 with its `--held-pointer-plan` mode. That mode performs
+source-bound `wink-certification-controller` built for live-v4 with its `--held-pointer-plan` mode. That mode performs
 two complete exact-window inventories, creates one owner, begins and releases the hold, and disconnects the owner while
 exporting the ordered six listener-signed receipts. Qualification additionally requires the corresponding consecutive
 left down/up Playground records, exact process-generation readback before and after, semantic restoration, and a clean
@@ -88,7 +88,7 @@ controlled Playground target are ready:
   "trusted_bridge_host_team_ids": ["TENCHARID1"],
   "expected_controller_build": {
     "source_commit": "40-lowercase-hex",
-    "executable_path": "/absolute/path/to/peekaboo-certification-controller",
+    "executable_path": "/absolute/path/to/wink-certification-controller",
     "executable_sha256": "64-lowercase-hex",
     "team_id": "TENCHARID1"
   },
@@ -113,7 +113,7 @@ controlled Playground target are ready:
 ```
 
 ```bash
-peekaboo-certification-controller \
+wink-certification-controller \
   --held-pointer-plan /private/path/to/held-pointer-plan.json
 ```
 
@@ -143,8 +143,8 @@ checkout's source merely because its bundle identifier matches.
 Every background case starts only after the 10 ms monitor completes its first sample and publishes a sequence
 heartbeat. After the command and its restoration checks finish, the case waits for that sequence to advance again; an
 alive but wedged watcher cannot certify a pass. The case also fails if the monitor does not remain alive until the
-harness terminates it, or if Peekaboo changes the sentinel PID/top window, the clipboard leaks, or a new visible
-Peekaboo window appears. Physical cursor coordinates are observational because the user may move the mouse while the
+harness terminates it, or if Wink changes the sentinel PID/top window, the clipboard leaks, or a new visible
+Wink window appears. Physical cursor coordinates are observational because the user may move the mouse while the
 matrix runs. The probe records `cursorMovementObserved`; hardware-origin `mouseMoved` events from PID 0 neither fail nor
 contaminate a row. User clicks, keys, wheel input, attribution loss, and focus changes remain contamination. A passive
 native event tap correlates product input with exact command/Bridge-host PID and
@@ -155,13 +155,13 @@ is part of the same contamination; without external input it violates the matchi
 the complete non-null event mask and verifies that macOS retained the required mouse, keyboard, scroll, and tablet bits;
 missing listen access, a reduced tap, disablement, or event overflow blocks certification. The original focus baseline
 is never rebased into a pass; no cursor-position equality is required. The catalog's
-`producer_pointer_event` slot means Peekaboo emitted no attributable shared-pointer route, not that the user
+`producer_pointer_event` slot means Wink emitted no attributable shared-pointer route, not that the user
 kept the mouse still. When observational cursor policy is disabled, coordinate drift is reported separately as the
-out-of-catalog `cursor_position` violation, which still fails the harness without blaming Peekaboo for the user's input.
+out-of-catalog `cursor_position` violation, which still fails the harness without blaming Wink for the user's input.
 A pre-command attempt can be discarded and restarted from a fresh baseline, with
 three total attempts. After dispatch, only catalog rows with a named replay-safe reset contract may rerun the whole row; mutation rows
 such as click, type, paste, close, and quit block instead. Disabled attribution, event overflow, or retry exhaustion also
-blocks the row instead of silently passing or blaming unrelated motion on Peekaboo. Clipboard and overlay invariants
+blocks the row instead of silently passing or blaming unrelated motion on Wink. Clipboard and overlay invariants
 remain active even on a contaminated interactive sample. The harness does not save and unconditionally restore a
 run-start clipboard snapshot, so a newer user clipboard is never overwritten during cleanup; the paste command's own
 transaction must restore its temporary payload. Clipboard
@@ -253,7 +253,7 @@ not certified merely because the cases that happened to execute passed. The mach
 `certification.json` beside the normal summary.
 
 Completeness is relative to this source-controlled 42-case single-controller matrix; it is not a claim that every
-Peekaboo CLI combination is represented. Live concurrent certification is a separate source-owned workflow. It runs
+Wink CLI combination is represented. Live concurrent certification is a separate source-owned workflow. It runs
 two long-lived, exact-window background controllers plus an independent foreground semantic observer through the same
 authenticated Bridge listener. Each controller publishes four signed slots: type mutation, protocol-1.30 triple click,
 checkpoint observation, and final-bounds observation.
@@ -270,7 +270,7 @@ semantic role plus title and/or identifier, expected value derived from the run 
 artifact paths. It performs a fresh signed readback during the overlap bracket and proves restoration afterward. The
 monitor also commits crash inventory, sentinel and clipboard state, producer revisions, all six fences, and restoration.
 The closed crash-report prefix set covers `Playground`, the fixture's resolved executable name, and retains the legacy
-`PeekabooPlayground` watch entry.
+`WinkPlayground` watch entry.
 Separate owner-private Unix sockets challenge the live monitor and observer by kernel peer PID before and after final
 validation; caller-written files alone never mint authority.
 
@@ -308,7 +308,7 @@ node scripts/finalize-multi-target-certification.mjs prepare \
   --monitor-evidence /private/path/to/monitor-evidence.json \
   --foreground-postcondition /private/path/to/foreground-postcondition.json \
   --artifacts /private/path/to/artifacts \
-  --peekaboo /absolute/path/to/signed/peekaboo
+  --wink /absolute/path/to/signed/wink
 
 node scripts/finalize-multi-target-certification.mjs verify-digests \
   --artifacts /private/path/to/artifacts \
@@ -349,7 +349,7 @@ scripts/test-background-computer-use.sh --foreground-phase
 ```
 
 That opt-in phase intentionally controls the shared cursor. It restores the prior cursor and sentinel only when their
-current values still match Peekaboo's last write; a concurrent user change is newer state and is never overwritten. The
+current values still match Wink's last write; a concurrent user change is newer state and is never overwritten. The
 phase is not part of the default background certification and should run only on an otherwise idle desktop.
 Do not move Dock items, switch Spaces, or open file dialogs in this harness; those belong in explicitly destructive or
 interactive test plans.
@@ -372,18 +372,18 @@ live run, leave exactly one visible key or sole window open for Safari, Calendar
 Monitor, and Finder; Activity Monitor may also retain auxiliary windows when exactly one visible window matches the
 catalog title. Add `--no-remote` when the exact CLI is team-signed and
 has local TCC grants; this prevents an installed bridge host from masking working-tree behavior. A prebuilt app must
-have the OpenClaw Foundation team signature and the exact current-source `PeekabooPlaygroundSource.json` manifest;
+have the OpenClaw Foundation team signature and the exact current-source `WinkPlaygroundSource.json` manifest;
 ad-hoc or unstamped fixtures are rejected. Build it with `scripts/build-playground-artifact.sh`, then use the terminal
 artifact finalizer for signing and notarization. Manifest schema v2 binds the fixture to `source_commit`, the
 `Apps/Playground` source tree, marketing version, configuration, bundle identifier, root workspace/scheme, and the path
-plus SHA-256 of the tracked canonical `Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved`. It also records
+plus SHA-256 of the tracked canonical `Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved`. It also records
 the canonical Developer directory and exact Xcode, macOS SDK, and Swift compiler versions. Standalone Playground
 lockfiles are not accepted. The native preflight and terminal finalizer share the strict v2 receipt validator in
 `scripts/source-provenance.sh`: exactly one JSON object with the 14 documented fields, numeric schema version 2,
 and an immutable regular receipt. Native preflight independently checks the clean current checkout, exact Playground
 tree, tracked unchanged canonical lock, selected toolchain, and actual bundle identifier/version/executable metadata.
 It verifies the app with `codesign --verify --deep --strict` and an Apple-anchored requirement for the OpenClaw Foundation
-Developer ID, team `FWJYW4S8P8`, and Debug identifier `boo.peekaboo.playground.debug`. Supplied artifacts are never
+Developer ID, team `FWJYW4S8P8`, and Debug identifier `boo.wink.playground.debug`. Supplied artifacts are never
 restamped, normalized, or re-signed.
 
 The default local build still uses the standalone Playground project and creates a v1 receipt. That narrow exception
@@ -409,12 +409,12 @@ binds the zipped app, its exact post-staple tree receipt, Foundation identity/no
 Node 26.9.0 qualification app. **That terminal-manifest/pinned-Node integration is not yet implemented by this native
 harness; fixture validation alone does not establish terminal qualification.** The qualification consumer must extract
 and verify that Node app before any candidate action and run
-qualification JavaScript only with `PeekabooQualificationNode.app/Contents/MacOS/node`; ambient `node`, PATH, and an
+qualification JavaScript only with `WinkQualificationNode.app/Contents/MacOS/node`; ambient `node`, PATH, and an
 OpenClaw installation are not fallbacks. Terminal app payloads permit no extended attributes, `__MACOSX`, or `._*`
 AppleDouble entries, and every ZIP must reproduce the retained canonical tree byte-for-byte.
 The retained receipts also preserve the exact notarization submissions, bind every universal Mach-O architecture,
 anchor the controller/monitor source aggregate inside signed code, and require the final DMG to remount with the exact
-notarized Peekaboo app and no unapproved root payloads.
+notarized Wink app and no unapproved root payloads.
 
 The synthetic `scripts/test-terminal-manifest-portability.sh` fixture copies disposable, metadata-bearing inputs without
 extended attributes before setting source modes to 444/555 and recording trees or packaging archives. Its final synthetic

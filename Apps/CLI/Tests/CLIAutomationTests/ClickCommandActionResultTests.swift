@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -182,7 +182,7 @@ struct ClickCommandActionResultTests {
     private func makeFixture(
         outcome: DesktopActionOutcome,
     ) async throws -> (
-        services: PeekabooServices,
+        services: WinkServices,
         snapshotID: String,
     ) {
         let automation = OutcomeStubAutomationService()
@@ -193,7 +193,7 @@ struct ClickCommandActionResultTests {
     private func makeFixture(
         automation: StubAutomationService,
     ) async throws -> (
-        services: PeekabooServices,
+        services: WinkServices,
         snapshotID: String,
     ) {
         let application = ServiceApplicationInfo(
@@ -226,7 +226,7 @@ struct ClickCommandActionResultTests {
     }
 
     private func runBackgroundClick(
-        _ fixture: (services: PeekabooServices, snapshotID: String),
+        _ fixture: (services: WinkServices, snapshotID: String),
         exactWindow: Bool = false,
     ) async throws -> CommandRunResult {
         var arguments = ["click", "--on", "B1", "--snapshot", fixture.snapshotID, "--json", "--no-remote"]

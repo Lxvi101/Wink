@@ -1,13 +1,13 @@
 ---
-summary: 'Dump the full Peekaboo agent guide via peekaboo learn'
+summary: 'Dump the full Wink agent guide via wink learn'
 read_when:
   - 'needing the latest system prompt, tool catalog, and best practices in one blob'
-  - 'building or QA-ing external agents that embed Peekaboo instructions'
+  - 'building or QA-ing external agents that embed Wink instructions'
 ---
 
-# `peekaboo learn`
+# `wink learn`
 
-`peekaboo learn` prints the canonical background-only public Agent guide for the current filtered tool catalog, followed by a complete standalone CLI reference. Its generated system prompt, tool count and quick reference agree with the Shell-free Agent registry; CLI examples do not make unavailable tools accessible to an Agent.
+`wink learn` prints the canonical background-only public Agent guide for the current filtered tool catalog, followed by a complete standalone CLI reference. Its generated system prompt, tool count and quick reference agree with the Shell-free Agent registry; CLI examples do not make unavailable tools accessible to an Agent.
 
 ## What it emits
 - **System instructions** generated from the same available tool names as the catalog. Unavailable tools do not contribute recipes; communication, authority and evidence rules remain unconditional.
@@ -19,7 +19,7 @@ read_when:
 ## Implementation notes
 - The command is intentionally text-only—`--json` is ignored—so downstream systems should capture stdout if they want to cache the content.
 - Everything runs on the main actor because it pulls the same background-only, policy-filtered toolset as a normal Agent session plus live Commander metadata; no parallel discovery catalog is involved.
-- Tool filters such as `PEEKABOO_ALLOW_TOOLS` and `PEEKABOO_DISABLE_TOOLS` affect the Agent sections, not the complete Commander command signatures. A blank allow-list means no allow-list restriction; combine an allow and matching disable filter to exercise an empty catalog.
+- Tool filters such as `WINK_ALLOW_TOOLS` and `WINK_DISABLE_TOOLS` affect the Agent sections, not the complete Commander command signatures. A blank allow-list means no allow-list restriction; combine an allow and matching disable filter to exercise an empty catalog.
 - Because it reuses the same builders the CLI uses at runtime, new commands and eligible tools automatically show up here as soon as they land.
 - Background-only typing examples use a fresh exact non-dialog snapshot; app/PID/window-selector-only Agent typing is intentionally absent because policy refuses it.
 - When stdout is a rich TTY, output is rendered with Swiftdansi for ANSI color and table/box formatting; piped output stays plain Markdown for downstream tools.
@@ -27,16 +27,16 @@ read_when:
 ## Examples
 ```bash
 # Save the full guide for another agent runtime
-peekaboo learn > /tmp/peekaboo-guide.md
+wink learn > /tmp/wink-guide.md
 
 # Inspect a minimal Agent catalog with the complete CLI reference
-PEEKABOO_ALLOW_TOOLS=permissions peekaboo learn
+WINK_ALLOW_TOOLS=permissions wink learn
 
 # Extract just the Commander signatures
-peekaboo learn | awk '/^## Commander/,0'
+wink learn | awk '/^## Commander/,0'
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

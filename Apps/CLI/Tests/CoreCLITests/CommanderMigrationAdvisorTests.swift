@@ -1,18 +1,18 @@
 import Commander
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.fast))
 @MainActor
 struct CommanderMigrationAdvisorTests {
     @Test(arguments: [
-        (["image"], "peekaboo see --no-elements"),
-        (["inspect-ui"], "peekaboo see --tree --no-screenshot"),
-        (["hotkey"], "peekaboo press"),
-        (["swipe"], "peekaboo drag"),
-        (["perform-action"], "peekaboo action"),
-        (["list", "windows"], "peekaboo window list"),
-        (["help", "image"], "peekaboo see --no-elements"),
+        (["image"], "wink see --no-elements"),
+        (["inspect-ui"], "wink see --tree --no-screenshot"),
+        (["hotkey"], "wink press"),
+        (["swipe"], "wink drag"),
+        (["perform-action"], "wink action"),
+        (["list", "windows"], "wink window list"),
+        (["help", "image"], "wink see --no-elements"),
     ])
     func `Removed commands name their replacement`(arguments: [String], replacement: String) throws {
         let error = try #require(CommanderMigrationAdvisor.commandError(for: arguments))
@@ -24,8 +24,8 @@ struct CommanderMigrationAdvisorTests {
         (["click", "--coords", "1,2"], "--at"),
         (["paste", "--restore-delay-ms", "100"], "--restore-delay"),
         (["capture", "video", "in.mov", "--every-ms", "500"], "--every"),
-        (["type", "hello", "--return"], "peekaboo press Return --foreground"),
-        (["agent", "--resume-session", "abc"], "peekaboo agent resume <session-id>"),
+        (["type", "hello", "--return"], "wink press Return --foreground"),
+        (["agent", "--resume-session", "abc"], "wink agent resume <session-id>"),
         (["clipboard", "--action", "get"], "clipboard status|get|set|clear|save|restore"),
     ])
     func `Removed options name their replacement`(arguments: [String], replacement: String) throws {
@@ -41,13 +41,13 @@ struct CommanderMigrationAdvisorTests {
     @Test
     func `Router returns migration advice instead of generic parser errors`() {
         #expect(throws: CommanderUsageError.self) {
-            _ = try CommanderRuntimeRouter.resolve(argv: ["peekaboo", "image"])
+            _ = try CommanderRuntimeRouter.resolve(argv: ["wink", "image"])
         }
         #expect(throws: CommanderUsageError.self) {
-            _ = try CommanderRuntimeRouter.resolve(argv: ["peekaboo", "click", "--coords", "1,2"])
+            _ = try CommanderRuntimeRouter.resolve(argv: ["wink", "click", "--coords", "1,2"])
         }
         #expect(throws: CommanderUsageError.self) {
-            _ = try CommanderRuntimeRouter.resolve(argv: ["peekaboo", "--json", "see"])
+            _ = try CommanderRuntimeRouter.resolve(argv: ["wink", "--json", "see"])
         }
     }
 }

@@ -28,7 +28,7 @@ UNIVERSAL_BINARY_SHA=4f99ecbd96c3f65a7c41ad3bae312dc4f42bc0b3ed51d46925111238ec5
 UNIVERSAL_BINARY_SIZE=295829824
 ENTITLEMENTS_PATH="$ROOT_DIR/scripts/qualification-node.entitlements"
 OUTPUT_APP=""
-TEST_MODE="${PEEKABOO_TERMINAL_TEST_MODE:-0}"
+TEST_MODE="${WINK_TERMINAL_TEST_MODE:-0}"
 
 fail() {
   printf 'build-node-runtime-macos: %s\n' "$*" >&2
@@ -74,7 +74,7 @@ case "$TEST_MODE" in
       NODE_RUNTIME_LICENSE_SHA NODE_RUNTIME_UNIVERSAL_BINARY_SHA NODE_RUNTIME_UNIVERSAL_BINARY_SIZE; do
       [[ -z "${!override_name+x}" ]] || fail "$override_name is test-only"
     done
-    download_root="$(mktemp -d /tmp/peekaboo-node-download.XXXXXX)"
+    download_root="$(mktemp -d /tmp/wink-node-download.XXXXXX)"
     ARM64_ARCHIVE="$download_root/arm64.tar.gz"
     X64_ARCHIVE="$download_root/x64.tar.gz"
     /usr/bin/curl --fail --location --proto '=https' --tlsv1.2 --silent --show-error \
@@ -82,10 +82,10 @@ case "$TEST_MODE" in
     /usr/bin/curl --fail --location --proto '=https' --tlsv1.2 --silent --show-error \
       "$X64_URL" -o "$X64_ARCHIVE"
     ;;
-  *) fail 'PEEKABOO_TERMINAL_TEST_MODE must be boolean' ;;
+  *) fail 'WINK_TERMINAL_TEST_MODE must be boolean' ;;
 esac
 
-work_root="$(mktemp -d /tmp/peekaboo-node-runtime.XXXXXX)"
+work_root="$(mktemp -d /tmp/wink-node-runtime.XXXXXX)"
 verify_sha() {
   local path="$1"
   local expected="$2"
@@ -113,7 +113,7 @@ ENTITLEMENTS_SHA="$(/usr/bin/shasum -a 256 "$ENTITLEMENTS_PATH" | /usr/bin/awk '
 [[ "$(/usr/bin/lipo -archs "$arm64_binary")" == arm64 ]] || fail 'arm64 input is not thin arm64'
 [[ "$(/usr/bin/lipo -archs "$x64_binary")" == x86_64 ]] || fail 'x64 input is not thin x86_64'
 
-app="$work_root/PeekabooQualificationNode.app"
+app="$work_root/WinkQualificationNode.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 /usr/bin/lipo -create -output "$app/Contents/MacOS/node" "$arm64_binary" "$x64_binary"
 [[ " $(/usr/bin/lipo -archs "$app/Contents/MacOS/node") " == *' arm64 '* && \
@@ -128,9 +128,9 @@ cat > "$app/Contents/Info.plist" <<EOF
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>node</string>
-<key>CFBundleIdentifier</key><string>boo.peekaboo.qualification-node</string>
+<key>CFBundleIdentifier</key><string>boo.wink.qualification-node</string>
 <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-<key>CFBundleName</key><string>PeekabooQualificationNode</string>
+<key>CFBundleName</key><string>WinkQualificationNode</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>$NODE_VERSION</string>
 <key>CFBundleVersion</key><string>$NODE_BUILD_VERSION</string>
@@ -143,14 +143,14 @@ jq -n \
   --argjson universalSize "$UNIVERSAL_BINARY_SIZE" \
   --arg armURL "$ARM64_URL" --arg armArchiveSHA "$ARM64_ARCHIVE_SHA" --arg armBinarySHA "$ARM64_BINARY_SHA" \
   --arg x64URL "$X64_URL" --arg x64ArchiveSHA "$X64_ARCHIVE_SHA" --arg x64BinarySHA "$X64_BINARY_SHA" '
-    {version: 1, runtime_version: $version, identifier: "boo.peekaboo.qualification-node",
+    {version: 1, runtime_version: $version, identifier: "boo.wink.qualification-node",
      executable_path: "Contents/MacOS/node", universal_binary_sha256: $universalSHA,
      universal_binary_size: $universalSize, architectures: ["arm64", "x86_64"],
      license: {path: "Contents/Resources/LICENSE", sha256: $licenseSHA},
      entitlements: {path: "Contents/Resources/qualification-node.entitlements", sha256: $entitlementsSHA},
      inputs: {arm64: {url: $armURL, archive_sha256: $armArchiveSHA, binary_sha256: $armBinarySHA},
        x86_64: {url: $x64URL, archive_sha256: $x64ArchiveSHA, binary_sha256: $x64BinarySHA}}}
-  ' > "$app/Contents/Resources/PeekabooQualificationNodeSource.json"
+  ' > "$app/Contents/Resources/WinkQualificationNodeSource.json"
 mkdir -p "$(dirname "$OUTPUT_APP")"
 /usr/bin/ditto "$app" "$OUTPUT_APP"
 printf 'Node runtime app: %s\n' "$OUTPUT_APP"

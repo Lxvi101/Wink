@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension CommanderBinderTests {
     @Test(arguments: BridgeTestFixtures.scrollHandshakeCases)
@@ -36,9 +36,9 @@ extension CommanderBinderTests {
         #expect(!element.requiresBackgroundCoordinateScroll && element.requiresTargetedScroll)
 
         for (minor, hasCapability) in [(42, true), (43, false), (43, true)] {
-            var capabilities = [PeekabooBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
+            var capabilities = [WinkBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
             if hasCapability {
-                capabilities.append(PeekabooBridgeHostCapability.backgroundCoordinateScroll)
+                capabilities.append(WinkBridgeHostCapability.backgroundCoordinateScroll)
             }
             let handshake = BridgeTestFixtures.handshake(
                 negotiatedVersion: .init(major: 1, minor: minor),
@@ -62,7 +62,7 @@ extension CommanderBinderTests {
             from: ParsedValues(positional: ["a"], options: [:], flags: ["foreground"]),
             commandType: PressCommand.self
         )
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .targetedHotkey,
             .getFocusedElement,
             .invalidateImplicitLatestSnapshot,
@@ -75,7 +75,7 @@ extension CommanderBinderTests {
             enabledOperations: operations
         )
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationPinnedHotkeyVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationPinnedHotkeyVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,
@@ -115,7 +115,7 @@ extension CommanderBinderTests {
             from: ParsedValues(positional: ["hello"], options: [:], flags: ["foreground"]),
             commandType: TypeCommand.self
         )
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .targetedHotkey,
             .targetedTypeActions,
             .targetedClick,
@@ -131,7 +131,7 @@ extension CommanderBinderTests {
             enabledOperations: operations
         )
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationPinnedInteractionVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationPinnedInteractionVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,
@@ -139,15 +139,15 @@ extension CommanderBinderTests {
             enabledOperations: operations
         )
         let policyCapable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.targetedClickAccessibilityValueDeliveryVersion,
+            negotiatedVersion: WinkBridgeConstants.targetedClickAccessibilityValueDeliveryVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,
             permissions: PermissionsStatus(screenRecording: true, accessibility: true, postEvent: true),
             enabledOperations: operations,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.targetedClickAccessibilityValueDelivery,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.targetedClickAccessibilityValueDelivery,
             ]
         )
 
@@ -294,14 +294,14 @@ extension CommanderBinderTests {
         #expect(CommandRuntime.supportsRemoteRequirements(for: fullyPermitted, options: foregroundCoordinate))
     }
 
-    private static func clickPermissionHandshake(postEvent: Bool) -> PeekabooBridgeHandshakeResponse {
-        let operations: [PeekabooBridgeOperation] = [
+    private static func clickPermissionHandshake(postEvent: Bool) -> WinkBridgeHandshakeResponse {
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .invalidateImplicitLatestSnapshot,
             .targetedClick,
         ]
         return BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.targetedClickAccessibilityValueDeliveryVersion,
+            negotiatedVersion: WinkBridgeConstants.targetedClickAccessibilityValueDeliveryVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,
@@ -311,10 +311,10 @@ extension CommanderBinderTests {
                 postEvent: postEvent
             ),
             enabledOperations: operations,
-            permissionTags: [PeekabooBridgeOperation.targetedClick.rawValue: []],
+            permissionTags: [WinkBridgeOperation.targetedClick.rawValue: []],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.targetedClickAccessibilityValueDelivery,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.targetedClickAccessibilityValueDelivery,
             ]
         )
     }

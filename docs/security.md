@@ -1,19 +1,19 @@
 ---
-summary: 'Security and tool hardening guide for Peekaboo'
+summary: 'Security and tool hardening guide for Wink'
 read_when:
   - 'tightening or auditing allowed tools/providers'
-  - 'running Peekaboo in untrusted contexts and need safe defaults'
+  - 'running Wink in untrusted contexts and need safe defaults'
 ---
 
 # Security & Tool Hardening
 
-Peekaboo ships powerful automation tools (clicking, typing, shell, window management, etc.). You can now constrain what the agent and MCP server expose.
+Wink ships powerful automation tools (clicking, typing, shell, window management, etc.). You can now constrain what the agent and MCP server expose.
 
 ## How to disable tools
 
 - **One-off via env (highest precedence for allow list)**  
-  - `PEEKABOO_ALLOW_TOOLS="see,click"` – only these tools are exposed.  
-  - `PEEKABOO_DISABLE_TOOLS="shell,menu_click"` – always removed, combined with config `deny`.
+  - `WINK_ALLOW_TOOLS="see,click"` – only these tools are exposed.  
+  - `WINK_DISABLE_TOOLS="shell,menu_click"` – always removed, combined with config `deny`.
 - **Persistent config (`~/.peekaboo/config.json`)**  
   ```jsonc
   {
@@ -31,12 +31,12 @@ Peekaboo ships powerful automation tools (clicking, typing, shell, window manage
     "tools": { "deny": ["image", "analyze", "agent"] }
   }
   ```
-  Empty providers short-circuit every AI call, and the deny list keeps AI-only tools off the registry. Combine with `PEEKABOO_ALLOW_TOOLS`/`PEEKABOO_DISABLE_TOOLS` if you need per-run overrides.
+  Empty providers short-circuit every AI call, and the deny list keeps AI-only tools off the registry. Combine with `WINK_ALLOW_TOOLS`/`WINK_DISABLE_TOOLS` if you need per-run overrides.
 
-Filters apply everywhere tools are surfaced: CLI `peekaboo tools`, the agent toolset, and the MCP server’s tool registry.
+Filters apply everywhere tools are surfaced: CLI `wink tools`, the agent toolset, and the MCP server’s tool registry.
 
 Agent execution adds a stricter runtime boundary. New Agent sessions are immutable background-only sessions unless the
-human starts that session with `peekaboo agent ... --allow-foreground`. The saved value is an immutable maximum, not a
+human starts that session with `wink agent ... --allow-foreground`. The saved value is an immutable maximum, not a
 bearer credential: every resumed process invocation returns to background-only unless the human passes the flag again.
 Provider-facing and MCP argument validation runs before execution authority is evaluated, so malformed calls remain
 invalid requests instead of being mislabeled as policy refusals. The policy is then checked centrally before dispatch
@@ -44,7 +44,7 @@ and cannot be changed by model output or writable session JSON alone. Foreground
 toolsets omit `shell`, and the execution boundary refuses it under both Agent policies. Foreground UI authority is not
 a process sandbox; a trusted prompt can operate terminal or scripting apps through their UI. Public MCP servers and
 standalone MCP tool contexts are also background-only. Foreground-capable CLI wrappers require an explicit
-`--foreground`, while `peekaboo mcp serve --allow-foreground` grants that server process explicit foreground authority.
+`--foreground`, while `wink mcp serve --allow-foreground` grants that server process explicit foreground authority.
 The pinned browser provider sends Puppeteer page evaluation with browser user activation even for headless/background
 pages. Default Browser catalogs expose only source-audited no-user-activation routes and refuse page discovery,
 snapshots, navigation, waits, element interaction, or arbitrary script evaluation before provider I/O. Explicitly
@@ -60,7 +60,7 @@ the focused target is not modal UI.
 
 ## Desktop context injection (DESKTOP_STATE)
 
-When the agent streaming loop runs with context injection enabled, Peekaboo gathers lightweight desktop state (focused app/window title, cursor position, and **clipboard preview only when the `clipboard` tool is enabled**) and injects it as two messages:
+When the agent streaming loop runs with context injection enabled, Wink gathers lightweight desktop state (focused app/window title, cursor position, and **clipboard preview only when the `clipboard` tool is enabled**) and injects it as two messages:
 
 - A stable **policy** message (system): DESKTOP_STATE is **untrusted data**, never instructions.
 - A **data** message (user): delimited with a per-injection nonce (`<DESKTOP_STATE …>`) and **datamarked** (every line prefixed with `DESKTOP_STATE | `) to reduce prompt-injection risk from window titles/clipboard contents.
@@ -76,9 +76,9 @@ If you disable the `clipboard` tool via allow/deny filters, the injected DESKTOP
 - **Requires AI network access** – these call out to the configured language/vision provider whenever used  
   - `image` (when passed `--analyze`/`question`) and MCP `image` tool.  
   - `analyze` (CLI/MCP) – always uploads the file to the active AI provider.  
-  - `peekaboo agent …` / `MCPAgentTool` – the planning loop streams prompts/responses to GPT‑5.1 (or whichever model you configured).  
-  - Any audio capture path (`AudioInputService`, voice command helpers) that transcribes speech through `PeekabooAIService`.  
-  Disable by clearing `PEEKABOO_AI_PROVIDERS`, removing API keys, or adding these names to your deny list when running offline.
+  - `wink agent …` / `MCPAgentTool` – the planning loop streams prompts/responses to GPT‑5.1 (or whichever model you configured).  
+  - Any audio capture path (`AudioInputService`, voice command helpers) that transcribes speech through `WinkAIService`.  
+  Disable by clearing `WINK_AI_PROVIDERS`, removing API keys, or adding these names to your deny list when running offline.
 - **Medium risk** – can manipulate apps or data  
   - `capture`: records retained screen/window/region frames, contact sheets, metadata, and optional MP4 files. Disable it when MCP or agent clients should not persist screen contents.
   - `click`, `type`, and `paste`: can trigger actions in foreground apps or target a background app when a safe receipt is known. Background clicks use Accessibility; background typed delivery requires Event Synthesizing. Direct CLI raw `press` requires either an exact window/focused-element receipt or explicit `--foreground` consent; background-only Agent/MCP accepts only an explicit fresh exact non-dialog snapshot.
@@ -94,5 +94,5 @@ If you disable the `clipboard` tool via allow/deny filters, the injected DESKTOP
 
 ### Recommendations
 
-- In production or shared machines: start with `PEEKABOO_ALLOW_TOOLS="see,click,type"` and add more only as required.  
+- In production or shared machines: start with `WINK_ALLOW_TOOLS="see,click,type"` and add more only as required.  
 - Document your chosen policy in team runbooks so other operators apply the same filters.

@@ -1,7 +1,7 @@
 ---
-summary: 'Index of Peekaboo CLI command docs'
+summary: 'Index of Wink CLI command docs'
 read_when:
-  - 'browsing available Peekaboo CLI commands'
+  - 'browsing available Wink CLI commands'
   - 'linking to specific command docs'
 ---
 
@@ -19,6 +19,6 @@ Reference tips
 
 ## Common troubleshooting
 - **Background/foreground issues** — input commands use background delivery when they can resolve a target process. Element/query clicks can use Accessibility actions. Grant Event Synthesizing for synthetic keyboard/pointer input; `--foreground` only opts into intentional shared input and does not bypass that permission.
-- **Element not found** — run `peekaboo see --annotate` to verify AX labels/roles. Background coordinate clicks require a fresh exact-window snapshot plus `--window-id`; use `--foreground` only for intentional shared-pointer fallback.
-- **Permission errors** — re-run `peekaboo permissions grant` and restart affected apps if dialogs persist.
+- **Element not found** — run `wink see --annotate` to verify AX labels/roles. Background coordinate clicks require a fresh exact-window snapshot plus `--window-id`; use `--foreground` only for intentional shared-pointer fallback.
+- **Permission errors** — re-run `wink permissions grant` and restart affected apps if dialogs persist.
 - **Slow or flaky automation** — tune `--quiet`/`--heartbeat` for capture/live commands; for input commands use `--delay` where available or `/bin/sleep` between shell invocations.

@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkFoundation
 import Subprocess
 import Testing
 #if canImport(System)
@@ -10,13 +10,13 @@ import System
 #else
 import SystemPackage
 #endif
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct BridgeCaptureStatusCLITests {
     @Test(.timeLimit(.minutes(1)), arguments: [false, true])
     func `capture preparation is visible without confusing handshake success`(verbose: Bool) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
@@ -43,8 +43,8 @@ struct BridgeCaptureStatusCLITests {
 
     @Test(.timeLimit(.minutes(1)))
     func `capture status JSON retains the existing handshake fields without presentation text`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
@@ -79,14 +79,14 @@ struct BridgeCaptureStatusCLITests {
     }
 
     private static let captureCapabilities = [
-        PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
-        PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+        WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
+        WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
     ]
 
     private static func runStatus(peer: ScriptedBridgePeer, flags: [String]) async throws -> TestChildProcess.Result {
         do {
             let directory = FileManager.default.temporaryDirectory
-                .appendingPathComponent("peekaboo-bridge-status-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("wink-bridge-status-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(
                 at: directory,
                 withIntermediateDirectories: false,
@@ -98,7 +98,7 @@ struct BridgeCaptureStatusCLITests {
             try Data().write(to: credentials)
             try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: credentials.path)
 
-            let binary = try TestChildProcess.peekabooBinaryURL()
+            let binary = try TestChildProcess.winkBinaryURL()
             // Do not inherit provider credentials or routing overrides that can select local services.
             let result = try await Subprocess.run(
                 .path(FilePath(binary.path)),
@@ -110,12 +110,12 @@ struct BridgeCaptureStatusCLITests {
                     "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
                     "LANG": "en_US.UTF-8",
                     "PEEKABOO_CONFIG_DIR": directory.path,
-                    "PEEKABOO_CONFIG_DISABLE_MIGRATION": "1",
-                    "PEEKABOO_CONFIG_NONINTERACTIVE": "1",
-                    "PEEKABOO_VISUAL_FEEDBACK": "false",
-                    "PEEKABOO_VISUALIZER_STDOUT": "false",
+                    "WINK_CONFIG_DISABLE_MIGRATION": "1",
+                    "WINK_CONFIG_NONINTERACTIVE": "1",
+                    "WINK_VISUAL_FEEDBACK": "false",
+                    "WINK_VISUALIZER_STDOUT": "false",
                     "PEEKABOO_LOG_LEVEL": "warning",
-                    "PEEKABOO_CHECK_BUILD_STALENESS": "false",
+                    "WINK_CHECK_BUILD_STALENESS": "false",
                 ]),
                 workingDirectory: FilePath(directory.path),
                 output: .string(limit: .max),
@@ -134,7 +134,7 @@ struct BridgeCaptureStatusCLITests {
     }
 
     private static func makePeer() throws -> ScriptedBridgePeer {
-        let handshake = PeekabooBridgeHandshakeResponse(
+        let handshake = WinkBridgeHandshakeResponse(
             negotiatedVersion: .init(major: 1, minor: 28),
             hostKind: .gui,
             build: "capture-status-fixture",
@@ -155,7 +155,7 @@ struct BridgeCaptureStatusCLITests {
         let requests = await peer.requests
         #expect(requests.count == 2)
         for data in requests {
-            let request = try JSONDecoder.peekabooBridgeDecoder().decode(PeekabooBridgeRequest.self, from: data)
+            let request = try JSONDecoder.winkBridgeDecoder().decode(WinkBridgeRequest.self, from: data)
             guard case .handshake = request else {
                 Issue.record("Bridge status unexpectedly dispatched \(request.operation.rawValue)")
                 continue

@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -17,7 +17,7 @@ struct AppHideExactTargetTests {
             name: "Fixture"
         )
         let service = ExactHideApplicationService(applications: [application])
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "Fixture", "--json", "--no-remote"],
@@ -56,7 +56,7 @@ struct AppHideExactTargetTests {
             activationPolicy: .regular
         )
         let service = ExactHideApplicationService(applications: [application])
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let fuzzy = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "Fixt", "--json", "--no-remote"],
@@ -88,7 +88,7 @@ struct AppHideExactTargetTests {
             activationPolicy: .regular
         )
         let service = ExactHideApplicationService(applications: [application])
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "frontmost", "--json", "--no-remote"],
@@ -114,7 +114,7 @@ struct AppHideExactTargetTests {
             processIdentifier: 4070,
             processStartIdentity: 71
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "Fixture", "--json", "--no-remote"],
@@ -140,7 +140,7 @@ struct AppHideExactTargetTests {
         )
         let service = ExactHideApplicationService(applications: [application])
         service.omitsReturnedTarget = true
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "Fixture", "--json", "--no-remote"],
@@ -198,7 +198,7 @@ struct AppHideExactTargetTests {
             evidence: .completionUnknown,
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "hide", "--app", "Fixture", "--json", "--no-remote"],
@@ -261,7 +261,7 @@ ApplicationServiceTargetedActionResultProviding {
         request: ApplicationActivationRequest
     ) async throws -> UIAutomationActionResult<Void> {
         guard let identity = request.expectedIdentity else {
-            throw PeekabooError.serviceUnavailable("Missing activation process identity")
+            throw WinkError.serviceUnavailable("Missing activation process identity")
         }
         return try UIAutomationActionResult(
             payload: (),
@@ -271,7 +271,7 @@ ApplicationServiceTargetedActionResultProviding {
     }
 
     func hideApplicationTargetedActionResult(identifier: String) async throws -> UIAutomationActionResult<Void> {
-        throw PeekabooError.notImplemented("Unpinned targeted hide \(identifier)")
+        throw WinkError.notImplemented("Unpinned targeted hide \(identifier)")
     }
 
     func hideApplicationTargetedActionResult(
@@ -285,7 +285,7 @@ ApplicationServiceTargetedActionResultProviding {
             request.identifier == "PID:\($0.processIdentifier)"
         }), application.processIdentity == request.expectedIdentity
         else {
-            throw PeekabooError.appNotFound(request.identifier)
+            throw WinkError.appNotFound(request.identifier)
         }
         let identity = self.returnedIdentity ?? request.expectedIdentity
         return try UIAutomationActionResult(

@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/terminal-artifact-env.sh
 source "$ROOT_DIR/scripts/terminal-artifact-env.sh"
 for secret_name in "${TERMINAL_ARTIFACT_SECRET_NAMES[@]}"; do unset "$secret_name"; done
-TEST_DIR="$(mktemp -d /tmp/peekaboo-terminal-dmg-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-terminal-dmg-test.XXXXXX)"
 FIXTURE_MOUNT=""
 cleanup() {
   if [[ -n "$FIXTURE_MOUNT" && -d "$FIXTURE_MOUNT" ]]; then
@@ -15,7 +15,7 @@ cleanup() {
   rm -rf "$TEST_DIR"
 }
 trap cleanup EXIT
-APP="$TEST_DIR/Peekaboo.app"
+APP="$TEST_DIR/Wink.app"
 mkdir -p "$APP/Contents/Resources"
 printf 'icon\n' > "$APP/Contents/Resources/AppIcon.icns"
 
@@ -38,7 +38,7 @@ chmod 755 "$TEST_DIR/sips" "$TEST_DIR/uv"
 export ROOT_DIR
 
 run_fixture() {
-  PEEKABOO_TERMINAL_TEST_MODE=1 \
+  WINK_TERMINAL_TEST_MODE=1 \
   TERMINAL_DMG_UV_BIN="$TEST_DIR/uv" \
   TERMINAL_DMG_CODESIGN_BIN="$TEST_DIR/codesign" \
   TERMINAL_DMG_XCRUN_BIN="$TEST_DIR/xcrun" \
@@ -67,15 +67,15 @@ settings = runpy.run_path(
     sys.argv[1],
     init_globals={
         "defines": {
-            "app_name": "Peekaboo",
-            "app_path": "/tmp/Peekaboo.app",
+            "app_name": "Wink",
+            "app_path": "/tmp/Wink.app",
             "background": "/tmp/background.png",
             "volume_icon": "/tmp/AppIcon.icns",
         }
     },
 )
 
-assert settings["files"] == [("/tmp/Peekaboo.app", "Peekaboo.app")]
+assert settings["files"] == [("/tmp/Wink.app", "Wink.app")]
 assert settings["symlinks"] == {"Applications": "/Applications"}
 assert settings["icon"] == "/tmp/AppIcon.icns"
 assert settings["background"] == "/tmp/background.png"
@@ -83,7 +83,7 @@ assert settings["window_rect"] == ((200, 120), (720, 460))
 assert settings["text_size"] == 13
 assert settings["icon_size"] == 128
 assert settings["icon_locations"] == {
-    "Peekaboo.app": (180, 230),
+    "Wink.app": (180, 230),
     "Applications": (540, 230),
 }
 assert settings.get("hide_extensions", []) == []
@@ -98,11 +98,11 @@ rg -Fq '"$UV_BIN" --no-config run --locked "$ROOT_DIR/scripts/dmgbuild-runner.py
 [[ -f "$ROOT_DIR/scripts/dmgbuild-runner.py.lock" ]]
 
 FIXTURE_DIR="$TEST_DIR/fixture"
-FIXTURE_DMG="$TEST_DIR/Peekaboo-Fixture.dmg"
+FIXTURE_DMG="$TEST_DIR/Wink-Fixture.dmg"
 FIXTURE_MOUNT="$TEST_DIR/fixture-mount"
-mkdir -p "$FIXTURE_DIR/Peekaboo.app/Contents/MacOS" "$FIXTURE_MOUNT"
-printf 'fixture\n' >"$FIXTURE_DIR/Peekaboo.app/Contents/MacOS/Peekaboo"
-chmod 755 "$FIXTURE_DIR/Peekaboo.app/Contents/MacOS/Peekaboo"
+mkdir -p "$FIXTURE_DIR/Wink.app/Contents/MacOS" "$FIXTURE_MOUNT"
+printf 'fixture\n' >"$FIXTURE_DIR/Wink.app/Contents/MacOS/Wink"
+chmod 755 "$FIXTURE_DIR/Wink.app/Contents/MacOS/Wink"
 
 env \
   -u APP_STORE_CONNECT_API_KEY_P8 \
@@ -115,11 +115,11 @@ env \
   --no-hidpi \
   --detach-retries 5 \
   --settings "$ROOT_DIR/scripts/dmgbuild-settings.py" \
-  -D 'app_name=Peekaboo' \
-  -D "app_path=$FIXTURE_DIR/Peekaboo.app" \
+  -D 'app_name=Wink' \
+  -D "app_path=$FIXTURE_DIR/Wink.app" \
   -D "background=$ROOT_DIR/assets/dmg-background.png" \
   -D "volume_icon=$ROOT_DIR/assets/dmg-background.png" \
-  'Peekaboo Fixture' \
+  'Wink Fixture' \
   "$FIXTURE_DMG" >/dev/null
 
 hdiutil attach -readonly -nobrowse -noautoopen \
@@ -130,7 +130,7 @@ cmp "$ROOT_DIR/assets/dmg-background.png" "$FIXTURE_MOUNT/.background.png"
 [[ -f "$FIXTURE_MOUNT/.VolumeIcon.icns" ]]
 [[ -f "$FIXTURE_MOUNT/.DS_Store" ]]
 
-fixture_xattrs="$(xattr -r "$FIXTURE_MOUNT/Peekaboo.app")"
+fixture_xattrs="$(xattr -r "$FIXTURE_MOUNT/Wink.app")"
 if printf '%s\n' "$fixture_xattrs" | rg -q ': com\.apple\.(FinderInfo|ResourceFork)$'; then
   printf 'Fixture app contains disallowed Finder metadata or a resource fork\n' >&2
   printf '%s\n' "$fixture_xattrs" >&2
@@ -154,7 +154,7 @@ icon_view = records[(".", b"icvp")]
 assert icon_view["backgroundType"] == 2
 assert icon_view["iconSize"] == 128.0
 assert icon_view["textSize"] == 13.0
-assert records[("Peekaboo.app", b"Iloc")] == (180, 230)
+assert records[("Wink.app", b"Iloc")] == (180, 230)
 assert records[("Applications", b"Iloc")] == (540, 230)
 PY
 

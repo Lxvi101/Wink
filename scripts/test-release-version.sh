@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/release-version.sh
-source "${PEEKABOO_RELEASE_VERSION_HELPER:-$ROOT_DIR/scripts/release-version.sh}"
+source "${WINK_RELEASE_VERSION_HELPER:-$ROOT_DIR/scripts/release-version.sh}"
 
 fail() {
   printf 'test-release-version: %s\n' "$*" >&2
@@ -15,7 +15,7 @@ valid_cases=0
 invalid_cases=0
 expect_build() {
   local actual
-  actual="$(peekaboo_release_build_number "$1")" || fail "supported version rejected: $1"
+  actual="$(wink_release_build_number "$1")" || fail "supported version rejected: $1"
   [[ "$actual" == "$2" ]] || fail "wrong build number for $1: $actual (expected $2)"
   valid_cases=$((valid_cases + 1))
 }
@@ -46,7 +46,7 @@ for invalid_version in 4.2.3- 4.2.3-beta.1.2 4.2.3-beta.foo.2 4.2.3-beta. \
   999999999999999999999.2.3 9223372036854.0.0 4.100.0 4.0.100 \
   4.2.3-alpha.30 4.2.3-beta.30 4.2.3-RC.30 4.2.3-beta.0 \
   4.2.3-preview.1 4.2.3-beta-1.2 4.2.3+local 4..3 ' 4.2.3' $'4.2.3\n'; do
-  if actual="$(peekaboo_release_build_number "$invalid_version" 2>/dev/null)"; then
+  if actual="$(wink_release_build_number "$invalid_version" 2>/dev/null)"; then
     fail "invalid or overflowing release version was accepted: $invalid_version"
   fi
   [[ -z "$actual" ]] || fail "rejected version emitted a build number: $invalid_version"

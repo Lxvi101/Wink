@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -29,9 +29,9 @@ struct PasteClipboardGuardTests {
         #expect(response.error?.retry_safe == !dispatched)
         if !hostSupportsPaste {
             let hint = try #require(response.error?.hint)
-            #expect(hint.contains("peekaboo bridge status --bridge-socket <path>"))
+            #expect(hint.contains("wink bridge status --bridge-socket <path>"))
             #expect(hint.contains("custom-socket trust policy can cap negotiation at protocol 1.28"))
-            #expect(!hint.contains("Update the Peekaboo host"))
+            #expect(!hint.contains("Update the Wink host"))
         }
         #expect(clipboard.setCallCount == (dispatched ? 1 : 0))
         #expect(clipboard.getCallCount == (hostSupportsPaste ? 1 : 0))

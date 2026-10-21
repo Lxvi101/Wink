@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct BuildStalenessProcessWaitTests {
@@ -38,7 +38,7 @@ struct BuildStalenessProcessWaitTests {
     func `timed out child is killed and wait throws`() throws {
         let fileManager = FileManager.default
         let scratch = fileManager.temporaryDirectory
-            .appendingPathComponent("peekaboo-build-staleness-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-build-staleness-\(UUID().uuidString)", isDirectory: true)
         defer { try? fileManager.removeItem(at: scratch) }
         try fileManager.createDirectory(at: scratch, withIntermediateDirectories: false)
         let readyFile = scratch.appendingPathComponent("ready")

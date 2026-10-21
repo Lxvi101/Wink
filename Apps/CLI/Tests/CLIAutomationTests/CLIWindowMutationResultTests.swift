@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -108,7 +108,7 @@ struct CLIWindowMutationResultTests {
             unitCount: .one
         )
         windows.postActionReadbackError = CLIWindowMutationTestError.readbackFailed
-        let services = TestServicesFactory.makePeekabooServices(windows: windows)
+        let services = TestServicesFactory.makeWinkServices(windows: windows)
 
         let result = try await InProcessCommandRunner.run(
             ["window", "move", "--window-id", "77", "--x", "30", "--y", "40", "--json", "--no-remote"],
@@ -162,7 +162,7 @@ struct CLIWindowMutationResultTests {
             unitCount: .one
         )
         windows.postActionReadbackWindow = replacement
-        let services = TestServicesFactory.makePeekabooServices(windows: windows)
+        let services = TestServicesFactory.makeWinkServices(windows: windows)
 
         let result = try await InProcessCommandRunner.run(
             ["window", "move", "--window-id", "77", "--x", "30", "--y", "40", "--json", "--no-remote"],
@@ -214,7 +214,7 @@ struct CLIWindowMutationResultTests {
             unitCount: .one
         )
         windows.postActionReadbackWindow = drifted
-        let services = TestServicesFactory.makePeekabooServices(windows: windows)
+        let services = TestServicesFactory.makeWinkServices(windows: windows)
 
         let result = try await InProcessCommandRunner.run(
             ["window", "maximize", "--window-id", "77", "--json", "--no-remote"],
@@ -252,7 +252,7 @@ struct CLIWindowMutationResultTests {
         let windows = OutcomeStubWindowService(windowsByApp: ["Fixture": [original]])
         windows.actionOutcome = reportedOutcome ?? Self.dispatchedOutcome
         windows.postActionReadbackWindow = Self.window(bounds: verifiedBounds)
-        let services = TestServicesFactory.makePeekabooServices(windows: windows)
+        let services = TestServicesFactory.makeWinkServices(windows: windows)
         let result = try await InProcessCommandRunner.runWithOwnedRuntime(
             arguments + ["--json", "--no-remote"],
             services: services

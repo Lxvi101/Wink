@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ActionEnvelopeTestProbe: Decodable {
     let success: Bool

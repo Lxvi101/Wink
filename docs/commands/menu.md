@@ -1,13 +1,13 @@
 ---
-summary: 'Drive application menus via peekaboo menu'
+summary: 'Drive application menus via wink menu'
 read_when:
   - 'navigating File/Edit/... menus without UI scripting'
   - 'listing menu trees to grab exact command paths for automation'
 ---
 
-# `peekaboo menu`
+# `wink menu`
 
-`menu` controls classic macOS application menus. Application menu listing and clicking use Accessibility in the background by default, so inspecting or choosing a menu does not activate the target app. Add `--foreground` only for an app whose menu is unavailable until its window is focused. Status items belong to `peekaboo menubar`.
+`menu` controls classic macOS application menus. Application menu listing and clicking use Accessibility in the background by default, so inspecting or choosing a menu does not activate the target app. Add `--foreground` only for an app whose menu is unavailable until its window is focused. Status items belong to `wink menubar`.
 
 ## Subcommands
 | Subcommand | Purpose | Key options |
@@ -25,19 +25,19 @@ read_when:
 ## Examples
 ```bash
 # Click File > New Window in Safari
-peekaboo menu click --app Safari --path "File > New Window"
+wink menu click --app Safari --path "File > New Window"
 
 # Intentionally use the current frontmost application's menu
-peekaboo menu click --foreground --path "File > Close"
+wink menu click --foreground --path "File > Close"
 
 # Inspect the Finder menu tree, including disabled actions
-peekaboo menu list --app Finder --include-disabled
+wink menu list --app Finder --include-disabled
 
 # List or click status items through the dedicated menubar command
-peekaboo menubar list --json
+wink menubar list --json
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your target with `peekaboo app list`, `peekaboo window list`, or `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your target with `wink app list`, `wink window list`, or `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

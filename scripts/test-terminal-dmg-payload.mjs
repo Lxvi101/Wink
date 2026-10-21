@@ -8,18 +8,18 @@ import { inspectDMGPayload } from './terminal-dmg-payload.mjs';
 
 const scripts = path.dirname(fileURLToPath(import.meta.url));
 const treeGenerator = path.join(scripts, 'artifact-tree-manifest.rb');
-const temporary = await mkdtemp(path.join(os.tmpdir(), 'peekaboo-dmg-payload-test.'));
+const temporary = await mkdtemp(path.join(os.tmpdir(), 'wink-dmg-payload-test.'));
 try {
   const root = path.join(temporary, 'volume');
   await mkdir(path.join(root, '.background'), { recursive: true });
-  await mkdir(path.join(root, 'Peekaboo.app', 'Contents'), { recursive: true });
+  await mkdir(path.join(root, 'Wink.app', 'Contents'), { recursive: true });
   await writeFile(path.join(root, '.DS_Store'), 'finder');
   await writeFile(path.join(root, '.VolumeIcon.icns'), 'icon');
   await writeFile(path.join(root, '.background', 'background.png'), 'background');
-  await writeFile(path.join(root, 'Peekaboo.app', 'Contents', 'Info.plist'), 'app');
+  await writeFile(path.join(root, 'Wink.app', 'Contents', 'Info.plist'), 'app');
   await symlink('/Applications', path.join(root, 'Applications'));
   const expectedTree = path.join(temporary, 'app-tree.json');
-  const tree = spawnSync('/usr/bin/ruby', [treeGenerator, path.join(root, 'Peekaboo.app')], { encoding: 'utf8' });
+  const tree = spawnSync('/usr/bin/ruby', [treeGenerator, path.join(root, 'Wink.app')], { encoding: 'utf8' });
   assert.equal(tree.status, 0);
   await writeFile(expectedTree, tree.stdout);
 
@@ -40,19 +40,19 @@ try {
     assert.equal(receipt.applications_symlink, '/Applications');
     assert.equal(receipt.metadata.length, 2);
 
-    assert.equal(spawnSync('/usr/bin/xattr', ['-w', 'com.openclaw.peekaboo.fixture', 'value',
+    assert.equal(spawnSync('/usr/bin/xattr', ['-w', 'com.openclaw.wink.fixture', 'value',
       path.join(root, '.VolumeIcon.icns')]).status, 0);
     await assert.rejects(inspectDMGPayload({ mountedRoot: root, expectedAppTree: expectedTree, treeGenerator }),
       /unbound xattrs/);
-    assert.equal(spawnSync('/usr/bin/xattr', ['-d', 'com.openclaw.peekaboo.fixture',
+    assert.equal(spawnSync('/usr/bin/xattr', ['-d', 'com.openclaw.wink.fixture',
       path.join(root, '.VolumeIcon.icns')]).status, 0);
-    assert.equal(spawnSync('/usr/bin/xattr', ['-s', '-w', 'com.openclaw.peekaboo.fixture', 'value',
+    assert.equal(spawnSync('/usr/bin/xattr', ['-s', '-w', 'com.openclaw.wink.fixture', 'value',
       path.join(root, 'Applications')]).status, 0);
     await assert.rejects(inspectDMGPayload({ mountedRoot: root, expectedAppTree: expectedTree, treeGenerator }),
       /Applications contains unbound xattrs/);
-    assert.equal(spawnSync('/usr/bin/xattr', ['-s', '-d', 'com.openclaw.peekaboo.fixture',
+    assert.equal(spawnSync('/usr/bin/xattr', ['-s', '-d', 'com.openclaw.wink.fixture',
       path.join(root, 'Applications')]).status, 0);
-    await writeFile(path.join(root, 'Peekaboo.app', 'Contents', 'Info.plist'), 'changed');
+    await writeFile(path.join(root, 'Wink.app', 'Contents', 'Info.plist'), 'changed');
     await assert.rejects(inspectDMGPayload({ mountedRoot: root, expectedAppTree: expectedTree, treeGenerator }),
       /differs from notarized app tree/);
     process.stdout.write('test-terminal-dmg-payload: PASS 4 native positive/isolated mutation cases\n');

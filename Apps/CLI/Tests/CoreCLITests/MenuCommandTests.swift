@@ -1,10 +1,10 @@
 //
 //  MenuCommandTests.swift
-//  PeekabooCLI
+//  WinkCLI
 //
 
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct MenuCommandSelectionNormalizationTests {
     @Test

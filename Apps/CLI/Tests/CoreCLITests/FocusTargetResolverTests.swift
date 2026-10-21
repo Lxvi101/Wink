@@ -1,7 +1,7 @@
 import CoreGraphics
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct FocusTargetResolverTests {
     @Test
@@ -127,7 +127,7 @@ struct FocusTargetResolverTests {
             snapshot: nil,
             windowContext: WindowContext(
                 applicationName: "Playground",
-                applicationBundleId: "boo.peekaboo.playground.debug",
+                applicationBundleId: "boo.wink.playground.debug",
                 applicationProcessId: 92941,
                 windowTitle: "Playground",
                 windowID: 3279
@@ -146,7 +146,7 @@ struct FocusTargetResolverTests {
             snapshot: nil,
             windowContext: WindowContext(
                 applicationName: "Playground",
-                applicationBundleId: "boo.peekaboo.playground.debug",
+                applicationBundleId: "boo.wink.playground.debug",
                 windowTitle: "Playground"
             ),
             applicationName: nil,
@@ -154,7 +154,7 @@ struct FocusTargetResolverTests {
         )
 
         #expect(result == .bestWindow(
-            applicationName: "boo.peekaboo.playground.debug",
+            applicationName: "boo.wink.playground.debug",
             windowTitle: "Playground"
         ))
     }
@@ -196,7 +196,7 @@ struct FocusTargetResolverTests {
             windowID: nil,
             snapshot: nil,
             windowContext: WindowContext(
-                applicationBundleId: "boo.peekaboo.playground.debug",
+                applicationBundleId: "boo.wink.playground.debug",
                 windowID: -1
             ),
             applicationName: nil,
@@ -204,7 +204,7 @@ struct FocusTargetResolverTests {
         )
 
         #expect(result == .bestWindow(
-            applicationName: "boo.peekaboo.playground.debug",
+            applicationName: "boo.wink.playground.debug",
             windowTitle: nil
         ))
     }

@@ -40,7 +40,7 @@ function wireBounds(value) {
   ];
 }
 
-const rawUInt64Prefix = '__peekaboo_raw_uint64_';
+const rawUInt64Prefix = '__wink_raw_uint64_';
 const rawUInt64Suffix = '__';
 
 function wireUInt64(value, { quoted = false } = {}) {
@@ -89,7 +89,7 @@ function graphemeCount(value) {
 }
 
 function observationPath(template) {
-  return `/private/tmp/peekaboo-certification-fixture/observations/${template.slot_id}.png`;
+  return `/private/tmp/wink-certification-fixture/observations/${template.slot_id}.png`;
 }
 
 function wireObservationResponse(template, target, options) {
@@ -443,12 +443,12 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
   const monitorProcess = {
     pid: 8001,
     start_identity: '800100',
-    executable_path: '/private/tmp/peekaboo-monitor-fixture',
+    executable_path: '/private/tmp/wink-monitor-fixture',
     executable_sha256: '8'.repeat(64),
     code_signature_hash: '8'.repeat(40),
     team_id: catalog.trusted_monitor_team_ids[0],
     source_commit: catalog.monitor_source.commit,
-    heartbeat_path: '/private/tmp/peekaboo-monitor-heartbeat.json',
+    heartbeat_path: '/private/tmp/wink-monitor-heartbeat.json',
   };
   const controlledTargets = [
     { id: 'target-a', controller_id: 'controller-a', controller: clientA, target: targetA },
@@ -513,7 +513,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
         ? 7
         : (template.controller_id === 'controller-a' ? 11 : 13))
       : null;
-    const requestBindingValue = `peekaboo-certification-run:${executionNonce}:slot:${template.slot_id}`;
+    const requestBindingValue = `wink-certification-run:${executionNonce}:slot:${template.slot_id}`;
     const wire = makeRequestAndResponse(
       template,
       index,
@@ -659,7 +659,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
     coordinator_runtime_commit: currentBuildCommit,
     coordinator_source_sha256: catalog.current_build_source.coordinator.sha256,
     monitor_process: monitorProcess,
-    monitor_attestation_socket_path: '/private/tmp/peekaboo-monitor-attestation.sock',
+    monitor_attestation_socket_path: '/private/tmp/wink-monitor-attestation.sock',
     sentinel,
     foreground_controller: foregroundController,
     foreground_target: foregroundTarget,
@@ -667,7 +667,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
   };
   const controllerBuild = {
     source_commit: currentBuildCommit,
-    executable_path: '/private/tmp/peekaboo-certification-controller',
+    executable_path: '/private/tmp/wink-certification-controller',
     executable_sha256: '6'.repeat(64),
     team_id: catalog.trusted_controller_team_ids[0],
   };
@@ -697,7 +697,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
     source: structuredClone(catalog.protocol_source),
     current_build_source: { commit: currentBuildCommit },
     first_party_validator: {
-      id: 'peekaboo-bridge-receipt-validate-v1',
+      id: 'wink-bridge-receipt-validate-v1',
       source_commit: currentBuildCommit,
       executable_sha256: 'f'.repeat(64),
       code_signature_hash: '1'.repeat(40),
@@ -707,7 +707,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
     },
     listener,
     socket_endpoint: {
-      path: '/private/tmp/peekaboo-multi-target-fixture.sock',
+      path: '/private/tmp/wink-multi-target-fixture.sock',
       device: '42',
       inode: '84',
     },
@@ -749,7 +749,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
       file_sha256: bundleRecords[index].sha256,
       verdict: {
         valid: true,
-        validator_id: 'peekaboo-bridge-receipt-validate-v1',
+        validator_id: 'wink-bridge-receipt-validate-v1',
         trust_source: 'authenticated_live_listener',
         minimum_protocol_version: '1.29',
         host_protocol_version: '1.32',
@@ -836,7 +836,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
     monitor_source_sha256: catalog.monitor_source.probe_sha256,
     coordinator_source_sha256: catalog.current_build_source.coordinator.sha256,
     monitor_process: structuredClone(monitorProcess),
-    monitor_attestation_socket_path: '/private/tmp/peekaboo-monitor-attestation.sock',
+    monitor_attestation_socket_path: '/private/tmp/wink-monitor-attestation.sock',
     sentinel: structuredClone(sentinel),
     foreground_controller: structuredClone(foregroundController),
     foreground_target: structuredClone(foregroundTarget),
@@ -885,9 +885,9 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
       clipboard_digest: '7'.repeat(64),
     },
     foreground_plan: {
-      request_marker: `peekaboo-foreground-postcondition:${executionNonce}`,
+      request_marker: `wink-foreground-postcondition:${executionNonce}`,
       expected_value_sha256: sha256(Buffer.from(
-        `peekaboo-foreground-postcondition:${executionNonce}`,
+        `wink-foreground-postcondition:${executionNonce}`,
         'utf8',
       )),
       baseline_value_sha256: '1'.repeat(64),
@@ -898,10 +898,10 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
         identifier: 'foreground-certification-field',
         title: null,
       },
-      observation_path: '/private/tmp/peekaboo-foreground-observation.json',
-      restoration_path: '/private/tmp/peekaboo-foreground-restoration.json',
-      witness_path: '/private/tmp/peekaboo-foreground-witness.json',
-      observer_attestation_socket_path: '/private/tmp/peekaboo-observer-attestation.sock',
+      observation_path: '/private/tmp/wink-foreground-observation.json',
+      restoration_path: '/private/tmp/wink-foreground-restoration.json',
+      witness_path: '/private/tmp/wink-foreground-witness.json',
+      observer_attestation_socket_path: '/private/tmp/wink-observer-attestation.sock',
     },
     violation_records: [],
     contamination_records: [],
@@ -937,7 +937,7 @@ export function makeMultiTargetFixture(catalog, catalogFileSHA256, options = {})
       started_at_milliseconds: globalInterval.started_at_milliseconds + 1700,
       completed_at_milliseconds: globalInterval.started_at_milliseconds + 2300,
     },
-    request_marker: `peekaboo-foreground-postcondition:${executionNonce}`,
+    request_marker: `wink-foreground-postcondition:${executionNonce}`,
     before_value_sha256: '1'.repeat(64),
     expected_value_sha256: monitorEvidence.foreground_plan.expected_value_sha256,
     observed_value_sha256: monitorEvidence.foreground_plan.expected_value_sha256,
@@ -1043,7 +1043,7 @@ export function makeControllerReceipts(fixture) {
         listener_instance_id: fixture.contract.listener.instance_id,
         host: {
           process: structuredClone(fixture.contract.listener.host),
-          bundle_identifier: 'boo.peekaboo.mac',
+          bundle_identifier: 'boo.wink.mac',
           bundle_short_version: '4.2.3',
           bundle_version: '4020399',
           source_commit: fixture.contract.listener.source_commit,

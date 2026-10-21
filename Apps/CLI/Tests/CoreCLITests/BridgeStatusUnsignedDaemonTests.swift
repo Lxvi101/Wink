@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooBridgeTestSupport
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooBridge
-@testable import PeekabooCLI
+@testable import WinkBridge
+@testable import WinkCLI
 
 @MainActor
 struct BridgeStatusUnsignedDaemonTests {
@@ -30,7 +30,7 @@ struct BridgeStatusUnsignedDaemonTests {
 
     @Test
     func `daemon status copies authenticated developer trust into JSON`() async throws {
-        var advertisedStatus = PeekabooDaemonStatus(running: true, pid: getpid(), mode: .manual)
+        var advertisedStatus = WinkDaemonStatus(running: true, pid: getpid(), mode: .manual)
         advertisedStatus.trustMode = .releaseSignature
         let peer = try ScriptedBridgePeer(responses: [
             .handshake(BridgeTestFixtures.handshake(
@@ -43,14 +43,14 @@ struct BridgeStatusUnsignedDaemonTests {
             )),
             .daemonStatus(advertisedStatus),
         ])
-        let client = PeekabooBridgeClient(
+        let client = WinkBridgeClient(
             socketPath: peer.socketPath,
             trustedHostTeamIDs: nil,
             hostAuthentication: .init(
                 signingIdentity: { _ in nil },
                 currentProcessIsReleaseSigned: { false },
                 unsignedDaemonPolicy: .init(
-                    environment: ["PEEKABOO_ALLOW_UNSIGNED_DAEMON": "1"],
+                    environment: ["WINK_ALLOW_UNSIGNED_DAEMON": "1"],
                     currentProcessIsReleaseSigned: { false }
                 )
             )

@@ -1,12 +1,12 @@
 import Commander
 import Foundation
 import MCP
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
 import TachikomaMCP
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension ScreenCaptureKitOwnerRuntimeTests {
     @Test
@@ -15,7 +15,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         var options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: MCPCommand.Serve.self,
-            environment: ["PEEKABOO_ALLOW_TOOLS": "browser"]
+            environment: ["WINK_ALLOW_TOOLS": "browser"]
         )
         options.autoStartDaemon = false
         var claimCalls = 0
@@ -25,7 +25,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
 
         let resolution = try await RuntimeHostResolver.resolveServices(
             options: options,
-            environment: ["PEEKABOO_ALLOW_TOOLS": "browser"],
+            environment: ["WINK_ALLOW_TOOLS": "browser"],
             configurationInput: nil,
             dependencies: Self.inertDependencies(
                 makeLocalServices: { _ in
@@ -52,7 +52,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                 remoteCandidatePlan: { _, _ in
                     RuntimeHostResolver.RemoteCandidatePlan(
                         explicitSocket: nil,
-                        daemonSocketPath: "/tmp/peekaboo-browser-only-daemon.sock",
+                        daemonSocketPath: "/tmp/wink-browser-only-daemon.sock",
                         runtimeBuildIdentity: "browser-only-build",
                         buildScopedDaemonSocketPath: buildScopedSocket,
                         historicalBuildScopedDaemonSocketPaths: [],
@@ -81,7 +81,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         var options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: MCPCommand.Serve.self,
-            environment: ["PEEKABOO_ALLOW_TOOLS": "browser,see"]
+            environment: ["WINK_ALLOW_TOOLS": "browser,see"]
         )
         options.autoStartDaemon = false
         var claimCalls = 0
@@ -92,7 +92,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         let error = await #expect(throws: PreDispatchActionError.self) {
             _ = try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: ["PEEKABOO_ALLOW_TOOLS": "browser,see"],
+                environment: ["WINK_ALLOW_TOOLS": "browser,see"],
                 configurationInput: nil,
                 dependencies: Self.inertDependencies(
                     makeLocalServices: { _ in
@@ -114,7 +114,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                     remoteCandidatePlan: { _, _ in
                         RuntimeHostResolver.RemoteCandidatePlan(
                             explicitSocket: nil,
-                            daemonSocketPath: "/tmp/peekaboo-browser-capture-daemon.sock",
+                            daemonSocketPath: "/tmp/wink-browser-capture-daemon.sock",
                             runtimeBuildIdentity: "browser-capture-build",
                             buildScopedDaemonSocketPath: buildScopedSocket,
                             historicalBuildScopedDaemonSocketPaths: [],
@@ -167,7 +167,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
     }
 
     @Test
-    func `one-shot and implicit capture safety discover only Peekaboo and selected hosts`() {
+    func `one-shot and implicit capture safety discover only Wink and selected hosts`() {
         let selectedSocket = "/tmp/one-shot-selected.sock"
         let daemonSocket = "/tmp/one-shot-daemon.sock"
         let buildSocket = "/tmp/one-shot-build-daemon.sock"
@@ -195,9 +195,9 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         #expect(candidates.contains(daemonSocket))
         #expect(candidates.contains(buildSocket))
         #expect(candidates.contains(historicalSocket))
-        #expect(candidates.contains(PeekabooBridgeConstants.peekabooSocketPath))
-        #expect(!candidates.contains(PeekabooBridgeConstants.claudeSocketPath))
-        #expect(!candidates.contains(PeekabooBridgeConstants.clawdbotSocketPath))
+        #expect(candidates.contains(WinkBridgeConstants.winkSocketPath))
+        #expect(!candidates.contains(WinkBridgeConstants.claudeSocketPath))
+        #expect(!candidates.contains(WinkBridgeConstants.clawdbotSocketPath))
         #expect(Set(candidates).count == candidates.count)
     }
 
@@ -212,7 +212,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             processIdentifier: 4242,
             processStartIdentity: 9001,
             codeSignatureHash: "selected-build",
-            maximumProtocolVersion: PeekabooBridgeConstants.protocolVersion,
+            maximumProtocolVersion: WinkBridgeConstants.protocolVersion,
             usesCurrentHostIdentity: true,
             permissionEvaluationObserver: { selectedHandshakeCount += 1 }
         )
@@ -273,7 +273,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                 remoteCandidatePlan: { _, _ in
                     RuntimeHostResolver.RemoteCandidatePlan(
                         explicitSocket: selectedSocket,
-                        daemonSocketPath: "/tmp/peekaboo-unused-daemon.sock",
+                        daemonSocketPath: "/tmp/wink-unused-daemon.sock",
                         runtimeBuildIdentity: "current-build",
                         buildScopedDaemonSocketPath: nil,
                         historicalBuildScopedDaemonSocketPaths: [],
@@ -341,7 +341,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                     remoteCandidatePlan: { _, _ in
                         RuntimeHostResolver.RemoteCandidatePlan(
                             explicitSocket: selectedSocket,
-                            daemonSocketPath: "/tmp/peekaboo-unused-daemon.sock",
+                            daemonSocketPath: "/tmp/wink-unused-daemon.sock",
                             runtimeBuildIdentity: "current-build",
                             buildScopedDaemonSocketPath: nil,
                             historicalBuildScopedDaemonSocketPaths: [],
@@ -369,7 +369,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             processIdentifier: 4242,
             processStartIdentity: 9001,
             codeSignatureHash: "selected-build",
-            maximumProtocolVersion: PeekabooBridgeConstants.protocolVersion,
+            maximumProtocolVersion: WinkBridgeConstants.protocolVersion,
             usesCurrentHostIdentity: true
         )
         defer { Task { await selectedHost.stop() } }
@@ -380,7 +380,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                 options: [
                     "app": ["Finder"],
                     "bridge-socket": [selectedSocket],
-                    "screenshot": ["/tmp/peekaboo-verify-never-written.png"],
+                    "screenshot": ["/tmp/wink-verify-never-written.png"],
                 ],
                 flags: ["window-exists"]
             ),
@@ -417,7 +417,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
                 remoteCandidatePlan: { _, _ in
                     RuntimeHostResolver.RemoteCandidatePlan(
                         explicitSocket: selectedSocket,
-                        daemonSocketPath: "/tmp/peekaboo-unused-daemon.sock",
+                        daemonSocketPath: "/tmp/wink-unused-daemon.sock",
                         runtimeBuildIdentity: "current-build",
                         buildScopedDaemonSocketPath: nil,
                         historicalBuildScopedDaemonSocketPaths: [],
@@ -459,8 +459,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
 
     private static func authenticatedHandshakeCache() -> RuntimeHostResolver.RemoteHandshakeCache {
         RuntimeHostResolver.RemoteHandshakeCache(
-            identity: PeekabooBridgeClientIdentity(
-                bundleIdentifier: "boo.peekaboo.dynamic-snapshot-tests",
+            identity: WinkBridgeClientIdentity(
+                bundleIdentifier: "boo.wink.dynamic-snapshot-tests",
                 teamIdentifier: nil,
                 processIdentifier: getpid()
             ),

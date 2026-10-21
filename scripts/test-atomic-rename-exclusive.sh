@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-atomic-rename-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-atomic-rename-test.XXXXXX)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 chmod 700 "$TEST_DIR"
 

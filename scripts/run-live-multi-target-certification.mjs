@@ -64,7 +64,7 @@ const FINALIZER_IDENTITY_RUNTIME_OVERHEAD_MILLISECONDS =
 const FINALIZER_INVOCATION_COUNT = 2;
 
 const HELP = `\
-Run one source-owned live multi-target Peekaboo certification.
+Run one source-owned live multi-target Wink certification.
 
 Usage:
   run-live-multi-target-certification --plan OWNER_PRIVATE_PLAN.json
@@ -159,16 +159,16 @@ function deriveCurrentBuildSource(catalog, testRuntime) {
   return { commit: head, repository_root: REPOSITORY_ROOT };
 }
 
-function requirePeekabooSourceCommit(executable, expectedCommit) {
-  const run = runSync(executable, ['--version', '--json'], 'Peekaboo source-stamp preflight');
+function requireWinkSourceCommit(executable, expectedCommit) {
+  const run = runSync(executable, ['--version', '--json'], 'Wink source-stamp preflight');
   let version;
   try {
     version = JSON.parse(run.stdout);
   } catch {
-    throw new CoordinatorError('Peekaboo source-stamp preflight did not return JSON');
+    throw new CoordinatorError('Wink source-stamp preflight did not return JSON');
   }
   if (version?.success !== true || version?.data?.sourceCommit !== expectedCommit) {
-    throw new CoordinatorError('Peekaboo validator source stamp differs from the clean Git HEAD');
+    throw new CoordinatorError('Wink validator source stamp differs from the clean Git HEAD');
   }
 }
 
@@ -207,15 +207,15 @@ export function embeddedSourceCommit(executable, label, {
   } catch {
     throw new CoordinatorError(`${label} source-stamp preflight is unreadable`);
   }
-  if (!HEX40.test(value?.PeekabooSourceCommit ?? '')) {
+  if (!HEX40.test(value?.WinkSourceCommit ?? '')) {
     throw new CoordinatorError(`${label} has no exact embedded source stamp`);
   }
-  return value.PeekabooSourceCommit;
+  return value.WinkSourceCommit;
 }
 
 function aggregateSHA256(domain, value) {
   return sha256(Buffer.concat([
-    Buffer.from(`peekaboo.multi-target-certification.${domain}.v2\0`, 'utf8'),
+    Buffer.from(`wink.multi-target-certification.${domain}.v2\0`, 'utf8'),
     canonicalBytes(value),
   ]));
 }
@@ -661,7 +661,7 @@ function validatePlan(
   plan, catalog, testRuntimeAllowed, currentBuildCommit, diagnosticReportsDirectory,
 ) {
   const rootKeys = [
-    'version', 'runs_directory', 'peekaboo_executable', 'controller_executable',
+    'version', 'runs_directory', 'wink_executable', 'controller_executable',
     'monitor_executable', 'bridge', 'controllers', 'observer', 'monitor',
     'external_foreground_timeout_seconds', 'operation_timeout_seconds',
   ];
@@ -670,7 +670,7 @@ function validatePlan(
     throw new CoordinatorError('live coordinator plan keys are not closed or version is not 1');
   }
   requirePrivateDirectory(requireAbsolute(plan.runs_directory, 'runs_directory'), 'runs_directory');
-  requireExecutable(plan.peekaboo_executable, 'peekaboo_executable');
+  requireExecutable(plan.wink_executable, 'wink_executable');
   requireExecutable(plan.controller_executable, 'controller_executable');
   requireExecutable(plan.monitor_executable, 'monitor_executable');
   if (!exactKeys(plan.bridge, ['socket_path', 'trusted_host_team_ids', 'expected_host'])
@@ -802,7 +802,7 @@ function monitorSample(monitorExecutable, outputPath) {
   const raw = readPrivateJSON(outputPath, 'monitor sample');
   if (!exactKeys(raw, [
     'timestamp', 'frontmostPID', 'frontmostBundleIdentifier', 'frontmostWindowID', 'cursor',
-    'clipboardChangeCount', 'clipboardDigest', 'peekabooWindowIDs', 'visibleScreenFramesTopLeft',
+    'clipboardChangeCount', 'clipboardDigest', 'winkWindowIDs', 'visibleScreenFramesTopLeft',
   ]) || !positiveSafeInteger(raw.frontmostPID) || !positiveSafeInteger(raw.frontmostWindowID)
       || !nonnegativeSafeInteger(raw.clipboardChangeCount) || !HEX64.test(raw.clipboardDigest ?? '')) {
     throw new CoordinatorError('monitor sample is not one closed complete desktop sample');
@@ -1237,7 +1237,7 @@ function finalizerCommand(retainedFinalizer, stagingDirectory, args, label, time
 }
 
 function makeControllerText(nonce, controllerID, externalTimeoutSeconds) {
-  const prefix = `peekaboo-certification-background:${nonce}:${controllerID}:`;
+  const prefix = `wink-certification-background:${nonce}:${controllerID}:`;
   const prefixBytes = Buffer.byteLength(prefix, 'utf8');
   const minimumCharacters = Math.ceil((
     (externalTimeoutSeconds + CONTROLLER_MUTATION_OVERLAP_MARGIN_SECONDS) * 1000
@@ -1261,7 +1261,7 @@ async function runCoordinator(
   plan, catalog, retainedFinalizer, diagnosticReportsDirectory, testRuntime, currentBuildCommit,
 ) {
   const runsDirectory = path.resolve(plan.runs_directory);
-  const runRoot = fs.mkdtempSync(path.join(runsDirectory, 'peekaboo-live-certification-'));
+  const runRoot = fs.mkdtempSync(path.join(runsDirectory, 'wink-live-certification-'));
   fs.chmodSync(runRoot, 0o700);
   const nonce = randomBytes(32).toString('hex');
   const monitorID = randomUUID().toLowerCase();
@@ -1273,7 +1273,7 @@ async function runCoordinator(
   const sourceControllerExecutable = fs.realpathSync(plan.controller_executable);
   let controllerExecutable = sourceControllerExecutable;
   const monitorExecutable = fs.realpathSync(plan.monitor_executable);
-  const peekabooExecutable = fs.realpathSync(plan.peekaboo_executable);
+  const winkExecutable = fs.realpathSync(plan.wink_executable);
   let inspectorStage;
   let controllerCodeIdentity;
   let monitorCodeIdentity;
@@ -1319,7 +1319,7 @@ async function runCoordinator(
     if (monitorCodeIdentity.code_signature_hash !== plan.monitor.code_signature_hash) {
       throw new CoordinatorError('certification monitor code-signature hash differs from the plan');
     }
-    requirePeekabooSourceCommit(peekabooExecutable, currentBuildCommit);
+    requireWinkSourceCommit(winkExecutable, currentBuildCommit);
   }
   const controllerBuild = {
     source_commit: currentBuildCommit,
@@ -1483,7 +1483,7 @@ async function runCoordinator(
 
     const observerDirectory = directories.observer;
     const observerPlanPath = path.join(observerDirectory, 'plan.json');
-    const marker = `peekaboo-foreground-postcondition:${nonce}`;
+    const marker = `wink-foreground-postcondition:${nonce}`;
     const observerPaths = {
       ready: path.join(observerDirectory, 'observer-ready.json'),
       observe: path.join(observerDirectory, 'observe-request.json'),
@@ -2074,7 +2074,7 @@ async function runCoordinator(
       '--monitor-evidence', shared.evidence,
       '--foreground-postcondition', observerPaths.witness,
       '--artifacts', directories['prepared-artifacts'],
-      '--peekaboo', peekabooExecutable,
+      '--wink', winkExecutable,
       '--output', shared.prepareSummary,
     ];
     finalizerCommand(
@@ -2086,7 +2086,7 @@ async function runCoordinator(
     );
     finalizerCommand(retainedFinalizer, runRoot, [
       'finalize', '--artifacts', directories['prepared-artifacts'],
-      '--peekaboo', peekabooExecutable, '--output', shared.summary,
+      '--wink', winkExecutable, '--output', shared.summary,
     ], 'final certification', remainingFinalizerTimeoutMilliseconds(
       globalFinalizerDeadline, finalizerTimeout,
     ));
@@ -2133,7 +2133,7 @@ async function runCoordinator(
         try {
           const release = path.join(directories.observer, 'observer-release.json');
           if (!fs.existsSync(release)) writePrivateJSON(release, requestMarker(
-            'release', nonce, `peekaboo-foreground-postcondition:${nonce}`,
+            'release', nonce, `wink-foreground-postcondition:${nonce}`,
           ));
         } catch {}
       }
@@ -2154,10 +2154,10 @@ async function main() {
     return;
   }
   if (args.action === 'version') {
-    process.stdout.write('peekaboo-live-multi-target-coordinator 1\n');
+    process.stdout.write('wink-live-multi-target-coordinator 1\n');
     return;
   }
-  const testRuntimeAllowed = process.env.PEEKABOO_COORDINATOR_TEST_RUNTIME === '1';
+  const testRuntimeAllowed = process.env.WINK_COORDINATOR_TEST_RUNTIME === '1';
   const planPath = requireAbsolute(args.plan, 'plan');
   const plan = parseJSON(requirePrivateFile(planPath, 'live coordinator plan', 1024 * 1024), 'live coordinator plan');
   const catalogPath = testRuntimeAllowed ? plan.test_runtime?.catalog_path : DEFAULT_CATALOG_PATH;

@@ -1,11 +1,11 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import UniformTypeIdentifiers
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 enum TestStubError: Error {
     case unimplemented(StaticString)
@@ -540,7 +540,7 @@ ExactWindowTargetedClickServiceProtocol, ElementActionAutomationServiceProtocol 
     ) async throws {
         if let currentHotkeyProcessIdentity,
            currentHotkeyProcessIdentity(expectedProcessIdentity.processIdentifier) != expectedProcessIdentity {
-            throw PeekabooError.invalidInput(
+            throw WinkError.invalidInput(
                 "Background hotkey target process exited or changed process generation"
             )
         }
@@ -692,7 +692,7 @@ class StubApplicationService: ScriptedApplicationInventoryService {
 
     override func getFrontmostApplication() async throws -> ServiceApplicationInfo {
         guard let application = self.applications.first else {
-            throw PeekabooError.appNotFound("frontmost")
+            throw WinkError.appNotFound("frontmost")
         }
         return application
     }
@@ -706,7 +706,7 @@ class StubApplicationService: ScriptedApplicationInventoryService {
         if let expectedIdentity = request.expectedIdentity {
             let application = try await self.findApplication(identifier: request.identifier)
             guard application.processIdentity == expectedIdentity else {
-                throw PeekabooError.commandFailed("Application process generation changed before activation")
+                throw WinkError.commandFailed("Application process generation changed before activation")
             }
         }
         try await self.activateApplication(identifier: request.identifier)
@@ -724,7 +724,7 @@ class StubApplicationService: ScriptedApplicationInventoryService {
                   $0.processIdentifier == expectedIdentity.processIdentifier
               })?.processIdentity == expectedIdentity
         else {
-            throw PeekabooError.commandFailed("Application process generation changed")
+            throw WinkError.commandFailed("Application process generation changed")
         }
         self.quitCalls.append((identifier: request.identifier, force: request.force))
         if self.quitShouldSucceed {
@@ -773,7 +773,7 @@ final class StubFileService: FileServiceProtocol {
     }
 
     func getSnapshotCacheDirectory() -> URL {
-        URL(fileURLWithPath: "/tmp/peekaboo-snapshots")
+        URL(fileURLWithPath: "/tmp/wink-snapshots")
     }
 
     func calculateDirectorySize(_ directory: URL) async throws -> Int64 {
@@ -829,7 +829,7 @@ class StubDockService: DockServiceProtocol {
 
     func findDockItem(name: String) async throws -> DockItem {
         guard let match = items.first(where: { $0.title == name }) else {
-            throw PeekabooError.elementNotFound(name)
+            throw WinkError.elementNotFound(name)
         }
         return match
     }
@@ -887,35 +887,35 @@ class StubMenuService: MenuServiceProtocol {
     func listMenus(for appIdentifier: String) async throws -> MenuStructure {
         self.listMenusRequests.append(appIdentifier)
         guard let structure = menusByApp[appIdentifier] else {
-            throw PeekabooError.menuNotFound(appIdentifier)
+            throw WinkError.menuNotFound(appIdentifier)
         }
         return structure
     }
 
     func listFrontmostMenus() async throws -> MenuStructure {
         guard let menus = frontmostMenus else {
-            throw PeekabooError.menuNotFound("frontmost")
+            throw WinkError.menuNotFound("frontmost")
         }
         return menus
     }
 
     func clickMenuItem(app: String, itemPath: String) async throws {
         guard self.menusByApp[app] != nil else {
-            throw PeekabooError.menuNotFound(app)
+            throw WinkError.menuNotFound(app)
         }
         self.clickPathCalls.append((app, itemPath))
     }
 
     func clickMenuItemByName(app: String, itemName: String) async throws {
         guard self.menusByApp[app] != nil else {
-            throw PeekabooError.menuNotFound(app)
+            throw WinkError.menuNotFound(app)
         }
         self.clickItemCalls.append((app, itemName))
     }
 
     func clickMenuExtra(title: String) async throws {
         guard self.menuExtras.contains(where: { $0.title == title }) else {
-            throw PeekabooError.menuNotFound(title)
+            throw WinkError.menuNotFound(title)
         }
         self.clickExtraCalls.append(title)
     }
@@ -936,11 +936,11 @@ class StubMenuService: MenuServiceProtocol {
         []
     }
 
-    func clickMenuBarItem(named name: String) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(named name: String) async throws -> WinkCore.ClickResult {
         throw TestStubError.unimplemented(#function)
     }
 
-    func clickMenuBarItem(at index: Int) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(at index: Int) async throws -> WinkCore.ClickResult {
         throw TestStubError.unimplemented(#function)
     }
 }
@@ -1160,7 +1160,7 @@ class StubWindowService: WindowManagementServiceProtocol, WindowMutationInventor
             throw OperationError.interactionFailed(
                 action: "close window",
                 reason: "A minimized window cannot be closed with a verified background-only route; " +
-                    "run `peekaboo window restore` for the same exact target first, or retry with --foreground"
+                    "run `wink window restore` for the same exact target first, or retry with --foreground"
             )
         }
     }
@@ -1277,7 +1277,7 @@ class StubWindowService: WindowManagementServiceProtocol, WindowMutationInventor
         let selection = try resolveWindowLocation(target: target)
         var windows = self.windowsByApp[selection.app] ?? []
         guard selection.index < windows.count else {
-            throw PeekabooError.windowNotFound(criteria: selection.app)
+            throw WinkError.windowNotFound(criteria: selection.app)
         }
         let updated = transform(windows[selection.index])
         windows[selection.index] = updated
@@ -1289,7 +1289,7 @@ class StubWindowService: WindowManagementServiceProtocol, WindowMutationInventor
         switch target {
         case let .application(app):
             guard let windows = windowsByApp[app], !windows.isEmpty else {
-                throw PeekabooError.windowNotFound(criteria: app)
+                throw WinkError.windowNotFound(criteria: app)
             }
             return (app, 0)
         case let .applicationAndTitle(app, title):
@@ -1297,31 +1297,31 @@ class StubWindowService: WindowManagementServiceProtocol, WindowMutationInventor
                 let windows = windowsByApp[app],
                 let index = windows.firstIndex(where: { $0.title.localizedCaseInsensitiveContains(title) })
             else {
-                throw PeekabooError.windowNotFound(criteria: "title contains \(title)")
+                throw WinkError.windowNotFound(criteria: "title contains \(title)")
             }
             return (app, index)
         case .frontmost:
             if let entry = windowsByApp.first(where: { !$0.value.isEmpty }) {
                 return (entry.key, 0)
             }
-            throw PeekabooError.windowNotFound(criteria: "frontmost")
+            throw WinkError.windowNotFound(criteria: "frontmost")
         case let .windowId(id):
             for (app, windows) in self.windowsByApp {
                 if let index = windows.firstIndex(where: { $0.windowID == id }) {
                     return (app, index)
                 }
             }
-            throw PeekabooError.windowNotFound(criteria: "windowId \(id)")
+            throw WinkError.windowNotFound(criteria: "windowId \(id)")
         case let .title(title):
             for (app, windows) in self.windowsByApp {
                 if let index = windows.firstIndex(where: { $0.title.localizedCaseInsensitiveContains(title) }) {
                     return (app, index)
                 }
             }
-            throw PeekabooError.windowNotFound(criteria: "title contains \(title)")
+            throw WinkError.windowNotFound(criteria: "title contains \(title)")
         case let .index(app, index):
             guard let windows = windowsByApp[app], index < windows.count else {
-                throw PeekabooError.windowNotFound(criteria: "index \(index) in \(app)")
+                throw WinkError.windowNotFound(criteria: "index \(index) in \(app)")
             }
             return (app, index)
         }
@@ -1476,7 +1476,7 @@ final class StubSpaceService: SpaceCommandSpaceService {
 
 @MainActor
 enum TestServicesFactory {
-    static func makePeekabooServices(
+    static func makeWinkServices(
         applications: any ApplicationServiceProtocol = StubApplicationService(applications: []),
         windows: any WindowManagementServiceProtocol = StubWindowService(windowsByApp: [:]),
         menu: any MenuServiceProtocol = StubMenuService(menusByApp: [:]),
@@ -1488,9 +1488,9 @@ enum TestServicesFactory {
         screens: [ScreenInfo] = [],
         automation: any UIAutomationServiceProtocol = StubAutomationService(),
         screenCapture: any ScreenCaptureServiceProtocol = StubScreenCaptureService()
-    ) -> PeekabooServices {
+    ) -> WinkServices {
         let screenService = StubScreenService(screens: screens)
-        return PeekabooServices(
+        return WinkServices(
             logging: LoggingService(),
             screenCapture: screenCapture,
             applications: applications,
@@ -1503,7 +1503,7 @@ enum TestServicesFactory {
             files: files,
             clipboard: clipboard,
             permissions: PermissionsService(),
-            audioInput: AudioInputService(aiService: PeekabooAIService()),
+            audioInput: AudioInputService(aiService: WinkAIService()),
             agent: nil,
             configuration: ConfigurationManager.shared,
             screens: screenService
@@ -1512,7 +1512,7 @@ enum TestServicesFactory {
 
     @MainActor
     struct AutomationTestContext {
-        let services: PeekabooServices
+        let services: WinkServices
         let automation: StubAutomationService
         let snapshots: StubSnapshotManager
     }
@@ -1530,7 +1530,7 @@ enum TestServicesFactory {
         screens: [ScreenInfo] = [],
         screenCapture: any ScreenCaptureServiceProtocol = StubScreenCaptureService()
     ) -> AutomationTestContext {
-        let services = self.makePeekabooServices(
+        let services = self.makeWinkServices(
             applications: applications,
             windows: windows,
             menu: menu,

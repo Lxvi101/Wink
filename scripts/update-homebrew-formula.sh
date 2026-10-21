@@ -10,7 +10,7 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-FORMULA_PATH="$PROJECT_ROOT/homebrew/peekaboo.rb"
+FORMULA_PATH="$PROJECT_ROOT/homebrew/wink.rb"
 
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <version> <sha256>"
@@ -26,7 +26,7 @@ echo "Version: $VERSION"
 echo "SHA256: $SHA256"
 
 # Update the formula
-sed -i.bak "s|url \".*\"|url \"https://github.com/openclaw/Peekaboo/releases/download/v${VERSION}/peekaboo-macos-universal.tar.gz\"|" "$FORMULA_PATH"
+sed -i.bak "s|url \".*\"|url \"https://github.com/Lxvi101/Wink/releases/download/v${VERSION}/wink-macos-universal.tar.gz\"|" "$FORMULA_PATH"
 sed -i.bak "s|sha256 \".*\"|sha256 \"${SHA256}\"|" "$FORMULA_PATH"
 sed -i.bak "s|version \".*\"|version \"${VERSION}\"|" "$FORMULA_PATH"
 
@@ -42,5 +42,5 @@ git diff "$FORMULA_PATH"
 
 echo -e "\n${BLUE}Next steps:${NC}"
 echo "1. Review the changes above"
-echo "2. Commit: git add homebrew/peekaboo.rb && git commit -m \"Update Homebrew formula to v${VERSION}\""
+echo "2. Commit: git add homebrew/wink.rb && git commit -m \"Update Homebrew formula to v${VERSION}\""
 echo "3. Push to openclaw/homebrew-tap"

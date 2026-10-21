@@ -1,13 +1,13 @@
 ---
-summary: 'Review Peekaboo Playground Testing Methodology guidance'
+summary: 'Review Wink Playground Testing Methodology guidance'
 read_when:
-  - 'planning work related to peekaboo playground testing methodology'
+  - 'planning work related to wink playground testing methodology'
   - 'debugging or extending features described here'
 ---
 
-# Peekaboo Playground Testing Methodology
+# Wink Playground Testing Methodology
 
-Playground provides controlled UI elements and native action logs for testing Peekaboo. Test the default background
+Playground provides controlled UI elements and native action logs for testing Wink. Test the default background
 workflow first; a successful command dispatch is not proof that the intended receiver changed.
 
 ## Prepare a signed, owned test
@@ -18,12 +18,12 @@ Use the signed installed CLI for routine tests, or build and sign a source candi
 source identities, independent observers, and the repository-owned native matrix.
 
 ```bash
-PEEKABOO_BIN="${PEEKABOO_BIN:-$(command -v peekaboo)}"
-RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-playground.XXXXXX")"
-"$PEEKABOO_BIN" --version
-"$PEEKABOO_BIN" bridge status --verbose --json
-"$PEEKABOO_BIN" permissions status --all-sources --json
-"$PEEKABOO_BIN" app list --include-hidden --include-background --json
+WINK_BIN="${WINK_BIN:-$(command -v wink)}"
+RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wink-playground.XXXXXX")"
+"$WINK_BIN" --version
+"$WINK_BIN" bridge status --verbose --json
+"$WINK_BIN" permissions status --all-sources --json
+"$WINK_BIN" app list --include-hidden --include-background --json
 ```
 
 Record the task-owned Playground PID and process generation, then select its window from `window list`.
@@ -35,7 +35,7 @@ or grant new permissions merely to turn a background refusal into success. A bac
 prove that an app stayed behind the user's work.
 
 Use `pnpm run test:automation:local` for the repository-owned local runner. A filtered Swift suite needs both
-`PEEKABOO_INCLUDE_AUTOMATION_TESTS=true` and `RUN_LOCAL_TESTS=true`. Read-only/action CI lanes use
+`WINK_INCLUDE_AUTOMATION_TESTS=true` and `RUN_LOCAL_TESTS=true`. Read-only/action CI lanes use
 `RUN_AUTOMATION_READ` / `RUN_AUTOMATION_ACTIONS`; do not add per-test environment switches.
 
 ## Observe, act once, and verify
@@ -47,14 +47,14 @@ fresh result. An opaque element ID belongs to its snapshot; a snapshot is not a 
 
 ```bash
 # PLAYGROUND_PID is the admitted task-owned process.
-"$PEEKABOO_BIN" window list --pid "$PLAYGROUND_PID" --json
+"$WINK_BIN" window list --pid "$PLAYGROUND_PID" --json
 # Copy WINDOW_ID from that inventory.
-"$PEEKABOO_BIN" see --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" \
+"$WINK_BIN" see --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" \
   --path "$RUN_DIR/before.png" --json
 
 # Copy BUTTON_ID and SNAPSHOT_ID from this observation.
-"$PEEKABOO_BIN" click --on "$BUTTON_ID" --snapshot "$SNAPSHOT_ID" --json
-"$PEEKABOO_BIN" see --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" \
+"$WINK_BIN" click --on "$BUTTON_ID" --snapshot "$SNAPSHOT_ID" --json
+"$WINK_BIN" see --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" \
   --path "$RUN_DIR/after-click.png" --json
 ```
 
@@ -72,22 +72,22 @@ observation and verify the later state without replay.
 ### Window state
 
 ```bash
-"$PEEKABOO_BIN" window list --pid "$PLAYGROUND_PID" --json
-"$PEEKABOO_BIN" window minimize --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" --json
-"$PEEKABOO_BIN" window list --pid "$PLAYGROUND_PID" --json
+"$WINK_BIN" window list --pid "$PLAYGROUND_PID" --json
+"$WINK_BIN" window minimize --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" --json
+"$WINK_BIN" window list --pid "$PLAYGROUND_PID" --json
 ```
 
 After confirming the minimized state and unchanged identity, use
 `window restore --pid "$PLAYGROUND_PID" --window-id "$WINDOW_ID" --json` and verify again.
 `window focus` deliberately makes an app foreground; reserve it for a separately authorized foreground test.
-The removed v3 command `peekaboo list windows` is not an alias for `peekaboo window list`.
+The removed v3 command `wink list windows` is not an alias for `wink window list`.
 
 ### Menu selection
 
 ```bash
-"$PEEKABOO_BIN" menu list --pid "$PLAYGROUND_PID" --json
+"$WINK_BIN" menu list --pid "$PLAYGROUND_PID" --json
 # Use the path only if that fresh inventory reports it.
-"$PEEKABOO_BIN" menu click --pid "$PLAYGROUND_PID" --path "Test Menu > Test Action 1" --json
+"$WINK_BIN" menu click --pid "$PLAYGROUND_PID" --path "Test Menu > Test Action 1" --json
 ```
 
 Corroborate the callback through the owned PID's log and fresh UI/native state. Unverified menu delivery is not
@@ -95,7 +95,7 @@ permission to click again.
 
 ## Command and capability coverage
 
-Start with `"$PEEKABOO_BIN" <command> --help` or `"$PEEKABOO_BIN" help <command>`, then read the command's documentation
+Start with `"$WINK_BIN" <command> --help` or `"$WINK_BIN" help <command>`, then read the command's documentation
 and owning implementation. Both help forms are supported. App/process selectors and element selectors have different
 roles: `--app` does not replace `--on`. Do not invent aliases to make an outdated example work.
 
@@ -140,7 +140,7 @@ Stop new mutations after an uncertain result. Once pending input is terminal and
 safe state, normally quit only the exact generation admitted for this test:
 
 ```bash
-"$PEEKABOO_BIN" app quit --pid "$PLAYGROUND_PID" \
+"$WINK_BIN" app quit --pid "$PLAYGROUND_PID" \
   --expected-process-start-identity "$PLAYGROUND_START_ID" --json
 ```
 

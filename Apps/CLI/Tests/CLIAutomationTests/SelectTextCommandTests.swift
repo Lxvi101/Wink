@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -13,7 +13,7 @@ struct SelectTextCommandTests {
         let automation = SelectionAutomation()
         let snapshots = StubSnapshotManager()
         let snapshot = try await ActionOutcomeCommandTests.storeExactWindowElementSnapshot(in: snapshots)
-        let services = TestServicesFactory.makePeekabooServices(snapshots: snapshots, automation: automation)
+        let services = TestServicesFactory.makeWinkServices(snapshots: snapshots, automation: automation)
         let result = try await InProcessCommandRunner.run([
             "select-text", "needle", "--on", "elem_3", "--snapshot", snapshot,
             "--prefix", "a ", "--suffix", " b", "--selection-type", "cursor_after", "--json", "--no-remote",
@@ -33,7 +33,7 @@ struct SelectTextCommandTests {
             ["select-text", "needle", "--on", "elem_3", "--foreground"],
         ] {
             let automation = SelectionAutomation()
-            let services = TestServicesFactory.makePeekabooServices(automation: automation)
+            let services = TestServicesFactory.makeWinkServices(automation: automation)
             let result = try await InProcessCommandRunner.run(arguments + ["--json", "--no-remote"], services: services)
             #expect(result.exitStatus != 0)
             #expect(automation.requests.isEmpty)
@@ -79,7 +79,7 @@ struct SelectTextCommandTests {
             let automation = SelectionAutomation()
             let applications = StubApplicationService(applications: [])
             let windows = StubWindowService(windowsByApp: [:])
-            let services = TestServicesFactory.makePeekabooServices(
+            let services = TestServicesFactory.makeWinkServices(
                 applications: applications,
                 windows: windows,
                 snapshots: snapshots,
@@ -125,7 +125,7 @@ struct SelectTextCommandTests {
         )
         let snapshots = StubSnapshotManager()
         let snapshot = try await ActionOutcomeCommandTests.storeExactWindowElementSnapshot(in: snapshots)
-        let services = TestServicesFactory.makePeekabooServices(snapshots: snapshots, automation: automation)
+        let services = TestServicesFactory.makeWinkServices(snapshots: snapshots, automation: automation)
         let arguments = ["select-text", "needle", "--on", "elem_3", "--snapshot", snapshot, "--json", "--no-remote"]
         let first = try await InProcessCommandRunner.run(arguments, services: services)
         #expect(first.exitStatus == 1 && first.stdout.contains("indeterminate"))
@@ -150,7 +150,7 @@ struct SelectTextCommandTests {
         let automation = SelectionAutomation()
         let applications = StubApplicationService(applications: [])
         let windows = StubWindowService(windowsByApp: [:])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows,
             snapshots: snapshots,
@@ -162,7 +162,7 @@ struct SelectTextCommandTests {
         let error = try #require(object["error"] as? [String: Any])
         let outcome = try #require(object["outcome"] as? [String: Any])
         let message = "Text selection requires a fresh exact-window snapshot."
-        let hint = "Run 'peekaboo see --window-id <id>' and retry with its fresh snapshot."
+        let hint = "Run 'wink see --window-id <id>' and retry with its fresh snapshot."
 
         #expect(result.exitStatus == 1)
         #expect(error["code"] as? String == ErrorCode.INVALID_INPUT.rawValue)

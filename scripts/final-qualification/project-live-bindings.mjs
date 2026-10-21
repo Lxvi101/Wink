@@ -147,7 +147,7 @@ export function projectBindings(specPath, outputPath) {
   exactKeys(spec, ['version', 'paths', 'receipts', 'timeouts'], 'projection input');
   requireCondition(spec.version === 1, 'projection input version is not 1');
   exactKeys(spec.paths, [
-    'catalog', 'runs_directory', 'peekaboo_executable', 'controller_executable',
+    'catalog', 'runs_directory', 'wink_executable', 'controller_executable',
     'monitor_executable', 'crash_directory',
   ], 'paths');
   exactKeys(spec.receipts, [
@@ -160,7 +160,7 @@ export function projectBindings(specPath, outputPath) {
 
   const catalog = catalogReceipt(spec.paths.catalog);
   requirePrivateDirectory(spec.paths.runs_directory, 'paths.runs_directory', { empty: true });
-  requireStableExecutable(spec.paths.peekaboo_executable, 'paths.peekaboo_executable');
+  requireStableExecutable(spec.paths.wink_executable, 'paths.wink_executable');
   requireStableExecutable(spec.paths.controller_executable, 'paths.controller_executable');
   requireStableExecutable(spec.paths.monitor_executable, 'paths.monitor_executable');
   const canonicalCrashDirectory = path.join(os.homedir(), 'Library', 'Logs', 'DiagnosticReports');
@@ -223,7 +223,7 @@ export function projectBindings(specPath, outputPath) {
   });
   const bindings = {
     runs_directory: spec.paths.runs_directory,
-    peekaboo_executable: spec.paths.peekaboo_executable,
+    wink_executable: spec.paths.wink_executable,
     controller_executable: spec.paths.controller_executable,
     monitor_executable: spec.paths.monitor_executable,
     bridge,

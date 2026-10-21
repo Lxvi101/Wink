@@ -1,41 +1,41 @@
 ---
 summary: 'Diagnose Bridge hosts and verify signed operation receipt bundles'
 read_when:
-  - 'verifying whether the CLI is using Peekaboo.app / Clawdbot.app as a Bridge host'
+  - 'verifying whether the CLI is using Wink.app / Clawdbot.app as a Bridge host'
   - 'debugging codesign / TeamID failures for bridge.sock connections'
-  - 'checking which socket path Peekaboo is probing'
+  - 'checking which socket path Wink is probing'
   - 'verifying a private protocol 1.29 operation receipt bundle'
 ---
 
-# `peekaboo bridge`
+# `wink bridge`
 
-`peekaboo bridge` reports how the CLI resolves a Peekaboo Bridge host (the socket-based TCC broker used for Screen Recording, Accessibility, and Event Synthesizing).
+`wink bridge` reports how the CLI resolves a Wink Bridge host (the socket-based TCC broker used for Screen Recording, Accessibility, and Event Synthesizing).
 
 ## Subcommands
 | Name | Purpose |
 | --- | --- |
-| `status` (default) | Probes configured sockets and reports reusable and build-scoped daemons, the healthy Peekaboo.app GUI host, auto-start plans, or final operation-dependent local fallback. |
+| `status` (default) | Probes configured sockets and reports reusable and build-scoped daemons, the healthy Wink.app GUI host, auto-start plans, or final operation-dependent local fallback. |
 | `receipt validate` | Authenticates one exact live listener and verifies one private exported protocol 1.29 terminal bundle against it. |
 
 ## Notes
-- Normal automation routing reuses a healthy daemon, then tries a capable Peekaboo.app host before starting a daemon
+- Normal automation routing reuses a healthy daemon, then tries a capable Wink.app host before starting a daemon
   on demand; operation-specific requirements can prefer the GUI host or require a surviving daemon. The complete host
   discovery order is documented in `docs/bridge-host.md`.
 - Implicit screen-capture observation, AX-tree inspection, browser, and snapshot-state commands first prefer the exact
   CLI build's build-scoped daemon and may auto-start it before considering the GUI host. Use the command's actual
   requirements—not the generic status ordering—to interpret which reported host it will select.
 - A command carrying a canonical `ps1_` snapshot reference uses unique authenticated producer affinity instead of the
-  generic ordering, including local, daemon, Peekaboo.app, Claude.app, and Clawdbot.app candidates. Zero or multiple
+  generic ordering, including local, daemon, Wink.app, Claude.app, and Clawdbot.app candidates. Zero or multiple
   owners fail before dispatch with no fallback or replay. See [`bridge-host.md`](../bridge-host.md#snapshot-authority).
-- `--no-remote` (or `PEEKABOO_NO_REMOTE`) skips remote probing and forces local execution.
-- `--bridge-socket <path>` (or `PEEKABOO_BRIDGE_SOCKET`) overrides host discovery and probes only that socket.
+- `--no-remote` (or `WINK_NO_REMOTE`) skips remote probing and forces local execution.
+- `--bridge-socket <path>` (or `WINK_BRIDGE_SOCKET`) overrides host discovery and probes only that socket.
   The override is strict: an unavailable or incompatible host fails non-zero instead of silently using the local
   runtime. Pass `--no-remote` explicitly when caller-local execution is intended.
 - For commands without a concrete snapshot, caller-local input-policy overrides conflict with an explicit socket
   and fail before local service construction. Remove the input-policy overrides to use the selected host, or use
   `--no-remote` deliberately. Concrete snapshot producer affinity and read-only Bridge diagnostics are unchanged.
 - Status probes run concurrently and give each candidate one second to complete its read-only diagnostic handshake. A `timeout` entry means that host missed the diagnostic deadline; other candidates are still reported and normal runtime selection order is unchanged.
-- Hosts validate callers by code signature TeamID. If the host rejects the client (`unauthorizedClient`), install a signed Peekaboo CLI build or enable the debug-only escape hatch on the host.
+- Hosts validate callers by code signature TeamID. If the host rejects the client (`unauthorizedClient`), install a signed Wink CLI build or enable the debug-only escape hatch on the host.
 - If every selection-eligible implicit host is rejected, normal human output warns before the CLI reports local fallback. Structured output keeps the established full status-report schema for compatibility.
 - If `bridge status` reports `internalError` / “Bridge host returned no response”, the probed host likely closed the socket without replying (older host builds). Hosts built from `main` after 2025-12-18 return a structured `unauthorizedClient` error instead, which is much easier to debug.
 - If a candidate reports `perm: SR=N`, grant Screen Recording to that host app. For capture-only subprocesses whose caller already has Screen Recording, bypass Bridge with `--no-remote --capture-engine cg`.
@@ -55,13 +55,13 @@ read_when:
   than from a reusable numeric PID.
 - The client authenticates a protocol 1.29 listener against the connected UNIX socket's audit token, exact PID/PID
   version, process-start identity, live kernel CDHash, and Apple-anchored signing team before installing its session.
-  Standard Peekaboo, daemon, Claude, and Clawdbot socket paths trust Peekaboo's release signing teams by default.
-  A custom `PeekabooBridgeClient` socket must pass `trustedHostTeamIDs`; without explicit host trust the client caps
+  Standard Wink, daemon, Claude, and Clawdbot socket paths trust Wink's release signing teams by default.
+  A custom `WinkBridgeClient` socket must pass `trustedHostTeamIDs`; without explicit host trust the client caps
   negotiation at receiptless protocol 1.28 instead of accepting an arbitrary Developer ID listener.
   `--bridge-socket` selects an endpoint, not additional trust. Public automation commands and `bridge status`
   have no host-team override, so custom paths remain limited to protocol 1.28 even with a current host.
   `--trusted-host-team-id` is a receipt-validation option, not a global automation flag. For capability-dependent
-  automation, use a standard Peekaboo or canonical build-scoped daemon socket; its listener must still satisfy
+  automation, use a standard Wink or canonical build-scoped daemon socket; its listener must still satisfy
   the built-in signing policy. Use the daemon's actual runtime-derived socket, not an invented matching filename
   or a symlink to an arbitrary custom socket. Fresh-AX support may still be advertised at protocol 1.28;
   it does not prove authenticated producer-bound snapshot support. When runtime selection fails, command
@@ -78,7 +78,7 @@ read_when:
   installation, or second rollover refusal is never automatically redispatched.
 - The host keeps bounded listener and logical-session archives under a private per-user temporary namespace keyed by
   the socket path. Receipt files use mode `0600`; retired session archives are quarantined and pruned without rotating
-  the listener. For a private certification run, setting `PEEKABOO_OPERATION_RECEIPT_DIRECTORY` exports one atomic
+  the listener. For a private certification run, setting `WINK_OPERATION_RECEIPT_DIRECTORY` exports one atomic
   verification bundle per successfully routed protocol 1.29 Bridge request. Local execution, protocol 1.28 and older
   hosts, and signed rollover refusals do not emit terminal receipt bundles. Certification must therefore distinguish a
   verified safe rollover from a missing terminal receipt and fail when a bundle expected for a completed operation is
@@ -91,7 +91,7 @@ read_when:
   listener is self-signed and carried inside the bundle. `bridge receipt validate` instead requires `--bridge-socket`,
   authenticates that exact connected host from the Unix-socket audit identity and signing team, and calls
   `validate(trustAnchor:)` with the complete listener attestation from that independent live handshake. Standard
-  Peekaboo socket paths use the built-in release-team policy; custom paths require one or more explicit
+  Wink socket paths use the built-in release-team policy; custom paths require one or more explicit
   `--trusted-host-team-id` values. A listener mismatch, protocol 1.28 downgrade, missing attestation, invalid signature,
   or semantic contradiction fails nonzero. Structural JSON checks and the bundle's own self-signature are never trust
   anchors.
@@ -107,7 +107,7 @@ read_when:
   byte-compatible; clients treat their row-only responses as partial evidence, refusing broad mutation selectors while
   retaining direct exact-PID and exact-window-ID compatibility.
 - Protocol 1.31 advertises `agentExecutionTrace` for one long Bridge request that launches and reaps an authenticated
-  Peekaboo CLI peer as a fixed background-only `agent run --no-cache --bridge-socket <serving-host> --json` child. The
+  Wink CLI peer as a fixed background-only `agent run --no-cache --bridge-socket <serving-host> --json` child. The
   host accepts no executable, shell, AppleScript, JXA, arbitrary argv, or environment input. It binds suspended-child
   identity revalidation, fresh `SETSID` session, earliest-entrypoint lockdown/readiness and release pipes,
   owner-private challenge/acknowledgement coordination, bounded stdout/stderr, and terminal `waitid`/`waitpid`
@@ -149,29 +149,29 @@ read_when:
 ## Examples
 ```bash
 # Human-readable status (selected host plus any local-fallback rejection warning)
-peekaboo bridge status
+wink bridge status
 
 # Full probe results + structured output for agents
-peekaboo bridge status --verbose --json | jq '.data'
+wink bridge status --verbose --json | jq '.data'
 
 # Probe a specific host socket path
-peekaboo bridge status --bridge-socket \
+wink bridge status --bridge-socket \
   ~/Library/Application\ Support/clawdbot/bridge.sock
 
-# Probe Claude Desktop host socket path (if Claude.app hosts PeekabooBridge)
-peekaboo bridge status --bridge-socket \
+# Probe Claude Desktop host socket path (if Claude.app hosts WinkBridge)
+wink bridge status --bridge-socket \
   ~/Library/Application\ Support/Claude/bridge.sock
 
 # Force local (skip the reusable daemon and all Bridge app hosts)
-peekaboo bridge status --no-remote
+wink bridge status --no-remote
 
 # Validate one private bundle against the authenticated listener that produced it
-peekaboo bridge receipt validate \
+wink bridge receipt validate \
   --bundle /private/path/to/request-id.json \
-  --bridge-socket ~/Library/Application\ Support/Peekaboo/bridge.sock \
+  --bridge-socket ~/Library/Application\ Support/Wink/bridge.sock \
   --json
 
 # OpenClaw/subprocess capture workaround when the caller already has Screen Recording
-peekaboo see --mode screen --screen-index 0 \
+wink see --mode screen --screen-index 0 \
   --no-remote --capture-engine cg --json
 ```

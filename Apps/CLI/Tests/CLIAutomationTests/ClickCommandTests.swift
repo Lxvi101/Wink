@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(
     .tags(.automation),
@@ -217,7 +217,7 @@ struct ClickCommandTests {
 
         for selectedWindow in mismatchedWindows {
             let context = await makeContext(application: application, windows: [selectedWindow])
-            context.automation.clickError = PeekabooError.snapshotStale(
+            context.automation.clickError = WinkError.snapshotStale(
                 "Exact-window click receipt no longer matches current identity and bounds"
             )
             let snapshotId = try await storeSnapshot(
@@ -687,8 +687,8 @@ struct ClickCommandTests {
         let application = ServiceApplicationInfo(
             processIdentifier: 12345,
             processStartIdentity: 7,
-            bundleIdentifier: "com.example.peekaboo-focus-mutation-fixture",
-            name: "PeekabooFocusMutationFixture",
+            bundleIdentifier: "com.example.wink-focus-mutation-fixture",
+            name: "WinkFocusMutationFixture",
             isActive: false,
             windowCount: 0,
             activationPolicy: .regular

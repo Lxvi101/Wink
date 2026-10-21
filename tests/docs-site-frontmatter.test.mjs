@@ -10,7 +10,7 @@ for (const [name, content] of [
 ]) {
   test(`docs builder extracts front matter with ${name} line endings`, (t) => {
     const html = buildDocsFixture(t, { 'index.md': content }).readPage();
-    assert.match(html, /<title>Metadata title — Peekaboo<\/title>/);
+    assert.match(html, /<title>Metadata title — Wink<\/title>/);
     assert.match(html, /name="description" content="Published description"/);
     const article = articleFromHTML(html);
     assert.match(article, /Body instructions\./);
@@ -20,13 +20,13 @@ for (const [name, content] of [
 
 test('CRLF without front matter keeps ordinary article content', (t) => {
   const html = buildDocsFixture(t, { 'index.md': '# Body heading\r\n\r\nBody instructions.\r\n' }).readPage();
-  assert.match(html, /<title>Body heading — Peekaboo<\/title>/);
+  assert.match(html, /<title>Body heading — Wink<\/title>/);
   assert.match(articleFromHTML(html), /Body instructions\./);
 });
 
 test('CRLF closing delimiter at EOF still supplies metadata without body leakage', (t) => {
   const html = buildDocsFixture(t, { 'index.md': lines.slice(0, 4).join('\r\n') }).readPage();
-  assert.match(html, /<title>Metadata title — Peekaboo<\/title>/);
+  assert.match(html, /<title>Metadata title — Wink<\/title>/);
   assert.match(html, /name="description" content="Published description"/);
   assert.equal(articleFromHTML(html).trim(), '');
 });

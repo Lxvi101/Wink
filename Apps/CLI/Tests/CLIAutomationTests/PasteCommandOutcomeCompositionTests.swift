@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 extension PasteCommandTests {
     @Test
@@ -179,7 +179,7 @@ extension PasteCommandTests {
             data: Data("current".utf8),
             textPreview: "current"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: clipboard,
             automation: automation
         )
@@ -261,7 +261,7 @@ extension PasteCommandTests {
             data: Data("current".utf8),
             textPreview: "current"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             windows: StubWindowService(windowsByApp: ["TextEdit": [window]]),
             clipboard: clipboard,
@@ -320,7 +320,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation
@@ -366,7 +366,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             clipboard: clipboard,
             automation: automation
@@ -416,7 +416,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             clipboard: clipboard,
             automation: automation
@@ -473,7 +473,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             clipboard: clipboard,
             automation: automation
@@ -513,7 +513,7 @@ extension PasteCommandTests {
         clipboard.getError = DesktopActionFailure.preDispatchRefusal(
             reason: .permissionDenied, message: "Synthetic clipboard policy refusal"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows, clipboard: clipboard, automation: automation
         )
         let result = try await InProcessCommandRunner.run([
@@ -555,7 +555,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows,
             clipboard: clipboard,
             automation: automation
@@ -609,7 +609,7 @@ struct ExactBackgroundTextPasteFixture {
     static let bounds = CGRect(x: 20, y: 30, width: 500, height: 400)
 
     let automation: OutcomeStubAutomationService
-    let services: PeekabooServices
+    let services: WinkServices
     let windows: StubWindowService
 
     init(
@@ -648,7 +648,7 @@ struct ExactBackgroundTextPasteFixture {
         let windows = StubWindowService(windowsByApp: ["TextEdit": [window]])
         self.automation = automation
         self.windows = windows
-        self.services = TestServicesFactory.makePeekabooServices(
+        self.services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             windows: windows,
             snapshots: snapshots,

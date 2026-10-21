@@ -1,12 +1,12 @@
 import Commander
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct AppCommandLaunchFlowTests {
@@ -172,7 +172,7 @@ struct AppCommandLaunchFlowTests {
 
     @Test
     func `Launch transmits the existing canonical private-prefix path`() async throws {
-        let root = URL(fileURLWithPath: "/private/tmp/peekaboo-cli-launch-path-\(UUID().uuidString)")
+        let root = URL(fileURLWithPath: "/private/tmp/wink-cli-launch-path-\(UUID().uuidString)")
         let appURL = root.appendingPathComponent("Fixture.app", isDirectory: true)
         try FileManager.default.createDirectory(at: appURL, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -392,13 +392,13 @@ struct AppCommandLaunchFlowTests {
         let application = ServiceApplicationInfo(
             processIdentifier: 321,
             processStartIdentity: 3001,
-            bundleIdentifier: "boo.peekaboo.peekaboo",
-            name: "Peekaboo daemon"
+            bundleIdentifier: "boo.wink.wink",
+            name: "Wink daemon"
         )
         let applicationService = RecordingApplicationService(applications: [application])
 
         var command = AppCommand.QuitSubcommand()
-        command.app = "Peekaboo daemon"
+        command.app = "Wink daemon"
         let runtime = CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: true, logLevel: nil),
             services: ServicesWithApplicationStub(applications: applicationService),
@@ -609,12 +609,12 @@ struct AppCommandLaunchFlowTests {
     func `Relaunch rejects an unsafe host before lifecycle calls`() async throws {
         let application = ServiceApplicationInfo(
             processIdentifier: 123,
-            bundleIdentifier: "boo.peekaboo.mac",
-            name: "Peekaboo"
+            bundleIdentifier: "boo.wink.mac",
+            name: "Wink"
         )
         let applicationService = RecordingApplicationService(applications: [application])
         var command = AppCommand.RelaunchSubcommand()
-        command.app = "Peekaboo"
+        command.app = "Wink"
         command.wait = .milliseconds(0)
         command.foreground = true
         let runtime = CommandRuntime(
@@ -636,12 +636,12 @@ struct AppCommandLaunchFlowTests {
         let application = ServiceApplicationInfo(
             processIdentifier: 321,
             processStartIdentity: 3001,
-            bundleIdentifier: "boo.peekaboo.peekaboo",
-            name: "Peekaboo daemon"
+            bundleIdentifier: "boo.wink.wink",
+            name: "Wink daemon"
         )
         let applicationService = RecordingApplicationService(applications: [application])
         var command = AppCommand.RelaunchSubcommand()
-        command.app = "Peekaboo daemon"
+        command.app = "Wink daemon"
         command.wait = .milliseconds(0)
         command.foreground = true
         let runtime = CommandRuntime(
@@ -772,8 +772,8 @@ private struct MenuConsentFixture {
 }
 
 @MainActor
-private final class ServicesWithApplicationStub: PeekabooServiceProviding {
-    private let base = PeekabooServices(snapshotManager: InMemorySnapshotManager())
+private final class ServicesWithApplicationStub: WinkServiceProviding {
+    private let base = WinkServices(snapshotManager: InMemorySnapshotManager())
     private let stubApplications: any ApplicationServiceProtocol
     private let stubAutomation: any UIAutomationServiceProtocol
     private let stubScreenCapture: any ScreenCaptureServiceProtocol
@@ -842,7 +842,7 @@ private final class ServicesWithApplicationStub: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         self.base.configuration
     }
 
@@ -880,7 +880,7 @@ private struct SnapshotInvalidationFixture {
         _ = try await discovered.createSnapshot()
 
         let discoveredSocketPath = hosts.desktop.root.appendingPathComponent("discovered.sock").path
-        let server = PeekabooBridgeServer(
+        let server = WinkBridgeServer(
             services: CLISnapshotBridgeServices(snapshots: discovered, directory: hosts.desktop.root),
             hostKind: .gui,
             allowlistedTeams: [],
@@ -899,7 +899,7 @@ private struct SnapshotInvalidationFixture {
                 )
             }
         )
-        let host = PeekabooBridgeHost(
+        let host = WinkBridgeHost(
             socketPath: discoveredSocketPath,
             server: server,
             allowedTeamIDs: [],
@@ -986,7 +986,7 @@ ApplicationMutationInventoryProviding {
         }) {
             return match
         }
-        throw PeekabooError.appNotFound(identifier)
+        throw WinkError.appNotFound(identifier)
     }
 
     func activateApplication(identifier: String) async throws {
@@ -1012,7 +1012,7 @@ ApplicationMutationInventoryProviding {
     func getFrontmostApplication() async throws -> ServiceApplicationInfo {
         self.frontmostCallCount += 1
         guard let first = applications.first else {
-            throw PeekabooError.appNotFound("frontmost")
+            throw WinkError.appNotFound("frontmost")
         }
         return first
     }
@@ -1032,7 +1032,7 @@ ApplicationMutationInventoryProviding {
             return launchResponse
         }
         guard let identifier = request.applicationIdentifier else {
-            throw PeekabooError.appNotFound("default handler")
+            throw WinkError.appNotFound("default handler")
         }
         return try await self.findApplication(identifier: identifier)
     }
@@ -1040,7 +1040,7 @@ ApplicationMutationInventoryProviding {
     func relaunchApplication(request: ApplicationRelaunchRequest) async throws -> ServiceApplicationInfo {
         self.relaunchRequests.append(request)
         guard request.expectedTargetIdentity != nil else {
-            throw PeekabooError.commandFailed("Relaunch request did not include a process-generation identity")
+            throw WinkError.commandFailed("Relaunch request did not include a process-generation identity")
         }
         guard try await self.quitApplication(request: ApplicationQuitRequest(
             identifier: request.targetIdentifier,
@@ -1048,7 +1048,7 @@ ApplicationMutationInventoryProviding {
             expectedIdentity: request.expectedTargetIdentity
         ))
         else {
-            throw PeekabooError.commandFailed("Application refused to quit")
+            throw WinkError.commandFailed("Application refused to quit")
         }
         return try await self.launchApplication(request: request.launchRequest)
     }
@@ -1063,11 +1063,11 @@ ApplicationMutationInventoryProviding {
     func quitApplication(request: ApplicationQuitRequest) async throws -> Bool {
         self.quitRequests.append(request)
         guard let expectedIdentity = request.expectedIdentity else {
-            throw PeekabooError.commandFailed("Quit request did not include a process-generation identity")
+            throw WinkError.commandFailed("Quit request did not include a process-generation identity")
         }
         let app = try await self.findApplication(identifier: request.identifier)
         guard app.processIdentity == expectedIdentity else {
-            throw PeekabooError.commandFailed("Quit request process generation did not match the selected application")
+            throw WinkError.commandFailed("Quit request process generation did not match the selected application")
         }
         return try await self.quitApplication(identifier: request.identifier, force: request.force)
     }
@@ -1241,13 +1241,13 @@ private final class RecordingMenuConsentService: MenuServiceGenerationPinnedActi
         return []
     }
 
-    func clickMenuBarItem(named _: String) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(named _: String) async throws -> WinkCore.ClickResult {
         self.operationCallCount += 1
-        return PeekabooCore.ClickResult(elementDescription: "unused", location: nil)
+        return WinkCore.ClickResult(elementDescription: "unused", location: nil)
     }
 
     func clickMenuBarItemActionResult(named name: String) async throws
-    -> UIAutomationActionResult<PeekabooCore.ClickResult> {
+    -> UIAutomationActionResult<WinkCore.ClickResult> {
         try await UIAutomationActionResult(
             payload: self.clickMenuBarItem(named: name),
             outcome: .dispatchedUnverified(
@@ -1259,13 +1259,13 @@ private final class RecordingMenuConsentService: MenuServiceGenerationPinnedActi
         )
     }
 
-    func clickMenuBarItem(at _: Int) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(at _: Int) async throws -> WinkCore.ClickResult {
         self.operationCallCount += 1
-        return PeekabooCore.ClickResult(elementDescription: "unused", location: nil)
+        return WinkCore.ClickResult(elementDescription: "unused", location: nil)
     }
 
     func clickMenuBarItemActionResult(at index: Int) async throws
-    -> UIAutomationActionResult<PeekabooCore.ClickResult> {
+    -> UIAutomationActionResult<WinkCore.ClickResult> {
         try await UIAutomationActionResult(
             payload: self.clickMenuBarItem(at: index),
             outcome: .dispatchedUnverified(
@@ -1290,7 +1290,7 @@ private final class RecordingMenuConsentService: MenuServiceGenerationPinnedActi
 
     private func processTarget() throws -> DesktopTargetIdentity {
         guard let identity = self.application.processIdentity else {
-            throw PeekabooError.serviceUnavailable("Missing fixture process identity")
+            throw WinkError.serviceUnavailable("Missing fixture process identity")
         }
         return try DesktopTargetIdentity(processIdentity: identity)
     }

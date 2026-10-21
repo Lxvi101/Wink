@@ -7,19 +7,19 @@ read_when:
 
 # Terminal Output Modes and Progressive Enhancement
 
-Peekaboo's agent command automatically adjusts its output for modern terminals while staying CI-friendly.
+Wink's agent command automatically adjusts its output for modern terminals while staying CI-friendly.
 
 > **Note**: The TermKit-based TUI was retired in November 2025. The agent now focuses on enhanced, compact, and minimal text output modes.
 
 ## Overview
 
-Peekaboo automatically detects your terminal's capabilities and selects the optimal output mode:
+Wink automatically detects your terminal's capabilities and selects the optimal output mode:
 
 - **Enhanced formatting** for color terminals with rich typography
 - **Compact mode** for standard ANSI terminals
 - **Minimal mode** for CI environments and pipes
 
-You can still override the selection with `--quiet`, `--verbose`, `--simple`, or by setting `PEEKABOO_OUTPUT_MODE`.
+You can still override the selection with `--quiet`, `--verbose`, `--simple`, or by setting `WINK_OUTPUT_MODE`.
 
 ## Output Modes
 
@@ -32,7 +32,7 @@ Provides rich formatting with improved typography:
 - Contextual progress information
 
 ```
-👻 Peekaboo Agent v3.5.0 using Claude Fable 5 (main/abc123, 2026-06-12)
+👻 Wink Agent v3.5.0 using Claude Fable 5 (main/abc123, 2026-06-12)
 
 👁 see screen ✅ Captured screen (dialog detected, 5 elements) (1.2s)
 🖱 click 'OK' ✅ Clicked 'OK' in dialog (0.8s)
@@ -67,7 +67,7 @@ Task completed in 2m 15s with 5 tools
 
 ## Terminal Detection
 
-Peekaboo performs comprehensive terminal capability detection:
+Wink performs comprehensive terminal capability detection:
 
 ```swift
 struct TerminalCapabilities {

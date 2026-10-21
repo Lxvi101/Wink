@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CaptureVideoCommandTests {
     @Test

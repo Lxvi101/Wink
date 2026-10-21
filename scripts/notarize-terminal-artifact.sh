@@ -31,7 +31,7 @@ done
 builtin unset early_secret_name
 PATH=/usr/bin:/bin
 builtin export PATH
-raw_function_names_file=$(/usr/bin/mktemp /tmp/peekaboo-functions.XXXXXX) || builtin exit 1
+raw_function_names_file=$(/usr/bin/mktemp /tmp/wink-functions.XXXXXX) || builtin exit 1
 /usr/bin/env -0 | /usr/bin/env -i /usr/bin/perl -0ne '
   if (index($_, "BASH_FUNC_") == 0) { my ($name) = split(/=/, $_, 2); print $name, chr(0); }
 ' > "$raw_function_names_file"
@@ -71,7 +71,7 @@ KIND=""
 ARTIFACT=""
 TRANSACTION_DIR=""
 NOTARYTOOL_PROFILE="${NOTARYTOOL_PROFILE:-${NOTARYTOOL_KEYCHAIN_PROFILE:-}}"
-TEST_MODE="${PEEKABOO_TERMINAL_TEST_MODE:-0}"
+TEST_MODE="${WINK_TERMINAL_TEST_MODE:-0}"
 NOTARY_TRANSPORT=auto
 fixture_api_args=()
 
@@ -121,7 +121,7 @@ case "$TEST_MODE" in
       MOLTY_OP_SERVICE_ACCOUNT_TOKEN; do
       [[ -z "${!credential_name+x}" ]] || fail "fixture mode contains live credential variable: $credential_name"
     done
-    [[ "$NOTARYTOOL_PROFILE" == __peekaboo_fixture__ ]] || fail 'fixture mode requires literal fixture profile'
+    [[ "$NOTARYTOOL_PROFILE" == __wink_fixture__ ]] || fail 'fixture mode requires literal fixture profile'
     XCRUN_BIN="${TERMINAL_NOTARY_XCRUN_BIN:?test xcrun required}"
     DITTO_BIN="${TERMINAL_NOTARY_DITTO_BIN:?test ditto required}"
     CODESIGN_BIN="${TERMINAL_NOTARY_CODESIGN_BIN:?test codesign required}"
@@ -141,7 +141,7 @@ case "$TEST_MODE" in
     XATTR_BIN=/usr/bin/xattr
     UNZIP_BIN=/usr/bin/unzip
     ;;
-  *) fail 'PEEKABOO_TERMINAL_TEST_MODE must be boolean' ;;
+  *) fail 'WINK_TERMINAL_TEST_MODE must be boolean' ;;
 esac
 
 for tool_path in "$XCRUN_BIN" "$DITTO_BIN" "$CODESIGN_BIN" "$XATTR_BIN" "$UNZIP_BIN"; do
@@ -185,7 +185,7 @@ if [[ -n "${TERMINAL_NOTARY_API_KEY_FILE:-}" ]]; then
   key_id=FIXTURE
   issuer_id=00000000-0000-4000-8000-000000000001
   NOTARYTOOL_PROFILE=""
-  fixture_api_args=(--fixture-profile __peekaboo_fixture__
+  fixture_api_args=(--fixture-profile __wink_fixture__
     --api-base "${TERMINAL_NOTARY_API_BASE_URL:?fixture API URL required}"
     --s3-endpoint "${TERMINAL_NOTARY_S3_ENDPOINT:?fixture S3 URL required}" --poll-interval 0.01)
 elif [[ -n "$NOTARYTOOL_PROFILE" && "$NOTARY_TRANSPORT" == api ]]; then
@@ -237,7 +237,7 @@ assert_no_xattrs "$working_artifact"
 
 code_target="$working_artifact"
 if [[ "$KIND" == controller-tree ]]; then
-  code_target="$working_artifact/peekaboo-certification-controller"
+  code_target="$working_artifact/wink-certification-controller"
   [[ -f "$code_target" && ! -L "$code_target" && -x "$code_target" ]] || \
     fail 'controller tree main executable missing'
   monitor_target="$working_artifact/background-computer-use-probe"
@@ -248,12 +248,12 @@ if [[ "$KIND" == controller-tree ]]; then
     [[ "$qualification_relative" != */* && -f "$qualification_file" && ! -L "$qualification_file" ]] || \
       fail "qualification tree entry is not a flat regular file: $qualification_relative"
     case "$qualification_relative" in
-      peekaboo-certification-controller|background-computer-use-probe|libswiftCompatibility*.dylib) ;;
+      wink-certification-controller|background-computer-use-probe|libswiftCompatibility*.dylib) ;;
       *) fail "unexpected qualification tree file: $qualification_relative" ;;
     esac
   done < <(find "$working_artifact" -mindepth 1 -print0)
 elif [[ "$KIND" == cli-tree ]]; then
-  code_target="$working_artifact/peekaboo"
+  code_target="$working_artifact/wink"
   [[ -f "$code_target" && ! -L "$code_target" && -x "$code_target" ]] || \
     fail 'CLI tree main executable missing'
   while IFS= read -r -d '' cli_file; do
@@ -261,7 +261,7 @@ elif [[ "$KIND" == cli-tree ]]; then
     [[ "$cli_relative" != */* && -f "$cli_file" && ! -L "$cli_file" ]] || \
       fail "CLI tree entry is not a flat regular file: $cli_relative"
     case "$cli_relative" in
-      peekaboo|libswiftCompatibility*.dylib) ;;
+      wink|libswiftCompatibility*.dylib) ;;
       *) fail "unexpected CLI tree file: $cli_relative" ;;
     esac
   done < <(find "$working_artifact" -mindepth 1 -print0)
@@ -281,8 +281,8 @@ code_authority="$(parse_signature_field Authority)"
 [[ "$code_authority" == 'Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)' && \
   "$code_team_id" == FWJYW4S8P8 ]] || fail 'artifact is not Foundation-signed'
 case "$KIND:$code_identifier" in
-  cli-tree:boo.peekaboo.peekaboo|app:boo.peekaboo.mac|app:boo.peekaboo.playground.debug|\
-    app:boo.peekaboo.qualification-node|controller-tree:boo.peekaboo.peekaboo-certification-controller|dmg:*) ;;
+  cli-tree:boo.wink.wink|app:boo.wink.mac|app:boo.wink.playground.debug|\
+    app:boo.wink.qualification-node|controller-tree:boo.wink.wink-certification-controller|dmg:*) ;;
   *) fail "unexpected signed identifier: $code_identifier" ;;
 esac
 
@@ -340,10 +340,10 @@ verify_controller_tree_identities() {
       "$team" == FWJYW4S8P8 ]] || return 1
     relative="${candidate#"$working_artifact/"}"
     case "$relative" in
-      peekaboo-certification-controller)
-        [[ "$identifier" == boo.peekaboo.peekaboo-certification-controller ]] || return 1 ;;
+      wink-certification-controller)
+        [[ "$identifier" == boo.wink.wink-certification-controller ]] || return 1 ;;
       background-computer-use-probe)
-        [[ "$identifier" == boo.peekaboo.background-computer-use-probe ]] || return 1 ;;
+        [[ "$identifier" == boo.wink.background-computer-use-probe ]] || return 1 ;;
       libswiftCompatibility*.dylib)
         [[ "$identifier" == com.apple.dt.runtime.swiftCompatibility* ]] || return 1 ;;
       *) return 1 ;;
@@ -372,7 +372,7 @@ verify_cli_tree_identities() {
       "$team" == FWJYW4S8P8 ]] || return 1
     relative="${candidate#"$working_artifact/"}"
     case "$relative" in
-      peekaboo) [[ "$identifier" == boo.peekaboo.peekaboo ]] || return 1 ;;
+      wink) [[ "$identifier" == boo.wink.wink ]] || return 1 ;;
       libswiftCompatibility*.dylib)
         [[ "$identifier" == com.apple.dt.runtime.swiftCompatibility* ]] || return 1 ;;
       *) return 1 ;;

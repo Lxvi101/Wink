@@ -11,15 +11,15 @@ const dependencyPackageURL = new URL(
   import.meta.url,
 );
 const routingContractURL = new URL(
-  "../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Browser/BrowserMCPPageRoutingContract.swift",
+  "../Core/WinkCore/Sources/WinkAgentRuntime/Browser/BrowserMCPPageRoutingContract.swift",
   import.meta.url,
 );
 const semanticsContractURL = new URL(
-  "../Core/PeekabooFoundation/Sources/PeekabooFoundation/BrowserToolActionSemantics.swift",
+  "../Core/WinkFoundation/Sources/WinkFoundation/BrowserToolActionSemantics.swift",
   import.meta.url,
 );
 const userActivationContractURL = new URL(
-  "../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Browser/BrowserMCPUserActivationPolicy.swift",
+  "../Core/WinkCore/Sources/WinkAgentRuntime/Browser/BrowserMCPUserActivationPolicy.swift",
   import.meta.url,
 );
 const rootPackage = JSON.parse(readFileSync(rootPackageURL, "utf8"));
@@ -69,13 +69,13 @@ assert.equal(swiftVersion, declaredVersion, "Swift browser routing contract must
 
 // Exercise the exact embedded runtime loader, stopping before the stdio server entrypoint.
 const bootstrapSwift = readFileSync(new URL(
-  "../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift", import.meta.url,
+  "../Core/WinkCore/Sources/WinkAgentRuntime/Browser/BrowserMCPProviderBootstrap.swift", import.meta.url,
 ), "utf8");
 const bootstrap = bootstrapSwift.match(/static let source = #"""\n([\s\S]*?)\n    """#/)[1]
   .replace(/^    /gm, "");
 // The owner verifies Chrome on the persistent provider socket, before page work.
 const connectionBootstrap = bootstrap.split("process.argv =")[0];
-assert.ok(connectionBootstrap.includes("peekaboo_browser_connect"),
+assert.ok(connectionBootstrap.includes("wink_browser_connect"),
   "native channel connect must verify the provider socket instead of opening a separate approval probe");
 const originalPath = process.env.PATH;
 process.env.PATH = fileURLToPath(new URL("../node_modules/.bin", import.meta.url)) + delimiter + originalPath;
@@ -110,7 +110,7 @@ const handlers = new Map(
 );
 
 const structuredFixtureTool = {
-  name: "peekaboo_structured_fixture",
+  name: "wink_structured_fixture",
   description: "Exercises the real pinned ToolHandler structured-content gate",
   annotations: { category: "navigation" },
   schema: {},
@@ -214,7 +214,7 @@ const versionProbe = spawnSync(process.execPath, ["--input-type=module", "--eval
 assert.equal(versionProbe.status, 0, "the complete embedded launcher must start the pinned provider");
 assert.equal(versionProbe.stdout.trim(), declaredVersion);
 
-const tamperedRoot = mkdtempSync(join(tmpdir(), "peekaboo-provider-contract-"));
+const tamperedRoot = mkdtempSync(join(tmpdir(), "wink-provider-contract-"));
 try {
   const fakeBin = join(tamperedRoot, "node_modules/.bin");
   const fakePackage = join(tamperedRoot, "node_modules/chrome-devtools-mcp");
@@ -228,7 +228,7 @@ try {
     encoding: "utf8", timeout: 10_000, env: { ...process.env, PATH: fakeBin + delimiter + originalPath },
   });
   assert.notEqual(rejected.status, 0);
-  assert.match(rejected.stderr, /Error: Peekaboo: unaudited Chrome DevTools MCP ToolHandler/);
+  assert.match(rejected.stderr, /Error: Wink: unaudited Chrome DevTools MCP ToolHandler/);
   assert.doesNotMatch(rejected.stderr, /Error: unverified code ran/);
 } finally {
   rmSync(tamperedRoot, { recursive: true, force: true });

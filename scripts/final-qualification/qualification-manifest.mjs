@@ -200,7 +200,7 @@ function semanticSourceManifest(filePath, label, expectedFiles = null, expectedS
   }
   if (expectedSourceCommit !== null) {
     requireCondition(retained.value.source_commit === expectedSourceCommit,
-      `${label} source commit differs from installed Peekaboo`);
+      `${label} source commit differs from installed Wink`);
   }
   requireCondition(sourceAggregate(files) === retained.value.aggregate_sha256,
     `${label} aggregate is invalid`);
@@ -258,7 +258,7 @@ function executableIdentity(filePath, label) {
   return { retained, codeSignatureHash: matches[0] };
 }
 
-function semanticPeekabooArtifactManifest(filePath, label, expectedSourceCommit) {
+function semanticWinkArtifactManifest(filePath, label, expectedSourceCommit) {
   const retained = readStableJSON(filePath, label);
   const value = retained.value;
   requireCondition(Number.isSafeInteger(value.schema) && value.schema >= 6
@@ -285,7 +285,7 @@ function semanticPeekabooArtifactManifest(filePath, label, expectedSourceCommit)
     && value.verification?.app_source === true
     && value.verification?.app_native_only === true
     && value.verification?.playground_native_only === true,
-  `${label} is not one complete source-bound Peekaboo artifact manifest`);
+  `${label} is not one complete source-bound Wink artifact manifest`);
   return {
     value,
     receipt: immutableRetainedReceipt(retained, label),
@@ -297,7 +297,7 @@ function semanticOpenClawArtifactReceipt(filePath, label, expected) {
   const value = retained.value;
   exactKeys(value, [
     'schemaVersion', 'kind', 'archive', 'archiveSha256', 'archiveChecksum', 'installer',
-    'installerSha256', 'installerChecksum', 'sourceCommit', 'peekabooCommit', 'version',
+    'installerSha256', 'installerChecksum', 'sourceCommit', 'winkCommit', 'version',
     'build', 'authority', 'teamIdentifier', 'cdhashes', 'architectures',
     'entitlementsSha256', 'notarizationId',
   ], label);
@@ -306,7 +306,7 @@ function semanticOpenClawArtifactReceipt(filePath, label, expected) {
   exactKeys(value.entitlementsSha256, ['main', 'helper'], `${label}.entitlementsSha256`);
   requireCondition(value.schemaVersion === 1 && value.kind === 'openclaw-elevation-artifact'
     && value.sourceCommit === expected.openclawSourceCommit
-    && value.peekabooCommit === expected.peekabooSourceCommit
+    && value.winkCommit === expected.winkSourceCommit
     && typeof value.archive === 'string' && value.archive.length > 0
     && value.archiveChecksum === `${value.archive}.sha256`
     && SHA256.test(value.archiveSha256)
@@ -336,44 +336,44 @@ function semanticArtifactBinding(filePath, label, deployment) {
   const retained = readStableJSON(filePath, label);
   const value = retained.value;
   exactKeys(value, [
-    'version', 'deployment_envelope_sha256', 'peekaboo_source_commit',
+    'version', 'deployment_envelope_sha256', 'wink_source_commit',
     'openclaw_source_commit', 'qualification_tools_aggregate_sha256',
-    'peekaboo_artifact_manifest', 'openclaw_artifact_receipt',
+    'wink_artifact_manifest', 'openclaw_artifact_receipt',
   ], label);
-  exactKeys(value.peekaboo_artifact_manifest, ['path', 'sha256'],
-    `${label}.peekaboo_artifact_manifest`);
+  exactKeys(value.wink_artifact_manifest, ['path', 'sha256'],
+    `${label}.wink_artifact_manifest`);
   exactKeys(value.openclaw_artifact_receipt, ['path', 'sha256'],
     `${label}.openclaw_artifact_receipt`);
   requireCondition(value.version === 2
     && value.deployment_envelope_sha256 === deployment.installed[0].envelopeSHA256
-    && value.peekaboo_source_commit === deployment.peekabooSourceCommit
+    && value.wink_source_commit === deployment.winkSourceCommit
     && value.openclaw_source_commit === deployment.installed[0].projection.openclaw_source_commit
     && value.qualification_tools_aggregate_sha256
       === deployment.qualificationToolsAggregateSHA256,
   `${label} differs from deployed envelope/source/tool identity`);
-  const peekaboo = semanticPeekabooArtifactManifest(
-    value.peekaboo_artifact_manifest.path,
-    `${label} Peekaboo artifact manifest`,
-    value.peekaboo_source_commit,
+  const wink = semanticWinkArtifactManifest(
+    value.wink_artifact_manifest.path,
+    `${label} Wink artifact manifest`,
+    value.wink_source_commit,
   );
   const openclaw = semanticOpenClawArtifactReceipt(
     value.openclaw_artifact_receipt.path,
     `${label} OpenClaw artifact receipt`,
     {
       openclawSourceCommit: value.openclaw_source_commit,
-      peekabooSourceCommit: value.peekaboo_source_commit,
+      winkSourceCommit: value.wink_source_commit,
     },
   );
-  requireCondition(value.peekaboo_artifact_manifest.sha256 === peekaboo.receipt.sha256
+  requireCondition(value.wink_artifact_manifest.sha256 === wink.receipt.sha256
     && value.openclaw_artifact_receipt.sha256 === openclaw.receipt.sha256,
   `${label} nested artifact digest is invalid`);
   return {
     evidence: {
       binding: immutableRetainedReceipt(retained, label),
-      peekaboo_artifact_manifest: peekaboo.receipt,
+      wink_artifact_manifest: wink.receipt,
       openclaw_artifact_receipt: openclaw.receipt,
     },
-    peekaboo: peekaboo.value,
+    wink: wink.value,
     openclaw: openclaw.value,
   };
 }
@@ -383,7 +383,7 @@ function semanticElevationInstallReceipt(filePath, label, installed) {
   const value = retained.value;
   exactKeys(value, [
     'schemaVersion', 'kind', 'transactionState', 'transactionId', 'sourceCommit',
-    'peekabooCommit', 'archiveSha256', 'artifactReceiptSha256', 'installerSha256',
+    'winkCommit', 'archiveSha256', 'artifactReceiptSha256', 'installerSha256',
     'cdhashes', 'nodeId', 'nodeProfile', 'appPath', 'stateDir', 'configPath',
     'backupPath', 'backupCDHashes', 'plistPath', 'previousPlist',
     'previousPlistSha256', 'previousPlistWasLoaded', 'previousReceipt',
@@ -396,7 +396,7 @@ function semanticElevationInstallReceipt(filePath, label, installed) {
     && value.transactionState === 'installed'
     && typeof value.transactionId === 'string' && /^[0-9A-F-]{36}$/.test(value.transactionId)
     && value.sourceCommit === installed.projection.openclaw_source_commit
-    && value.peekabooCommit === installed.projection.peekaboo_source_commit
+    && value.winkCommit === installed.projection.wink_source_commit
     && SHA256.test(value.archiveSha256)
     && SHA256.test(value.artifactReceiptSha256)
     && SHA256.test(value.installerSha256)
@@ -422,7 +422,7 @@ function semanticElevationInstallReceipt(filePath, label, installed) {
 
 const DEPLOYMENT_HOST_ROLES = ['local', 'studio'];
 const PROCESS_TREE_EPOCHS = ['before', 'during', 'after'];
-const INSTALLED_ARTIFACTS = ['openclaw_app', 'peekaboo_app', 'peekaboo_cli'];
+const INSTALLED_ARTIFACTS = ['openclaw_app', 'wink_app', 'wink_cli'];
 const PROCESS_ROOT_CLASSES = [
   'agent', 'agent_requester', 'bridge', 'coordinator', 'elevation', 'fixture', 'integrated_cu',
 ];
@@ -491,7 +491,7 @@ function installedEntry(value, label) {
 function installedInventoryProjection(value) {
   return {
     deployment_envelope_sha256: value.deployment_envelope_sha256,
-    peekaboo_source_commit: value.peekaboo_source_commit,
+    wink_source_commit: value.wink_source_commit,
     openclaw_source_commit: value.openclaw_source_commit,
     qualification_tools_aggregate_sha256: value.qualification_tools_aggregate_sha256,
     entries: value.entries,
@@ -503,14 +503,14 @@ function semanticInstalledInventory(filePath, label) {
   const value = retained.value;
   exactKeys(value, [
     'version', 'role', 'host_uuid', 'hostname', 'deployment_envelope_sha256',
-    'peekaboo_source_commit', 'openclaw_source_commit', 'qualification_tools_aggregate_sha256',
+    'wink_source_commit', 'openclaw_source_commit', 'qualification_tools_aggregate_sha256',
     'elevation_receipt_sha256', 'captured_at_milliseconds', 'entries', 'aggregate_sha256',
   ], label);
   requireCondition(value.version === 1 && DEPLOYMENT_HOST_ROLES.includes(value.role)
     && HOST_UUID.test(value.host_uuid)
     && typeof value.hostname === 'string' && /^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$/.test(value.hostname)
     && SHA256.test(value.deployment_envelope_sha256)
-    && SOURCE_COMMIT.test(value.peekaboo_source_commit)
+    && SOURCE_COMMIT.test(value.wink_source_commit)
     && SOURCE_COMMIT.test(value.openclaw_source_commit)
     && SHA256.test(value.qualification_tools_aggregate_sha256)
     && SHA256.test(value.elevation_receipt_sha256)
@@ -1124,7 +1124,7 @@ function semanticDeploymentEvidence(value, label) {
       executable_policy_scanner: scanner,
       executable_policy_reports: policyReports.map((entry) => entry.receipt),
     },
-    peekabooSourceCommit: installed[0].projection.peekaboo_source_commit,
+    winkSourceCommit: installed[0].projection.wink_source_commit,
     qualificationToolsAggregateSHA256: installed[0].qualificationToolsAggregateSHA256,
     installed,
     elevations,
@@ -1135,11 +1135,11 @@ function semanticDeploymentEvidence(value, label) {
   };
 }
 
-function validatePeekabooArtifactDeployment(artifact, deployment, label) {
+function validateWinkArtifactDeployment(artifact, deployment, label) {
   const cliCandidates = deployment.installed[0].projection.entries.filter((entry) => (
-    entry.artifact === 'peekaboo_cli'
+    entry.artifact === 'wink_cli'
       && entry.type === 'file'
-      && path.basename(entry.relative_path) === 'peekaboo'
+      && path.basename(entry.relative_path) === 'wink'
       && (entry.mode & 0o111) !== 0
   ));
   requireCondition(cliCandidates.length === 1
@@ -1151,7 +1151,7 @@ function validatePeekabooArtifactDeployment(artifact, deployment, label) {
       && hostTrees.every((tree) => {
         const bridge = tree.roots.find((root) => root.rootClass === 'bridge');
         return bridge?.codeSignatureHash === artifact.app.cdhash;
-      }), `${label} Peekaboo.app artifact differs from the ${role} Bridge root`);
+      }), `${label} Wink.app artifact differs from the ${role} Bridge root`);
     const during = hostTrees.find((tree) => tree.epoch === 'during');
     const fixtures = during?.roots.filter((root) => root.rootClass === 'fixture') ?? [];
     requireCondition(fixtures.length > 0 && fixtures.every((root) => (
@@ -1207,7 +1207,7 @@ function sourceBoundToolReceipt(filePath, relativePath, toolsManifest, label) {
 }
 
 function qualificationBundleAuthentication(plan, artifact, authenticateBundle, label) {
-  const executable = requireStableExecutable(plan.peekaboo_executable, `${label} CLI`, {
+  const executable = requireStableExecutable(plan.wink_executable, `${label} CLI`, {
     allowRootOwner: true,
   });
   requireCondition(executable.sha256 === artifact.cli.sha256,
@@ -1243,7 +1243,7 @@ function qualificationAdjunctBinding(deployment, plan, label) {
     && typeof expectedHost.process_start_identity_decimal === 'string'
     && /^[1-9][0-9]*$/.test(expectedHost.process_start_identity_decimal)
     && CODE_SIGNATURE_HASH.test(expectedHost.code_signature_hash ?? '')
-    && expectedHost.source_commit === deployment.peekabooSourceCommit,
+    && expectedHost.source_commit === deployment.winkSourceCommit,
   `${label} Bridge host is not bound to the exact candidate source`);
   requireCondition(Array.isArray(plan.controllers) && plan.controllers.length === 2,
     `${label} does not contain both controlled fixture targets`);
@@ -1254,7 +1254,7 @@ function qualificationAdjunctBinding(deployment, plan, label) {
     `${target.pid}:${target.start_identity}:${target.window_id}`
   ))).size === fixtureTargets.length, `${label} controlled fixture targets are not distinct`);
   return {
-    sourceCommit: deployment.peekabooSourceCommit,
+    sourceCommit: deployment.winkSourceCommit,
     expectedHost: {
       host_kind: expectedHost.host_kind,
       pid: expectedHost.process_identifier,
@@ -1277,9 +1277,9 @@ function semanticCertificate(filePath, label, expected) {
   const value = retained.value;
   exactKeys(value, [
     'version', 'cycle', 'success', 'catalog_version', 'expected_cases', 'observed_cases',
-    'failures', 'execution_nonce', 'host_uuid', 'peekaboo_source_commit',
+    'failures', 'execution_nonce', 'host_uuid', 'wink_source_commit',
     'bridge_source_commit', 'deployment_envelope_sha256',
-    'installed_inventory_aggregate_sha256', 'peekaboo_artifact_manifest_sha256',
+    'installed_inventory_aggregate_sha256', 'wink_artifact_manifest_sha256',
     'started_at_milliseconds', 'completed_at_milliseconds',
   ], label);
   requireCondition(value.version === 2 && value.cycle === expected.cycle
@@ -1287,11 +1287,11 @@ function semanticCertificate(filePath, label, expected) {
     && value.expected_cases === 42 && value.observed_cases === 42
     && Array.isArray(value.failures) && value.failures.length === 0
     && SHA256.test(value.execution_nonce) && value.host_uuid === expected.hostUUID
-    && value.peekaboo_source_commit === expected.sourceCommit
+    && value.wink_source_commit === expected.sourceCommit
     && value.bridge_source_commit === expected.sourceCommit
     && value.deployment_envelope_sha256 === expected.deploymentEnvelopeSHA256
     && value.installed_inventory_aggregate_sha256 === expected.installedInventoryAggregateSHA256
-    && value.peekaboo_artifact_manifest_sha256 === expected.peekabooArtifactManifestSHA256
+    && value.wink_artifact_manifest_sha256 === expected.winkArtifactManifestSHA256
     && Number.isSafeInteger(value.started_at_milliseconds) && value.started_at_milliseconds > 0
     && Number.isSafeInteger(value.completed_at_milliseconds)
     && value.completed_at_milliseconds > value.started_at_milliseconds,
@@ -1313,21 +1313,21 @@ function semanticCrashComparison(filePath, label, expected = null) {
       )), `${label} is not one passing zero-delta crash comparison`);
   } else {
     exactKeys(value, [
-      'version', 'cycle', 'execution_nonce', 'host_uuid', 'peekaboo_source_commit',
+      'version', 'cycle', 'execution_nonce', 'host_uuid', 'wink_source_commit',
       'deployment_envelope_sha256', 'installed_inventory_aggregate_sha256',
-      'peekaboo_artifact_manifest_sha256', 'started_at_milliseconds',
+      'wink_artifact_manifest_sha256', 'started_at_milliseconds',
       'completed_at_milliseconds', 'passed', 'added',
       'changed', 'removed',
     ], label);
     requireCondition(value.version === 2 && value.cycle === expected.cycle
       && value.execution_nonce === expected.execution_nonce
       && value.host_uuid === expected.host_uuid
-      && value.peekaboo_source_commit === expected.peekaboo_source_commit
+      && value.wink_source_commit === expected.wink_source_commit
       && value.deployment_envelope_sha256 === expected.deployment_envelope_sha256
       && value.installed_inventory_aggregate_sha256
         === expected.installed_inventory_aggregate_sha256
-      && value.peekaboo_artifact_manifest_sha256
-        === expected.peekaboo_artifact_manifest_sha256
+      && value.wink_artifact_manifest_sha256
+        === expected.wink_artifact_manifest_sha256
       && Number.isSafeInteger(value.started_at_milliseconds)
       && value.started_at_milliseconds <= expected.started_at_milliseconds
       && Number.isSafeInteger(value.completed_at_milliseconds)
@@ -1352,7 +1352,7 @@ function semanticPlaygroundAlertLifecycle(
     label,
     cycle: expected.cycle,
     execution_nonce: expected.execution_nonce,
-    peekaboo_source_commit: expected.peekaboo_source_commit,
+    wink_source_commit: expected.wink_source_commit,
     bridge_source_commit: expected.bridge_source_commit,
     playground_code_signature_hash: playgroundCodeSignatureHash,
   });
@@ -1710,7 +1710,7 @@ function semanticConcurrentValidation(filePath) {
 }
 
 function revalidateConcurrentEvidence(spec, retainedReport, authenticateBundle, label) {
-  const temporary = fs.mkdtempSync('/private/tmp/peekaboo-concurrent-revalidation.');
+  const temporary = fs.mkdtempSync('/private/tmp/wink-concurrent-revalidation.');
   fs.chmodSync(temporary, 0o700);
   try {
     const outputPath = path.join(temporary, 'concurrent-validation-report.json');
@@ -1964,7 +1964,7 @@ function semanticValidatorPair(bundlePath, validatorPath, label, {
   const identity = authenticatedBridgeReceiptIdentity(payload, report, label);
   requireCondition(validator.value.success === true
     && report?.valid === true
-    && report.validator_id === 'peekaboo-bridge-receipt-validate-v1'
+    && report.validator_id === 'wink-bridge-receipt-validate-v1'
     && report.trust_source === 'authenticated_live_listener'
     && report.minimum_protocol_version === '1.29'
     && isSupportedQualificationHostProtocol(report.host_protocol_version)
@@ -2051,7 +2051,7 @@ function agentBundleAuthentication(plan, terminal, authenticateBundle, label) {
   `${label} Bridge validation policy is malformed`);
   requireCondition(path.isAbsolute(terminal?.process?.executablePath)
     && /^[0-9a-f]{64}$/.test(terminal.process.executableSHA256 ?? '')
-    && terminal.process.executablePath === plan.peekaboo_executable
+    && terminal.process.executablePath === plan.wink_executable
     && terminal.response?.bridgeSocketPath === plan.bridge.socket_path,
   `${label} Agent validator executable/socket differs from the live plan`);
   return {
@@ -2413,7 +2413,7 @@ function derivedHeldPointerClientID(executionNonce) {
   requireCondition(/^[0-9a-f]{64}$/.test(executionNonce ?? ''),
     'held-pointer execution nonce is malformed');
   const digest = Buffer.from(sha256(Buffer.concat([
-    Buffer.from('peekaboo.held-pointer-certification.client.v1\0', 'utf8'),
+    Buffer.from('wink.held-pointer-certification.client.v1\0', 'utf8'),
     Buffer.from(executionNonce, 'utf8'),
   ])), 'hex').subarray(0, 16);
   digest[6] = (digest[6] & 0x0f) | 0x80;
@@ -2819,7 +2819,7 @@ function projectInput(input, authenticateBundle) {
   exactKeys(input.restoration_cleanup, ['restoration_evidence', 'cleanup_evidence'], 'restoration_cleanup');
   const deployment = semanticDeploymentEvidence(input.deployment, 'deployment');
   const artifacts = semanticArtifactBinding(input.artifact_manifest, 'artifact manifest', deployment);
-  validatePeekabooArtifactDeployment(artifacts.peekaboo, deployment, 'artifact manifest');
+  validateWinkArtifactDeployment(artifacts.wink, deployment, 'artifact manifest');
   requireCondition(deployment.elevations.every((elevation) => (
     elevation.value.artifactReceiptSha256 === artifacts.evidence.openclaw_artifact_receipt.sha256
       && elevation.value.archiveSha256 === artifacts.openclaw.archiveSha256
@@ -2837,10 +2837,10 @@ function projectInput(input, authenticateBundle) {
       {
         cycle: index + 1,
         hostUUID: deployment.installed[0].hostUUID,
-        sourceCommit: deployment.peekabooSourceCommit,
+        sourceCommit: deployment.winkSourceCommit,
         deploymentEnvelopeSHA256: deployment.installed[0].envelopeSHA256,
         installedInventoryAggregateSHA256: deployment.installed[0].aggregateSHA256,
-        peekabooArtifactManifestSHA256: artifacts.evidence.peekaboo_artifact_manifest.sha256,
+        winkArtifactManifestSHA256: artifacts.evidence.wink_artifact_manifest.sha256,
       },
     );
     const crashInventory = semanticCrashComparison(
@@ -2958,7 +2958,7 @@ function projectInput(input, authenticateBundle) {
   );
   const matrixBundleAuthentication = qualificationBundleAuthentication(
     boundPlanValue,
-    artifacts.peekaboo,
+    artifacts.wink,
     authenticateBundle,
     'matrix alert lifecycle',
   );
@@ -2970,9 +2970,9 @@ function projectInput(input, authenticateBundle) {
       cycle.playground_alert_lifecycle_path,
       cycle.binding,
       cycle.crash_inventory.path,
-      artifacts.peekaboo.playground.cdhash,
+      artifacts.wink.playground.cdhash,
       matrixBundleAuthentication,
-      artifacts.peekaboo.cli.cdhash,
+      artifacts.wink.cli.cdhash,
       `matrix cycle ${index + 1} Playground alert lifecycle`,
     ),
     binding: cycle.binding,
@@ -3024,7 +3024,7 @@ function projectInput(input, authenticateBundle) {
     'bound Agent',
   );
   const agentExecutable = requireStableExecutable(
-    boundPlanValue.peekaboo_executable,
+    boundPlanValue.wink_executable,
     'bound Agent executable',
     { allowRootOwner: true },
   );
@@ -3064,7 +3064,7 @@ function projectInput(input, authenticateBundle) {
     'Agent terminal bundle',
   );
   validateExercisedCandidateBindings(
-    artifacts.peekaboo,
+    artifacts.wink,
     deployment,
     concurrentValue,
     'qualification',
@@ -3159,7 +3159,7 @@ function projectInput(input, authenticateBundle) {
     input.tooling.qualification_tools_manifest,
     'qualification tools source manifest',
     QUALIFICATION_TOOL_FILES,
-    deployment.peekabooSourceCommit,
+    deployment.winkSourceCommit,
   );
   requireCondition(qualificationTools.value.aggregate_sha256
     === deployment.qualificationToolsAggregateSHA256,
@@ -3167,7 +3167,7 @@ function projectInput(input, authenticateBundle) {
   validateDeploymentToolSources(
     deployment,
     qualificationTools.value,
-    artifacts.peekaboo,
+    artifacts.wink,
     'deployment',
   );
   validateLocalDuringAuthorizationArtifacts(
@@ -3247,7 +3247,7 @@ function validateEvidenceShape(evidence, visitReceipt) {
     'adjuncts', 'restoration_cleanup',
   ], 'qualification evidence');
   exactKeys(evidence.artifact_manifest, [
-    'binding', 'peekaboo_artifact_manifest', 'openclaw_artifact_receipt',
+    'binding', 'wink_artifact_manifest', 'openclaw_artifact_receipt',
   ], 'evidence.artifact_manifest');
   for (const [key, receipt] of Object.entries(evidence.artifact_manifest)) {
     visitReceipt(receipt, `evidence.artifact_manifest.${key}`);
@@ -3418,8 +3418,8 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
   );
   requireCondition(sameJSON(artifacts.evidence, evidence.artifact_manifest),
     'verified artifact evidence differs from the manifest');
-  validatePeekabooArtifactDeployment(
-    artifacts.peekaboo,
+  validateWinkArtifactDeployment(
+    artifacts.wink,
     deployment,
     'verified artifact manifest',
   );
@@ -3433,7 +3433,7 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
     evidence.tooling.qualification_tools_manifest.path,
     'verified qualification tools source manifest',
     QUALIFICATION_TOOL_FILES,
-    deployment.peekabooSourceCommit,
+    deployment.winkSourceCommit,
   );
   requireCondition(qualificationTools.value.aggregate_sha256
     === deployment.qualificationToolsAggregateSHA256,
@@ -3441,7 +3441,7 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
   validateDeploymentToolSources(
     deployment,
     qualificationTools.value,
-    artifacts.peekaboo,
+    artifacts.wink,
     'verified deployment',
   );
   const verifiedPlanConstructor = sourceBoundToolReceipt(
@@ -3466,10 +3466,10 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
       {
         cycle: index + 1,
         hostUUID: deployment.installed[0].hostUUID,
-        sourceCommit: deployment.peekabooSourceCommit,
+        sourceCommit: deployment.winkSourceCommit,
         deploymentEnvelopeSHA256: deployment.installed[0].envelopeSHA256,
         installedInventoryAggregateSHA256: deployment.installed[0].aggregateSHA256,
-        peekabooArtifactManifestSHA256: artifacts.evidence.peekaboo_artifact_manifest.sha256,
+        winkArtifactManifestSHA256: artifacts.evidence.wink_artifact_manifest.sha256,
       },
     );
     semanticCrashComparison(
@@ -3580,7 +3580,7 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
   );
   const verifiedMatrixAuthentication = qualificationBundleAuthentication(
     verifiedPlanValue,
-    artifacts.peekaboo,
+    artifacts.wink,
     authenticateBundle,
     'verified matrix alert lifecycle',
   );
@@ -3589,9 +3589,9 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
       cycle.playground_alert_lifecycle.path,
       matrixBindings[index],
       cycle.crash_inventory.path,
-      artifacts.peekaboo.playground.cdhash,
+      artifacts.wink.playground.cdhash,
       verifiedMatrixAuthentication,
-      artifacts.peekaboo.cli.cdhash,
+      artifacts.wink.cli.cdhash,
       `verified matrix cycle ${index + 1} Playground alert lifecycle`,
     );
     requireCondition(sameJSON(verifiedLifecycle, cycle.playground_alert_lifecycle),
@@ -3609,7 +3609,7 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
     'verified Agent',
   );
   const verifiedAgentExecutable = requireStableExecutable(
-    verifiedPlanValue.peekaboo_executable,
+    verifiedPlanValue.wink_executable,
     'verified Agent executable',
     { allowRootOwner: true },
   );
@@ -3650,7 +3650,7 @@ function validateSemanticEvidence(evidence, authenticateBundle) {
     'verified Agent manifest',
   );
   validateExercisedCandidateBindings(
-    artifacts.peekaboo,
+    artifacts.wink,
     deployment,
     concurrentValue,
     'verified qualification',

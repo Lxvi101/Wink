@@ -1,30 +1,30 @@
 import Commander
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
 import Subprocess
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct BridgeStatusCLITests {
     @Test
     func `implicit unauthorized daemon rejection warns before verbose diagnostics`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let refusal = PeekabooBridgeResponse.error(.init(
+        let refusal = WinkBridgeResponse.error(.init(
             code: .unauthorizedClient,
             message: "Team TEST is not authorized"
         ))
         let peer = try ScriptedBridgePeer(responses: [refusal, refusal])
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["bridge", "status"],
             environment: [
-                "PEEKABOO_BRIDGE_SOCKET": "",
-                "PEEKABOO_DAEMON_SOCKET": peer.socketPath,
+                "WINK_BRIDGE_SOCKET": "",
+                "WINK_DAEMON_SOCKET": peer.socketPath,
             ],
             isolateFromRemoteHosts: false
         )
@@ -41,21 +41,21 @@ struct BridgeStatusCLITests {
 
     @Test
     func `implicit unauthorized rejection JSON preserves the established report`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
-        let refusal = PeekabooBridgeResponse.error(.init(
+        let refusal = WinkBridgeResponse.error(.init(
             code: .unauthorizedClient,
             message: "Team TEST is not authorized"
         ))
         let peer = try ScriptedBridgePeer(responses: [refusal, refusal])
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["bridge", "status", "--json"],
             environment: [
-                "PEEKABOO_BRIDGE_SOCKET": "",
-                "PEEKABOO_DAEMON_SOCKET": peer.socketPath,
+                "WINK_BRIDGE_SOCKET": "",
+                "WINK_DAEMON_SOCKET": peer.socketPath,
             ],
             isolateFromRemoteHosts: false
         )
@@ -102,45 +102,45 @@ struct BridgeStatusCLITests {
             #expect(!foreground.requiresBackgroundStatelessClickVariants)
         }
 
-        let operations: [PeekabooBridgeOperation] = [.targetedClick, .exactWindowTargetedClick]
+        let operations: [WinkBridgeOperation] = [.targetedClick, .exactWindowTargetedClick]
         let permissions = PermissionsStatus(screenRecording: false, accessibility: true, postEvent: true)
         let incomplete = [
             BridgeTestFixtures.handshake(
                 negotiatedVersion: .init(major: 1, minor: 29),
                 supportedOperations: operations,
                 permissions: permissions,
-                hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+                hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
             ),
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+                negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
                 supportedOperations: operations,
                 permissions: permissions
             ),
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+                negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
                 supportedOperations: [.exactWindowTargetedClick],
                 permissions: permissions,
-                hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+                hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
             ),
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+                negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
                 supportedOperations: [.targetedClick],
                 permissions: permissions,
-                hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+                hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
             ),
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+                negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
                 supportedOperations: operations,
                 permissions: permissions,
                 enabledOperations: [.exactWindowTargetedClick],
-                hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+                hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
             ),
             BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+                negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
                 supportedOperations: operations,
                 permissions: permissions,
                 enabledOperations: [.targetedClick],
-                hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+                hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
             ),
         ]
         var options = CommandRuntimeOptions()
@@ -151,17 +151,17 @@ struct BridgeStatusCLITests {
         }
 
         let capable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+            negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
             supportedOperations: operations,
             permissions: permissions,
-            hostCapabilities: [PeekabooBridgeHostCapability.statelessClickVariants]
+            hostCapabilities: [WinkBridgeHostCapability.statelessClickVariants]
         )
         #expect(CommandRuntime.supportsRemoteRequirements(for: capable, options: options))
 
         var foregroundOptions = CommandRuntimeOptions()
         foregroundOptions.requiresStatelessClickVariants = true
         let foregroundCapable = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.statelessClickVariantVersion,
+            negotiatedVersion: WinkBridgeConstants.statelessClickVariantVersion,
             supportedOperations: [.click],
             permissions: permissions
         )
@@ -206,17 +206,17 @@ struct BridgeStatusCLITests {
         ),
     ])
     func `malformed requests fail before explicit Bridge resolution`(testCase: MalformedRequestCase) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-bridge-\(UUID().uuidString).sock").path
+            .appendingPathComponent("wink-missing-bridge-\(UUID().uuidString).sock").path
         var arguments = testCase.arguments
         arguments += ["--bridge-socket", socketPath, "--json"]
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             arguments,
             isolateFromRemoteHosts: false
         )
@@ -243,14 +243,14 @@ struct BridgeStatusCLITests {
 
     @Test
     func `explicit missing Bridge socket fails without local fallback`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-bridge-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-missing-bridge-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             [
                 "bridge", "status",
                 "--bridge-socket", socketPath,
@@ -277,14 +277,14 @@ struct BridgeStatusCLITests {
 
     @Test
     func `explicit missing Bridge socket blocks runtime command local fallback`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-bridge-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-missing-bridge-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             [
                 "app", "list",
                 "--bridge-socket", socketPath,
@@ -308,14 +308,14 @@ struct BridgeStatusCLITests {
 
     @Test
     func `explicit missing Bridge socket blocks middle click local fallback`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-middle-click-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-missing-middle-click-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             [
                 "click", "--on", "B1", "--snapshot", "ps1_00000000000000000000000000000001", "--middle",
                 "--bridge-socket", socketPath,
@@ -338,14 +338,14 @@ struct BridgeStatusCLITests {
 
     @Test
     func `no remote explicitly permits local execution alongside a socket override`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-bridge-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-missing-bridge-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             [
                 "screen", "list",
                 "--bridge-socket", socketPath,
@@ -368,14 +368,14 @@ struct BridgeStatusCLITests {
 
     @Test
     func `human explicit missing Bridge socket reports the endpoint on stderr`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-bridge-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-missing-bridge-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             [
                 "bridge", "status",
                 "--bridge-socket", socketPath,

@@ -41,7 +41,7 @@ private func captureStandardStreamUnlocked(
     operation: () async throws -> Void
 ) async throws -> Data {
     let url = FileManager.default.temporaryDirectory
-        .appendingPathComponent("peekaboo-test-stream-\(UUID().uuidString)")
+        .appendingPathComponent("wink-test-stream-\(UUID().uuidString)")
     let descriptor = Darwin.open(url.path, O_RDWR | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
     guard descriptor >= 0 else { throw POSIXError(.EIO) }
     let file = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)

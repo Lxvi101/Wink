@@ -84,21 +84,21 @@ set_plist_value() {
 
 generate_info_plist() {
     local template="$SWIFT_PROJECT_PATH/Sources/Resources/Info.plist"
-    local output="$SWIFT_PROJECT_PATH/.generated/PeekabooCLI-Info.plist"
+    local output="$SWIFT_PROJECT_PATH/.generated/WinkCLI-Info.plist"
     mkdir -p "$SWIFT_PROJECT_PATH/.generated"
     cp "$template" "$output"
 
-    local display="Peekaboo $VERSION"
+    local display="Wink $VERSION"
     set_plist_value "$output" "CFBundleShortVersionString" "$VERSION"
     set_plist_value "$output" "CFBundleVersion" "$VERSION"
-    set_plist_value "$output" "PeekabooVersionDisplayString" "$display"
-    set_plist_value "$output" "PeekabooGitCommit" "$GIT_COMMIT_SHORT$GIT_DIRTY"
-    set_plist_value "$output" "PeekabooSourceCommit" "$SOURCE_COMMIT"
-    set_plist_value "$output" "PeekabooGitCommitDate" "$GIT_COMMIT_DATE"
-    set_plist_value "$output" "PeekabooGitBranch" "$GIT_BRANCH"
-    set_plist_value "$output" "PeekabooBuildDate" "$BUILD_DATE"
+    set_plist_value "$output" "WinkVersionDisplayString" "$display"
+    set_plist_value "$output" "WinkGitCommit" "$GIT_COMMIT_SHORT$GIT_DIRTY"
+    set_plist_value "$output" "WinkSourceCommit" "$SOURCE_COMMIT"
+    set_plist_value "$output" "WinkGitCommitDate" "$GIT_COMMIT_DATE"
+    set_plist_value "$output" "WinkGitBranch" "$GIT_BRANCH"
+    set_plist_value "$output" "WinkBuildDate" "$BUILD_DATE"
 
-    export PEEKABOO_CLI_INFO_PLIST_PATH="$output"
+    export WINK_CLI_INFO_PLIST_PATH="$output"
 }
 
 # Parse arguments
@@ -120,12 +120,12 @@ VERSION=$(node -p "require('$PROJECT_ROOT/version.json').version" 2>/dev/null ||
 
 # Get git information. Keep the historical short value for human display while
 # certification consumes the separate immutable full source commit.
-SOURCE_COMMIT=$(peekaboo_debug_source_commit "$PROJECT_ROOT")
-HUMAN_SOURCE_COMMIT=$(peekaboo_source_commit_from_repo "$PROJECT_ROOT")
-GIT_COMMIT_SHORT=$(peekaboo_short_source_commit "$HUMAN_SOURCE_COMMIT")
+SOURCE_COMMIT=$(wink_debug_source_commit "$PROJECT_ROOT")
+HUMAN_SOURCE_COMMIT=$(wink_source_commit_from_repo "$PROJECT_ROOT")
+GIT_COMMIT_SHORT=$(wink_short_source_commit "$HUMAN_SOURCE_COMMIT")
 GIT_COMMIT_DATE=$(git show -s --format=%ci HEAD 2>/dev/null || echo "unknown")
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-GIT_DIRTY=$(peekaboo_source_dirty_suffix "$PROJECT_ROOT")
+GIT_DIRTY=$(wink_source_dirty_suffix "$PROJECT_ROOT")
 BUILD_DATE=$(date -Iseconds)
 
 echo "🧾 Embedding version metadata in Info.plist..."
@@ -141,14 +141,14 @@ fi
     cd "$SWIFT_PROJECT_PATH"
     python3 "$PROJECT_ROOT/scripts/setup-swift-workspace.py" run -- swift build 2>&1 | pipe_build_output
 )
-if peekaboo_is_exact_source_commit "$SOURCE_COMMIT"; then
-    peekaboo_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"
+if wink_is_exact_source_commit "$SOURCE_COMMIT"; then
+    wink_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"
 fi
 
 echo "🔏 Code signing the debug binary..."
-PROJECT_NAME="peekaboo"
+PROJECT_NAME="wink"
 DEBUG_BINARY_PATH="$SWIFT_PROJECT_PATH/.build/debug/$PROJECT_NAME"
-ENTITLEMENTS_PATH="$SWIFT_PROJECT_PATH/Sources/Resources/peekaboo.entitlements"
+ENTITLEMENTS_PATH="$SWIFT_PROJECT_PATH/Sources/Resources/wink.entitlements"
 
 resolve_signing_identity
 resolve_timestamp_arg
@@ -156,7 +156,7 @@ if [[ -f "$ENTITLEMENTS_PATH" ]]; then
     "$PROJECT_ROOT/scripts/codesign-with-retry.sh" --force --sign "$SIGN_IDENTITY" \
         --options runtime \
         $TIMESTAMP_ARG \
-        --identifier "boo.peekaboo.peekaboo" \
+        --identifier "boo.wink.wink" \
         --entitlements "$ENTITLEMENTS_PATH" \
         "$DEBUG_BINARY_PATH"
     echo "✅ Debug binary signed with entitlements"
@@ -165,10 +165,10 @@ else
     "$PROJECT_ROOT/scripts/codesign-with-retry.sh" --force --sign "$SIGN_IDENTITY" \
         --options runtime \
         $TIMESTAMP_ARG \
-        --identifier "boo.peekaboo.peekaboo" \
+        --identifier "boo.wink.wink" \
         "$DEBUG_BINARY_PATH"
 fi
 
 echo "📦 Copying binary to project root..."
-cp "$DEBUG_BINARY_PATH" "$PROJECT_ROOT/peekaboo"
+cp "$DEBUG_BINARY_PATH" "$PROJECT_ROOT/wink"
 echo "✅ Debug build complete"

@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 actor InProcessRunGate {
     private struct Waiter {
@@ -97,11 +97,11 @@ enum InProcessCommandRunner {
     /// Exercise command routing with an owned mutation journal, without native CLI startup.
     static func runWithOwnedRuntime(
         _ arguments: [String],
-        services: any PeekabooServiceProviding
+        services: any WinkServiceProviding
     ) async throws -> CommandRunResult {
         try await self.gate.run {
             let directory = FileManager.default.temporaryDirectory
-                .appendingPathComponent("peekaboo-command-\(UUID().uuidString)", isDirectory: true)
+                .appendingPathComponent("wink-command-\(UUID().uuidString)", isDirectory: true)
             try FileManager.default.createDirectory(
                 at: directory,
                 withIntermediateDirectories: false,
@@ -112,7 +112,7 @@ enum InProcessCommandRunner {
             let result = try await self.redirectOutput {
                 do {
                     try await CommanderRuntimeExecutor.resolveAndRun(
-                        arguments: ["peekaboo"] + arguments,
+                        arguments: ["wink"] + arguments,
                         runtimeFactory: .init { options in
                             CommandRuntime(
                                 configuration: options.makeConfiguration(),
@@ -140,7 +140,7 @@ enum InProcessCommandRunner {
 
     static func run(
         _ arguments: [String],
-        services: any PeekabooServiceProviding,
+        services: any WinkServiceProviding,
         standardInput: String? = nil,
         spaceService: (any SpaceCommandSpaceService)? = nil
     ) async throws -> CommandRunResult {
@@ -161,7 +161,7 @@ enum InProcessCommandRunner {
     static func runWithSharedServices(_ arguments: [String]) async throws -> CommandRunResult {
         // Use stubbed services in tests to avoid driving the real UI while still exercising
         // command wiring and JSON formatting.
-        let services = TestServicesFactory.makePeekabooServices()
+        let services = TestServicesFactory.makeWinkServices()
 
         return try await self.gate.run {
             try await CommandRuntime.withInjectedServices(services) {
@@ -213,7 +213,7 @@ enum InProcessCommandRunner {
             var stderrData = Data()
 
             let result: (Int32, Data, Data) = try await self.redirectOutput(standardInput: standardInput) {
-                await executePeekabooCLI(arguments: ["peekaboo"] + arguments)
+                await executeWinkCLI(arguments: ["wink"] + arguments)
             }
 
             exitStatus = result.0
@@ -278,7 +278,7 @@ enum InProcessCommandRunner {
 
         if let standardInput {
             var pathTemplate = FileManager.default.temporaryDirectory
-                .appendingPathComponent("peekaboo-cli-stdin.XXXXXX")
+                .appendingPathComponent("wink-cli-stdin.XXXXXX")
                 .path
                 .utf8CString
             let inputFile = pathTemplate.withUnsafeMutableBufferPointer { buffer in
@@ -342,7 +342,7 @@ enum InProcessCommandRunner {
 
     private static func makeOutputFile() throws -> FileHandle {
         var template = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-output.XXXXXX").path.utf8CString
+            .appendingPathComponent("wink-cli-output.XXXXXX").path.utf8CString
         let descriptor = template.withUnsafeMutableBufferPointer { mkstemp($0.baseAddress!) }
         guard descriptor >= 0 else { throw self.currentPOSIXError() }
         let path = template.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
@@ -362,15 +362,15 @@ enum InProcessCommandRunner {
 enum ExternalCommandRunner {
     enum Error: Swift.Error, LocalizedError {
         case executableNotFound(String)
-        case peekabooCLIPathMissing
+        case winkCLIPathMissing
         case jsonPayloadMissing(output: String)
 
         var errorDescription: String? {
             switch self {
             case let .executableNotFound(path):
                 "Unable to find executable at \(path)"
-            case .peekabooCLIPathMissing:
-                "PEEKABOO_CLI_PATH was not set (unable to run Peekaboo CLI as an external process)."
+            case .winkCLIPathMissing:
+                "WINK_CLI_PATH was not set (unable to run Wink CLI as an external process)."
             case let .jsonPayloadMissing(output):
                 "Expected JSON payload was not found in command output:\n\(output)"
             }
@@ -378,13 +378,13 @@ enum ExternalCommandRunner {
     }
 
     @discardableResult
-    static func runPeekabooCLI(
+    static func runWinkCLI(
         _ arguments: [String],
         allowedExitCodes: Set<Int32> = [0],
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) throws -> CommandRunResult {
-        guard let executablePath = environment["PEEKABOO_CLI_PATH"], !executablePath.isEmpty else {
-            throw Error.peekabooCLIPathMissing
+        guard let executablePath = environment["WINK_CLI_PATH"], !executablePath.isEmpty else {
+            throw Error.winkCLIPathMissing
         }
         guard FileManager.default.isExecutableFile(atPath: executablePath) else {
             throw Error.executableNotFound(executablePath)
@@ -416,7 +416,7 @@ enum ExternalCommandRunner {
         )
         try result.validateExitStatus(
             allowedExitCodes: allowedExitCodes,
-            arguments: ["peekaboo"] + arguments
+            arguments: ["wink"] + arguments
         )
         return result
     }

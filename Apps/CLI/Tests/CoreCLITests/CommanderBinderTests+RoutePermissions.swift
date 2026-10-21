@@ -1,9 +1,9 @@
 import Commander
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension CommanderBinderTests {
     struct PermissionRoute: Sendable {
@@ -297,7 +297,7 @@ extension CommanderBinderTests {
         #expect(options.requiresTargetedFocusedElement == route.focusedReceiver, "\(route.name)")
         #expect(!options.requiresExactWindowTargetedKeyboard, "\(route.name)")
         #expect(!options.requiresScreenCapturePermission, "\(route.name)")
-        var expected: Set<PeekabooBridgePermissionKind> = []
+        var expected: Set<WinkBridgePermissionKind> = []
         if route.accessibility {
             expected.insert(.accessibility)
         }
@@ -305,7 +305,7 @@ extension CommanderBinderTests {
             expected.insert(.postEvent)
         }
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             supportedOperations: [],
             permissions: .init(screenRecording: false, accessibility: false, postEvent: false)
         )

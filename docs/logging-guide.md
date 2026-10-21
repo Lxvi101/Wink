@@ -1,11 +1,11 @@
 ---
-summary: 'Use and interpret Peekaboo CLI logging'
+summary: 'Use and interpret Wink CLI logging'
 read_when:
   - 'debugging CLI execution or structured output'
   - 'adding log levels, categories, or performance timers'
 ---
 
-# Peekaboo Logging Guide
+# Wink Logging Guide
 
 ## Overview
 
@@ -13,7 +13,7 @@ The CLI logger writes timestamped diagnostic messages to stderr in text mode and
 
 ## Log Levels
 
-Peekaboo supports these levels from most to least verbose:
+Wink supports these levels from most to least verbose:
 
 - **TRACE**
 - **VERBOSE**
@@ -32,14 +32,14 @@ The default minimum is `warning` unless `PEEKABOO_LOG_LEVEL` overrides it.
 Use `--verbose` or `-v` on commands that expose the global runtime options:
 
 ```bash
-peekaboo see --app Safari --verbose
-peekaboo click --on "$ELEMENT_ID" --verbose
+wink see --app Safari --verbose
+wink click --on "$ELEMENT_ID" --verbose
 ```
 
 ### Environment Variable
 
 ```bash
-PEEKABOO_LOG_LEVEL=debug peekaboo see --app Safari
+PEEKABOO_LOG_LEVEL=debug wink see --app Safari
 ```
 
 Accepted values are `trace`, `verbose`, `debug`, `info`, `warning`/`warn`, `error`, and `critical`.
@@ -61,11 +61,11 @@ Categories are strings supplied by call sites rather than a central enum. Curren
 
 The separate automation event logger uses Apple's unified logging for command activity; it does not change the stderr/JSON format above.
 
-Detached native AX observations have a debug-only unified-log category, `AXObservation`, under `boo.peekaboo.core`.
+Detached native AX observations have a debug-only unified-log category, `AXObservation`, under `boo.wink.core`.
 Capture it for the executing CLI or Bridge host while reproducing a slow or incomplete read:
 
 ```bash
-log stream --level debug --predicate 'processIdentifier == 12345 AND subsystem == "boo.peekaboo.core" AND category == "AXObservation"'
+log stream --level debug --predicate 'processIdentifier == 12345 AND subsystem == "boo.wink.core" AND category == "AXObservation"'
 ```
 
 Replace `12345` with the verified executing host PID. These records report native call type, traversal-node ordinal,
@@ -88,11 +88,11 @@ queries are performed. This stream is separate from CLI `debug_logs`; it does no
 ### Agent phase timing
 
 The Agent runtime separately emits content-free debug records through unified logging under subsystem
-`boo.peekaboo`, category `agent`. Capture them for the verified executing Agent process without enabling verbose
+`boo.wink`, category `agent`. Capture them for the verified executing Agent process without enabling verbose
 payload logging:
 
 ```bash
-log stream --level debug --predicate 'processIdentifier == 12345 AND subsystem == "boo.peekaboo" AND category == "agent" AND eventMessage BEGINSWITH "phase="'
+log stream --level debug --predicate 'processIdentifier == 12345 AND subsystem == "boo.wink" AND category == "agent" AND eventMessage BEGINSWITH "phase="'
 ```
 
 Each completed phase emits only a fixed phase name, zero-based model-step number, monotonic elapsed milliseconds,
@@ -140,14 +140,14 @@ When a command enables JSON output, the logger buffers messages instead of writi
 ### Filtering Logs
 
 ```bash
-peekaboo see --verbose 2>&1 | rg 'Performance'
-peekaboo see --verbose 2>peekaboo.log
+wink see --verbose 2>&1 | rg 'Performance'
+wink see --verbose 2>wink.log
 ```
 
 For JSON output, inspect `.debug_logs` instead of mixing diagnostics into stdout:
 
 ```bash
-peekaboo see --app Safari --json-output --verbose | jq '.debug_logs'
+wink see --app Safari --json-output --verbose | jq '.debug_logs'
 ```
 
 ## Troubleshooting

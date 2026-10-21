@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -15,7 +15,7 @@ struct AgentDryRunRuntimeTests {
                 let probe = RuntimeProbe()
                 let output = try await captureStandardOutputText {
                     try await CommanderRuntimeExecutor.resolveAndRun(
-                        arguments: ["peekaboo"] + command + [
+                        arguments: ["wink"] + command + [
                             "  Inspect the synthetic Playground window  ", "--dry-run", "--no-cache",
                             "--max-steps", "1", "--no-desktop-context",
                         ] + transport + (foreground ? ["--allow-foreground"] : []) + (json ? ["--json"] : []),
@@ -60,7 +60,7 @@ struct AgentDryRunRuntimeTests {
         let output = try await captureStandardOutputText {
             do {
                 try await CommanderRuntimeExecutor.resolveAndRun(
-                    arguments: ["peekaboo", "agent", "run"] + options + [
+                    arguments: ["wink", "agent", "run"] + options + [
                         "--dry-run", "--bridge-socket", "/synthetic/unavailable.sock", "--json",
                     ],
                     runtimeFactory: probe.factory
@@ -77,26 +77,26 @@ struct AgentDryRunRuntimeTests {
 
     @Test
     func `disabled Agent still refuses a text preview without runtime`() async throws {
-        let previous = getenv("PEEKABOO_DISABLE_AGENT").map { String(cString: $0) }
-        setenv("PEEKABOO_DISABLE_AGENT", "1", 1)
+        let previous = getenv("WINK_DISABLE_AGENT").map { String(cString: $0) }
+        setenv("WINK_DISABLE_AGENT", "1", 1)
         defer {
             if let previous {
-                setenv("PEEKABOO_DISABLE_AGENT", previous, 1)
+                setenv("WINK_DISABLE_AGENT", previous, 1)
             } else {
-                unsetenv("PEEKABOO_DISABLE_AGENT")
+                unsetenv("WINK_DISABLE_AGENT")
             }
         }
         let probe = RuntimeProbe()
         let output = try await captureStandardOutputText {
             await #expect(throws: ExitCode.self) {
                 try await CommanderRuntimeExecutor.resolveAndRun(
-                    arguments: ["peekaboo", "agent", "Inspect", "--dry-run", "--json"],
+                    arguments: ["wink", "agent", "Inspect", "--dry-run", "--json"],
                     runtimeFactory: probe.factory
                 )
             }
         }
         #expect(output.contains("AGENT_ERROR"))
-        #expect(output.contains("PEEKABOO_DISABLE_AGENT"))
+        #expect(output.contains("WINK_DISABLE_AGENT"))
         #expect(probe.runtimeConstructions == 0)
         #expect(probe.bridgeProbes == 0)
     }
@@ -107,7 +107,7 @@ struct AgentDryRunRuntimeTests {
         let output = try await captureStandardOutputText {
             try await CommanderRuntimeExecutor.resolveAndRun(
                 arguments: [
-                    "peekaboo", "agent", "Inspect", "--dry-run", "--model", "unsupported-model",
+                    "wink", "agent", "Inspect", "--dry-run", "--model", "unsupported-model",
                     "--queue-mode", "unsupported-queue", "--json",
                 ],
                 runtimeFactory: probe.factory
@@ -128,7 +128,7 @@ struct AgentDryRunRuntimeTests {
         let probe = RuntimeProbe()
         await #expect(throws: (any Error).self) {
             try await CommanderRuntimeExecutor.resolveAndRun(
-                arguments: ["peekaboo"] + command + ["--bridge-socket", "/synthetic/unavailable.sock"],
+                arguments: ["wink"] + command + ["--bridge-socket", "/synthetic/unavailable.sock"],
                 runtimeFactory: probe.factory
             )
         }
@@ -156,7 +156,7 @@ private final class RuntimeProbe {
                     makeRemoteHandshakeCache: {
                         RuntimeHostResolver.RemoteHandshakeCache(
                             identity: .init(
-                                bundleIdentifier: "boo.peekaboo.test",
+                                bundleIdentifier: "boo.wink.test",
                                 teamIdentifier: nil,
                                 processIdentifier: getpid()
                             ),

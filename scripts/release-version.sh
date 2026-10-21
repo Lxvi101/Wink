@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-peekaboo_release_build_number() {
+wink_release_build_number() {
   local version=${1:?'version required'}
   local prerelease major minor patch suffix prerelease_label prerelease_number
   # Parse the complete supported version, so extra identifiers cannot alias a

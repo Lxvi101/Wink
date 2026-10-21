@@ -4,7 +4,7 @@ import OSLog
 import SwiftUI
 import UniformTypeIdentifiers
 
-private let logger = Logger(subsystem: "boo.peekaboo.playground", category: "Click")
+private let logger = Logger(subsystem: "boo.wink.playground", category: "Click")
 
 @MainActor
 final class PlaygroundTabRouter: ObservableObject {
@@ -90,10 +90,10 @@ struct HeaderView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 5) {
-                Text("Peekaboo Playground")
+                Text("Wink Playground")
                     .font(.title2.weight(.semibold))
 
-                Text("Test all Peekaboo automation features")
+                Text("Test all Wink automation features")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -208,7 +208,7 @@ struct DialogTestingView: View {
     @State private var owningWindow: NSWindow?
     @State private var filename: String = "playground-dialog.txt"
     @State private var content: String = """
-    Peekaboo Playground
+    Wink Playground
 
     This file was created from the Dialogs tab.
     """
@@ -444,7 +444,7 @@ struct DialogTestingView: View {
         }
 
         let alert = NSAlert()
-        alert.messageText = "Peekaboo Playground Alert"
+        alert.messageText = "Wink Playground Alert"
         alert.informativeText = withTextField
             ? "This alert includes a text field so `dialog input` can be exercised."
             : "Use `dialog click` to press buttons without needing TextEdit."

@@ -1,10 +1,10 @@
 ---
-summary: 'Release Peekaboo through verified GitHub Actions artifacts.'
+summary: 'Release Wink through verified GitHub Actions artifacts.'
 read_when:
-  - 'preparing or verifying a Peekaboo release'
+  - 'preparing or verifying a Wink release'
 ---
 
-# Releasing Peekaboo
+# Releasing Wink
 
 The sole publication path is `.github/workflows/release.yml`. It builds the app,
 DMG, standalone CLI archives and npm package, signs with the OpenClaw Foundation
@@ -51,7 +51,7 @@ rebuild or overwrite an existing version.
 Before closeout, verify the GitHub Release assets against `checksums.txt`, and
 confirm the published notes match the dated root changelog. Check npm's exact
 version, dist-tag, tarball, integrity and publish time with
-`npm view @steipete/peekaboo@X.Y.Z version dist-tags dist.tarball dist.integrity time --json`;
+`npm view wink@X.Y.Z version dist-tags dist.tarball dist.integrity time --json`;
 download that registry tarball and compare its SHA-512 integrity with the exact
 tarball retained by the hosted run. Verify the Homebrew tap formula's version,
 asset URLs and checksums. Review and merge the Actions-created appcast closeout
@@ -62,7 +62,7 @@ The caller pins the fleet release-workflows `@v1` compatibility tag, which point
 1.11.4 or newer: zippered macOS runtime validation (`openclaw/release-workflows#75`)
 and legacy appcast build numbers (#76).
 `npm-publish.yml` must keep its filename: the trusted publisher for
-`@steipete/peekaboo` names it. No npm token is needed.
+`wink` names it. No npm token is needed.
 
 The `release` environment needs `MACOS_SIGNING_P12`,
 `MACOS_SIGNING_P12_PASSWORD`, `ASC_KEY_ID`, `ASC_ISSUER_ID`,

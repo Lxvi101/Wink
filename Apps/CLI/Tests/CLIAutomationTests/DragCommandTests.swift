@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 private struct DragResult: Codable {
     let from: [String: Int]
@@ -14,7 +14,7 @@ private struct DragResult: Codable {
     let executionTime: TimeInterval
 }
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.serialized, .tags(.safe), .enabled(if: CLITestEnvironment.runAutomationRead))
 struct DragCommandTests {
     @Test
@@ -377,7 +377,7 @@ extension DragCommandTests {
 }
 
 #else
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 // Drag automation tests remain disabled pending Swift compiler fixes.
 #endif
 #endif

@@ -1,10 +1,10 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
+import WinkAutomationKitTestSupport
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -12,7 +12,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     @Test
     func `keyboard commands reject targetless delivery unless foreground is explicit`() async throws {
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: StubClipboardService(),
             automation: automation
         )
@@ -50,7 +50,7 @@ struct TargetedInteractionDefaultDeliveryTests {
             processIdentity: #require(app.processIdentity)
         )
         let applications = StubApplicationService(applications: [app])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: StubClipboardService(),
             automation: automation
@@ -80,7 +80,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     @Test
     func `keyboard target resolution failure never falls back to global input`() async throws {
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: []),
             clipboard: StubClipboardService(),
             automation: automation
@@ -112,7 +112,7 @@ struct TargetedInteractionDefaultDeliveryTests {
             activationPolicy: .regular
         )
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             windows: StubWindowService(windowsByApp: [:]),
             clipboard: StubClipboardService(),
@@ -151,7 +151,7 @@ struct TargetedInteractionDefaultDeliveryTests {
         )
         let automation = StubAutomationService()
         let windows = PartialKeyboardWindowInventoryService(windowsByApp: ["TextEdit": [window]])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             windows: windows,
             clipboard: StubClipboardService(),
@@ -221,7 +221,7 @@ struct TargetedInteractionDefaultDeliveryTests {
             windowID: fixture.window.windowID,
             identifier: "messages-compose"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: StubWindowService(windowsByApp: [fixture.application.name: [fixture.window]]),
             clipboard: StubClipboardService(),
@@ -266,7 +266,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     @Test
     func `foreground explicitly preserves intentional global keyboard delivery`() async throws {
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: StubClipboardService(),
             automation: automation
         )
@@ -301,7 +301,7 @@ struct TargetedInteractionDefaultDeliveryTests {
             name: "TextEdit"
         )
         let automation = StubAutomationService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             clipboard: StubClipboardService(),
             automation: automation
@@ -607,12 +607,12 @@ struct TargetedInteractionDefaultDeliveryTests {
             bounds: windowBounds,
             mutationIdentity: windowIdentity
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation
         )
-        let clickServices = TestServicesFactory.makePeekabooServices(
+        let clickServices = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: StubWindowService(windowsByApp: [app.name: [window]]),
             clipboard: clipboard,
@@ -631,7 +631,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     }
 
     private func assertTypeDefaultsToBackground(
-        services: PeekabooServices,
+        services: WinkServices,
         automation: StubAutomationService
     ) async throws {
         let result = try await InProcessCommandRunner.run(
@@ -651,7 +651,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     }
 
     private func assertPressDefaultsToRefusal(
-        services: PeekabooServices,
+        services: WinkServices,
         automation: StubAutomationService
     ) async throws {
         let result = try await InProcessCommandRunner.run(
@@ -674,7 +674,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     }
 
     private func assertPasteDefaultsToBackground(
-        services: PeekabooServices,
+        services: WinkServices,
         automation: StubAutomationService
     ) async throws {
         let result = try await InProcessCommandRunner.run(
@@ -697,7 +697,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     }
 
     private func assertClickDefaultsToBackground(
-        services: PeekabooServices,
+        services: WinkServices,
         automation: StubAutomationService,
         targetWindow: ServiceWindowInfo
     ) async throws {
@@ -766,7 +766,7 @@ struct TargetedInteractionDefaultDeliveryTests {
     }
 
     private func storeKeyboardSnapshot(
-        in services: PeekabooServices,
+        in services: WinkServices,
         processIdentifier: pid_t,
         processStartIdentity: UInt64,
         window: KeyboardSnapshotWindow

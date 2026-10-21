@@ -1,22 +1,22 @@
 import Commander
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
 struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
-    private static let operations: [PeekabooBridgeOperation] = [
+    private static let operations: [WinkBridgeOperation] = [
         .captureScreen,
         .desktopObservation,
     ]
     private static let inlineOperations = Self.operations + [.invalidateImplicitLatestSnapshot]
     private static let inlineCapabilities = [
-        PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-        PeekabooBridgeHostCapability.desktopObservationInlinePixels,
-        PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+        WinkBridgeHostCapability.desktopObservationCaptureEngine,
+        WinkBridgeHostCapability.desktopObservationInlinePixels,
+        WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
     ]
 
     @Test(arguments: ["live", "action"], ["omitted", "cli-classic", "environment-classic"])
@@ -24,7 +24,7 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         command: String,
         selector: String
     ) async throws {
-        let environment = selector == "environment-classic" ? ["PEEKABOO_CAPTURE_ENGINE": "cg"] : [:]
+        let environment = selector == "environment-classic" ? ["WINK_CAPTURE_ENGINE": "cg"] : [:]
         let arguments = selector == "cli-classic" ? ["captureEngine": ["cg"]] : [:]
         var options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: arguments, flags: []),
@@ -106,8 +106,8 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: ["captureEngine": [empty]], flags: []),
             commandType: command == "live" ? CaptureLiveCommand.self : CaptureActionCommand.self,
-            environment: ["PEEKABOO_CAPTURE_ENGINE": empty]
-        ).applyingEnvironmentOverrides(environment: ["PEEKABOO_CAPTURE_ENGINE": empty])
+            environment: ["WINK_CAPTURE_ENGINE": empty]
+        ).applyingEnvironmentOverrides(environment: ["WINK_CAPTURE_ENGINE": empty])
         let legacy = Self.handshake(
             operations: [.captureScreen, .invalidateImplicitLatestSnapshot],
             capabilities: nil
@@ -135,17 +135,17 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let noInline = Self.handshake(
             operations: Self.inlineOperations,
             capabilities: Self.inlineCapabilities
-                .filter { $0 != PeekabooBridgeHostCapability.desktopObservationInlinePixels }
+                .filter { $0 != WinkBridgeHostCapability.desktopObservationInlinePixels }
         )
         let noEngine = Self.handshake(
             operations: Self.inlineOperations,
             capabilities: Self.inlineCapabilities
-                .filter { $0 != PeekabooBridgeHostCapability.desktopObservationCaptureEngine }
+                .filter { $0 != WinkBridgeHostCapability.desktopObservationCaptureEngine }
         )
         let noOwnership = Self.handshake(
             operations: Self.inlineOperations,
             capabilities: Self.inlineCapabilities
-                .filter { $0 != PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership }
+                .filter { $0 != WinkBridgeHostCapability.screenCaptureKitProcessOwnership }
         )
         let legacy = Self.handshake(operations: Self.inlineOperations, capabilities: nil)
 
@@ -227,7 +227,7 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
             operations: Self.inlineOperations,
             enabledOperations: [.invalidateImplicitLatestSnapshot],
             capabilities: Self.inlineCapabilities
-                .filter { $0 != PeekabooBridgeHostCapability.desktopObservationInlinePixels },
+                .filter { $0 != WinkBridgeHostCapability.desktopObservationInlinePixels },
             permissions: permissions
         )
 
@@ -239,8 +239,8 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
     func `non auto engine selection requires the additive host capability`() {
         let capable = Self.handshake(
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
         let legacy = Self.handshake(capabilities: nil)
@@ -248,15 +248,15 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let missingOperation = Self.handshake(
             operations: [.captureScreen],
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
         let disabled = Self.handshake(
             enabledOperations: [.captureScreen],
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
 
@@ -274,12 +274,12 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let options = try Self.options(engine: engine)
         let capable = Self.handshake(
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
         let engineOnly = Self.handshake(
-            capabilities: [PeekabooBridgeHostCapability.desktopObservationCaptureEngine]
+            capabilities: [WinkBridgeHostCapability.desktopObservationCaptureEngine]
         )
         let legacy = Self.handshake(capabilities: nil)
 
@@ -297,12 +297,12 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let options = try Self.options(engine: engine)
         let capable = Self.handshake(
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ]
         )
         let engineOnly = Self.handshake(
-            capabilities: [PeekabooBridgeHostCapability.desktopObservationCaptureEngine]
+            capabilities: [WinkBridgeHostCapability.desktopObservationCaptureEngine]
         )
 
         #expect(options.requiresCaptureEnginePreferenceCapability)
@@ -318,9 +318,9 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
         let handshake = Self.handshake(
             enabledOperations: [],
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
-                PeekabooBridgeHostCapability.desktopObservationFreshAccessibilityTree,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationFreshAccessibilityTree,
             ],
             permissions: PermissionsStatus(
                 screenRecording: false,
@@ -346,9 +346,9 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
             operations: [.captureScreen, .desktopObservation, .storeObservationSnapshot],
             enabledOperations: [.storeObservationSnapshot],
             capabilities: [
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.desktopObservationOCR,
-                PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.desktopObservationOCR,
+                WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
             ],
             permissions: PermissionsStatus(
                 screenRecording: false,
@@ -373,7 +373,7 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
             commandType: SeeCommand.self
         )
         let ownerAware = Self.handshake(
-            capabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership]
+            capabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership]
         )
         let legacy = Self.handshake(capabilities: nil)
 
@@ -405,10 +405,10 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
 
         let launchEnvironment = DaemonLaunchPolicy.onDemandDaemonEnvironment([
             "PATH": "/usr/bin:/bin",
-            "PEEKABOO_CAPTURE_ENGINE": "modern",
+            "WINK_CAPTURE_ENGINE": "modern",
             "PEEKABOO_LOG_LEVEL": "debug",
         ])
-        #expect(launchEnvironment["PEEKABOO_CAPTURE_ENGINE"] == nil)
+        #expect(launchEnvironment["WINK_CAPTURE_ENGINE"] == nil)
         #expect(launchEnvironment["PATH"] == "/usr/bin:/bin")
         #expect(launchEnvironment["PEEKABOO_LOG_LEVEL"] == "debug")
     }
@@ -433,13 +433,13 @@ struct DesktopObservationCaptureEngineRuntimeCapabilityTests {
     }
 
     private static func handshake(
-        operations: [PeekabooBridgeOperation] = Self.operations,
-        enabledOperations: [PeekabooBridgeOperation]? = nil,
+        operations: [WinkBridgeOperation] = Self.operations,
+        enabledOperations: [WinkBridgeOperation]? = nil,
         capabilities: [String]?,
         permissions: PermissionsStatus? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,

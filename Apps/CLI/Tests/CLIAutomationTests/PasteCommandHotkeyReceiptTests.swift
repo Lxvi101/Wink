@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 extension PasteCommandTests {
     @Test(arguments: [false, true], [false, true])
@@ -166,7 +166,7 @@ extension PasteCommandTests {
             processStartIdentity: PasteFocusWindowService.processStartIdentity
         ))
         let clipboard = StubClipboardService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: windows, clipboard: clipboard, automation: automation
         )
         var arguments = [

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct GitStalenessProbeTests {
@@ -45,6 +45,6 @@ struct GitStalenessProbeTests {
 
     @Test
     func `a failed git probe skips the optional diagnostic`() {
-        #expect(runGitStalenessProbe(arguments: ["peekaboo-nonexistent-command"]) == nil)
+        #expect(runGitStalenessProbe(arguments: ["wink-nonexistent-command"]) == nil)
     }
 }

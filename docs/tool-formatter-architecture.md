@@ -9,10 +9,10 @@ read_when:
 
 ## Overview
 
-Tool formatting is owned by `PeekabooAgentRuntime` and shared with the Mac app. The live implementation is under:
+Tool formatting is owned by `WinkAgentRuntime` and shared with the Mac app. The live implementation is under:
 
 ```text
-Core/PeekabooCore/Sources/PeekabooAgentRuntime/ToolFormatting/
+Core/WinkCore/Sources/WinkAgentRuntime/ToolFormatting/
 ```
 
 ## Architecture Components
@@ -40,8 +40,8 @@ The registry is available as `ToolFormatterRegistry.shared` or as a separately i
 
 The Mac app does not maintain its own formatter registry:
 
-- `Apps/Mac/Peekaboo/Core/ToolFormatterBridge.swift` parses JSON arguments/results and delegates to `ToolFormatterRegistry`.
-- `Apps/Mac/Peekaboo/Features/Main/ToolFormatter.swift` is a compatibility facade for compact summaries and shared formatting utilities.
+- `Apps/Mac/Wink/Core/ToolFormatterBridge.swift` parses JSON arguments/results and delegates to `ToolFormatterRegistry`.
+- `Apps/Mac/Wink/Features/Main/ToolFormatter.swift` is a compatibility facade for compact summaries and shared formatting utilities.
 
 Unknown tool names fall back to a title-cased name and raw/pretty-printed JSON rather than being added to a parallel Mac-only stack.
 
@@ -55,7 +55,7 @@ or delivery changes; current structured tool summaries take precedence over comp
 1. Add the formatter-facing name to `ToolType`.
 2. Add or extend the appropriate formatter under `ToolFormatting/Formatters/`.
 3. Register the type in `ToolFormatterRegistry.registerAllFormatters()`. Unregistered types receive a category-based default formatter, but explicit routing documents the intended family.
-4. Add focused registry/formatter tests under `Core/PeekabooCore/Tests`.
+4. Add focused registry/formatter tests under `Core/WinkCore/Tests`.
 5. Verify both agent output and the Mac facade if the new result shape is user-visible there.
 
 Example lookup:
@@ -69,6 +69,6 @@ let summary = formatter.formatResultSummary(result: resultDictionary)
 
 - Use `ToolResultExtractor` for values that may be direct or wrapped.
 - Keep compact summaries short and deterministic.
-- Put shared policy in `PeekabooAgentRuntime`; Mac files should remain adapters.
+- Put shared policy in `WinkAgentRuntime`; Mac files should remain adapters.
 - Prefer `ToolEventSummary` for canonical structured results, then fall back to the registered formatter.
 - Test the actual dictionary keys emitted by the tool rather than synthetic result shapes.

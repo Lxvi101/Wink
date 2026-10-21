@@ -1,7 +1,7 @@
 ---
 title: Automation
-summary: 'Overview of Peekaboo UI automation targets, input primitives, app surfaces, recipes, and resilience tips.'
-description: How to drive macOS UI with Peekaboo — click, type, press, scroll, drag, menus, dialogs, windows, Spaces.
+summary: 'Overview of Wink UI automation targets, input primitives, app surfaces, recipes, and resilience tips.'
+description: How to drive macOS UI with Wink — click, type, press, scroll, drag, menus, dialogs, windows, Spaces.
 read_when:
   - 'deciding which UI automation command or targeting mode to use'
   - 'documenting agent, MCP, or CLI behavior that mutates macOS UI'
@@ -9,21 +9,21 @@ read_when:
 
 # Automation
 
-Peekaboo's automation surface is small but covers the whole macOS UI graph. Each command is documented separately under `commands/`; this page is the map.
+Wink's automation surface is small but covers the whole macOS UI graph. Each command is documented separately under `commands/`; this page is the map.
 
 ## Targeting model
 
 Every input command accepts one of three target shapes:
 
-- **Element ID** — `--on <id>` from a fresh `peekaboo see` capture; preferred when available. Treat IDs as opaque strings and copy the exact value returned by the capture.
-- **Label / role / app** — positional query text such as `peekaboo click "Send" --app Mail`; resolved via the AX tree.
+- **Element ID** — `--on <id>` from a fresh `wink see` capture; preferred when available. Treat IDs as opaque strings and copy the exact value returned by the capture.
+- **Label / role / app** — positional query text such as `wink click "Send" --app Mail`; resolved via the AX tree.
 - **Coordinates** — `--at 480,120`; background clicks use the explicit snapshot's window as their origin, even without app/window flags. Foreground coordinates are relative to a selected target window and global without one. Add `--global` to force global logical coordinates; background points must still lie inside the captured window.
 
 Prefer IDs when you can capture them, labels when you can't, and coordinates only as a last resort. The agent and MCP tooling default to the first two.
 
 Process and window selectors are fail-closed. Choose either `--app` or `--pid`, never both. Choose at most one of `--window-id`, `--window-title`, or `--window-index`; title and index require an app or PID owner. The same rules apply to MCP's `app`, `pid`, `window_id`, `window_title`, and `window_index` fields.
 
-When AppKit reports an invalid PID after an app re-execs itself, Peekaboo recovers it only if exactly one live process
+When AppKit reports an invalid PID after an app re-execs itself, Wink recovers it only if exactly one live process
 has the same resolved executable path and matching bundle ID, bundle URL and executable URL, with a readable process
 generation that stays unchanged during verification. Ambiguous or unverifiable identities remain unavailable; window
 ownership and mutation-generation checks still apply.
@@ -34,27 +34,27 @@ screenshots, or other snapshot state. A store cannot claim an ID that was not cr
 opaque receipt and copy it exactly; legacy timestamp IDs are non-actionable and exist only for strict cache cleanup.
 
 A command with a concrete snapshot reference resolves its unique live authenticated producer before the ordinary
-daemon/app preference order. This keeps a snapshot and its in-memory state together even when several Peekaboo hosts
+daemon/app preference order. This keeps a snapshot and its in-memory state together even when several Wink hosts
 are available. Explicit routing is still authoritative: `--bridge-socket` checks only that Bridge host, while
 `--no-remote` checks only the local process, and either refuses rather than rerouting when the selected boundary does
 not own the reference.
 
 ## Delivery modes
 
-Peekaboo has two input delivery modes:
+Wink has two input delivery modes:
 
 - **Background** (default when a target process is known) uses exact semantic or typed delivery without activating the app. `type` and `paste` require `--app`, `--pid`, or supported snapshot process metadata. Raw `press` requires a fresh exact-window/snapshot receipt; app/PID-only and targetless forms refuse. Background click can retain its exact window/element target.
 - **Foreground** focuses the target first, then sends normal/global input to the active key window or mouse focus. Add `--foreground` when an app ignores background input, when a text field only accepts key-window input, or when you want focus/Space switching to be part of the action.
 
-When a field has no stable snapshot element ID, `type --at x,y --snapshot <id>` can resolve a writable text field at one pixel, set only its Accessibility focus, and type under a single exact-window background lane. It never presses or selects the hit element, activates the app, or splits the focus and keyboard units into independently retryable actions. Foreground modifier-click remains explicit: `click --on <id> --snapshot <id> --foreground --modifiers cmd,shift` restores only cursor/focus state that still matches Peekaboo's own last write, so concurrent user input wins.
+When a field has no stable snapshot element ID, `type --at x,y --snapshot <id>` can resolve a writable text field at one pixel, set only its Accessibility focus, and type under a single exact-window background lane. It never presses or selects the hit element, activates the app, or splits the focus and keyboard units into independently retryable actions. Foreground modifier-click remains explicit: `click --on <id> --snapshot <id> --foreground --modifiers cmd,shift` restores only cursor/focus state that still matches Wink's own last write, so concurrent user input wins.
 
-Focus flags tune foreground focus behavior but do not silently change delivery mode. Add `--foreground` explicitly. `--no-auto-focus` also does not discard a background keyboard PID. Background element/query/coordinate clicks complete through Accessibility alone. Keyboard input and foreground synthetic pointer input require Event Synthesizing for the sender shown by `peekaboo permissions status`; request it with `peekaboo permissions request event-synthesizing`.
+Focus flags tune foreground focus behavior but do not silently change delivery mode. Add `--foreground` explicitly. `--no-auto-focus` also does not discard a background keyboard PID. Background element/query/coordinate clicks complete through Accessibility alone. Keyboard input and foreground synthetic pointer input require Event Synthesizing for the sender shown by `wink permissions status`; request it with `wink permissions request event-synthesizing`.
 
 All CLI timing flags use the same grammar: bare numbers are milliseconds, and `ms`/`s` suffixes are accepted (`500`, `500ms`, `2s`, `1.5s`).
 
 Pointer delivery is deliberately stricter. A targeted `scroll --on <id>` stays in the background and prefers the element's Accessibility scroll action. Groups, web areas, and scroll areas in an eligible visible WebKit-linked or recognized Safari app may use exact PID/window-routed wheel events from a fresh pixel snapshot; that route is retry-unsafe because macOS does not acknowledge the receiver's effect. It never falls back to the shared cursor. Targetless, smooth, or delayed wheel input requires `--foreground`. A bounded linear `drag --snapshot <id>` routes only inside that snapshot's exact window, with no cursor movement or activation; it requires protocol 1.39 and reports unverified, retry-unsafe dispatch. Cross-window/app drops, modifiers, and human movement require `--foreground`. `move` and `click --long-press` still manipulate shared physical pointer state and require explicit `--foreground` consent. Space/focus modifiers are only valid with foreground mode; there is no `--no-auto-focus` escape hatch.
 
-Multi-unit background input is prefix-aware. Once any scroll unit or semantic click has been accepted—or may have been accepted—Peekaboo stops instead of replaying the request through a fallback route. Canonical partial and indeterminate outcomes retain the accepted/possible unit count, stay retry-unsafe, and provide recovery or observation escalation. This also covers SwiftUI tab buttons whose `AXPress` returns before selection can be confirmed: Peekaboo reports the accepted press as indeterminate rather than issuing a second synthetic click.
+Multi-unit background input is prefix-aware. Once any scroll unit or semantic click has been accepted—or may have been accepted—Wink stops instead of replaying the request through a fallback route. Canonical partial and indeterminate outcomes retain the accepted/possible unit count, stay retry-unsafe, and provide recovery or observation escalation. This also covers SwiftUI tab buttons whose `AXPress` returns before selection can be confirmed: Wink reports the accepted press as indeterminate rather than issuing a second synthetic click.
 
 Application menu list/click, dialog list, dialog button click, normal dialog dismissal, window close, and exact minimized-window restore also default to background Accessibility actions. Restore changes only the retained window's `AXMinimized` state. Dialog list never focuses. Dialog keyboard/file flows, forced Escape dismissal, coordinate fallback, and window-close Cmd-W fallback require an explicit `--foreground` (or `foreground: true` in MCP) so these global actions cannot interrupt an unrelated foreground app by accident.
 
@@ -75,13 +75,13 @@ Examples:
 
 ```bash
 # Background: use semantic controls without activating Safari
-peekaboo click "Address and search bar" --app Safari --window-id 12345
-peekaboo type "github.com/openclaw/Peekaboo" --app Safari --window-id 12345
+wink click "Address and search bar" --app Safari --window-id 12345
+wink type "github.com/Lxvi101/Wink" --app Safari --window-id 12345
 
 # Exact-window raw chords can stay background; app-only chords require foreground consent
-peekaboo press cmd+l --window-id 12345
-peekaboo press cmd+l --app Safari --foreground --space-switch
-peekaboo type "github.com/openclaw/Peekaboo" --app Safari --foreground && peekaboo press Return --app Safari --foreground
+wink press cmd+l --window-id 12345
+wink press cmd+l --app Safari --foreground --space-switch
+wink type "github.com/Lxvi101/Wink" --app Safari --foreground && wink press Return --app Safari --foreground
 ```
 
 ## Input primitives
@@ -117,26 +117,26 @@ For UX parity with humans (jitter, easing, dwell), see [human-mouse-move.md](hum
 
 ```bash
 # 1. Inspect first to find a stable label.
-peekaboo see --app Safari --annotate --path /tmp/safari.png
+wink see --app Safari --annotate --path /tmp/safari.png
 
 # 2. Click it.
-peekaboo click "Reload" --app Safari
+wink click "Reload" --app Safari
 ```
 
 ## Recipe: a small flow
 
 ```bash
-peekaboo window focus --app "Notes"
-peekaboo press cmd+n --foreground
-peekaboo type "Standup notes\n\n- Shipped Peekaboo docs\n- Reviewed PR #42\n"
-peekaboo press cmd+s --foreground
+wink window focus --app "Notes"
+wink press cmd+n --foreground
+wink type "Standup notes\n\n- Shipped Wink docs\n- Reviewed PR #42\n"
+wink press cmd+s --foreground
 ```
 
 Three primitives, four lines. The agent does the same thing under the hood — it just plans the sequence for you.
 
 ## Swift SDK waits
 
-Source consumers of the `PeekabooCore` package can call `PeekabooServices.automate(appIdentifier:actions:)` with
+Source consumers of the `WinkCore` package can call `WinkServices.automate(appIdentifier:actions:)` with
 `.wait(milliseconds:)` actions. Waits use signed integer milliseconds: zero remains a successful immediate action,
 and positive values retain the full `Int` range without an overflow-prone nanosecond conversion. Suspended waits are
 cancellable and retain the method's existing action-error wrapping.
@@ -146,7 +146,7 @@ earlier input actions. Correct the request instead of expecting a preceding acti
 
 ## Resilience tips
 
-- Always run [`peekaboo see`](commands/see.md) when an element is unreachable. The AX tree refreshes after focus changes; capture again if a click fails.
+- Always run [`wink see`](commands/see.md) when an element is unreachable. The AX tree refreshes after focus changes; capture again if a click fails.
 - Use [focus](focus.md) and [application-resolving](application-resolving.md) for tricky cases (multiple windows, helper apps, processes that hide on activation).
 - Use `/bin/sleep` between shell-composed actions when a target genuinely needs settling time.
 - Prefer background click, semantic text/value actions, menus, and targeted background scrolling for routine app-specific input.
@@ -154,6 +154,6 @@ earlier input actions. Correct the request instead of expecting a preceding acti
 
 ## Going further
 
-- [Agent overview](commands/agent.md) — let Peekaboo plan input sequences from a goal.
+- [Agent overview](commands/agent.md) — let Wink plan input sequences from a goal.
 - [MCP](MCP.md) — expose all of the above to Codex, Claude Code, and Cursor.
 - [Architecture](ARCHITECTURE.md) — how the input pipeline routes through Bridge and Daemon.

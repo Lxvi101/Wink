@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooBridge
-import PeekabooCore
+import WinkBridge
+import WinkCore
 import Testing
-@testable import PeekabooAutomationKit
+@testable import WinkAutomationKit
 
 /// Owns only a newly created directory, never a borrowed store or an ambient runtime root.
 struct CLIDesktopFixture {
@@ -39,7 +39,7 @@ struct CLIDesktopFixture {
 @MainActor
 final class CLIBridgeHostFixture {
     let desktop: CLIDesktopFixture
-    private var hosts: [PeekabooBridgeHost] = []
+    private var hosts: [WinkBridgeHost] = []
 
     private init() throws {
         self.desktop = try CLIDesktopFixture()
@@ -57,7 +57,7 @@ final class CLIBridgeHostFixture {
         }
     }
 
-    func start(_ host: PeekabooBridgeHost) async throws {
+    func start(_ host: WinkBridgeHost) async throws {
         // Retain before startup so partial startup and later sibling failures also drain the host.
         self.hosts.append(host)
         try await host.startChecked()

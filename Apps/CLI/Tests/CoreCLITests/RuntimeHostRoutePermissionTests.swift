@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -14,7 +14,7 @@ struct RuntimeHostRoutePermissionTests {
         let options = try Self.options(route)
         let weak = Self.candidate("/synthetic/weak.sock", kind: .onDemand)
         let strong = Self.candidate("/synthetic/strong.sock", kind: gui ? .gui : .onDemand)
-        let missing: PeekabooBridgePermissionKind = route == "press-events" ? .postEvent : .accessibility
+        let missing: WinkBridgePermissionKind = route == "press-events" ? .postEvent : .accessibility
         let weakHandshake = Self.handshake(kind: .onDemand, missing: missing)
         let cache = RuntimeHostResolver.RemoteHandshakeCache(
             identity: Self.identity,
@@ -54,7 +54,7 @@ struct RuntimeHostRoutePermissionTests {
     func `no grants still construct the local fallback once`(route: String) async throws {
         let options = try Self.options(route)
         let daemon = Self.candidate("/synthetic/daemon.sock", kind: .onDemand)
-        let gui = Self.candidate(PeekabooBridgeConstants.peekabooSocketPath, kind: .gui)
+        let gui = Self.candidate(WinkBridgeConstants.winkSocketPath, kind: .gui)
         var localCalls = 0
         let local = OwnerPolicyFixtureServices(ownerAware: true)
         let dependencies = ScreenCaptureKitOwnerRuntimeTests.inertDependencies(
@@ -122,12 +122,12 @@ struct RuntimeHostRoutePermissionTests {
         #expect(!options.routeRequiresPostEventPermission)
         for granted in [false, true] {
             let handshake = BridgeTestFixtures.handshake(
-                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                 supportedOperations: [.targetedClick, .invalidateImplicitLatestSnapshot],
                 permissions: granted ? .init(screenRecording: true, accessibility: true, postEvent: true) : nil,
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.attestedOperationReceipts,
-                    PeekabooBridgeHostCapability.targetedClickAccessibilityValueDelivery
+                    WinkBridgeHostCapability.attestedOperationReceipts,
+                    WinkBridgeHostCapability.targetedClickAccessibilityValueDelivery
                 ]
             )
             #expect(BridgeCapabilityPolicy.supportsRemoteRequirements(for: handshake, options: options) == granted)
@@ -147,7 +147,7 @@ struct RuntimeHostRoutePermissionTests {
         #expect(BridgeCapabilityPolicy.supportsRemoteRequirements(
             for: Self.handshake(permissions: legacy), options: options
         ))
-        let missing: PeekabooBridgePermissionKind = route == "type" ? .accessibility : .postEvent
+        let missing: WinkBridgePermissionKind = route == "type" ? .accessibility : .postEvent
         let denied = Self.handshake(missing: missing)
         #expect(!BridgeCapabilityPolicy.supportsRemoteRequirements(for: denied, options: options))
         #expect(BridgeCapabilityPolicy.explicitlyMissingRemotePermissions(for: denied, options: options) == [missing])
@@ -178,7 +178,7 @@ struct RuntimeHostRoutePermissionTests {
         #expect(BridgeCapabilityPolicy.explicitlyMissingRemotePermissions(for: denied, options: options).isEmpty)
     }
 
-    private static let identity = PeekabooBridgeClientIdentity(
+    private static let identity = WinkBridgeClientIdentity(
         bundleIdentifier: nil, teamIdentifier: nil, processIdentifier: 123
     )
 
@@ -199,7 +199,7 @@ struct RuntimeHostRoutePermissionTests {
     }
 
     private static func candidate(
-        _ path: String, kind: PeekabooBridgeHostKind
+        _ path: String, kind: WinkBridgeHostKind
     ) -> RuntimeHostResolver.ImplicitRemoteCandidate {
         .init(
             socketPath: path,
@@ -210,10 +210,10 @@ struct RuntimeHostRoutePermissionTests {
     }
 
     private static func handshake(
-        kind: PeekabooBridgeHostKind = .onDemand,
-        missing: PeekabooBridgePermissionKind? = nil,
+        kind: WinkBridgeHostKind = .onDemand,
+        missing: WinkBridgePermissionKind? = nil,
         granted: Bool = true
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         self.handshake(kind: kind, permissions: .init(
             screenRecording: granted,
             accessibility: granted && missing != .accessibility,
@@ -222,11 +222,11 @@ struct RuntimeHostRoutePermissionTests {
     }
 
     private static func handshake(
-        kind: PeekabooBridgeHostKind = .onDemand,
+        kind: WinkBridgeHostKind = .onDemand,
         permissions: PermissionsStatus?
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: kind,
             supportedOperations: [
                 .targetedTypeActions,
@@ -237,8 +237,8 @@ struct RuntimeHostRoutePermissionTests {
             ],
             permissions: permissions,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.processGenerationPinnedApplicationHide
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.processGenerationPinnedApplicationHide
             ]
         )
     }

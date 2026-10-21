@@ -106,7 +106,7 @@ struct ActionLoggerTests {
 
         let exported = logger.exportLogs()
 
-        #expect(exported.contains("Peekaboo Playground Action Log"))
+        #expect(exported.contains("Wink Playground Action Log"))
         #expect(exported.contains("Opened File menu"))
         #expect(exported.contains("Toggled switch"))
     }

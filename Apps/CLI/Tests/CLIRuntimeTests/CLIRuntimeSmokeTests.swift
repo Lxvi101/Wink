@@ -1,13 +1,13 @@
 import Foundation
 import Subprocess
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @preconcurrency
 enum CLIRuntimeEnvironment {
     static var shouldRunSmokeTests: Bool {
         ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] != nil &&
-            TestChildProcess.canLocatePeekabooBinary()
+            TestChildProcess.canLocateWinkBinary()
     }
 
     nonisolated static var runAmbientStateTests: Bool {
@@ -15,17 +15,17 @@ enum CLIRuntimeEnvironment {
     }
 
     nonisolated static func allowsAmbientStateTests(environment: [String: String]) -> Bool {
-        environment["PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS"] == "true"
+        environment["WINK_INCLUDE_AMBIENT_STATE_TESTS"] == "true"
     }
 }
 
 struct CLIRuntimeSmokeTests {
     @discardableResult
     private static func ensureLocalRuntimeAvailable() -> Bool {
-        if TestChildProcess.canLocatePeekabooBinary() {
+        if TestChildProcess.canLocateWinkBinary() {
             return true
         }
-        Issue.record("Build peekaboo (or set PEEKABOO_CLI_BINARY) before running CLI runtime smoke tests.")
+        Issue.record("Build wink (or set WINK_CLI_BINARY) before running CLI runtime smoke tests.")
         return false
     }
 
@@ -33,21 +33,21 @@ struct CLIRuntimeSmokeTests {
     func `ambient state tests require explicit opt in`() {
         #expect(!CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [:]))
         #expect(!CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [
-            "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS": "false",
+            "WINK_INCLUDE_AMBIENT_STATE_TESTS": "false",
         ]))
         #expect(!CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [
-            "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS": "1",
+            "WINK_INCLUDE_AMBIENT_STATE_TESTS": "1",
         ]))
         #expect(!CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [
-            "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS": "TRUE",
+            "WINK_INCLUDE_AMBIENT_STATE_TESTS": "TRUE",
         ]))
         #expect(!CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [
-            "PEEKABOO_INCLUDE_CLIPBOARD_TESTS": "true",
+            "WINK_INCLUDE_CLIPBOARD_TESTS": "true",
             "RUN_AUTOMATION_ACTIONS": "true",
             "RUN_LOCAL_TESTS": "true",
         ]))
         #expect(CLIRuntimeEnvironment.allowsAmbientStateTests(environment: [
-            "PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS": "true",
+            "WINK_INCLUDE_AMBIENT_STATE_TESTS": "true",
         ]))
     }
 
@@ -55,7 +55,7 @@ struct CLIRuntimeSmokeTests {
     func `raw CLI version is stable across processes and working copy changes`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
         let temporaryDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-version-stability-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-version-stability-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
 
@@ -64,17 +64,17 @@ struct CLIRuntimeSmokeTests {
         let environment = ["PATH": "\(temporaryDirectory.path):\(inheritedPath)"]
 
         try Self.writeFakeGit(to: fakeGit, identity: "first")
-        let first = try await TestChildProcess.runPeekaboo(["--version"], environment: environment)
+        let first = try await TestChildProcess.runWink(["--version"], environment: environment)
         try await Task.sleep(for: .seconds(1.1))
         try Self.writeFakeGit(to: fakeGit, identity: "second")
-        let second = try await TestChildProcess.runPeekaboo(["--version"], environment: environment)
+        let second = try await TestChildProcess.runWink(["--version"], environment: environment)
 
         #expect(first.status == .exited(0))
         #expect(second.status == .exited(0))
         #expect(first.standardError.isEmpty)
         #expect(second.standardError.isEmpty)
         #expect(first.standardOutput == second.standardOutput)
-        if ProcessInfo.processInfo.environment["PEEKABOO_CLI_BINARY"] == nil {
+        if ProcessInfo.processInfo.environment["WINK_CLI_BINARY"] == nil {
             #expect(first.standardOutput.contains("(unknown/unknown, built: unknown)"))
         }
     }
@@ -97,7 +97,7 @@ struct CLIRuntimeSmokeTests {
     @Test
     func `version JSON exposes one explicit source commit`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["--version", "--json"])
+        let result = try await TestChildProcess.runWink(["--version", "--json"])
 
         #expect(result.status == .exited(0))
         #expect(result.standardError.isEmpty)
@@ -106,7 +106,7 @@ struct CLIRuntimeSmokeTests {
         )
         let data = try #require(object["data"] as? [String: Any])
         let sourceCommit = try #require(data["sourceCommit"] as? String)
-        if ProcessInfo.processInfo.environment["PEEKABOO_CLI_BINARY"] == nil {
+        if ProcessInfo.processInfo.environment["WINK_CLI_BINARY"] == nil {
             #expect(sourceCommit == "unknown")
         } else {
             #expect(sourceCommit == "unknown" || sourceCommit.range(
@@ -117,9 +117,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo app list emits JSON via Commander`() async throws {
+    func `wink app list emits JSON via Commander`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["app", "list", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["app", "list", "--json", "--no-remote"])
 
         if result.status == .exited(0) {
             #expect(result.standardOutput.contains("\"apps\""))
@@ -150,9 +150,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo window list requires --app or --pid`() async throws {
+    func `wink window list requires --app or --pid`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["window", "list", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["window", "list", "--json", "--no-remote"])
         #expect(result.status != .exited(0))
         let payload = !result.standardOutput.isEmpty ? result.standardOutput : result.standardError
         let data = Data(payload.utf8)
@@ -169,9 +169,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo parse errors honor JSON mode`() async throws {
+    func `wink parse errors honor JSON mode`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["tools", "--bogus", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["tools", "--bogus", "--json", "--no-remote"])
         #expect(result.status == .exited(1))
 
         let payload = !result.standardOutput.isEmpty ? result.standardOutput : result.standardError
@@ -190,9 +190,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo tools emits standard JSON envelope`() async throws {
+    func `wink tools emits standard JSON envelope`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["tools", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["tools", "--json", "--no-remote"])
         #expect(result.status == .exited(0))
 
         let data = Data(result.standardOutput.utf8)
@@ -220,9 +220,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo tools rejects unknown subcommands in JSON mode`() async throws {
+    func `wink tools rejects unknown subcommands in JSON mode`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["tools", "extra", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["tools", "extra", "--json", "--no-remote"])
         #expect(result.status == .exited(1))
         #expect(result.standardError.isEmpty)
 
@@ -241,9 +241,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo browser status emits standard JSON envelope`() async throws {
+    func `wink browser status emits standard JSON envelope`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["browser", "status", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["browser", "status", "--json", "--no-remote"])
         #expect(result.status == .exited(0))
 
         let data = Data(result.standardOutput.utf8)
@@ -260,21 +260,21 @@ struct CLIRuntimeSmokeTests {
         #expect(payload["isError"] as? Bool == false)
         let text = try #require(payload["text"] as? String)
         #expect(text.contains("Chrome DevTools MCP Status"))
-        #expect(text.contains("Run `peekaboo browser connect --channel stable --foreground`."))
+        #expect(text.contains("Run `wink browser connect --channel stable --foreground`."))
         #expect(text.contains("pass `--browser-url`"))
         #expect(!text.contains("Run browser {"))
         #expect(!text.contains("pass browser_url"))
     }
 
     @Test
-    func `peekaboo browser disconnected status prints CLI-native recovery instructions`() async throws {
+    func `wink browser disconnected status prints CLI-native recovery instructions`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["browser", "status", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["browser", "status", "--no-remote"])
 
         #expect(result.status == .exited(0))
         #expect(result.standardError.isEmpty)
         #expect(result.standardOutput.contains(
-            "Run `peekaboo browser connect --channel stable --foreground`."
+            "Run `wink browser connect --channel stable --foreground`."
         ))
         #expect(result.standardOutput.contains("pass `--browser-url`"))
         #expect(!result.standardOutput.contains("Run browser {"))
@@ -282,9 +282,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo config show effective emits only JSON in JSON mode`() async throws {
+    func `wink config show effective emits only JSON in JSON mode`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo([
+        let result = try await TestChildProcess.runWink([
             "config",
             "show",
             "--effective",
@@ -307,9 +307,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo config errors emit standard JSON envelope`() async throws {
+    func `wink config errors emit standard JSON envelope`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo([
+        let result = try await TestChildProcess.runWink([
             "config",
             "provider",
             "add",
@@ -342,9 +342,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo menubar list emits standard JSON envelope`() async throws {
+    func `wink menubar list emits standard JSON envelope`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["menubar", "list", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["menubar", "list", "--json", "--no-remote"])
 
         let data = Data(result.standardOutput.utf8)
         let object = try JSONSerialization.jsonObject(with: data)
@@ -365,9 +365,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo permissions status emits standard JSON envelope`() async throws {
+    func `wink permissions status emits standard JSON envelope`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["permissions", "status", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["permissions", "status", "--json", "--no-remote"])
         #expect(result.status == .exited(0))
 
         let data = Data(result.standardOutput.utf8)
@@ -383,9 +383,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo dialog list emits structured JSON success or error`() async throws {
+    func `wink dialog list emits structured JSON success or error`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["dialog", "list", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["dialog", "list", "--json", "--no-remote"])
 
         let payload = !result.standardOutput.isEmpty ? result.standardOutput : result.standardError
         let data = Data(payload.utf8)
@@ -408,12 +408,12 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test(.enabled(if: CLIRuntimeEnvironment.runAmbientStateTests))
-    func `peekaboo clipboard get JSON includes exact text`() async throws {
+    func `wink clipboard get JSON includes exact text`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let text = "Peekaboo exact clipboard text \(UUID().uuidString)"
+        let text = "Wink exact clipboard text \(UUID().uuidString)"
 
         try await Self.withSavedClipboard {
-            let setResult = try await TestChildProcess.runPeekaboo([
+            let setResult = try await TestChildProcess.runWink([
                 "clipboard",
                 "set",
                 "--text",
@@ -423,7 +423,7 @@ struct CLIRuntimeSmokeTests {
             ])
             #expect(setResult.status == .exited(0))
 
-            let getResult = try await TestChildProcess.runPeekaboo([
+            let getResult = try await TestChildProcess.runWink([
                 "clipboard",
                 "get",
                 "--json",
@@ -434,7 +434,7 @@ struct CLIRuntimeSmokeTests {
             #expect(payload["text"] as? String == text)
             #expect(payload["textPreview"] as? String == text)
 
-            let stdoutJSONResult = try await TestChildProcess.runPeekaboo([
+            let stdoutJSONResult = try await TestChildProcess.runWink([
                 "clipboard",
                 "get",
                 "--output",
@@ -446,7 +446,7 @@ struct CLIRuntimeSmokeTests {
             let stdoutJSONPayload = try Self.jsonDataPayload(from: stdoutJSONResult.standardOutput)
             #expect(stdoutJSONPayload["text"] as? String == text)
 
-            let stdoutResult = try await TestChildProcess.runPeekaboo([
+            let stdoutResult = try await TestChildProcess.runWink([
                 "clipboard",
                 "get",
                 "--output",
@@ -459,33 +459,33 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo mcp help renders only runnable transport examples without starting server`() async throws {
+    func `wink mcp help renders only runnable transport examples without starting server`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["mcp", "--help"])
+        let result = try await TestChildProcess.runWink(["mcp", "--help"])
         #expect(result.status == .exited(0))
-        #expect(result.standardOutput.contains("Start Peekaboo as an MCP server"))
-        #expect(result.standardOutput.contains("peekaboo mcp serve --transport stdio"))
-        #expect(!result.standardOutput.contains("peekaboo mcp serve --transport http"))
+        #expect(result.standardOutput.contains("Start Wink as an MCP server"))
+        #expect(result.standardOutput.contains("wink mcp serve --transport stdio"))
+        #expect(!result.standardOutput.contains("wink mcp serve --transport http"))
     }
 
     @Test
-    func `peekaboo agent fails when no provider credentials exist`() async throws {
+    func `wink agent fails when no provider credentials exist`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo([
+        let result = try await TestChildProcess.runWink([
             "agent",
             "list files",
             "--dry-run",
-        ], environment: ["PEEKABOO_DISABLE_AGENT": "1", "PEEKABOO_NO_REMOTE": "1"])
+        ], environment: ["WINK_DISABLE_AGENT": "1", "WINK_NO_REMOTE": "1"])
         #expect(result.status == .exited(1))
         #expect(result.standardOutput.contains("Agent service not available"))
     }
 
     @Test
-    func `peekaboo agent dry run bypasses unavailable configured default and credentials`() async throws {
+    func `wink agent dry run bypasses unavailable configured default and credentials`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
 
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: tempDir) }
 
@@ -501,7 +501,7 @@ struct CLIRuntimeSmokeTests {
             encoding: .utf8
         )
 
-        let result = try await TestChildProcess.runPeekaboo([
+        let result = try await TestChildProcess.runWink([
             "agent",
             "say hi",
             "--dry-run",
@@ -511,7 +511,7 @@ struct CLIRuntimeSmokeTests {
             "--no-remote",
         ], environment: [
             "PEEKABOO_CONFIG_DIR": tempDir.path,
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION": "1",
+            "WINK_CONFIG_DISABLE_MIGRATION": "1",
             "OPENAI_API_KEY": "",
             "ANTHROPIC_API_KEY": "",
             "MINIMAX_API_KEY": "",
@@ -536,7 +536,7 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test(arguments: [false, true])
-    func `peekaboo agent dry run is explicit for shorthand and run JSON`(noDesktopContext: Bool) async throws {
+    func `wink agent dry run is explicit for shorthand and run JSON`(noDesktopContext: Bool) async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
 
         let authorityCases: [(arguments: [String], requestedForeground: Bool, policy: String)] = [
@@ -556,8 +556,8 @@ struct CLIRuntimeSmokeTests {
             for authorityCase in authorityCases {
                 let arguments = prefix + ["  Inspect TextEdit  ", "--dry-run", "--json", "--no-remote"] +
                     authorityCase.arguments + (noDesktopContext ? ["--no-desktop-context"] : [])
-                let result = try await TestChildProcess.runPeekaboo(arguments)
-                let repeated = try await TestChildProcess.runPeekaboo(arguments)
+                let result = try await TestChildProcess.runWink(arguments)
+                let repeated = try await TestChildProcess.runWink(arguments)
                 #expect(result.status == .exited(0))
                 #expect(result.standardError.isEmpty)
                 #expect(repeated.status == .exited(0))
@@ -591,7 +591,7 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test(arguments: [false, true])
-    func `peekaboo agent dry run is explicit for shorthand and run human output`(noDesktopContext: Bool) async throws {
+    func `wink agent dry run is explicit for shorthand and run human output`(noDesktopContext: Bool) async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
 
         let authorityCases: [(arguments: [String], requested: String, policy: String)] = [
@@ -603,7 +603,7 @@ struct CLIRuntimeSmokeTests {
             for authorityCase in authorityCases {
                 let clipboardPermitted = authorityCase.requested == "yes" ||
                     authorityCase.arguments.contains("--allow-temporary-clipboard")
-                let result = try await TestChildProcess.runPeekaboo(
+                let result = try await TestChildProcess.runWink(
                     prefix + ["  Inspect TextEdit  ", "--dry-run", "--simple", "--no-remote"] +
                         authorityCase.arguments + (noDesktopContext ? ["--no-desktop-context"] : [])
                 )
@@ -626,11 +626,11 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo taskless dry run is typed invalid usage`() async throws {
+    func `wink taskless dry run is typed invalid usage`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
 
         for prefix in [["agent"], ["agent", "run"]] {
-            let jsonResult = try await TestChildProcess.runPeekaboo(
+            let jsonResult = try await TestChildProcess.runWink(
                 prefix + ["--dry-run", "--json", "--no-remote"]
             )
             #expect(jsonResult.status == .exited(1))
@@ -646,7 +646,7 @@ struct CLIRuntimeSmokeTests {
             #expect(!debugLogs.contains { $0.contains("Runtime host:") })
             #expect(!jsonResult.standardOutput.contains("Runtime host:"))
 
-            let humanResult = try await TestChildProcess.runPeekaboo(
+            let humanResult = try await TestChildProcess.runWink(
                 prefix + ["--dry-run", "--simple", "--no-remote"]
             )
             #expect(humanResult.status == .exited(1))
@@ -658,11 +658,11 @@ struct CLIRuntimeSmokeTests {
 
     @Test
     @MainActor
-    func `peekaboo learn prints comprehensive guide`() async throws {
+    func `wink learn prints comprehensive guide`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["learn", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["learn", "--no-remote"])
         #expect(result.status == .exited(0))
-        #expect(result.standardOutput.contains("# Peekaboo Comprehensive Guide"))
+        #expect(result.standardOutput.contains("# Wink Comprehensive Guide"))
         #expect(result.standardOutput.contains("## Commander Command Signatures"))
         #expect(!result.standardOutput.contains("#### `shell`"))
         #expect(!result.standardOutput.contains("- **System**: shell"))
@@ -681,10 +681,10 @@ struct CLIRuntimeSmokeTests {
         #expect(compactClipboard.contains("Options: `status`, `get`, `save`"))
         #expect(!clipboardSection.contains("**Examples:**"))
         #expect(!clipboardSection.contains(#""action": "set""#))
-        #expect(!clipboardSection.contains("peekaboo clipboard set"))
+        #expect(!clipboardSection.contains("wink clipboard set"))
 
         let registeredRoots = Set(CommandRegistry.definitions().map(\.name))
-        let expression = try NSRegularExpression(pattern: #"\bpeekaboo ([a-z][a-z0-9-]*)"#)
+        let expression = try NSRegularExpression(pattern: #"\bwink ([a-z][a-z0-9-]*)"#)
         let output = result.standardOutput
         let range = NSRange(output.startIndex..<output.endIndex, in: output)
         let documentedRoots: Set<String> = Set(expression.matches(in: output, range: range)
@@ -703,7 +703,7 @@ struct CLIRuntimeSmokeTests {
         guard Self.ensureLocalRuntimeAvailable() else { return }
 
         for toolName in ["app", "window", "clipboard"] {
-            let result = try await TestChildProcess.runPeekaboo([
+            let result = try await TestChildProcess.runWink([
                 "tools",
                 "describe",
                 toolName,
@@ -742,9 +742,9 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test(.enabled(if: CLIRuntimeEnvironment.runAmbientStateTests))
-    func `peekaboo visualizer emits JSON (success or error)`() async throws {
+    func `wink visualizer emits JSON (success or error)`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
-        let result = try await TestChildProcess.runPeekaboo(["visualizer", "--json", "--no-remote"])
+        let result = try await TestChildProcess.runWink(["visualizer", "--json", "--no-remote"])
 
         let payload = !result.standardOutput.isEmpty ? result.standardOutput : result.standardError
         #expect(!payload.isEmpty)
@@ -766,12 +766,12 @@ struct CLIRuntimeSmokeTests {
     }
 
     @Test
-    func `peekaboo visualizer fails fast when visual feedback is disabled`() async throws {
+    func `wink visualizer fails fast when visual feedback is disabled`() async throws {
         guard Self.ensureLocalRuntimeAvailable() else { return }
         let startTime = Date()
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             ["visualizer", "--json", "--no-remote"],
-            environment: ["PEEKABOO_VISUAL_FEEDBACK": "false"]
+            environment: ["WINK_VISUAL_FEEDBACK": "false"]
         )
         let duration = Date().timeIntervalSince(startTime)
 
@@ -790,7 +790,7 @@ struct CLIRuntimeSmokeTests {
 
     private static func withSavedClipboard(_ body: () async throws -> Void) async throws {
         let slot = "cli-runtime-smoke-\(UUID().uuidString)"
-        let saveResult = try await TestChildProcess.runPeekaboo([
+        let saveResult = try await TestChildProcess.runWink([
             "clipboard",
             "save",
             "--slot",
@@ -806,7 +806,7 @@ struct CLIRuntimeSmokeTests {
 
         do {
             try await body()
-            _ = try await TestChildProcess.runPeekaboo([
+            _ = try await TestChildProcess.runWink([
                 "clipboard",
                 "restore",
                 "--slot",
@@ -815,7 +815,7 @@ struct CLIRuntimeSmokeTests {
                 "--no-remote",
             ])
         } catch {
-            _ = try? await TestChildProcess.runPeekaboo([
+            _ = try? await TestChildProcess.runWink([
                 "clipboard",
                 "restore",
                 "--slot",

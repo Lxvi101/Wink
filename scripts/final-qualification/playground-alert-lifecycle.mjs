@@ -150,7 +150,7 @@ export function constructPlaygroundAlertLifecycle({
   physicalTargets,
   cycle,
   executionNonce,
-  peekabooSourceCommit,
+  winkSourceCommit,
   bridgeSourceCommit,
   button,
 }) {
@@ -159,15 +159,15 @@ export function constructPlaygroundAlertLifecycle({
   requireCondition(Number.isSafeInteger(numericCycle) && numericCycle >= 1 && numericCycle <= 5,
     'qualification cycle is outside 1...5');
   requireCondition(EXECUTION_NONCE.test(executionNonce)
-    && SOURCE_COMMIT.test(peekabooSourceCommit)
-    && bridgeSourceCommit === peekabooSourceCommit
+    && SOURCE_COMMIT.test(winkSourceCommit)
+    && bridgeSourceCommit === winkSourceCommit
     && button === expectedAlertDismissButton(numericCycle),
   'Playground alert run binding is invalid');
   const report = {
     version: 2,
     qualification_cycle: numericCycle,
     execution_nonce: executionNonce,
-    peekaboo_source_commit: peekabooSourceCommit,
+    wink_source_commit: winkSourceCommit,
     bridge_source_commit: bridgeSourceCommit,
     dismiss_button: button,
     physical_targets: fileReference(physicalTargets, 'physical targets'),
@@ -270,7 +270,7 @@ function validatePhaseCorpus(phase, value) {
 export function validatePlaygroundAlertLifecycle(value, expected = null) {
   const label = expected?.label ?? 'Playground alert lifecycle';
   exactKeys(value, [
-    'version', 'qualification_cycle', 'execution_nonce', 'peekaboo_source_commit',
+    'version', 'qualification_cycle', 'execution_nonce', 'wink_source_commit',
     'bridge_source_commit', 'dismiss_button', 'physical_targets', 'target_before',
     'target_after', 'initial_screenshot', 'crash_comparison', 'phases',
   ], label);
@@ -278,14 +278,14 @@ export function validatePlaygroundAlertLifecycle(value, expected = null) {
     && Number.isSafeInteger(value.qualification_cycle)
     && value.qualification_cycle >= 1 && value.qualification_cycle <= 5
     && EXECUTION_NONCE.test(value.execution_nonce ?? '')
-    && SOURCE_COMMIT.test(value.peekaboo_source_commit ?? '')
-    && value.bridge_source_commit === value.peekaboo_source_commit
+    && SOURCE_COMMIT.test(value.wink_source_commit ?? '')
+    && value.bridge_source_commit === value.wink_source_commit
     && value.dismiss_button === expectedAlertDismissButton(value.qualification_cycle),
   `${label} is not one source-bound alert lifecycle`);
   if (expected !== null) {
     requireCondition(value.qualification_cycle === expected.cycle
       && value.execution_nonce === expected.execution_nonce
-      && value.peekaboo_source_commit === expected.peekaboo_source_commit
+      && value.wink_source_commit === expected.wink_source_commit
       && value.bridge_source_commit === expected.bridge_source_commit,
     `${label} differs from its bound matrix cycle`);
   }
@@ -437,14 +437,14 @@ if (invokedAsScript()) {
     if (action === 'construct') {
       const options = parseNamedOptions(arguments_, [
         'root', 'physical-targets', 'cycle', 'execution-nonce',
-        'peekaboo-source', 'bridge-source', 'button', 'output',
+        'wink-source', 'bridge-source', 'button', 'output',
       ]);
       const report = constructPlaygroundAlertLifecycle({
         root: path.resolve(options.root),
         physicalTargets: path.resolve(options['physical-targets']),
         cycle: options.cycle,
         executionNonce: options['execution-nonce'],
-        peekabooSourceCommit: options['peekaboo-source'],
+        winkSourceCommit: options['wink-source'],
         bridgeSourceCommit: options['bridge-source'],
         button: options.button,
       });

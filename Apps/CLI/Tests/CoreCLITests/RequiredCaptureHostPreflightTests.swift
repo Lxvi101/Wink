@@ -1,6 +1,6 @@
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -19,7 +19,7 @@ struct RequiredCaptureHostPreflightTests {
         let message = "A host with desktopObservationInlinePixels is required; use --no-remote for local capture."
         let runtime = self.makeRuntime(requiredHostFailure: message)
 
-        let error = #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = #expect(throws: WinkBridgeErrorEnvelope.self) {
             try runtime.requireCompatibleHost()
         }
         #expect(error?.code == .operationNotSupported)
@@ -39,7 +39,7 @@ struct RequiredCaptureHostPreflightTests {
         command.childCommandDispatched = true
         command.childCommandCompleted = true
 
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             _ = try await command.executeActionCapture()
         }
 

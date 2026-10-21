@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct BridgeCaptureStatusPresentationTests {
     @Test
@@ -31,9 +31,9 @@ struct BridgeCaptureStatusPresentationTests {
         let (capabilities, ownership, classic): ([String]?, Bool, Bool) = switch scenario {
         case "missing": (nil, false, false)
         case "empty": ([], false, false)
-        case "ownership": ([PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement], true, false)
-        case "classic": ([PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit], false, true)
-        case "legacy": ([PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership], true, true)
+        case "ownership": ([WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement], true, false)
+        case "classic": ([WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit], false, true)
+        case "legacy": ([WinkBridgeHostCapability.screenCaptureKitProcessOwnership], true, true)
         default: (Self.captureCapabilities, true, true)
         }
         let handshake = self.handshake(capabilities: capabilities)
@@ -95,9 +95,9 @@ struct BridgeCaptureStatusPresentationTests {
 
     @Test(arguments: ["enabled", "disabled", "unreported", "unsupported"])
     func `desktop observation availability remains separate from capture support`(scenario: String) {
-        let supported: [PeekabooBridgeOperation] = scenario == "unsupported"
+        let supported: [WinkBridgeOperation] = scenario == "unsupported"
             ? [.permissionsStatus] : [.permissionsStatus, .desktopObservation]
-        let enabled: [PeekabooBridgeOperation]? = switch scenario {
+        let enabled: [WinkBridgeOperation]? = switch scenario {
         case "enabled": [.desktopObservation]
         case "unreported": nil
         default: []
@@ -183,8 +183,8 @@ struct BridgeCaptureStatusPresentationTests {
 
     private static let observedAt = Date(timeIntervalSince1970: 1_700_000_000)
     private static let captureCapabilities = [
-        PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
-        PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+        WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
+        WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
     ]
 
     private var blockedReadiness: ScreenCaptureKitReadiness {
@@ -198,13 +198,13 @@ struct BridgeCaptureStatusPresentationTests {
 
     private func handshake(
         permissions: PermissionsStatus? = .init(screenRecording: true, accessibility: true, postEvent: true),
-        supported: [PeekabooBridgeOperation] = [.permissionsStatus, .desktopObservation],
-        enabled: [PeekabooBridgeOperation]? = [.permissionsStatus, .desktopObservation],
+        supported: [WinkBridgeOperation] = [.permissionsStatus, .desktopObservation],
+        enabled: [WinkBridgeOperation]? = [.permissionsStatus, .desktopObservation],
         capabilities: [String]? = BridgeCaptureStatusPresentationTests.captureCapabilities,
         readiness: ScreenCaptureKitReadiness? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
-        PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+    ) -> WinkBridgeHandshakeResponse {
+        WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "synthetic-build",
             supportedOperations: supported,

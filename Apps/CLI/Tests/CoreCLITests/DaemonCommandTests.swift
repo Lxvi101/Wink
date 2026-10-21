@@ -1,9 +1,9 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct DaemonCommandTests {
@@ -11,7 +11,7 @@ struct DaemonCommandTests {
     func `DaemonCommand description`() {
         let config = DaemonCommand.commandDescription
         #expect(config.commandName == "daemon")
-        #expect(config.abstract == "Manage the headless Peekaboo daemon")
+        #expect(config.abstract == "Manage the headless Wink daemon")
         #expect(config.subcommands.count == 4)
     }
 
@@ -35,9 +35,9 @@ struct DaemonCommandTests {
         for (explicit, environmentValue, expected) in [
             (nil, " /tmp/custom-daemon.sock ", "/tmp/custom-daemon.sock"),
             ("/tmp/explicit.sock", "/tmp/custom-daemon.sock", "/tmp/explicit.sock"),
-            (nil, "  ", PeekabooBridgeConstants.daemonSocketPath),
+            (nil, "  ", WinkBridgeConstants.daemonSocketPath),
         ] as [(String?, String, String)] {
-            let environment = ["PEEKABOO_DAEMON_SOCKET": environmentValue]
+            let environment = ["WINK_DAEMON_SOCKET": environmentValue]
             let configuration = try DaemonCommand.Run.configuration(
                 mode: mode,
                 bridgeSocket: explicit,
@@ -48,7 +48,7 @@ struct DaemonCommandTests {
             #expect(configuration.bridgeSocketPath == expected)
             #expect(configuration.bridgeSocketPath == (
                 DaemonLaunchPolicy.explicitDaemonSocketPath(bridgeSocket: explicit, environment: environment)
-                    ?? PeekabooBridgeConstants.daemonSocketPath
+                    ?? WinkBridgeConstants.daemonSocketPath
             ))
         }
     }
@@ -78,7 +78,7 @@ struct DaemonCommandTests {
             "--mode",
             "auto",
             "--bridge-socket",
-            "/tmp/peekaboo.sock",
+            "/tmp/wink.sock",
             "--poll-interval",
             "500ms",
             "--idle-timeout",
@@ -86,7 +86,7 @@ struct DaemonCommandTests {
         ]
         let command = try DaemonCommand.Run.parse(args)
         #expect(command.mode == "auto")
-        #expect(command.bridgeSocket == "/tmp/peekaboo.sock")
+        #expect(command.bridgeSocket == "/tmp/wink.sock")
         #expect(command.pollInterval?.roundedMilliseconds == 500)
         #expect(command.idleTimeout?.seconds == 2.5)
     }
@@ -105,30 +105,30 @@ struct DaemonCommandTests {
 
     @Test
     func `legacy migration accepts daemon status only`() {
-        let bridge = PeekabooDaemonBridgeStatus(
+        let bridge = WinkDaemonBridgeStatus(
             socketPath: "/tmp/bridge.sock",
             hostKind: .onDemand,
             allowedOperations: [.daemonStatus, .daemonStop]
         )
-        let daemon = PeekabooDaemonStatus(
+        let daemon = WinkDaemonStatus(
             running: true,
             mode: .manual,
             bridge: bridge,
             supportsConditionalStop: true
         )
-        let legacyMCPDaemon = PeekabooDaemonStatus(
+        let legacyMCPDaemon = WinkDaemonStatus(
             running: true,
             mode: .mcp,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: "/tmp/bridge.sock",
                 hostKind: .inProcess,
                 allowedOperations: [.daemonStatus, .daemonStop]
             )
         )
-        let appHost = PeekabooDaemonStatus(
+        let appHost = WinkDaemonStatus(
             running: true,
             mode: nil,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: "/tmp/bridge.sock",
                 hostKind: .gui,
                 allowedOperations: [.permissionsStatus]
@@ -147,7 +147,7 @@ struct DaemonCommandTests {
         #expect(DaemonControlClient.supportsSafeMigration(daemon))
         #expect(!DaemonControlClient.supportsSafeMigration(legacyMCPDaemon))
 
-        let autoDaemon = PeekabooDaemonStatus(
+        let autoDaemon = WinkDaemonStatus(
             running: true,
             mode: .auto,
             bridge: bridge,
@@ -156,11 +156,11 @@ struct DaemonCommandTests {
         #expect(DaemonControlClient.migrationMode(for: autoDaemon) == .auto)
         #expect(DaemonControlClient.isIdleForMigration(autoDaemon))
 
-        let busyDaemon = PeekabooDaemonStatus(
+        let busyDaemon = WinkDaemonStatus(
             running: true,
             mode: .auto,
             bridge: bridge,
-            activity: PeekabooDaemonActivityStatus(
+            activity: WinkDaemonActivityStatus(
                 activeRequests: 1,
                 lastActivityAt: nil,
                 idleTimeoutSeconds: 300,
@@ -175,35 +175,35 @@ struct DaemonCommandTests {
     func `legacy stop race uses current socket owner compatibility`() {
         let initiallyCompatibleLegacy = Self.target(
             role: .legacyDefault,
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            socketPath: WinkBridgeConstants.winkSocketPath,
             mode: .auto,
             current: true
         ).status
         let replacementIncompatibleLegacy = Self.target(
             role: .legacyDefault,
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            socketPath: WinkBridgeConstants.winkSocketPath,
             mode: .auto,
             current: false
         ).status
         let replacementCompatibleLegacy = Self.target(
             role: .legacyDefault,
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            socketPath: WinkBridgeConstants.winkSocketPath,
             mode: .auto,
             current: true
         ).status
 
         #expect(DaemonLaunchPolicy.legacyStopRaceResolution(for: initiallyCompatibleLegacy) ==
-            .useLegacy(socketPath: PeekabooBridgeConstants.peekabooSocketPath))
+            .useLegacy(socketPath: WinkBridgeConstants.winkSocketPath))
         #expect(DaemonLaunchPolicy.legacyStopRaceResolution(for: replacementIncompatibleLegacy) == .keepReplacement)
         #expect(DaemonLaunchPolicy.legacyStopRaceResolution(for: replacementCompatibleLegacy) ==
-            .useLegacy(socketPath: PeekabooBridgeConstants.peekabooSocketPath))
+            .useLegacy(socketPath: WinkBridgeConstants.winkSocketPath))
     }
 
     @Test
     func `failed replacement launch refreshes legacy socket owner before fallback`() async {
         let replacementIncompatibleLegacy = Self.target(
             role: .legacyDefault,
-            socketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            socketPath: WinkBridgeConstants.winkSocketPath,
             mode: .auto,
             current: false
         ).status
@@ -224,7 +224,7 @@ struct DaemonCommandTests {
         let selected = DaemonLaunchPolicy.legacyStopRaceSocketPath(
             replacementCleanupSucceeded: false,
             replacementIsReusable: true,
-            legacySocketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            legacySocketPath: WinkBridgeConstants.winkSocketPath,
             replacementSocketPath: replacementSocketPath
         )
 
@@ -232,9 +232,9 @@ struct DaemonCommandTests {
         #expect(DaemonLaunchPolicy.legacyStopRaceSocketPath(
             replacementCleanupSucceeded: true,
             replacementIsReusable: false,
-            legacySocketPath: PeekabooBridgeConstants.peekabooSocketPath,
+            legacySocketPath: WinkBridgeConstants.winkSocketPath,
             replacementSocketPath: replacementSocketPath
-        ) == PeekabooBridgeConstants.peekabooSocketPath)
+        ) == WinkBridgeConstants.winkSocketPath)
     }
 
     @Test
@@ -266,22 +266,22 @@ struct DaemonCommandTests {
 
     @Test
     func `historical scoped socket discovery rejects unrelated files`() {
-        let daemonSocketPath = "/tmp/peekaboo/daemon.sock"
-        let currentSocketPath = "/tmp/peekaboo/daemon-aaaaaaaaaaaaaaaa.sock"
+        let daemonSocketPath = "/tmp/wink/daemon.sock"
+        let currentSocketPath = "/tmp/wink/daemon-aaaaaaaaaaaaaaaa.sock"
         let candidates = [
             DaemonSocketFileCandidate(
-                path: "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock",
+                path: "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock",
                 isSocket: true,
                 ownerUID: 501
             ),
             DaemonSocketFileCandidate(path: currentSocketPath, isSocket: true, ownerUID: 501),
             DaemonSocketFileCandidate(
-                path: "/tmp/peekaboo/daemon-cccccccccccccccc.sock",
+                path: "/tmp/wink/daemon-cccccccccccccccc.sock",
                 isSocket: false,
                 ownerUID: 501
             ),
             DaemonSocketFileCandidate(
-                path: "/tmp/peekaboo/daemon-dddddddddddddddd.sock",
+                path: "/tmp/wink/daemon-dddddddddddddddd.sock",
                 isSocket: true,
                 ownerUID: 502
             ),
@@ -291,12 +291,12 @@ struct DaemonCommandTests {
                 ownerUID: 501
             ),
             DaemonSocketFileCandidate(
-                path: "/tmp/peekaboo/unrelated.sock",
+                path: "/tmp/wink/unrelated.sock",
                 isSocket: true,
                 ownerUID: 501
             ),
             DaemonSocketFileCandidate(
-                path: "/tmp/peekaboo/daemon-ABCDEF0123456789.sock",
+                path: "/tmp/wink/daemon-ABCDEF0123456789.sock",
                 isSocket: true,
                 ownerUID: 501
             ),
@@ -307,12 +307,12 @@ struct DaemonCommandTests {
             currentBuildScopedSocketPath: currentSocketPath,
             candidates: candidates,
             currentUID: 501
-        ) == ["/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock"])
+        ) == ["/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock"])
     }
 
     @Test
     func `historical scoped target validation rejects spoofed daemon identity`() {
-        let socketPath = "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock"
+        let socketPath = "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock"
         let valid = Self.target(
             role: .buildScopedDaemon,
             socketPath: socketPath,
@@ -324,7 +324,7 @@ struct DaemonCommandTests {
             socketPath: socketPath,
             mode: .manual,
             current: false,
-            reportedSocketPath: "/tmp/peekaboo/daemon-cccccccccccccccc.sock"
+            reportedSocketPath: "/tmp/wink/daemon-cccccccccccccccc.sock"
         )
         let wrongHost = Self.target(
             role: .buildScopedDaemon,
@@ -361,7 +361,7 @@ struct DaemonCommandTests {
 
     @Test
     func `historical cleanup stops only managed automatic daemons past their idle deadline`() {
-        let daemonSocketPath = PeekabooBridgeConstants.daemonSocketPath
+        let daemonSocketPath = WinkBridgeConstants.daemonSocketPath
         let directory = URL(fileURLWithPath: daemonSocketPath).deletingLastPathComponent()
         let currentSocketPath = directory.appendingPathComponent("daemon-aaaaaaaaaaaaaaaa.sock").path
         let eligibleSocketPath = directory.appendingPathComponent("daemon-bbbbbbbbbbbbbbbb.sock").path
@@ -487,12 +487,12 @@ struct DaemonCommandTests {
 
     @Test
     func `historical cleanup never targets explicit or custom daemon sockets`() {
-        let canonicalDirectory = URL(fileURLWithPath: PeekabooBridgeConstants.daemonSocketPath)
+        let canonicalDirectory = URL(fileURLWithPath: WinkBridgeConstants.daemonSocketPath)
             .deletingLastPathComponent()
         let unownedBuildShapedSocketPath = canonicalDirectory
             .appendingPathComponent("daemon-bbbbbbbbbbbbbbbb.sock")
             .path
-        let explicitSocketPath = "/tmp/peekaboo-explicit/daemon-bbbbbbbbbbbbbbbb.sock"
+        let explicitSocketPath = "/tmp/wink-explicit/daemon-bbbbbbbbbbbbbbbb.sock"
         let explicitTarget = Self.target(
             role: .explicit,
             socketPath: explicitSocketPath,
@@ -517,19 +517,19 @@ struct DaemonCommandTests {
 
         #expect(DaemonControlResolver.historicalAutoDaemonStops(
             [explicitTarget],
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             currentBuildScopedSocketPath: nil,
             managedRecord: { _ in nil }
         ).isEmpty)
         #expect(DaemonControlResolver.historicalAutoDaemonStops(
             [customTarget],
-            daemonSocketPath: "/tmp/peekaboo-explicit/daemon.sock",
+            daemonSocketPath: "/tmp/wink-explicit/daemon.sock",
             currentBuildScopedSocketPath: nil,
             managedRecord: { _ in nil }
         ).isEmpty)
         #expect(DaemonControlResolver.historicalAutoDaemonStops(
             [unownedBuildShapedTarget],
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             currentBuildScopedSocketPath: nil,
             managedRecord: { _ in nil }
         ).isEmpty)
@@ -537,7 +537,7 @@ struct DaemonCommandTests {
 
     @Test
     func `managed auto records require policy owned build scoped identity`() throws {
-        let daemonSocketPath = PeekabooBridgeConstants.daemonSocketPath
+        let daemonSocketPath = WinkBridgeConstants.daemonSocketPath
         let directory = URL(fileURLWithPath: daemonSocketPath).deletingLastPathComponent()
         let buildScopedSocketPath = directory.appendingPathComponent("daemon-bbbbbbbbbbbbbbbb.sock").path
         let automatic = Self.target(
@@ -584,7 +584,7 @@ struct DaemonCommandTests {
     @Test
     func `managed auto registry prunes only missing canonical build sockets`() throws {
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-managed-daemon-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-managed-daemon-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
 
@@ -627,13 +627,13 @@ extension DaemonCommandTests {
     func `compatible historical daemon wins over incompatible historical candidate`() throws {
         let incompatible = Self.target(
             role: .buildScopedDaemon,
-            socketPath: "/tmp/peekaboo/daemon-bbbbbbbbbbbbbbbb.sock",
+            socketPath: "/tmp/wink/daemon-bbbbbbbbbbbbbbbb.sock",
             mode: .manual,
             current: false
         )
         let compatible = Self.target(
             role: .buildScopedDaemon,
-            socketPath: "/tmp/peekaboo/daemon-cccccccccccccccc.sock",
+            socketPath: "/tmp/wink/daemon-cccccccccccccccc.sock",
             mode: .manual,
             current: true
         )
@@ -647,8 +647,8 @@ extension DaemonCommandTests {
         #expect(DaemonControlPlanner.startAction(
             targets: [incompatible, compatible],
             explicitSocket: nil,
-            defaultSocketPath: "/tmp/peekaboo/daemon.sock",
-            buildScopedSocketPath: "/tmp/peekaboo/daemon-aaaaaaaaaaaaaaaa.sock"
+            defaultSocketPath: "/tmp/wink/daemon.sock",
+            buildScopedSocketPath: "/tmp/wink/daemon-aaaaaaaaaaaaaaaa.sock"
         ) ==
             .useExisting(socketPath: compatible.client.socketPath))
     }
@@ -750,7 +750,7 @@ extension DaemonCommandTests {
 
         #expect(DaemonLaunchPolicy.compatibleLegacyFallbackSocketPath(for: oldLegacy.status) == nil)
         #expect(DaemonLaunchPolicy.compatibleLegacyFallbackSocketPath(for: currentLegacy.status) ==
-            PeekabooBridgeConstants.peekabooSocketPath)
+            WinkBridgeConstants.winkSocketPath)
     }
 
     @Test
@@ -890,7 +890,7 @@ extension DaemonCommandTests {
     private static func target(
         role: DaemonControlTargetRole,
         socketPath: String,
-        mode: PeekabooDaemonMode,
+        mode: WinkDaemonMode,
         current: Bool,
         activeRequests: Int = 0,
         includeActivity: Bool = true,
@@ -899,28 +899,28 @@ extension DaemonCommandTests {
         idleExitAt: Date? = nil,
         supportsConditionalStop: Bool = true,
         reportedSocketPath: String? = nil,
-        hostKind: PeekabooBridgeHostKind = .onDemand
+        hostKind: WinkBridgeHostKind = .onDemand
     ) -> DaemonControlTarget {
         let currentNames = [
-            PeekabooBridgeOperation.daemonStatus.rawValue,
-            PeekabooBridgeOperation.daemonStop.rawValue,
-            PeekabooBridgeOperation.launchApplicationWithOptions.rawValue,
-            PeekabooBridgeOperation.relaunchApplicationWithOptions.rawValue,
-            PeekabooBridgeOperation.invalidateImplicitLatestSnapshot.rawValue,
+            WinkBridgeOperation.daemonStatus.rawValue,
+            WinkBridgeOperation.daemonStop.rawValue,
+            WinkBridgeOperation.launchApplicationWithOptions.rawValue,
+            WinkBridgeOperation.relaunchApplicationWithOptions.rawValue,
+            WinkBridgeOperation.invalidateImplicitLatestSnapshot.rawValue,
         ]
-        let status = PeekabooDaemonStatus(
+        let status = WinkDaemonStatus(
             running: true,
             pid: pid,
             startedAt: startedAt,
             mode: mode,
-            bridge: PeekabooDaemonBridgeStatus(
+            bridge: WinkDaemonBridgeStatus(
                 socketPath: reportedSocketPath ?? socketPath,
                 hostKind: hostKind,
                 allowedOperations: [.daemonStatus, .daemonStop],
                 availableOperationNames: current ? currentNames : nil
             ),
             activity: includeActivity
-                ? PeekabooDaemonActivityStatus(
+                ? WinkDaemonActivityStatus(
                     activeRequests: activeRequests,
                     lastActivityAt: nil,
                     idleTimeoutSeconds: mode == .auto ? 300 : nil,

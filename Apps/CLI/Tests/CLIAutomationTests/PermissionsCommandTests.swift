@@ -1,14 +1,14 @@
 import Commander
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct PermissionsCommandTests {
     @Test
     func `permissions command metadata describes current command`() {
         #expect(PermissionsCommand.commandDescription.commandName == "permissions")
-        #expect(PermissionsCommand.commandDescription.abstract == "Check Peekaboo permissions")
+        #expect(PermissionsCommand.commandDescription.abstract == "Check Wink permissions")
         #expect(PermissionsCommand.commandDescription.subcommands.count == 3)
     }
 
@@ -43,7 +43,7 @@ struct PermissionsCommandTests {
         let screenCapture = StubScreenCaptureService(permissionGranted: false)
 
         let services = await MainActor.run {
-            TestServicesFactory.makePeekabooServices(
+            TestServicesFactory.makeWinkServices(
                 automation: automation,
                 screenCapture: screenCapture
             )

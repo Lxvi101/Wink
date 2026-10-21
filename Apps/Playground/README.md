@@ -1,12 +1,12 @@
 
 
-# Peekaboo Playground
+# Wink Playground
 
-A comprehensive SwiftUI test application for validating all Peekaboo automation features.
+A comprehensive SwiftUI test application for validating all Wink automation features.
 
 ## Overview
 
-Peekaboo Playground is a macOS app designed to test and demonstrate all automation capabilities of Peekaboo. It provides a controlled environment with various UI elements and interactions that can be automated.
+Wink Playground is a macOS app designed to test and demonstrate all automation capabilities of Wink. It provides a controlled environment with various UI elements and interactions that can be automated.
 
 ## Features
 
@@ -74,7 +74,7 @@ Peekaboo Playground is a macOS app designed to test and demonstrate all automati
 
 ## Logging
 
-All actions are logged using Apple's OSLog framework with the subsystem `boo.peekaboo.playground`. The app provides:
+All actions are logged using Apple's OSLog framework with the subsystem `boo.wink.playground`. The app provides:
 
 - Real-time action logging
 - Categorized logs (Click, Text, Menu, etc.)
@@ -106,9 +106,9 @@ Confirm the newly launched process generation before treating it as task-owned. 
 not prove noninterference. See the [testing methodology](../../docs/playground-testing.md) for fresh exact-window
 observations, result readback, and cleanup; preserve existing user instances and earlier test artifacts.
 
-## Using with Peekaboo
+## Using with Wink
 
-This app is designed to work with Peekaboo's automation features. Each UI element has:
+This app is designed to work with Wink's automation features. Each UI element has:
 - Unique accessibility identifiers
 - Proper labeling for element detection
 - Clear visual boundaries
@@ -171,10 +171,10 @@ without interpreting backslash escapes inside log messages.
 ### Using pblog (if available)
 ```bash
 # Stream logs
-log stream --predicate 'subsystem == "boo.peekaboo.playground"' --level info
+log stream --predicate 'subsystem == "boo.wink.playground"' --level info
 
 # Show recent logs
-log show --predicate 'subsystem == "boo.peekaboo.playground"' --info --last 30m
+log show --predicate 'subsystem == "boo.wink.playground"' --info --last 30m
 ```
 
 ### Log Categories

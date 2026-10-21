@@ -1,10 +1,10 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ResultEnvelopeTests {
     private struct Payload: Codable { let value: Int }
@@ -527,7 +527,7 @@ struct ResultEnvelopeTests {
     }
 
     @Test @MainActor func `all capture failures preserve actual dispatch receipts`() {
-        let error = PeekabooError.fileIOError("artifact write failed")
+        let error = WinkError.fileIOError("artifact write failed")
         var live = CaptureLiveCommand()
         #expect(live.captureFailureReceipt(for: error) == CaptureFailureReceipt(
             retrySafe: true,
@@ -548,7 +548,7 @@ struct ResultEnvelopeTests {
 
         let combined = CaptureArtifactCleanupError(
             primaryError: error,
-            cleanupError: PeekabooError.fileIOError("cleanup failed"),
+            cleanupError: WinkError.fileIOError("cleanup failed"),
             artifactPath: "/tmp/capture.mp4"
         )
         #expect(StubErrorHandlingCommand().mapErrorToCode(combined) == .FILE_IO_ERROR)

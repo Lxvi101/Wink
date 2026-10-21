@@ -20,7 +20,7 @@ fail() {
 usage() {
   cat <<'EOF'
 Usage: scripts/sign-release-app.sh \
-  --app <Peekaboo.app> \
+  --app <Wink.app> \
   --entitlements <path> \
   --sign-identity <identity> \
   --timestamp-url <url>

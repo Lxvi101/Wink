@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller slot receipt encoding")
 struct SlotReceiptEncodingTests {
@@ -106,7 +106,7 @@ struct SlotReceiptEncodingTests {
             kind: kind,
             operation: operation,
             checkpoint: checkpoint,
-            marker: "peekaboo-certification-fixture",
+            marker: "wink-certification-fixture",
             requestID: "019c0000-0000-4000-8000-000000000030",
             sessionID: "019c0000-0000-4000-8000-000000000031",
             sessionSequence: "0",

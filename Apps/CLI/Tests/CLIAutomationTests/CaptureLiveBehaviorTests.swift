@@ -1,10 +1,10 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CaptureLiveBehaviorTests {
     @Test
@@ -241,7 +241,7 @@ struct CaptureLiveBehaviorTests {
             bundleIdentifier: "dev.fixture",
             name: appName
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(
                 applications: [application],
                 windowsByApp: [appName: windows]

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller stable session ledger")
 struct ControllerLedgerTests {

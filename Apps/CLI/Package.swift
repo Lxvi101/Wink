@@ -3,7 +3,7 @@ import Foundation
 import PackageDescription
 
 let packageDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-let infoPlistPath = ProcessInfo.processInfo.environment["PEEKABOO_CLI_INFO_PLIST_PATH"] ??
+let infoPlistPath = ProcessInfo.processInfo.environment["WINK_CLI_INFO_PLIST_PATH"] ??
     packageDirectory.appendingPathComponent("Sources/Resources/Info.plist").path
 
 let concurrencyBaseSettings: [SwiftSetting] = [
@@ -21,31 +21,31 @@ let swiftTestingSettings = cliConcurrencySettings + [
     .enableExperimentalFeature("SwiftTesting"),
 ]
 
-let includeAutomationTests = ProcessInfo.processInfo.environment["PEEKABOO_INCLUDE_AUTOMATION_TESTS"] == "true"
+let includeAutomationTests = ProcessInfo.processInfo.environment["WINK_INCLUDE_AUTOMATION_TESTS"] == "true"
 
 var targets: [Target] = [
     .target(
-        name: "PeekabooCLI",
+        name: "WinkCLI",
         dependencies: [
             .product(name: "Commander", package: "Commander"),
             .product(name: "MCP", package: "swift-sdk"),
             .product(name: "Spinner", package: "Spinner"),
             .product(name: "TauTUI", package: "TauTUI"),
-            .product(name: "PeekabooCore", package: "PeekabooCore"),
-            .product(name: "PeekabooBridge", package: "PeekabooCore"),
-            .product(name: "PeekabooVisualizer", package: "PeekabooVisualizer"),
+            .product(name: "WinkCore", package: "WinkCore"),
+            .product(name: "WinkBridge", package: "WinkCore"),
+            .product(name: "WinkVisualizer", package: "WinkVisualizer"),
             .product(name: "Tachikoma", package: "Tachikoma"),
             .product(name: "TachikomaMCP", package: "Tachikoma"),
             .product(name: "Swiftdansi", package: "Swiftdansi"),
         ],
-        path: "Sources/PeekabooCLI",
+        path: "Sources/WinkCLI",
         swiftSettings: cliConcurrencySettings),
     .executableTarget(
-        name: "PeekabooExec",
+        name: "WinkExec",
         dependencies: [
-            "PeekabooCLI",
+            "WinkCLI",
         ],
-        path: "Sources/PeekabooExec",
+        path: "Sources/WinkExec",
         swiftSettings: cliConcurrencySettings,
         linkerSettings: [
             .unsafeFlags([
@@ -58,13 +58,13 @@ var targets: [Target] = [
             ]),
         ]),
     .executableTarget(
-        name: "PeekabooCertificationController",
+        name: "WinkCertificationController",
         dependencies: [
-            .product(name: "PeekabooBridge", package: "PeekabooCore"),
-            .product(name: "PeekabooAutomationKit", package: "PeekabooAutomationKit"),
-            .product(name: "PeekabooFoundation", package: "PeekabooFoundation"),
+            .product(name: "WinkBridge", package: "WinkCore"),
+            .product(name: "WinkAutomationKit", package: "WinkAutomationKit"),
+            .product(name: "WinkFoundation", package: "WinkFoundation"),
         ],
-        path: "Sources/PeekabooCertificationController",
+        path: "Sources/WinkCertificationController",
         swiftSettings: concurrencyBaseSettings,
         linkerSettings: [
             .linkedFramework("Security"),
@@ -79,17 +79,17 @@ var targets: [Target] = [
     .testTarget(
         name: "CoreCLITests",
         dependencies: [
-            "PeekabooCLI",
-            .product(name: "PeekabooAgentRuntimeTestSupport", package: "PeekabooCore"),
-            .product(name: "PeekabooAutomationKit", package: "PeekabooAutomationKit"),
-            .product(name: "PeekabooBridgeTestSupport", package: "PeekabooCore"),
-            .product(name: "PeekabooAutomationKitTestSupport", package: "PeekabooAutomationKit"),
-            .product(name: "PeekabooFoundation", package: "PeekabooFoundation"),
-            .product(name: "PeekabooFoundationTestSupport", package: "PeekabooFoundation"),
-            .product(name: "PeekabooAutomation", package: "PeekabooCore"),
-            .product(name: "PeekabooAgentRuntime", package: "PeekabooCore"),
-            .product(name: "PeekabooBridge", package: "PeekabooCore"),
-            .product(name: "PeekabooCore", package: "PeekabooCore"),
+            "WinkCLI",
+            .product(name: "WinkAgentRuntimeTestSupport", package: "WinkCore"),
+            .product(name: "WinkAutomationKit", package: "WinkAutomationKit"),
+            .product(name: "WinkBridgeTestSupport", package: "WinkCore"),
+            .product(name: "WinkAutomationKitTestSupport", package: "WinkAutomationKit"),
+            .product(name: "WinkFoundation", package: "WinkFoundation"),
+            .product(name: "WinkFoundationTestSupport", package: "WinkFoundation"),
+            .product(name: "WinkAutomation", package: "WinkCore"),
+            .product(name: "WinkAgentRuntime", package: "WinkCore"),
+            .product(name: "WinkBridge", package: "WinkCore"),
+            .product(name: "WinkCore", package: "WinkCore"),
         ],
         path: "Tests/CoreCLITests",
         resources: [
@@ -99,9 +99,9 @@ var targets: [Target] = [
     .testTarget(
         name: "CLIRuntimeTests",
         dependencies: [
-            "PeekabooCLI",
-            .product(name: "PeekabooBridgeTestSupport", package: "PeekabooCore"),
-            .product(name: "PeekabooFoundation", package: "PeekabooFoundation"),
+            "WinkCLI",
+            .product(name: "WinkBridgeTestSupport", package: "WinkCore"),
+            .product(name: "WinkFoundation", package: "WinkFoundation"),
             .product(name: "Subprocess", package: "swift-subprocess"),
         ],
         path: "Tests/CLIRuntimeTests",
@@ -109,9 +109,9 @@ var targets: [Target] = [
     .testTarget(
         name: "CertificationControllerTests",
         dependencies: [
-            "PeekabooCertificationController",
-            .product(name: "PeekabooAutomationKit", package: "PeekabooAutomationKit"),
-            .product(name: "PeekabooFoundation", package: "PeekabooFoundation"),
+            "WinkCertificationController",
+            .product(name: "WinkAutomationKit", package: "WinkAutomationKit"),
+            .product(name: "WinkFoundation", package: "WinkFoundation"),
         ],
         path: "Tests/CertificationControllerTests",
         swiftSettings: swiftTestingSettings),
@@ -122,13 +122,13 @@ if includeAutomationTests {
         .testTarget(
             name: "CLIAutomationTests",
             dependencies: [
-                "PeekabooCLI",
-                .product(name: "PeekabooAutomationKitTestSupport", package: "PeekabooAutomationKit"),
-                .product(name: "PeekabooFoundation", package: "PeekabooFoundation"),
-                .product(name: "PeekabooFoundationTestSupport", package: "PeekabooFoundation"),
-                .product(name: "PeekabooCore", package: "PeekabooCore"),
-                .product(name: "PeekabooAgentRuntime", package: "PeekabooCore"),
-                .product(name: "PeekabooAutomation", package: "PeekabooCore"),
+                "WinkCLI",
+                .product(name: "WinkAutomationKitTestSupport", package: "WinkAutomationKit"),
+                .product(name: "WinkFoundation", package: "WinkFoundation"),
+                .product(name: "WinkFoundationTestSupport", package: "WinkFoundation"),
+                .product(name: "WinkCore", package: "WinkCore"),
+                .product(name: "WinkAgentRuntime", package: "WinkCore"),
+                .product(name: "WinkAutomation", package: "WinkCore"),
                 .product(name: "Subprocess", package: "swift-subprocess"),
                 .product(name: "Swiftdansi", package: "Swiftdansi"),
             ],
@@ -143,19 +143,19 @@ if includeAutomationTests {
 
 
 // Xcode derives intermediate paths from the package and executable product names.
-// Keep this project distinct from Peekaboo.xcodeproj even on case-insensitive volumes.
+// Keep this project distinct from Wink.xcodeproj even on case-insensitive volumes.
 let package = Package(
-    name: "PeekabooCLIPackage",
+    name: "WinkCLIPackage",
     platforms: [
         .macOS(.v15),
     ],
     products: [
         .executable(
-            name: "peekaboo",
-            targets: ["PeekabooExec"]),
+            name: "wink",
+            targets: ["WinkExec"]),
         .executable(
-            name: "peekaboo-certification-controller",
-            targets: ["PeekabooCertificationController"]),
+            name: "wink-certification-controller",
+            targets: ["WinkCertificationController"]),
     ],
     dependencies: [
         .package(path: "../../Commander"),
@@ -166,10 +166,10 @@ let package = Package(
         .package(url: "https://github.com/dominicegginton/Spinner", from: "2.2.0"),
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "1.0.0"),
         .package(path: "../../TauTUI"),
-        .package(path: "../../Core/PeekabooFoundation"),
-        .package(path: "../../Core/PeekabooAutomationKit"),
-        .package(path: "../../Core/PeekabooVisualizer"),
-        .package(path: "../../Core/PeekabooCore"),
+        .package(path: "../../Core/WinkFoundation"),
+        .package(path: "../../Core/WinkAutomationKit"),
+        .package(path: "../../Core/WinkVisualizer"),
+        .package(path: "../../Core/WinkCore"),
         .package(path: "../../Tachikoma"),
         .package(path: "../../Swiftdansi"),
     ],

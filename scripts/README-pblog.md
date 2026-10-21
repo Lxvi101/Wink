@@ -1,11 +1,11 @@
-# pblog - Peekaboo Log Viewer
+# pblog - Wink Log Viewer
 
-A unified log viewer for all Peekaboo applications and services.
+A unified log viewer for all Wink applications and services.
 
 ## Quick Start
 
 ```bash
-# Show recent logs from all Peekaboo subsystems
+# Show recent logs from all Wink subsystems
 ./scripts/pblog.sh
 
 # Stream logs continuously
@@ -18,17 +18,17 @@ A unified log viewer for all Peekaboo applications and services.
 ./scripts/pblog.sh -c ElementDetectionService
 
 # Show logs from a specific subsystem
-./scripts/pblog.sh --subsystem boo.peekaboo.core
+./scripts/pblog.sh --subsystem boo.wink.core
 ```
 
 ## Supported Subsystems
 
-- `boo.peekaboo.core` - Core services (ClickService, ElementDetectionService, etc.)
-- `boo.peekaboo.cli` - CLI tool
-- `boo.peekaboo.inspector` - Inspector app
-- `boo.peekaboo.playground` - Playground test app
-- `boo.peekaboo.app` - Main Mac app
-- `boo.peekaboo` - Mac app components
+- `boo.wink.core` - Core services (ClickService, ElementDetectionService, etc.)
+- `boo.wink.cli` - CLI tool
+- `boo.wink.inspector` - Inspector app
+- `boo.wink.playground` - Playground test app
+- `boo.wink.app` - Main Mac app
+- `boo.wink` - Mac app components
 
 ## Options
 
@@ -65,7 +65,7 @@ Value-taking options require a following argument. A final `--search`, `--lines`
 ./scripts/pblog.sh -s "Dialog" -n 100
 
 # Monitor Playground app logs
-./scripts/pblog.sh --subsystem boo.peekaboo.playground -f
+./scripts/pblog.sh --subsystem boo.wink.playground -f
 ```
 
 `--lines` limits completed text queries. JSON output preserves the producer's

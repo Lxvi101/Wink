@@ -1,11 +1,11 @@
 ---
-summary: 'Automate macOS Dock interactions via peekaboo dock'
+summary: 'Automate macOS Dock interactions via wink dock'
 read_when:
   - 'launching/closing apps through Dock affordances'
   - 'toggling Dock visibility or iterating over Dock items in scripts'
 ---
 
-# `peekaboo dock`
+# `wink dock`
 
 `dock` exposes Dock-specific helpers so you don’t have to rely on brittle coordinate clicks. It leverages `DockServiceBridge`, which uses AX to locate Dock items, right-click menus, and visibility toggles.
 
@@ -28,19 +28,19 @@ read_when:
 ## Examples
 ```bash
 # Launch Safari directly from the Dock
-peekaboo dock launch Safari --foreground
+wink dock launch Safari --foreground
 
 # Launch and verify the app is running
-peekaboo dock launch Safari --verify --foreground
+wink dock launch Safari --verify --foreground
 
 # Right-click Finder and choose "New Window"
-peekaboo dock right-click --app Finder --select "New Window" --foreground
+wink dock right-click --app Finder --select "New Window" --foreground
 
 # Hide the Dock before recording a video
-peekaboo dock hide --foreground
+wink dock hide --foreground
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

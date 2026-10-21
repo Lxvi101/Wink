@@ -1,12 +1,12 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomationKit
+@testable import WinkAutomationKit
 
 /// Regression tests for duplicate / mis-ordered window IDs leaking out of window enumeration.
 ///
-/// `peekaboo list windows` returned the same CGWindowID twice (with distinct indexes) because the
+/// `wink list windows` returned the same CGWindowID twice (with distinct indexes) because the
 /// CG/AX merge in `WindowEnumerationContext` associated AX windows to CG entries by title alone.
 /// Two windows sharing a title collapsed onto a single CG entry, so one was dropped from its AX
 /// position and re-appended later as a leftover — unique IDs, but the emitted order no longer
@@ -440,7 +440,7 @@ private final class FakeApplicationService: ApplicationServiceProtocol {
     private let windows: [ServiceWindowInfo]
     private let app = ServiceApplicationInfo(
         processIdentifier: 4242,
-        bundleIdentifier: "boo.peekaboo.playground.debug",
+        bundleIdentifier: "boo.wink.playground.debug",
         name: "Playground",
         isActive: true,
         windowCount: 4

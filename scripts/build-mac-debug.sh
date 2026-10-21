@@ -1,12 +1,12 @@
 #!/bin/bash
-# Build script for macOS Peekaboo app using xcodebuild
+# Build script for macOS Wink app using xcodebuild
 set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=scripts/source-provenance.sh
 source "$PROJECT_ROOT/scripts/source-provenance.sh"
-if ! SOURCE_COMMIT="$(peekaboo_debug_source_commit "$PROJECT_ROOT")"; then
+if ! SOURCE_COMMIT="$(wink_debug_source_commit "$PROJECT_ROOT")"; then
     exit 1
 fi
 
@@ -32,8 +32,8 @@ pipe_build_output() {
 }
 
 # Build configuration (overridable for other schemes)
-WORKSPACE="${WORKSPACE:-$PROJECT_ROOT/Apps/Peekaboo.xcworkspace}"
-SCHEME="${SCHEME:-Peekaboo}"
+WORKSPACE="${WORKSPACE:-$PROJECT_ROOT/Apps/Wink.xcworkspace}"
+SCHEME="${SCHEME:-Wink}"
 CONFIGURATION="${CONFIGURATION:-Debug}"
 APP_NAME="${APP_NAME:-$SCHEME}"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$PROJECT_ROOT/.build/DerivedData}"
@@ -53,7 +53,7 @@ echo -e "${CYAN}Building ${SCHEME} macOS app (${CONFIGURATION})...${NC}"
 # signature keeps grants stable across rebuilds. Machines without a
 # development certificate (contributors, CI) fall back to unsigned builds.
 DEBUG_CODE_SIGN_IDENTITY="${DEBUG_CODE_SIGN_IDENTITY:-Apple Development}"
-if [[ "${PEEKABOO_BUILD_UNSIGNED:-0}" != "1" && -z "${DEBUG_DEVELOPMENT_TEAM:-}" ]]; then
+if [[ "${WINK_BUILD_UNSIGNED:-0}" != "1" && -z "${DEBUG_DEVELOPMENT_TEAM:-}" ]]; then
     dev_cert_name=$(security find-identity -v -p codesigning 2>/dev/null \
         | sed -n 's/.*"\('"$DEBUG_CODE_SIGN_IDENTITY"'[^"]*\)".*/\1/p' | head -n 1)
     if [ -n "$dev_cert_name" ]; then
@@ -65,7 +65,7 @@ if [[ "${PEEKABOO_BUILD_UNSIGNED:-0}" != "1" && -z "${DEBUG_DEVELOPMENT_TEAM:-}"
     fi
 fi
 
-if [[ "${PEEKABOO_BUILD_UNSIGNED:-0}" == "1" ]]; then
+if [[ "${WINK_BUILD_UNSIGNED:-0}" == "1" ]]; then
     echo -e "${CYAN}Building unsigned for explicit post-build signing${NC}"
     SIGNING_SETTINGS=(
         CODE_SIGN_IDENTITY=""
@@ -105,15 +105,15 @@ python3 "$PROJECT_ROOT/scripts/setup-swift-workspace.py" run -- xcodebuild \
     -destination "$DESTINATION" \
     build \
     ONLY_ACTIVE_ARCH=YES \
-    PEEKABOO_SOURCE_COMMIT="$SOURCE_COMMIT" \
+    WINK_SOURCE_COMMIT="$SOURCE_COMMIT" \
     "${SIGNING_SETTINGS[@]}" \
     2>&1 | pipe_build_output
 
 BUILD_EXIT_CODE=${PIPESTATUS[0]}
 
 if [ $BUILD_EXIT_CODE -eq 0 ]; then
-    if peekaboo_is_exact_source_commit "$SOURCE_COMMIT" && \
-       ! peekaboo_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"; then
+    if wink_is_exact_source_commit "$SOURCE_COMMIT" && \
+       ! wink_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"; then
         exit 1
     fi
     echo -e "${GREEN}✅ Build successful${NC}"

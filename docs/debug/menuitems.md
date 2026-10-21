@@ -2,12 +2,12 @@
 summary: 'Menu bar item debug log for missing Trimmy status item on macOS 26.1'
 read_when:
   - 'investigating missing menubar/status items'
-  - 'debugging peekaboo menubar list output or CGS/AX heuristics'
+  - 'debugging wink menubar list output or CGS/AX heuristics'
 ---
 
 # Menu Bar Item Debug Log (macOS 26.1, Trimmy missing)
 
-Goal: Find why `peekaboo menubar list` does not show Trimmy on macOS 26.1 even though the status item is visible.
+Goal: Find why `wink menubar list` does not show Trimmy on macOS 26.1 even though the status item is visible.
 
 Timeline
 - 2025-11-22 (earlier): Layer/AX heuristics showed only Control Center items. Trimmy absent.
@@ -34,7 +34,7 @@ Planned next steps (no Vision fallback):
 
 Environment
 - macOS 26.1 arm64
-- Peekaboo CLI built via `./scripts/build-cli-standalone.sh`
+- Wink CLI built via `./scripts/build-cli-standalone.sh`
 - Permissions: Screen Recording + Accessibility granted
 - Trimmy running from `.build/debug/Trimmy`
 

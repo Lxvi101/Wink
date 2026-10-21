@@ -1,8 +1,8 @@
 import Darwin
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 @MainActor
@@ -40,17 +40,17 @@ struct DaemonStartupGateTests {
 
     @Test
     func `custom daemon sockets use an isolated startup lock while default family stays shared`() {
-        let customSocketPath = "/tmp/peekaboo-custom-\(UUID().uuidString).sock"
+        let customSocketPath = "/tmp/wink-custom-\(UUID().uuidString).sock"
         #expect(
             DaemonPaths.daemonStartupLockURL(socketPath: customSocketPath).path ==
                 "\(customSocketPath).start.lock"
         )
         let defaultLockURL = DaemonPaths.daemonStartupLockURL()
         #expect(
-            DaemonPaths.daemonStartupLockURL(socketPath: PeekabooBridgeConstants.daemonSocketPath) ==
+            DaemonPaths.daemonStartupLockURL(socketPath: WinkBridgeConstants.daemonSocketPath) ==
                 defaultLockURL
         )
-        let buildScopedSocketURL = URL(fileURLWithPath: PeekabooBridgeConstants.daemonSocketPath)
+        let buildScopedSocketURL = URL(fileURLWithPath: WinkBridgeConstants.daemonSocketPath)
             .deletingLastPathComponent()
             .appendingPathComponent("daemon-0123456789abcdef.sock")
         #expect(
@@ -277,7 +277,7 @@ struct DaemonStartupGateTests {
 
     private func temporaryLockURL(createDirectory: Bool = false) throws -> (URL, URL) {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-daemon-gate-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-daemon-gate-\(UUID().uuidString)", isDirectory: true)
         if createDirectory {
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         }

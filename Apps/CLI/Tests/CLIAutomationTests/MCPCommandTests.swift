@@ -1,8 +1,8 @@
 import Commander
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct MCPCommandTests {
     // MARK: - Command Structure Tests
@@ -52,8 +52,8 @@ struct MCPCommandTests {
     func `MCP serve help text`() {
         let helpText = MCPCommand.Serve.helpMessage()
 
-        #expect(helpText.contains("Start Peekaboo as an MCP server"))
-        #expect(helpText.contains("claude mcp add peekaboo"))
+        #expect(helpText.contains("Start Wink as an MCP server"))
+        #expect(helpText.contains("claude mcp add wink"))
         #expect(helpText.contains("npx @modelcontextprotocol/inspector"))
         #expect(helpText.contains("--transport"))
         #expect(helpText.contains("--port"))
@@ -120,7 +120,7 @@ struct MCPCommandIntegrationTests {
 
         // This test would need to actually run the serve command
         // and verify it starts the server with the correct transport.
-        let expectedTransport: PeekabooCore.TransportType = .stdio
+        let expectedTransport: WinkCore.TransportType = .stdio
         #expect(serve.transport == expectedTransport.description)
     }
 }

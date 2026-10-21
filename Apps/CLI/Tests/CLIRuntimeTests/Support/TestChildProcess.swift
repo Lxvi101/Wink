@@ -13,7 +13,7 @@ enum TestChildProcess {
         let status: TerminationStatus
     }
 
-    static func runPeekaboo(
+    static func runWink(
         _ arguments: [String],
         environment extraEnvironment: [String: String] = [:],
         executablePathOverride: String? = nil,
@@ -21,13 +21,13 @@ enum TestChildProcess {
         standardInput: String? = nil,
         isolateFromRemoteHosts: Bool = true
     ) async throws -> Result {
-        let binaryURL = try Self.peekabooBinaryURL()
+        let binaryURL = try Self.winkBinaryURL()
         var environmentOverrides: [Environment.Key: String?] = [:]
 
         // Keep CLI runtime smoke tests deterministic: avoid opportunistically switching to
         // a remote GUI runtime when a bridge socket happens to exist on the machine.
-        if let envKey = Environment.Key(rawValue: "PEEKABOO_NO_REMOTE") {
-            if isolateFromRemoteHosts, extraEnvironment["PEEKABOO_NO_REMOTE"] == nil {
+        if let envKey = Environment.Key(rawValue: "WINK_NO_REMOTE") {
+            if isolateFromRemoteHosts, extraEnvironment["WINK_NO_REMOTE"] == nil {
                 environmentOverrides[envKey] = "1"
             } else if !isolateFromRemoteHosts {
                 environmentOverrides.updateValue(nil, forKey: envKey)
@@ -79,15 +79,15 @@ enum TestChildProcess {
         )
     }
 
-    static func peekabooBinaryURL() throws -> URL {
-        if let override = ProcessInfo.processInfo.environment["PEEKABOO_CLI_BINARY"], !override.isEmpty {
+    static func winkBinaryURL() throws -> URL {
+        if let override = ProcessInfo.processInfo.environment["WINK_CLI_BINARY"], !override.isEmpty {
             return URL(fileURLWithPath: override)
         }
 
         let packageRoot = Self.packageRootURL()
         let potentialPaths = [
             packageRoot.appendingPathComponent(Self.currentArchitectureBuildPath),
-            packageRoot.appendingPathComponent(".build/debug/peekaboo"),
+            packageRoot.appendingPathComponent(".build/debug/wink"),
             packageRoot.appendingPathComponent(Self.fallbackArchitectureBuildPath)
         ]
 
@@ -96,12 +96,12 @@ enum TestChildProcess {
         }
 
         throw RuntimeError(
-            "Unable to locate peekaboo binary. Checked: \n\(potentialPaths.map(\.path).joined(separator: "\n"))"
+            "Unable to locate wink binary. Checked: \n\(potentialPaths.map(\.path).joined(separator: "\n"))"
         )
     }
 
-    static func canLocatePeekabooBinary() -> Bool {
-        (try? self.peekabooBinaryURL()) != nil
+    static func canLocateWinkBinary() -> Bool {
+        (try? self.winkBinaryURL()) != nil
     }
 
     private static func packageRootURL() -> URL {
@@ -115,19 +115,19 @@ enum TestChildProcess {
 
     private static var currentArchitectureBuildPath: String {
         #if arch(arm64)
-        ".build/arm64-apple-macosx/debug/peekaboo"
+        ".build/arm64-apple-macosx/debug/wink"
         #elseif arch(x86_64)
-        ".build/x86_64-apple-macosx/debug/peekaboo"
+        ".build/x86_64-apple-macosx/debug/wink"
         #else
-        ".build/debug/peekaboo"
+        ".build/debug/wink"
         #endif
     }
 
     private static var fallbackArchitectureBuildPath: String {
         #if arch(arm64)
-        ".build/x86_64-apple-macosx/debug/peekaboo"
+        ".build/x86_64-apple-macosx/debug/wink"
         #else
-        ".build/arm64-apple-macosx/debug/peekaboo"
+        ".build/arm64-apple-macosx/debug/wink"
         #endif
     }
 }

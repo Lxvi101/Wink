@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooBridgeTestSupport
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooBridge
-@testable import PeekabooCLI
+@testable import WinkBridge
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -15,7 +15,7 @@ struct DaemonSigningDiagnosticTests {
             lastProbeError: "Fixture probe failure",
             logURL: URL(fileURLWithPath: "/fixture/daemon.log")
         )
-        let original = "Peekaboo daemon did not become ready within 10s " +
+        let original = "Wink daemon did not become ready within 10s " +
             "(elapsed 10.25s); last probe: Fixture probe failure; see /fixture/daemon.log"
         #expect(error.description(currentProcessIsReleaseSigned: { releaseSigned }) ==
             original + (releaseSigned ? "" : " " + Self.hint))
@@ -45,7 +45,7 @@ struct DaemonSigningDiagnosticTests {
             releaseSigned: releaseSigned,
             hostAuthenticationFails: hostAuthenticationFails
         )
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             try await DaemonControlClient(socketPath: peer.socketPath).fetchStatus(using: client)
         }
         await peer.stop()
@@ -73,7 +73,7 @@ struct DaemonSigningDiagnosticTests {
             releaseSigned: releaseSigned,
             hostAuthenticationFails: false
         )
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             try await DaemonControlClient(socketPath: peer.socketPath).fetchStatus(using: client)
         }
         await peer.stop()
@@ -91,7 +91,7 @@ struct DaemonSigningDiagnosticTests {
             releaseSigned: releaseSigned,
             hostAuthenticationFails: true
         )
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             try await DaemonLaunchPolicy.launchDaemon(
                 socketPath: peer.socketPath,
                 arguments: ["30"],
@@ -111,17 +111,17 @@ struct DaemonSigningDiagnosticTests {
 
     private static func client(
         socketPath: String, releaseSigned: Bool, hostAuthenticationFails: Bool
-    ) -> PeekabooBridgeClient {
+    ) -> WinkBridgeClient {
         if !hostAuthenticationFails {
-            return PeekabooBridgeClient(
+            return WinkBridgeClient(
                 socketPath: socketPath,
                 trustedHostTeamIDs: ["FWJYW4S8P8"],
                 hostAuthentication: .init(
                     signingIdentity: { identity in
-                        guard let hash = PeekabooBridgeCodeSignatureIdentity.codeSignatureHash(auditIdentity: identity)
+                        guard let hash = WinkBridgeCodeSignatureIdentity.codeSignatureHash(auditIdentity: identity)
                         else { return nil }
                         return .init(
-                            bundleIdentifier: "boo.peekaboo.peekaboo",
+                            bundleIdentifier: "boo.wink.wink",
                             teamIdentifier: "FWJYW4S8P8",
                             codeSignatureHash: hash
                         )
@@ -130,7 +130,7 @@ struct DaemonSigningDiagnosticTests {
                 )
             )
         }
-        return PeekabooBridgeClient(
+        return WinkBridgeClient(
             socketPath: socketPath,
             trustedHostTeamIDs: ["FWJYW4S8P8"],
             hostAuthentication: .init(
@@ -159,7 +159,7 @@ struct DaemonSigningDiagnosticTests {
     }
 
     private static let hint =
-        "This peekaboo binary is not release-signed (for example Homebrew core's source-built `peekaboo` formula " +
-        "or a local `swift build`), so Peekaboo Bridge and daemon hosts cannot trust it; install the notarized CLI " +
-        "with `brew install openclaw/tap/peekaboo` or `npm i -g @steipete/peekaboo`."
+        "This wink binary is not release-signed (for example Homebrew core's source-built `wink` formula " +
+        "or a local `swift build`), so Wink Bridge and daemon hosts cannot trust it; install the notarized CLI " +
+        "with `brew install openclaw/tap/peekaboo` or `npm i -g wink`."
 }

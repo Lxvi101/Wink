@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct ServiceBridgeTests {
@@ -79,7 +79,7 @@ struct ServiceBridgeTests {
                 targetProcessIdentifier: 12345
             )
             Issue.record("Expected Event Synthesizing permission error")
-        } catch PeekabooError.permissionDeniedEventSynthesizing {
+        } catch WinkError.permissionDeniedEventSynthesizing {
             #expect(automation.targetedHotkeyCalls.isEmpty)
         }
     }
@@ -123,7 +123,7 @@ struct ServiceBridgeTests {
                 expectedProcessIdentity: self.processIdentity
             )
             Issue.record("Expected Event Synthesizing permission error")
-        } catch PeekabooError.permissionDeniedEventSynthesizing {
+        } catch WinkError.permissionDeniedEventSynthesizing {
             #expect(automation.targetedTypeActionsCalls.isEmpty)
         }
     }
@@ -176,7 +176,7 @@ struct ServiceBridgeTests {
         let automation = MockTargetedAutomationService()
         automation.supportsTargetedClickAccessibilityValueDelivery = false
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await AutomationServiceBridge.click(
                 automation: automation,
                 target: .elementId("field"),
@@ -190,30 +190,30 @@ struct ServiceBridgeTests {
 
     @Test func `CLI click refuses old 1 34 value policy before remote provider entry`() async throws {
         let services = PolicyBlindBridgeServices()
-        let socketPath = "/tmp/peekaboo-cli-old-value-policy-\(UUID().uuidString).sock"
-        let version = PeekabooBridgeProtocolVersion(major: 1, minor: 34)
-        let server = PeekabooBridgeServer(
+        let socketPath = "/tmp/wink-cli-old-value-policy-\(UUID().uuidString).sock"
+        let version = WinkBridgeProtocolVersion(major: 1, minor: 34)
+        let server = WinkBridgeServer(
             services: services,
             hostKind: .onDemand,
             allowlistedTeams: [],
             allowlistedBundles: [],
             supportedVersions: version...version
         )
-        let host = PeekabooBridgeHost(socketPath: socketPath, server: server, allowedTeamIDs: [])
+        let host = WinkBridgeHost(socketPath: socketPath, server: server, allowedTeamIDs: [])
         try await host.startChecked()
         defer { Task { await host.stop() } }
 
         let client = BridgeTestFixtures.authenticatedClient(socketPath: socketPath, requestTimeoutSec: 1)
         let handshake = try await client.handshake(
             client: .init(
-                bundleIdentifier: "boo.peekaboo.cli-policy-tests",
+                bundleIdentifier: "boo.wink.cli-policy-tests",
                 teamIdentifier: nil,
                 processIdentifier: getpid()
             ),
             protocolVersion: version
         )
         #expect(handshake.hostCapabilities?.contains(
-            PeekabooBridgeHostCapability.targetedClickAccessibilityValueDelivery
+            WinkBridgeHostCapability.targetedClickAccessibilityValueDelivery
         ) != true)
         let remote = RemoteUIAutomationService(
             client: client,
@@ -221,7 +221,7 @@ struct ServiceBridgeTests {
             supportsProcessGenerationPinnedClicks: true
         )
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await AutomationServiceBridge.click(
                 automation: remote,
                 target: .elementId("field"),
@@ -251,7 +251,7 @@ struct ServiceBridgeTests {
                 expectedProcessIdentity: self.processIdentity
             )
             Issue.record("Expected Event Synthesizing permission error")
-        } catch PeekabooError.permissionDeniedEventSynthesizing {
+        } catch WinkError.permissionDeniedEventSynthesizing {
             #expect(automation.targetedClickCalls.isEmpty)
         }
     }
@@ -306,10 +306,10 @@ struct ServiceBridgeTests {
     @Test func `dock bridge lists items`() async throws {
         let dockItems = [DockItem(
             index: 0,
-            title: "Peekaboo",
+            title: "Wink",
             itemType: .application,
             isRunning: true,
-            bundleIdentifier: "boo.peekaboo",
+            bundleIdentifier: "boo.wink",
             position: nil,
             size: nil
         )]
@@ -337,7 +337,7 @@ class MockAutomationService: UIAutomationServiceProtocol {
         snapshotId _: String?,
         windowContext _: WindowContext?
     ) async throws -> ElementDetectionResult {
-        throw PeekabooError.notImplemented("mock detectElements")
+        throw WinkError.notImplemented("mock detectElements")
     }
 
     func click(target: ClickTarget, clickType: ClickType, snapshotId: String?) async throws {
@@ -396,7 +396,7 @@ class MockAutomationService: UIAutomationServiceProtocol {
     }
 
     func findElement(matching _: UIElementSearchCriteria, in _: String?) async throws -> DetectedElement {
-        throw PeekabooError.elementNotFound("not implemented")
+        throw WinkError.elementNotFound("not implemented")
     }
 }
 
@@ -523,7 +523,7 @@ TargetedTypeServiceProtocol, ExactWindowTargetedClickServiceProtocol, CompositeT
     ) async throws {
         self.policyAwareClickEntryCount += 1
         guard self.supportsTargetedClickAccessibilityValueDelivery else {
-            throw PeekabooError.serviceUnavailable("Targeted click value-delivery policy is unavailable")
+            throw WinkError.serviceUnavailable("Targeted click value-delivery policy is unavailable")
         }
         self.targetedClickCalls.append(.init(
             target: target,
@@ -561,7 +561,7 @@ TargetedTypeServiceProtocol, ExactWindowTargetedClickServiceProtocol, CompositeT
     ) async throws {
         self.policyAwareClickEntryCount += 1
         guard self.supportsTargetedClickAccessibilityValueDelivery else {
-            throw PeekabooError.serviceUnavailable("Targeted click value-delivery policy is unavailable")
+            throw WinkError.serviceUnavailable("Targeted click value-delivery policy is unavailable")
         }
         self.targetedClickCalls.append(.init(
             target: target,
@@ -575,8 +575,8 @@ TargetedTypeServiceProtocol, ExactWindowTargetedClickServiceProtocol, CompositeT
 }
 
 @MainActor
-private final class PolicyBlindBridgeServices: PeekabooBridgeServiceProviding {
-    let base = PeekabooServices()
+private final class PolicyBlindBridgeServices: WinkBridgeServiceProviding {
+    let base = WinkServices()
     let automationService = MockTargetedAutomationService()
 
     var permissions: PermissionsService {
@@ -721,14 +721,14 @@ final class MockMenuService: MenuServiceProtocol {
         self.barItems
     }
 
-    func clickMenuBarItem(named _: String) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(named _: String) async throws -> WinkCore.ClickResult {
         .init(
             elementDescription: "",
             location: nil
         )
     }
 
-    func clickMenuBarItem(at _: Int) async throws -> PeekabooCore.ClickResult {
+    func clickMenuBarItem(at _: Int) async throws -> WinkCore.ClickResult {
         .init(
             elementDescription: "",
             location: nil

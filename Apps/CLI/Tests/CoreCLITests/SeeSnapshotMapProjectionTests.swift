@@ -1,12 +1,12 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomationKit
-@testable import PeekabooCLI
+@testable import WinkAutomationKit
+@testable import WinkCLI
 
 @MainActor
 @Suite(.tags(.safe))
@@ -74,7 +74,7 @@ struct SeeSnapshotMapProjectionTests {
         let detection = Self.detection(snapshotId: snapshotId)
         try await local.storeDetectionResult(snapshotId: snapshotId, result: detection)
         let remote = RemoteSnapshotManager(
-            client: PeekabooBridgeClient(socketPath: storage.appendingPathComponent("absent.sock").path),
+            client: WinkBridgeClient(socketPath: storage.appendingPathComponent("absent.sock").path),
             supportsProducerBoundSnapshotReferences: true
         )
 
@@ -177,6 +177,6 @@ struct SeeSnapshotMapProjectionTests {
 
     private static func temporaryStorage() -> URL {
         FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
-            .appendingPathComponent("peekaboo-see-map-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-see-map-\(UUID().uuidString)", isDirectory: true)
     }
 }

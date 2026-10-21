@@ -1,30 +1,30 @@
 ---
-summary: 'Package boundaries, runtime ownership, and execution contracts for Peekaboo.'
+summary: 'Package boundaries, runtime ownership, and execution contracts for Wink.'
 read_when:
   - 'finding the owner of an automation, agent, Bridge, or UI change'
-  - 'integrating Peekaboo services into a host'
+  - 'integrating Wink services into a host'
 ---
 
-# Peekaboo architecture
+# Wink architecture
 
-Peekaboo is a macOS automation system with a CLI, a menu-bar app, and an MCP server. The apps share automation
-services and result contracts; Tachikoma supplies model providers and streaming. The [project vision](https://github.com/openclaw/Peekaboo/blob/main/VISION.md)
+Wink is a macOS automation system with a CLI, a menu-bar app, and an MCP server. The apps share automation
+services and result contracts; Tachikoma supplies model providers and streaming. The [project vision](https://github.com/Lxvi101/Wink/blob/main/VISION.md)
 sets the platform and reliability scope. [Platform support](platform-support.md) lists the declared runtime floors.
 
 ## Package boundaries
 
 | Package or product | Owns |
 | --- | --- |
-| `PeekabooFoundation` | Shared errors and low-level value types. |
-| `PeekabooProtocols` | Cross-module protocols and transport-safe models. |
-| `PeekabooExternalDependencies` | The shared AXorcist, Commander, Algorithms, Logging, System, and Collections dependency boundary. |
-| `PeekabooAutomationKit` | Capture, desktop observation, input, application/menu/window services, snapshots, and typed automation models. |
-| `PeekabooAutomation` | AutomationKit re-exports, configuration, Tachikoma model resolution, and visualizer feedback adapters. |
-| `PeekabooBridge` | Authenticated host/client transport, request validation, capabilities, and operation receipts. |
-| `PeekabooVisualizer` | Visual feedback events, presets, and delivery to the app, independent of the agent runtime. |
-| `PeekabooUICore` | Shared SwiftUI inspector and overlay components. |
-| `PeekabooAgentRuntime` | Agent execution, MCP tools and catalogs, browser sessions, and tool formatting. |
-| `PeekabooCore` | Umbrella imports and the `PeekabooServices` container used by apps and the CLI. |
+| `WinkFoundation` | Shared errors and low-level value types. |
+| `WinkProtocols` | Cross-module protocols and transport-safe models. |
+| `WinkExternalDependencies` | The shared AXorcist, Commander, Algorithms, Logging, System, and Collections dependency boundary. |
+| `WinkAutomationKit` | Capture, desktop observation, input, application/menu/window services, snapshots, and typed automation models. |
+| `WinkAutomation` | AutomationKit re-exports, configuration, Tachikoma model resolution, and visualizer feedback adapters. |
+| `WinkBridge` | Authenticated host/client transport, request validation, capabilities, and operation receipts. |
+| `WinkVisualizer` | Visual feedback events, presets, and delivery to the app, independent of the agent runtime. |
+| `WinkUICore` | Shared SwiftUI inspector and overlay components. |
+| `WinkAgentRuntime` | Agent execution, MCP tools and catalogs, browser sessions, and tool formatting. |
+| `WinkCore` | Umbrella imports and the `WinkServices` container used by apps and the CLI. |
 | `Tachikoma` | Model providers, request configuration, and streaming. |
 
 Automation behavior belongs in AutomationKit; agent and MCP adapters belong in AgentRuntime. Put shared UI in UICore
@@ -32,26 +32,26 @@ and visual feedback in Visualizer. The public root `Package.swift` exports Found
 Bridge without the agent runtime or Tachikoma. Internal apps can link the umbrella or focused products as needed.
 
 The repository uses submodules for AXorcist, Commander, Swiftdansi, Tachikoma, and TauTUI. Change these in their owning
-repositories before updating Peekaboo's pointers. The [build guide](building.md#commander-dependency-resolution)
+repositories before updating Wink's pointers. The [build guide](building.md#commander-dependency-resolution)
 describes checkout-local dependency setup and the distinction between internal and public package resolution.
 
 ## Service ownership
 
-`PeekabooServices` is a main-actor container. Its default initializer constructs the production services; its injected
+`WinkServices` is a main-actor container. Its default initializer constructs the production services; its injected
 initializer accepts service implementations for hosts and tests. The container does not install global agent defaults
 automatically. A host that uses the default MCP context or tool registry installs its services explicitly:
 
 ```swift
-let services = PeekabooServices()
+let services = WinkServices()
 services.installAgentRuntimeDefaults()
 ```
 
 Keep that instance alive while its installed factories are used: they capture it without retaining it. Tests and
 embedded hosts can instead pass explicit service contexts. See
-[`PeekabooServiceProviding`](../Core/PeekabooCore/Sources/PeekabooAgentRuntime/Support/PeekabooServiceProviding.swift)
+[`WinkServiceProviding`](../Core/WinkCore/Sources/WinkAgentRuntime/Support/WinkServiceProviding.swift)
 for the installation boundary and [agent chat](agent-chat.md) for execution lifecycle.
 
-`PeekabooAIService` resolves configured provider strings to Tachikoma `LanguageModel` values. Configuration and provider
+`WinkAIService` resolves configured provider strings to Tachikoma `LanguageModel` values. Configuration and provider
 selection are documented in [configuration](configuration.md) and [providers](providers.md), rather than duplicated here.
 The app and CLI share `~/.peekaboo/credentials`; `config.json` holds settings. A configured `PEEKABOO_CONFIG_DIR` changes
 that root. Credential persistence and migration rules belong to the configuration guide.
@@ -61,7 +61,7 @@ that root. Credential persistence and migration rules belong to the configuratio
 | Runtime | State and permissions | Transport |
 | --- | --- | --- |
 | Reusable daemon | Warm services, snapshots, tracking, and browser state; daemon process TCC grants. | `daemon.sock` or a build-scoped daemon socket. |
-| Peekaboo.app | GUI lifecycle and the app's TCC grants. | `bridge.sock`. |
+| Wink.app | GUI lifecycle and the app's TCC grants. | `bridge.sock`. |
 | MCP server | Services owned by the MCP client process. | stdio, without a Bridge listener. |
 | Local CLI | Services owned by one CLI invocation. | In-process calls. |
 
@@ -89,7 +89,7 @@ preserve that evidence instead of inferring success from an absence of errors.
 The default agent/MCP authority is background-only. Foreground operations require explicit consent, and catalogs expose
 only actions supported by the session's authority. Once an action may have been dispatched, later validation or cleanup
 failure must preserve uncertainty and retry safety. See [automation](automation.md), [security](security.md), and
-[background computer-use testing](https://github.com/openclaw/Peekaboo/blob/main/docs/testing/background-computer-use.md) for the action contract and proof requirements.
+[background computer-use testing](https://github.com/Lxvi101/Wink/blob/main/docs/testing/background-computer-use.md) for the action contract and proof requirements.
 
 Service orchestration and AppKit-facing state use `MainActor`. Blocking native work and socket waits use bounded workers
 or transport queues so they do not hold the main actor or Swift's cooperative executor. A timeout does not necessarily
@@ -103,7 +103,7 @@ starts, and a deleted session's queued prompts are rejected before provider exec
 conversation.
 
 Desktop operation lane admission uses one monotonic 15-second budget across its turnstiles and global, process, and
-window lock claims. Acquiring a lock after expiry does not authorize the operation: Peekaboo releases the acquired
+window lock claims. Acquiring a lock after expiry does not authorize the operation: Wink releases the acquired
 claims and returns a retry-safe `TIMEOUT` refusal before the operation body starts. Cancellation can end the wait
 sooner. This is a lock-admission ceiling, not a whole-command timeout or a new Bridge wire deadline. Once admitted,
 the operation retains its claims until its body actually returns, including noncooperative native work. Callers
@@ -122,13 +122,13 @@ bound synchronous in-process AppKit callbacks.
 
 ## Presentation and verification
 
-Automation feedback adapters submit `VisualizerEvent` values to the visualizer event store and notify Peekaboo.app.
+Automation feedback adapters submit `VisualizerEvent` values to the visualizer event store and notify Wink.app.
 The app's receiver and coordinator render the overlays. Automation can continue without a running visualizer host;
 visual feedback is not proof that an action reached its target. See [visualizer](visualizer.md) for event delivery.
 
-Agent and Mac tool summaries share the [tool formatter registry](https://github.com/openclaw/Peekaboo/blob/main/docs/tool-formatter-architecture.md). New result shapes
+Agent and Mac tool summaries share the [tool formatter registry](https://github.com/Lxvi101/Wink/blob/main/docs/tool-formatter-architecture.md). New result shapes
 should be handled at that shared boundary rather than independently in each app.
 
-Use [building](building.md) for source setup, [testing tools](https://github.com/openclaw/Peekaboo/blob/main/docs/testing/tools.md) for manual recipes, and the focused
+Use [building](building.md) for source setup, [testing tools](https://github.com/Lxvi101/Wink/blob/main/docs/testing/tools.md) for manual recipes, and the focused
 contracts under `docs/testing/` for live qualification. Historical timing ranges and archived captures do not establish
 current performance or correctness; record the command, built revision, and observed result for the change being tested.

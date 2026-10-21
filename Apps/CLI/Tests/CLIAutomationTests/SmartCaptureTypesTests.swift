@@ -8,7 +8,7 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooAutomation
+@testable import WinkAutomation
 
 struct SmartCaptureResultTests {
     @Test

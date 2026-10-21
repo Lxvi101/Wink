@@ -6,7 +6,7 @@
 #   "mac-alias==2.2.3",
 # ]
 # ///
-"""Locked entry point for Peekaboo's native Finder-layout generator."""
+"""Locked entry point for Wink's native Finder-layout generator."""
 
 from dmgbuild.__main__ import main
 

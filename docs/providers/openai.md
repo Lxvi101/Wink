@@ -1,12 +1,12 @@
 ---
-summary: 'OpenAI provider architecture and migration status in Peekaboo'
+summary: 'OpenAI provider architecture and migration status in Wink'
 read_when:
   - 'debugging OpenAI model integration or tool calling'
   - 'planning changes to the OpenAI provider layer'
   - 'explaining the Assistants→Chat Completions migration'
 ---
 
-# OpenAI in Peekaboo
+# OpenAI in Wink
 
 ## Status
 - Migration from Assistants API to Chat Completions is **complete** (as of 2025-11). Legacy Assistants code was removed; protocol-based message architecture is the sole implementation.
@@ -16,7 +16,7 @@ read_when:
 1. Protocol-based message and tool abstractions for strong typing.
 2. Native streaming via `AsyncThrowingStream` with event handling.
 3. Type-safe tool system with generic context.
-4. Integrated with PeekabooCore services and session resume.
+4. Integrated with WinkCore services and session resume.
 5. Removed feature flags and legacy Assistants artifacts.
 
 ## Implementation notes

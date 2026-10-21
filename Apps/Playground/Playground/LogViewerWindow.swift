@@ -148,7 +148,7 @@ struct LogViewerWindow: View {
     private func exportLogs() {
         let savePanel = NSSavePanel()
         savePanel.allowedContentTypes = [.plainText]
-        savePanel.nameFieldStringValue = "peekaboo-logs-\(Date().timeIntervalSince1970).txt"
+        savePanel.nameFieldStringValue = "wink-logs-\(Date().timeIntervalSince1970).txt"
 
         savePanel.begin { result in
             Task { @MainActor in

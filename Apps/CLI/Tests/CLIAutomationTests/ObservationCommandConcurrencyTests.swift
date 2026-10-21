@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -93,14 +93,14 @@ struct ObservationCommandConcurrencyTests {
             app.name: [window],
             "com.example.concurrent": [window],
         ]
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app], windowsByApp: windowsByApp),
             windows: StubWindowService(windowsByApp: windowsByApp),
             automation: automation,
             screenCapture: screenCapture
         )
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-observation-concurrency-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-observation-concurrency-\(UUID().uuidString)", isDirectory: true)
         let seePath = directory.appendingPathComponent("see.png")
         let imagePath = directory.appendingPathComponent("image.png")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

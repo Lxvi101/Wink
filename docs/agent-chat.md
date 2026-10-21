@@ -1,5 +1,5 @@
 ---
-summary: 'Document the minimal interactive chat loop for peekaboo agent'
+summary: 'Document the minimal interactive chat loop for wink agent'
 read_when:
   - 'planning work related to the agent chat loop'
   - 'debugging or extending the interactive agent shell'
@@ -7,12 +7,12 @@ read_when:
 
 # Minimal Agent Chat Mode
 
-This document captures the initial design for a dependency-free interactive chat shell built on top of `peekaboo agent`. The goal is to let operators hold a live conversation—enter a prompt, let the agent act, then immediately enter another prompt—without reinventing the retired TermKit UI.
+This document captures the initial design for a dependency-free interactive chat shell built on top of `wink agent`. The goal is to let operators hold a live conversation—enter a prompt, let the agent act, then immediately enter another prompt—without reinventing the retired TermKit UI.
 
 ## How You Enter Chat Mode
 
-- `peekaboo agent "<task>"` keeps the existing single-shot behavior.
-- Running `peekaboo agent` **without** a task drops you into chat mode automatically when stdout is an interactive TTY.
+- `wink agent "<task>"` keeps the existing single-shot behavior.
+- Running `wink agent` **without** a task drops you into chat mode automatically when stdout is an interactive TTY.
 - In non-interactive environments the command prints the chat help menu and exits, except a taskless
   `agent resume [session-id]`, which consumes piped prompts for the saved session.
 - `agent chat` always forces the interactive loop (even when piped) and doubles as the discoverable/explicit mode for documentation and tooling.
@@ -20,7 +20,7 @@ This document captures the initial design for a dependency-free interactive chat
 
 ## Command Surface
 
-- Expose chat as `peekaboo agent chat`.
+- Expose chat as `wink agent chat`.
 - When present, the command enters an interactive loop instead of executing once and exiting.
 - Shared execution options (`--model`, `--max-steps`, `--queue-mode`, etc.) still apply at launch; their values remain in effect for the entire chat session.
 
@@ -33,7 +33,7 @@ This document captures the initial design for a dependency-free interactive chat
 ## Control Flow
 
 ```text
-peekaboo agent chat
+wink agent chat
 → print header (model, session ID, exit instructions)
 loop {
     prompt with `chat> `

@@ -1,8 +1,8 @@
 import Commander
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct PreRuntimeSemanticValidationTests {
@@ -14,23 +14,23 @@ struct PreRuntimeSemanticValidationTests {
     @Test(arguments: [
         Case(
             arguments: [
-                "peekaboo", "see", "--app", "Digital Color Meter", "--pid", "38461", "--no-remote", "--json",
+                "wink", "see", "--app", "Digital Color Meter", "--pid", "38461", "--no-remote", "--json",
             ],
             expectedMessage: "Use either --app or --pid, not both."
         ),
         Case(
             arguments: [
-                "peekaboo", "see", "--window-title", "Digital Color Meter", "--no-remote", "--json",
+                "wink", "see", "--window-title", "Digital Color Meter", "--no-remote", "--json",
             ],
             expectedMessage: "--window-title and --window-index require --app or --pid."
         ),
         Case(
-            arguments: ["peekaboo", "see", "--pid", "999999999", "--no-remote", "--json"],
+            arguments: ["wink", "see", "--pid", "999999999", "--no-remote", "--json"],
             expectedMessage: "No running application found for --pid 999999999."
         ),
         Case(
             arguments: [
-                "peekaboo", "scroll", "--direction", "sideways", "--on", "elem_6", "--snapshot",
+                "wink", "scroll", "--direction", "sideways", "--on", "elem_6", "--snapshot",
                 SnapshotReferenceFixtures.first.rawValue,
                 "--no-remote", "--json",
             ],
@@ -38,43 +38,43 @@ struct PreRuntimeSemanticValidationTests {
         ),
         Case(
             arguments: [
-                "peekaboo", "move", "--at", "not-a-coordinate", "--foreground", "--no-remote", "--json",
+                "wink", "move", "--at", "not-a-coordinate", "--foreground", "--no-remote", "--json",
             ],
             expectedMessage: "Invalid coordinates format. Use: x,y"
         ),
         Case(
-            arguments: ["peekaboo", "move", "--at", "nan,200", "--foreground", "--no-remote", "--json"],
+            arguments: ["wink", "move", "--at", "nan,200", "--foreground", "--no-remote", "--json"],
             expectedMessage: "Invalid coordinates format. Use: x,y"
         ),
         Case(
-            arguments: ["peekaboo", "move", "--at", "100,inf", "--foreground", "--no-remote", "--json"],
+            arguments: ["wink", "move", "--at", "100,inf", "--foreground", "--no-remote", "--json"],
             expectedMessage: "Invalid coordinates format. Use: x,y"
         ),
         Case(
-            arguments: ["peekaboo", "type", "--profile", "human", "--no-remote", "--json"],
+            arguments: ["wink", "type", "--profile", "human", "--no-remote", "--json"],
             expectedMessage: "No input specified. Provide text or use --clear."
         ),
         Case(
             arguments: [
-                "peekaboo", "drag", "--from", "source_id", "--to", "target_id", "--button", "middle",
+                "wink", "drag", "--from", "source_id", "--to", "target_id", "--button", "middle",
                 "--foreground", "--no-remote", "--json",
             ],
             expectedMessage: "--button must be either 'left' or 'right'"
         ),
         Case(
-            arguments: ["peekaboo", "action", "AXIncrement", "--json"],
+            arguments: ["wink", "action", "AXIncrement", "--json"],
             expectedMessage: "--on is required"
         ),
         Case(
-            arguments: ["peekaboo", "action", "--on", "B1", "--json"],
+            arguments: ["wink", "action", "--on", "B1", "--json"],
             expectedMessage: "Action name is required"
         ),
         Case(
-            arguments: ["peekaboo", "set-value", "hello", "--json"],
+            arguments: ["wink", "set-value", "hello", "--json"],
             expectedMessage: "--on is required"
         ),
         Case(
-            arguments: ["peekaboo", "set-value", "--on", "T1", "--json"],
+            arguments: ["wink", "set-value", "--on", "T1", "--json"],
             expectedMessage: "Value is required"
         ),
     ])
@@ -95,7 +95,7 @@ struct PreRuntimeSemanticValidationTests {
     @Test
     func `click coordinates validate before runtime selection`() throws {
         let resolved = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo", "click", "--at", "not-a-coordinate", "--json",
+            "wink", "click", "--at", "not-a-coordinate", "--json",
         ])
         let command = try CommanderCLIBinder.instantiateCommand(
             type: resolved.type,
@@ -112,7 +112,7 @@ struct PreRuntimeSemanticValidationTests {
     @Test
     func `drag element selectors remain valid before runtime selection`() throws {
         let resolved = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo", "drag", "--from", "row_1", "--to", "row_5", "--foreground", "--json",
+            "wink", "drag", "--from", "row_1", "--to", "row_5", "--foreground", "--json",
         ])
         let command = try CommanderCLIBinder.instantiateCommand(
             type: resolved.type,
@@ -130,7 +130,7 @@ struct PreRuntimeSemanticValidationTests {
         ["--duration", "11s"], ["--window-id", "42"], ["--space-switch"],
     ])
     func `background drag rejects missing snapshot or foreground only options`(_ extra: [String]) throws {
-        var arguments = ["peekaboo", "drag", "--from", "10,20", "--to", "30,40"]
+        var arguments = ["wink", "drag", "--from", "10,20", "--to", "30,40"]
         if !extra.isEmpty {
             arguments += ["--snapshot", SnapshotReferenceFixtures.first.rawValue]
         }
@@ -146,7 +146,7 @@ struct PreRuntimeSemanticValidationTests {
     @Test
     func `background drag accepts a bounded explicit snapshot without foreground`() throws {
         let resolved = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo", "drag", "--from", "10,20", "--to", "30,40", "--snapshot",
+            "wink", "drag", "--from", "10,20", "--to", "30,40", "--snapshot",
             SnapshotReferenceFixtures.first.rawValue, "--steps", "96", "--duration", "10s",
         ])
         let command = try CommanderCLIBinder.instantiateCommand(
@@ -186,7 +186,7 @@ struct PreRuntimeSemanticValidationTests {
         ]
 
         for arguments in cases {
-            let resolved = try CommanderRuntimeRouter.resolve(argv: ["peekaboo"] + arguments + ["--json"])
+            let resolved = try CommanderRuntimeRouter.resolve(argv: ["wink"] + arguments + ["--json"])
             let command = try CommanderCLIBinder.instantiateCommand(
                 type: resolved.type,
                 parsedValues: resolved.parsedValues
@@ -221,7 +221,7 @@ struct PreRuntimeSemanticValidationTests {
             for selector in selectors {
                 for snapshot in [[], ["--snapshot", "latest"]] {
                     let resolved = try CommanderRuntimeRouter.resolve(
-                        argv: ["peekaboo"] + commandArguments + selector + snapshot + ["--json"]
+                        argv: ["wink"] + commandArguments + selector + snapshot + ["--json"]
                     )
                     let command = try CommanderCLIBinder.instantiateCommand(
                         type: resolved.type,
@@ -240,7 +240,7 @@ struct PreRuntimeSemanticValidationTests {
     @Test
     func `environment no remote validates local PID before runtime selection`() throws {
         let resolved = try CommanderRuntimeRouter.resolve(argv: [
-            "peekaboo", "see", "--pid", "999999999", "--json",
+            "wink", "see", "--pid", "999999999", "--json",
         ])
         let command = try #require(CommanderCLIBinder.instantiateCommand(
             type: resolved.type,
@@ -251,7 +251,7 @@ struct PreRuntimeSemanticValidationTests {
             try command.validateBeforeRuntime(environment: [:])
         }
         let error = #expect(throws: ValidationError.self) {
-            try command.validateBeforeRuntime(environment: ["PEEKABOO_NO_REMOTE": "1"])
+            try command.validateBeforeRuntime(environment: ["WINK_NO_REMOTE": "1"])
         }
         #expect(error?.localizedDescription == "No running application found for --pid 999999999.")
     }

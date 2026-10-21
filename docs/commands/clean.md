@@ -1,11 +1,11 @@
 ---
-summary: 'Prune snapshot caches via peekaboo clean'
+summary: 'Prune snapshot caches via wink clean'
 read_when:
   - 'saving disk space or nuking stale snapshot artifacts'
   - 'debugging interactions that still reference an old snapshot ID'
 ---
 
-# `peekaboo clean`
+# `wink clean`
 
 `clean` removes entries from `~/.peekaboo/snapshots/` by age, by ID, or wholesale. Because every `see`/`click` pipeline streams screenshots and UI maps into that cache, it can grow quickly; this command is the supported way to prune it without deleting unrelated files.
 
@@ -40,14 +40,14 @@ directories are rejected or ignored without deleting them.
 ## Examples
 ```bash
 # Preview what would be deleted without actually removing files
-peekaboo clean --older-than 12 --dry-run
+wink clean --older-than 12 --dry-run
 
 # Remove the snapshot returned from the last `see` run
-SNAPSHOT=$(peekaboo see --json | jq -r '.data.snapshot_id')
-peekaboo clean --snapshot "$SNAPSHOT"
+SNAPSHOT=$(wink see --json | jq -r '.data.snapshot_id')
+wink clean --snapshot "$SNAPSHOT"
 
 # Preview removal of one strict legacy timestamp directory
-peekaboo clean --snapshot 1787675983803-1514 --dry-run
+wink clean --snapshot 1787675983803-1514 --dry-run
 ```
 
 ## Troubleshooting

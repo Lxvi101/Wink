@@ -1,12 +1,12 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 @MainActor
@@ -54,7 +54,7 @@ struct CoordinateTargetEligibilityTests {
         target.windowId = 49
         let windows = CoordinateEligibilityWindows(rows: [])
         let services = FocusProofPressServices(windows: windows, automation: CoordinateEligibilityAutomation())
-        let missing = try #require(await #expect(throws: PeekabooError.self) {
+        let missing = try #require(await #expect(throws: WinkError.self) {
             try await InteractionCoordinateResolver.resolveTargetWindow(target: target, services: services)
         })
         if case .windowNotFound = missing {} else {

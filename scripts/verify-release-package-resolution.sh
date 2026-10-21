@@ -20,7 +20,7 @@ usage() {
 Usage: scripts/verify-release-package-resolution.sh \
   --source-root <repo> \
   --derived-data <path> \
-  --app <Peekaboo.app>
+  --app <Wink.app>
 EOF
 }
 
@@ -56,7 +56,7 @@ done
 [[ -x "$GIT_BIN" ]] || fail 'git is required'
 [[ -x "$PLISTBUDDY_BIN" ]] || fail "PlistBuddy is not executable: $PLISTBUDDY_BIN"
 
-workspace_lock="$SOURCE_ROOT/Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+workspace_lock="$SOURCE_ROOT/Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 cli_lock="$SOURCE_ROOT/Apps/CLI/Package.resolved"
 [[ -f "$workspace_lock" && ! -L "$workspace_lock" ]] || \
   fail "Canonical workspace package lock is missing or symlinked: $workspace_lock"

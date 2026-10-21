@@ -1,9 +1,9 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 private enum WindowCommandIntegrationTestConfig {
     @preconcurrency
     nonisolated static func enabled() -> Bool {
@@ -132,7 +132,7 @@ struct WindowCommandCLITests {
         return CommandResult(output: output, status: result.exitStatus)
     }
 
-    private func makeTestServices() -> PeekabooServices {
+    private func makeTestServices() -> WinkServices {
         let applications: [ServiceApplicationInfo] = [
             ServiceApplicationInfo(
                 processIdentifier: 101,
@@ -173,7 +173,7 @@ struct WindowCommandCLITests {
             "Finder": [finderWindow],
         ]
 
-        return TestServicesFactory.makePeekabooServices(
+        return TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: applications, windowsByApp: windowsByApp),
             windows: StubWindowService(windowsByApp: windowsByApp),
             menu: StubMenuService(menusByApp: [:]),

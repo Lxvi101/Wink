@@ -1,13 +1,13 @@
 ---
-summary: 'Control macOS apps via peekaboo app'
+summary: 'Control macOS apps via wink app'
 read_when:
   - 'launching/quitting/focusing apps as part of an automation flow'
   - 'auditing running apps or force cycling foreground focus'
 ---
 
-# `peekaboo app`
+# `wink app`
 
-`app` bundles every app-management primitive Peekaboo exposes: launching, quitting, hiding, relaunching, switching/focusing, and listing processes. Commands run through the selected Peekaboo runtime host so they share its macOS session, LaunchServices, and AX view instead of the caller's sandbox.
+`app` bundles every app-management primitive Wink exposes: launching, quitting, hiding, relaunching, switching/focusing, and listing processes. Commands run through the selected Wink runtime host so they share its macOS session, LaunchServices, and AX view instead of the caller's sandbox.
 
 ## Subcommands
 | Name | Purpose | Key flags |
@@ -30,12 +30,12 @@ read_when:
 - Background no-op `launch --wait-ready` and `--wait-for-window` retain the selected PID/process-generation receipt throughout their read-only waits. A readiness failure remains explicitly retry-safe with `mutation_dispatched: false`. A `PID:` selector stays pinned to that exact process generation for both the no-op and a plain foreground activation; it cannot be combined with `--open` or `--new-instance`. Foreground launch keeps the full existing LaunchServices behavior for path/name/bundle selectors: it can start windowless/accessory apps, deliver documents/URLs, create a distinct process, and wait up to 10 seconds for a real WindowServer window. `relaunch` retains its single `--wait-until-ready` spelling and requires `--foreground` before the target is resolved or quit.
 - JSON launch output returns the launch-bound numeric compatibility field `process_start_identity` plus the lossless authoritative string `process_start_identity_decimal` beside `pid`, along with refreshed `window_count`, `window_ready`, and `window_ids`. Relaunch uses `new_process_start_identity` and authoritative `new_process_start_identity_decimal`. JSON-number consumers must not use the numeric forms for exact comparison because values above 2^53 can lose precision. A current native host captures that process generation from the exact process selected by LaunchServices and refuses the result if the PID is recycled before return. Older runtime hosts may omit the process identity for foreground launch, but background launch fails closed unless the host advertises the safe no-op contract; cleanup callers must never probe a returned PID to manufacture a new receipt. `window_identity` is `exact` when the window IDs came from WindowServer and `unknown` for an older runtime host that cannot provide that metadata.
 - MCP app lifecycle and focus results expose the same generation through `target_identity.kind: process` and `target_identity.process_start_identity_decimal`. Agents must chain that target identity; the generic numeric `process_start_identity` metadata is compatibility-only and is intentionally not exported as authoritative safety metadata.
-- Quit mode supports `--all` plus `--except`, automatically ignoring core system processes (`Finder`, `Dock`, `SystemUIServer`, `WindowServer`). Bulk quit targets only generation-pinned applications whose bounded metadata explicitly classifies them as regular; accessory, prohibited, and incomplete rows are never treated as regular by default. Controlled cleanup can pair `--pid` with the lossless unsigned-decimal `--expected-process-start-identity` (including the full UInt64 range); Peekaboo atomically rejects a recycled PID instead of terminating its replacement. Each JSON result publishes the frozen target plan as `pid` plus authoritative `process_start_identity_decimal`. When quits fail, the command prints hints about unsaved changes and suggests `--force`.
+- Quit mode supports `--all` plus `--except`, automatically ignoring core system processes (`Finder`, `Dock`, `SystemUIServer`, `WindowServer`). Bulk quit targets only generation-pinned applications whose bounded metadata explicitly classifies them as regular; accessory, prohibited, and incomplete rows are never treated as regular by default. Controlled cleanup can pair `--pid` with the lossless unsigned-decimal `--expected-process-start-identity` (including the full UInt64 range); Wink atomically rejects a recycled PID instead of terminating its replacement. Each JSON result publishes the frozen target plan as `pid` plus authoritative `process_start_identity_decimal`. When quits fail, the command prints hints about unsaved changes and suggests `--force`.
 - Hide remains background-capable. Unhide requires `--activate` before runtime-host resolution and carries the selected PID/process-generation receipt through verified activation because showing an application's windows can move them in front. Hosts that cannot enforce the receipt are rejected, and the legacy identifier-only Bridge unhide operation is refused.
 - An interrupted quit batch retains any response-loss evidence from completed attempts. In-flight cancellation remains indeterminate and unsafe to retry, includes the potentially dispatched attempt in its count, and does not attribute a delivery mechanism to the combined result. Observe the affected apps before deciding whether another quit is safe.
 - `switch --cycle` synthesizes Cmd+Tab events using `CGEvent` so it behaves like the real keyboard shortcut; `switch --to` activates the exact PID resolved via AX. Both switch forms and `app focus` require `--foreground` before application lookup or global input dispatch. Switch accepts exactly one app target or `--cycle`; it never ignores a target in favor of a global cycle.
 - App activation is successful only after the exact resolved PID reports active and Workspace-frontmost. When the
-  target owns visible ordinary windows, the frontmost WindowServer window must also belong to that PID. Peekaboo
+  target owns visible ordinary windows, the frontmost WindowServer window must also belong to that PID. Wink
   first uses native application activation, then falls back to the application's AX frontmost attribute when macOS
   accepts the request without completing it. Multi-window apps activate all of their windows; use `window focus`
   when one specific window must become key.
@@ -51,40 +51,40 @@ read_when:
 ## Examples
 ```bash
 # Verify an already-running Xcode generation without dispatching a launch
-peekaboo app launch "Xcode" --wait-ready
+wink app launch "Xcode" --wait-ready
 
 # Open a project with explicit foreground consent
-peekaboo app launch "Xcode" --open ~/Projects/Peekaboo.xcodeproj --foreground
+wink app launch "Xcode" --open ~/Projects/Wink.xcodeproj --foreground
 
 # Start an independent TextEdit process with explicit foreground consent
-peekaboo app launch "TextEdit" --new-instance --wait-for-window --foreground
+wink app launch "TextEdit" --new-instance --wait-for-window --foreground
 
 # Explicitly activate Safari after launching it
-peekaboo app launch "Safari" --foreground
+wink app launch "Safari" --foreground
 
 # Unhide and activate one exact app
-peekaboo app unhide TextEdit --activate
+wink app unhide TextEdit --activate
 
 # Quit everything but Finder and Terminal
-peekaboo app quit --all --except "Finder,Terminal"
+wink app quit --all --except "Finder,Terminal"
 
 # Quit one app positionally
-peekaboo app quit TextEdit
+wink app quit TextEdit
 
 # Atomically quit only the saved process generation
-peekaboo app quit --pid 1234 --expected-process-start-identity 987654321 --force
+wink app quit --pid 1234 --expected-process-start-identity 987654321 --force
 
 # Cycle to the next app exactly once
-peekaboo app switch --cycle --foreground
+wink app switch --cycle --foreground
 
 # Switch and verify the app is frontmost
-peekaboo app switch Safari --verify --foreground
+wink app switch Safari --verify --foreground
 
 # Focus an app without a separate launch
-peekaboo app focus Safari --foreground
+wink app focus Safari --foreground
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your target with `peekaboo app list`, `peekaboo window list`, or `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your target with `wink app list`, `wink window list`, or `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

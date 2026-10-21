@@ -1,13 +1,13 @@
 import Commander
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
 struct ExactWindowROIRuntimeCapabilityTests {
-    private static let roiOperations: [PeekabooBridgeOperation] = [
+    private static let roiOperations: [WinkBridgeOperation] = [
         .desktopObservation,
         .storeObservationSnapshot,
         .storeScreenshot,
@@ -17,7 +17,7 @@ struct ExactWindowROIRuntimeCapabilityTests {
 
     @Test
     func `exact window ROI requires protocol 1_21 and enabled publication operations`() {
-        let minimalOperations: [PeekabooBridgeOperation] = [
+        let minimalOperations: [WinkBridgeOperation] = [
             .desktopObservation,
             .storeObservationSnapshot,
         ]
@@ -72,11 +72,11 @@ struct ExactWindowROIRuntimeCapabilityTests {
             ),
             commandType: SeeCommand.self
         )
-        let operations = [PeekabooBridgeOperation.captureScreen] + Self.roiOperations
+        let operations = [WinkBridgeOperation.captureScreen] + Self.roiOperations
         let older = Self.handshake(minor: 20, hostKind: .onDemand, operations: operations)
         let roiOnly = Self.handshake(minor: 21, hostKind: .onDemand, operations: operations)
         let current = Self.handshake(
-            minor: PeekabooBridgeConstants.protocolVersion.minor,
+            minor: WinkBridgeConstants.protocolVersion.minor,
             hostKind: .onDemand,
             operations: operations
         ).withProducerBoundSnapshotFixture()
@@ -166,17 +166,17 @@ struct ExactWindowROIRuntimeCapabilityTests {
 
     private static func handshake(
         minor: Int,
-        hostKind: PeekabooBridgeHostKind,
-        operations: [PeekabooBridgeOperation],
-        enabledOperations: [PeekabooBridgeOperation]? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+        hostKind: WinkBridgeHostKind,
+        operations: [WinkBridgeOperation],
+        enabledOperations: [WinkBridgeOperation]? = nil
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: minor),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: minor),
             hostKind: hostKind,
             build: nil,
             supportedOperations: operations,
             enabledOperations: enabledOperations,
-            hostCapabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership]
+            hostCapabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership]
         )
     }
 }

@@ -1,16 +1,16 @@
 import AppKit
 import Darwin
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 struct ImageBlankCaptureDiagnosticsTests {
     @Test
     func `Missing artifact still diagnoses current capture pixels`() throws {
         let missingPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-missing-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-missing-\(UUID().uuidString).png")
             .path
         let capture = try self.capture(
             imageData: self.pngData(width: 32, height: 32) { _, _ in (0, 0, 0, 255) },
@@ -27,7 +27,7 @@ struct ImageBlankCaptureDiagnosticsTests {
     @Test
     func `Stale artifact cannot replace current capture pixels`() throws {
         let staleURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-stale-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-stale-\(UUID().uuidString).png")
         try self.pngData(width: 32, height: 32) { _, _ in (255, 255, 255, 255) }
             .write(to: staleURL, options: .atomic)
         defer { try? FileManager.default.removeItem(at: staleURL) }
@@ -47,7 +47,7 @@ struct ImageBlankCaptureDiagnosticsTests {
     @Test
     func `Current nonblank pixels ignore a stale blank artifact`() throws {
         let staleURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-stale-blank-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-stale-blank-\(UUID().uuidString).png")
         try self.pngData(width: 32, height: 32) { _, _ in (0, 0, 0, 255) }
             .write(to: staleURL, options: .atomic)
         defer { try? FileManager.default.removeItem(at: staleURL) }
@@ -177,7 +177,7 @@ struct ImageBlankCaptureDiagnosticsTests {
         iterations: Int
     ) throws -> BenchmarkResult {
         let artifactURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-blank-benchmark-\(UUID().uuidString).\(fileExtension)")
+            .appendingPathComponent("wink-blank-benchmark-\(UUID().uuidString).\(fileExtension)")
         try artifactData.write(to: artifactURL, options: .atomic)
         defer { try? FileManager.default.removeItem(at: artifactURL) }
 

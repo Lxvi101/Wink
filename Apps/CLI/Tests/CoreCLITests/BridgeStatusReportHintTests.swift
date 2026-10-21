@@ -1,20 +1,20 @@
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct BridgeStatusReportHintTests {
     private func candidate(
         socketPath: String,
-        hostKind: PeekabooBridgeHostKind,
+        hostKind: WinkBridgeHostKind,
         permissions: PermissionsStatus,
         selectionEligible: Bool = false,
         rejection: BridgeCandidateRejectionReport? = nil
     ) -> BridgeCandidateReport {
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 1),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 1),
             hostKind: hostKind,
             build: nil,
             supportedOperations: [],
@@ -37,7 +37,7 @@ struct BridgeStatusReportHintTests {
             remoteSkipReason: nil,
             selected: selected,
             candidates: candidates,
-            client: BridgeClientReport(identity: PeekabooBridgeClientIdentity(
+            client: BridgeClientReport(identity: WinkBridgeClientIdentity(
                 bundleIdentifier: nil,
                 teamIdentifier: nil,
                 processIdentifier: 1,
@@ -109,9 +109,9 @@ struct BridgeStatusReportHintTests {
 
     @Test
     func `bundle authorization refusal names the bundle allowlist instead of the team`() throws {
-        let refusal = PeekabooBridgeErrorEnvelope(
+        let refusal = WinkBridgeErrorEnvelope(
             code: .unauthorizedClient,
-            message: "Bundle boo.peekaboo.boundary-denied is not authorized"
+            message: "Bundle boo.wink.boundary-denied is not authorized"
         )
 
         let report = BridgeCandidateErrorReport
@@ -122,12 +122,12 @@ struct BridgeStatusReportHintTests {
         #expect(hint.contains("bundle/signing identifier"))
         #expect(hint.contains("bundle allowlist"))
         #expect(hint.contains("TeamID") == false)
-        #expect(hint.contains("PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS") == false)
+        #expect(hint.contains("WINK_ALLOW_UNSIGNED_SOCKET_CLIENTS") == false)
     }
 
     @Test
     func `host authentication hint never recommends disabling client signature checks`() throws {
-        let error = PeekabooBridgeErrorEnvelope(
+        let error = WinkBridgeErrorEnvelope(
             code: .unauthorizedClient,
             message: "Bridge host authentication failed",
             context: "connectedHostAuthentication"
@@ -135,12 +135,12 @@ struct BridgeStatusReportHintTests {
         let hint = try #require(BridgeCandidateErrorReport.bridgeEnvelope(error).hint)
         #expect(hint.contains("socket host"))
         #expect(hint.contains("Relaunch the released signed host"))
-        #expect(!hint.contains("PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS"))
+        #expect(!hint.contains("WINK_ALLOW_UNSIGNED_SOCKET_CLIENTS"))
     }
 
     @Test
     func `team authorization refusal retains the signed-client remediation`() throws {
-        let refusal = PeekabooBridgeErrorEnvelope(
+        let refusal = WinkBridgeErrorEnvelope(
             code: .unauthorizedClient,
             message: "Team NOT_ALLOWED is not authorized"
         )
@@ -157,7 +157,7 @@ struct BridgeStatusReportHintTests {
     @Test
     func `unauthorized implicit GUI rejection is visible without verbose diagnostics`() throws {
         let socketPath = "/tmp/gui.sock"
-        let failure = BridgeCandidateErrorReport.bridgeEnvelope(PeekabooBridgeErrorEnvelope(
+        let failure = BridgeCandidateErrorReport.bridgeEnvelope(WinkBridgeErrorEnvelope(
             code: .unauthorizedClient,
             message: "Team TEST is not authorized"
         ))
@@ -198,7 +198,7 @@ struct BridgeStatusReportHintTests {
         options.requiredElementActionOperations = [.setValue]
 
         let missingPermissionHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             supportedOperations: [.setValue, .performAction],
             permissions: PermissionsStatus(
@@ -208,9 +208,9 @@ struct BridgeStatusReportHintTests {
                 postEvent: true
             ),
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let permissionEvaluation = await RuntimeHostResolver.evaluateRemoteCandidate(
@@ -229,7 +229,7 @@ struct BridgeStatusReportHintTests {
         #expect(permissionReport.message.contains("Accessibility"))
 
         let missingCapabilityHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             supportedOperations: [],
             permissions: PermissionsStatus(
@@ -254,7 +254,7 @@ struct BridgeStatusReportHintTests {
         #expect(capabilityReport.code == "requirementsNotMet")
 
         let wrongHostKindHandshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .helper,
             supportedOperations: [.setValue, .performAction]
         )
@@ -284,7 +284,7 @@ struct BridgeStatusReportHintTests {
             requiresValidatedHistoricalDaemon: false
         )
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "4.2.0",
             supportedOperations: [.permissionsStatus]
@@ -315,13 +315,13 @@ struct BridgeStatusReportHintTests {
     func `JSON encoding preserves the established full status report`() throws {
         let socketPath = "/tmp/gui.sock"
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "4.2.0",
-            supportedOperations: PeekabooBridgeOperation.allCases,
+            supportedOperations: WinkBridgeOperation.allCases,
             hostCapabilities: [
-                PeekabooBridgeHostCapability.backgroundBridgeHost,
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.backgroundBridgeHost,
+                WinkBridgeHostCapability.attestedOperationReceipts,
             ]
         )
         let handshakeReport = BridgeHandshakeReport(from: handshake)
@@ -360,8 +360,8 @@ struct BridgeStatusReportHintTests {
 
     @Test
     func `Bridge report preserves typed capture readiness`() throws {
-        let handshake = PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+        let handshake = WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "fixture",
             supportedOperations: [.desktopObservation],
@@ -384,28 +384,28 @@ struct BridgeStatusReportHintTests {
 
     @Test
     func `Bridge report preserves host generation build and launch capabilities`() throws {
-        let identity = PeekabooBridgeHostIdentity(
+        let identity = WinkBridgeHostIdentity(
             processIdentifier: 4242,
             processStartIdentity: 9_876_543,
-            bundleIdentifier: "boo.peekaboo.mac",
+            bundleIdentifier: "boo.wink.mac",
             bundleShortVersion: "4.0.0",
             bundleVersion: "400",
             codeSignatureHash: "abcdef",
             sourceCommit: "0123456789abcdef0123456789abcdef01234567"
         )
         let handshake = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeProtocolVersion(major: 1, minor: 21),
+            negotiatedVersion: WinkBridgeProtocolVersion(major: 1, minor: 21),
             hostKind: .gui,
             build: "4.0.0 (400)",
             supportedOperations: [],
             hostIdentity: identity,
-            hostCapabilities: [PeekabooBridgeHostCapability.backgroundBridgeHost]
+            hostCapabilities: [WinkBridgeHostCapability.backgroundBridgeHost]
         )
         let report = BridgeHandshakeReport(from: handshake)
         let selection = BridgeSelectionReport.remote(socketPath: "/tmp/gui.sock", handshake: report)
 
         #expect(report.hostIdentity == identity)
-        #expect(report.hostCapabilities == [PeekabooBridgeHostCapability.backgroundBridgeHost])
+        #expect(report.hostCapabilities == [WinkBridgeHostCapability.backgroundBridgeHost])
         #expect(selection.humanSummary.contains("pid=4242"))
 
         let object = try #require(
@@ -414,6 +414,6 @@ struct BridgeStatusReportHintTests {
         #expect((object["hostIdentity"] as? [String: Any])?["processIdentifier"] as? Int == 4242)
         #expect((object["hostIdentity"] as? [String: Any])?["sourceCommit"] as? String ==
             "0123456789abcdef0123456789abcdef01234567")
-        #expect(object["hostCapabilities"] as? [String] == [PeekabooBridgeHostCapability.backgroundBridgeHost])
+        #expect(object["hostCapabilities"] as? [String] == [WinkBridgeHostCapability.backgroundBridgeHost])
     }
 }

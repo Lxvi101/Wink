@@ -1,14 +1,14 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
+import WinkAutomationKit
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension ScreenCaptureKitOwnerRuntimeTests {
     @Test
     func `SCK safety handshake is reused for selection and authenticated dispatch`() async throws {
-        let socketPath = "/tmp/peekaboo-safety-handshake-reuse-\(UUID().uuidString).sock"
+        let socketPath = "/tmp/wink-safety-handshake-reuse-\(UUID().uuidString).sock"
         var permissionEvaluationCount = 0
         let host = try await Self.startHost(
             socketPath: socketPath,
@@ -21,8 +21,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         )
         defer { Task { await host.stop() } }
 
-        let identity = PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+        let identity = WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -43,7 +43,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         #expect(permissionEvaluationCount == 1)
         #expect(handshakeCache.entry(
             for: candidate,
-            identity: PeekabooBridgeClientIdentity(
+            identity: WinkBridgeClientIdentity(
                 bundleIdentifier: identity.bundleIdentifier,
                 teamIdentifier: identity.teamIdentifier,
                 processIdentifier: identity.processIdentifier + 1,

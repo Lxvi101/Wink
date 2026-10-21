@@ -1,12 +1,12 @@
 import Commander
 import Foundation
 import MCP
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import TachikomaMCP
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooCLI
+@testable import WinkAgentRuntime
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -14,7 +14,7 @@ struct BrowserMutationLaneInvalidatorTests {
     @Test
     func `Concurrent browser lanes share a durable cross process barrier`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-browser-lanes-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-browser-lanes-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: store)
@@ -30,7 +30,7 @@ struct BrowserMutationLaneInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         let coordinator = runtime.toolSnapshotMutationCoordinator
@@ -63,7 +63,7 @@ struct BrowserMutationLaneInvalidatorTests {
     @Test
     func `Completed browser mutation stays durable when its peer cancels`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-browser-complete-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-browser-complete-cancel-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -75,7 +75,7 @@ struct BrowserMutationLaneInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: InMemorySnapshotManager()),
+            services: WinkServices(snapshotManager: InMemorySnapshotManager()),
             interactionMutationTracker: tracker
         )
         let coordinator = runtime.toolSnapshotMutationCoordinator
@@ -97,7 +97,7 @@ struct BrowserMutationLaneInvalidatorTests {
     @Test
     func `Overlapping browser refusals cancel their shared uncommitted boundary`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-browser-cancel-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-browser-cancel-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
@@ -109,7 +109,7 @@ struct BrowserMutationLaneInvalidatorTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: InMemorySnapshotManager()),
+            services: WinkServices(snapshotManager: InMemorySnapshotManager()),
             interactionMutationTracker: tracker
         )
         let coordinator = runtime.toolSnapshotMutationCoordinator
@@ -133,13 +133,13 @@ struct BrowserMutationLaneInvalidatorTests {
     @Test
     func `Session teardown recovers durable debt through its originating coordinator`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-browser-teardown-debt-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-browser-teardown-debt-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let watermarkURL = root.appendingPathComponent("desktop-mutation-watermark.json", isDirectory: false)
         let store = DesktopMutationWatermarkStore(directoryURL: root)
         let snapshots = InMemorySnapshotManager(desktopMutationWatermarkStore: store)
         let tracker = InteractionMutationTracker(desktopMutationWatermarkStore: store)
-        let services = PeekabooServices(snapshotManager: snapshots)
+        let services = WinkServices(snapshotManager: snapshots)
         let runtime = CommandRuntime(
             configuration: .init(
                 verbose: false,
@@ -282,9 +282,9 @@ struct BrowserMutationLaneInvalidatorTests {
     private static func services(
         browser: any BrowserMCPClientProviding,
         snapshots: any SnapshotManagerProtocol
-    ) -> PeekabooServices {
-        let defaults = PeekabooServices()
-        return PeekabooServices(
+    ) -> WinkServices {
+        let defaults = WinkServices()
+        return WinkServices(
             logging: defaults.logging,
             screenCapture: defaults.screenCapture,
             applications: defaults.applications,

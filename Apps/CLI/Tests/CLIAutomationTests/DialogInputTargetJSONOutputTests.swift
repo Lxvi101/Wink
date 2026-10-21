@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.unit))
 struct DialogInputTargetJSONOutputTests {
@@ -35,7 +35,7 @@ struct DialogInputTargetJSONOutputTests {
                 )
             )
         )
-        let services = TestServicesFactory.makePeekabooServices(dialogs: StubDialogService(elements: elements))
+        let services = TestServicesFactory.makeWinkServices(dialogs: StubDialogService(elements: elements))
 
         let result = try await InProcessCommandRunner.run(
             ["dialog", "list", "--pid", "42", "--window-id", "73", "--json"],
@@ -82,7 +82,7 @@ struct DialogInputTargetJSONOutputTests {
                 )
             )
         )
-        let services = TestServicesFactory.makePeekabooServices(dialogs: StubDialogService(elements: elements))
+        let services = TestServicesFactory.makeWinkServices(dialogs: StubDialogService(elements: elements))
 
         let result = try await InProcessCommandRunner.run(
             ["dialog", "list", "--pid", "42", "--window-id", "73", "--json"],
@@ -148,7 +148,7 @@ struct DialogInputTargetJSONOutputTests {
         )
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, dialogs: dialogService)
+            base: TestServicesFactory.makeWinkServices(windows: windows, dialogs: dialogService)
         )
 
         let result = try await InProcessCommandRunner.run(

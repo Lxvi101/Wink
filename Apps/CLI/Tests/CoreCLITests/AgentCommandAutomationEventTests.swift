@@ -1,9 +1,9 @@
 import Foundation
 import OSLog
-import PeekabooAgentRuntime
+import WinkAgentRuntime
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct AgentCommandAutomationEventTests {
@@ -11,7 +11,7 @@ struct AgentCommandAutomationEventTests {
     @MainActor
     func `Agent completion event omits task result and model content`() async throws {
         let taskText = """
-        PEEKABOO_ALERT17_SENTINEL
+        WINK_ALERT17_SENTINEL
         prompt=TEST_PROMPT_MARKER
         credential=TEST_CREDENTIAL_MARKER
         path=/Users/example/private
@@ -41,7 +41,7 @@ struct AgentCommandAutomationEventTests {
 
         let events = try await Self.agentEvents(since: startedAt, taskLength: taskText.count)
         for fragment in [
-            "PEEKABOO_ALERT17_SENTINEL",
+            "WINK_ALERT17_SENTINEL",
             "TEST_PROMPT_MARKER",
             "TEST_RESULT_PROMPT_MARKER",
             "TEST_CREDENTIAL_MARKER",
@@ -88,7 +88,7 @@ struct AgentCommandAutomationEventTests {
     private static func agentEvents(since date: Date, taskLength: Int) async throws -> [String] {
         let predicate = NSPredicate(
             format: "subsystem == %@ AND category == %@",
-            "boo.peekaboo.playground",
+            "boo.wink.playground",
             AutomationLogCategory.agent.rawValue
         )
         for _ in 0..<20 {

@@ -18,7 +18,7 @@ def run(command, **kwargs):
     return result
 
 
-with tempfile.TemporaryDirectory(prefix="peekaboo-standalone-install.") as directory:
+with tempfile.TemporaryDirectory(prefix="wink-standalone-install.") as directory:
     fixture = Path(directory)
     scripts = fixture / "scripts"
     scripts.mkdir()
@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory(prefix="peekaboo-standalone-install.") as direc
     binary_source = fixture / "binary.c"
     binary_source.write_text('#include <stdio.h>\nextern int companion_value(void);\n'
                              'int main(void) { printf("loaded=%d\\n", companion_value()); return 0; }\n')
-    binary = output / "peekaboo"
+    binary = output / "wink"
     run(["/usr/bin/clang", str(binary_source), "-L" + str(output),
          "-lswiftCompatibilityFixture", "-Wl,-rpath,@executable_path", "-o", str(binary)])
     assert run([str(binary)]).stdout == "loaded=42\n"
@@ -63,11 +63,11 @@ with tempfile.TemporaryDirectory(prefix="peekaboo-standalone-install.") as direc
 from pathlib import Path
 args = sys.argv[1:]
 assert args[0] in ("cp", "install"), args
-assert args[-1] in ("/usr/local/bin", "/usr/local/bin/", "/usr/local/bin/peekaboo"), args
+assert args[-1] in ("/usr/local/bin", "/usr/local/bin/", "/usr/local/bin/wink"), args
 original = args[-1]
 args[-1] = os.environ["FIXTURE_INSTALL_DIR"]
-if original.endswith("/peekaboo"):
-    args[-1] = str(Path(args[-1]) / "peekaboo")
+if original.endswith("/wink"):
+    args[-1] = str(Path(args[-1]) / "wink")
 os.execv({"cp": "/bin/cp", "install": "/usr/bin/install"}[args[0]], args)
 ''')
     sudo.chmod(0o755)
@@ -84,7 +84,7 @@ os.execv({"cp": "/bin/cp", "install": "/usr/bin/install"}[args[0]], args)
     def no_core_dump():
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
-    result = subprocess.run([str(installed / "peekaboo")], capture_output=True, text=True,
+    result = subprocess.run([str(installed / "wink")], capture_output=True, text=True,
                             preexec_fn=no_core_dump)
     assert result.returncode == 0, f"installed executable cannot load companion: {result.stderr}"
     assert result.stdout == "loaded=42\n"
@@ -106,8 +106,8 @@ os.execv({"cp": "/bin/cp", "install": "/usr/bin/install"}[args[0]], args)
     library.unlink()
     collector.write_text("#!/bin/bash\nexit 0\n")
     run(["/bin/bash", str(scripts / "build-cli-standalone.sh"), "--install"], env=environment)
-    assert run([str(installed / "peekaboo")]).stdout == "independent\n"
-    assert [path.name for path in installed.iterdir()] == ["peekaboo"]
+    assert run([str(installed / "wink")]).stdout == "independent\n"
+    assert [path.name for path in installed.iterdir()] == ["wink"]
     print("PASS collection failure refuses partial installation; native dependency-free CLI still installs")
 
     # Exercise the actual collector and verifier rather than substituting their
@@ -143,7 +143,7 @@ os.execv({"cp": "/bin/cp", "install": "/usr/bin/install"}[args[0]], args)
         for path in installed.iterdir():
             path.unlink()
         run(["/bin/bash", str(scripts / "build-cli-standalone.sh"), "--install"], env=environment)
-        result = run([str(installed / "peekaboo")], preexec_fn=no_core_dump)
+        result = run([str(installed / "wink")], preexec_fn=no_core_dump)
         assert result.stdout.strip() == "OutputSpan<UInt8>", result.stdout
         companions = list(installed.glob("libswiftCompatibility*.dylib"))
         assert companions, "real SDK collector must install the required companions"

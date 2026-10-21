@@ -1,6 +1,6 @@
 import Commander
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderMCPWindowTests {
     @Test
@@ -9,7 +9,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "mcp",
             "serve",
             "--transport", "http",
@@ -37,7 +37,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "window",
             "close",
             "--app", "Safari",
@@ -54,7 +54,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "window",
             "move",
             "--app", "Notes",
@@ -73,7 +73,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "window",
             "focus",
             "--app", "Safari",
@@ -96,7 +96,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "app",
             "launch",
             "\"Visual Studio Code\"",
@@ -115,7 +115,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "app",
             "quit",
             "--pid", "123",
@@ -134,7 +134,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "menu",
             "click",
             "--app", "Safari",
@@ -153,7 +153,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "permissions",
             "--json"
         ])
@@ -167,7 +167,7 @@ struct CommanderBinderMCPWindowTests {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let program = Program(descriptors: descriptors.map(\.metadata))
         let invocation = try program.resolve(argv: [
-            "peekaboo",
+            "wink",
             "tools",
             "--no-sort",
             "--verbose"

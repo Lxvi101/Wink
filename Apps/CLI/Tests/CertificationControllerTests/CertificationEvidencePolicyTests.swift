@@ -1,8 +1,8 @@
 import CoreGraphics
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller exact evidence policies")
 struct CertificationEvidencePolicyTests {

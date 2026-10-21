@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.tags(.automation), .enabled(if: CLITestEnvironment.runAutomationRead))
 struct DockCommandTests {
     @Test
@@ -48,7 +48,7 @@ struct DockCommandTests {
     }
 
     @MainActor
-    private func makeTestServices() -> PeekabooServices {
+    private func makeTestServices() -> WinkServices {
         let applications = StubApplicationService(applications: [])
         let dockItems = [
             DockItem(
@@ -62,7 +62,7 @@ struct DockCommandTests {
             ),
         ]
         let dockService = StubDockService(items: dockItems, autoHidden: false)
-        return TestServicesFactory.makePeekabooServices(
+        return TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: StubWindowService(windowsByApp: [:]),
             menu: StubMenuService(menusByApp: [:]),
@@ -89,7 +89,7 @@ struct DockCommandJSONContractTests {
                 size: CGSize(width: 64, height: 64)
             ),
         ]
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             dock: StubDockService(items: dockItems, autoHidden: false)
         )
 

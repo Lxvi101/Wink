@@ -20,7 +20,7 @@ function canonicalValue(value) {
 
 function aggregateSHA256(name, value) {
   return createHash('sha256').update(Buffer.concat([
-    Buffer.from(`peekaboo.multi-target-certification.${name}.v2\0`, 'utf8'),
+    Buffer.from(`wink.multi-target-certification.${name}.v2\0`, 'utf8'),
     Buffer.from(JSON.stringify(canonicalValue(value)), 'utf8')
   ])).digest('hex');
 }

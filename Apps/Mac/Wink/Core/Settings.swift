@@ -1,0 +1,1128 @@
+import Foundation
+import KeyboardShortcuts
+import Observation
+import WinkCore
+import ServiceManagement
+import Tachikoma
+
+/// Application settings and preferences manager.
+///
+/// Settings are automatically persisted to UserDefaults and synchronized across app launches.
+/// This class uses the modern @Observable pattern for SwiftUI integration.
+@Observable
+@MainActor
+final class WinkSettings {
+    static let defaultVisualizerAnimationSpeed: Double = 1.0
+    /// Flag to prevent recursive saves during loading
+    private var isLoading = false
+    // Reference to ConfigurationManager
+    private let configManager = ConfigurationManager.shared
+    private weak var services: WinkServices?
+
+    /// API Configuration - Now synced with config.json
+    var selectedProvider: String = "anthropic" {
+        didSet {
+            let canonicalProvider = self.canonicalProviderIdentifier(self.selectedProvider)
+            if canonicalProvider != self.selectedProvider {
+                let wasLoading = self.isLoading
+                self.isLoading = true
+                self.selectedProvider = canonicalProvider
+                self.isLoading = wasLoading
+                if !wasLoading {
+                    self.save()
+                    self.updateConfigFile()
+                    self.services?.refreshAgentService()
+                }
+                return
+            }
+
+            self.save()
+            self.updateConfigFile()
+            if !self.isLoading {
+                self.services?.refreshAgentService()
+            }
+        }
+    }
+
+    var openAIAPIKey: String {
+        get { self.credentialCoordinator.state(for: .openAI).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .openAI) }
+    }
+
+    var anthropicAPIKey: String {
+        get { self.credentialCoordinator.state(for: .anthropic).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .anthropic) }
+    }
+
+    var grokAPIKey: String {
+        get { self.credentialCoordinator.state(for: .grok).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .grok) }
+    }
+
+    var googleAPIKey: String {
+        get { self.credentialCoordinator.state(for: .google).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .google) }
+    }
+
+    var miniMaxAPIKey: String {
+        get { self.credentialCoordinator.state(for: .miniMax).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .miniMax) }
+    }
+
+    var miniMaxChinaAPIKey: String {
+        get { self.credentialCoordinator.state(for: .miniMaxChina).draft }
+        set { self.credentialCoordinator.edit(newValue, for: .miniMaxChina) }
+    }
+
+    var ollamaBaseURL: String = "http://localhost:11434" {
+        didSet {
+            self.save()
+            self.persistOllamaBaseURL()
+        }
+    }
+
+    var selectedModel: String = "claude-opus-5" {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+            if !self.isLoading {
+                self.services?.refreshAgentService()
+            }
+        }
+    }
+
+    /// Vision model override. Empty provider means a previously saved bare model id.
+    var customVisionProvider: String = "" {
+        didSet {
+            self.save()
+            self.persistVisionModel()
+        }
+    }
+
+    var useCustomVisionModel: Bool = false {
+        didSet {
+            self.save()
+            self.persistVisionModel()
+        }
+    }
+
+    var customVisionModel: String = "gpt-5.6" {
+        didSet {
+            self.save()
+            self.persistVisionModel()
+        }
+    }
+
+    var temperature: Double = 0.7 {
+        didSet {
+            let clamped = max(0, min(1, temperature))
+            if self.temperature != clamped {
+                self.temperature = clamped
+            } else {
+                self.save()
+                self.updateConfigFile()
+            }
+        }
+    }
+
+    var maxTokens: Int = 16384 {
+        didSet {
+            let clamped = max(1, min(128_000, maxTokens))
+            if self.maxTokens != clamped {
+                self.maxTokens = clamped
+            } else {
+                self.save()
+                self.updateConfigFile()
+            }
+        }
+    }
+
+    /// UI Preferences
+    var alwaysOnTop: Bool = false {
+        didSet { self.save() }
+    }
+
+    var showInDock: Bool = true {
+        didSet {
+            self.save()
+            // Update dock visibility when preference changes
+            Task { @MainActor in
+                DockIconManager.shared.updateDockVisibility()
+            }
+        }
+    }
+
+    var launchAtLogin: Bool = false {
+        didSet {
+            // Don't save or update during loading to prevent recursion
+            if !self.isLoading {
+                self.save()
+
+                // Update launch at login status
+                do {
+                    if self.launchAtLogin {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    print("Failed to update launch at login: \(error)")
+                    // Prevent recursion when reverting - temporarily set isLoading
+                    self.isLoading = true
+                    self.launchAtLogin = !self.launchAtLogin
+                    self.isLoading = false
+                }
+            }
+        }
+    }
+
+    // MARK: - Keyboard Shortcuts
+
+    // Keyboard shortcuts are now managed by sindresorhus/KeyboardShortcuts library
+    // See KeyboardShortcutNames.swift for the defined shortcuts
+
+    /// Mac-specific UI Features
+    var agentModeEnabled: Bool = false {
+        didSet { self.save() }
+    }
+
+    var hapticFeedbackEnabled: Bool = true {
+        didSet { self.save() }
+    }
+
+    var soundEffectsEnabled: Bool = true {
+        didSet { self.save() }
+    }
+
+    var showAutomationTargetIcons: Bool = true {
+        didSet { self.save() }
+    }
+
+    // MARK: - Visualizer Settings
+
+    var visualizerEnabled: Bool = true {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    var visualizerAnimationSpeed: Double = WinkSettings.defaultVisualizerAnimationSpeed {
+        didSet {
+            let clamped = max(0.1, min(2.0, visualizerAnimationSpeed))
+            if self.visualizerAnimationSpeed != clamped {
+                self.visualizerAnimationSpeed = clamped
+            } else {
+                self.save()
+            }
+        }
+    }
+
+    var visualizerEffectIntensity: Double = 1.0 {
+        didSet {
+            let clamped = max(0.1, min(2.0, visualizerEffectIntensity))
+            if self.visualizerEffectIntensity != clamped {
+                self.visualizerEffectIntensity = clamped
+            } else {
+                self.save()
+            }
+        }
+    }
+
+    var visualizerSoundEnabled: Bool = true {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    var agentCursorEnabled: Bool = true {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    var inputHUDEnabled: Bool = true {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    var captureIndicatorsEnabled: Bool = true {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    /// Accessibility element bounding boxes during `see`. Off by default —
+    /// a box per detected control clutters the screen.
+    var elementDetectionEnabled: Bool = false {
+        didSet {
+            self.save()
+            self.updateConfigFile()
+        }
+    }
+
+    /// Custom Providers
+    @ObservationIgnored
+    var customProviders: [String: Configuration.CustomProvider] {
+        self.configManager.listCustomProviders()
+    }
+
+    /// Computed Properties
+    var hasValidAPIKey: Bool {
+        if let customProviderID = self.customProviderIdentifier(matching: self.selectedProvider),
+           let customProvider = self.customProviders[customProviderID]
+        {
+            return self.configManager.resolveCredentialReference(customProvider.options.apiKey)?.isEmpty == false
+        }
+
+        switch self.selectedProvider {
+        case "openai":
+            return !self.credentialCoordinator.state(for: .openAI).confirmed.isEmpty || self.isUsingOpenAIEnvironment ||
+                self.hasCredentialValue(forAny: ["OPENAI_ACCESS_TOKEN", "OPENAI_API_KEY"])
+        case "anthropic":
+            return !self.credentialCoordinator.state(for: .anthropic).confirmed.isEmpty || self
+                .isUsingAnthropicEnvironment ||
+                self.hasCredentialValue(forAny: ["ANTHROPIC_ACCESS_TOKEN", "ANTHROPIC_API_KEY"])
+        case "grok":
+            return !self.credentialCoordinator.state(for: .grok).confirmed.isEmpty || self.isUsingGrokEnvironment ||
+                self.hasCredentialValue(forAny: ["X_AI_API_KEY", "XAI_API_KEY", "GROK_API_KEY"])
+        case "google":
+            return !self.credentialCoordinator.state(for: .google).confirmed.isEmpty || self.isUsingGoogleEnvironment ||
+                self.hasCredentialValue(forAny: ["GEMINI_API_KEY", "GOOGLE_API_KEY"])
+        case "minimax":
+            return !self.credentialCoordinator.state(for: .miniMax).confirmed.isEmpty || self
+                .isUsingMiniMaxEnvironment ||
+                self.hasCredentialValue(forAny: ["MINIMAX_API_KEY"]) ||
+                self.configManager.getMiniMaxAPIKey()?.isEmpty == false
+        case "minimax-cn", "minimax_cn", "minimaxi":
+            return !self.credentialCoordinator.state(for: .miniMaxChina).confirmed.isEmpty || !self
+                .credentialCoordinator.state(for: .miniMax).confirmed.isEmpty ||
+                self.isUsingMiniMaxChinaEnvironment || self.isUsingMiniMaxEnvironment ||
+                self.hasCredentialValue(forAny: ["MINIMAX_CN_API_KEY", "MINIMAX_API_KEY"]) ||
+                self.configManager.getMiniMaxChinaAPIKey()?.isEmpty == false
+        case "openrouter":
+            return self.configManager.getOpenRouterAPIKey()?.isEmpty == false
+        case "ollama", "lmstudio", "lm-studio":
+            return true // Local providers don't require API keys.
+        default:
+            // Check if it's a custom provider
+            if let customProvider = self.customProviders[self.selectedProvider] {
+                return !customProvider.options.apiKey.isEmpty
+            }
+            return false
+        }
+    }
+
+    /// Check if we're using environment variables
+    var isUsingOpenAIEnvironment: Bool {
+        self.detectedEnvironmentVariable(for: ["OPENAI_API_KEY"]) != nil
+    }
+
+    var isUsingAnthropicEnvironment: Bool {
+        self.detectedEnvironmentVariable(for: ["ANTHROPIC_API_KEY"]) != nil
+    }
+
+    var isUsingGrokEnvironment: Bool {
+        self.detectedEnvironmentVariable(
+            for: ["X_AI_API_KEY", "XAI_API_KEY", "GROK_API_KEY"]) != nil
+    }
+
+    var isUsingGoogleEnvironment: Bool {
+        self.detectedEnvironmentVariable(
+            for: ["GEMINI_API_KEY", "GOOGLE_API_KEY"]) != nil
+    }
+
+    var isUsingMiniMaxEnvironment: Bool {
+        self.detectedEnvironmentVariable(for: ["MINIMAX_API_KEY"]) != nil
+    }
+
+    var isUsingMiniMaxChinaEnvironment: Bool {
+        self.detectedEnvironmentVariable(for: ["MINIMAX_CN_API_KEY"]) != nil ||
+            (self.configManager.getMiniMaxChinaAPIKey(fallbackToSharedKey: false) == nil &&
+                self.detectedEnvironmentVariable(for: ["MINIMAX_API_KEY"]) != nil)
+    }
+
+    var allAvailableProviders: [String] {
+        let builtIn = ["openai", "anthropic", "grok", "google", "minimax", "minimax-cn", "ollama", "lmstudio"]
+        let custom = self.customProviders.compactMap { $0.value.enabled ? $0.key : nil }
+        let customIDs = Set(custom.map { $0.lowercased() })
+        return builtIn.filter { !customIDs.contains($0) } + custom.sorted()
+    }
+
+    // Storage
+    private let userDefaults = UserDefaults.standard
+    private let keyPrefix = "wink."
+    let credentialCoordinator: ProviderCredentialCoordinator
+
+    init(credentialCoordinator: ProviderCredentialCoordinator? = nil) {
+        self.credentialCoordinator = credentialCoordinator ?? ProviderCredentialCoordinator(
+            file: ConfigurationManager.shared,
+            legacy: LegacyCredentialPreferences(
+                read: { UserDefaults.standard.string(forKey: "wink.\($0.rawValue)") },
+                remove: { UserDefaults.standard.removeObject(forKey: "wink.\($0.rawValue)") }),
+            runtimeDidChange: {})
+        self.load()
+        self.loadFromWinkConfig()
+        self.migrateSettingsIfNeeded()
+        self.backfillVisionModelIfNeeded()
+        if credentialCoordinator == nil {
+            self.credentialCoordinator.runtimeDidChange = { [weak self] in
+                guard let self else { return }
+                self.configManager.applyAIProviderKeys()
+                self.services?.refreshAgentService()
+            }
+            self.credentialCoordinator.reload()
+        }
+    }
+}
+
+extension WinkSettings {
+    private func load() {
+        self.isLoading = true
+        defer { self.isLoading = false }
+
+        self.loadProviderSettings()
+        self.loadUIPreferences()
+        self.loadVisualizerSettings()
+        self.loadAnimationPreferences()
+    }
+
+    private func loadProviderSettings() {
+        self.selectedProvider = self.canonicalProviderIdentifier(
+            self.userDefaults.string(forKey: self.namespaced("selectedProvider")) ?? "anthropic")
+        self.ollamaBaseURL = self.userDefaults.string(forKey: self.namespaced(
+            "ollamaBaseURL")) ?? "http://localhost:11434"
+
+        let defaultModel = self.defaultModel(for: self.selectedProvider)
+        self.selectedModel = self.userDefaults.string(forKey: self.namespaced("selectedModel")) ?? defaultModel
+        self.useCustomVisionModel = self.userDefaults.bool(forKey: self.namespaced("useCustomVisionModel"))
+        self.customVisionProvider = self.userDefaults.string(forKey: self.namespaced("customVisionProvider")) ?? ""
+        self.customVisionModel = self.userDefaults.string(forKey: self.namespaced("customVisionModel")) ?? "gpt-5.6"
+
+        self.temperature = self.nonZeroDouble(forKey: "temperature", fallback: 0.7)
+        self.maxTokens = self.nonZeroInt(forKey: "maxTokens", fallback: 16384)
+    }
+
+    private func loadUIPreferences() {
+        self.alwaysOnTop = self.userDefaults.bool(forKey: self.namespaced("alwaysOnTop"))
+
+        let showInDockKey = self.namespaced("showInDock")
+        if self.userDefaults.object(forKey: showInDockKey) == nil {
+            self.showInDock = true
+            self.userDefaults.set(true, forKey: showInDockKey)
+        } else {
+            self.showInDock = self.userDefaults.bool(forKey: showInDockKey)
+        }
+
+        self.launchAtLogin = SMAppService.mainApp.status == .enabled
+        self.userDefaults.set(self.launchAtLogin, forKey: self.namespaced("launchAtLogin"))
+
+        self.agentModeEnabled = self.valueOrDefault(key: "agentModeEnabled", defaultValue: false)
+        self.hapticFeedbackEnabled = self.userDefaults.bool(forKey: self.namespaced("hapticFeedbackEnabled"))
+        self.soundEffectsEnabled = self.userDefaults.bool(forKey: self.namespaced("soundEffectsEnabled"))
+        self.showAutomationTargetIcons = self.valueOrDefault(
+            key: "showAutomationTargetIcons",
+            defaultValue: true)
+
+        self.ensureTrueFlag(markerKey: "hapticFeedbackEnabledSet", value: &self.hapticFeedbackEnabled)
+        self.ensureTrueFlag(markerKey: "soundEffectsEnabledSet", value: &self.soundEffectsEnabled)
+    }
+
+    private func loadVisualizerSettings() {
+        self.visualizerEnabled = self.valueOrDefault(key: "visualizerEnabled", defaultValue: true)
+
+        self.visualizerAnimationSpeed = self.nonZeroDouble(
+            forKey: "visualizerAnimationSpeed",
+            fallback: WinkSettings.defaultVisualizerAnimationSpeed)
+        self.visualizerEffectIntensity = self.nonZeroDouble(forKey: "visualizerEffectIntensity", fallback: 1.0)
+        self.visualizerSoundEnabled = self.valueOrDefault(key: "visualizerSoundEnabled", defaultValue: true)
+    }
+
+    private func loadAnimationPreferences() {
+        self.agentCursorEnabled = self.migratedVisualizerToggle(
+            key: "agentCursorEnabled",
+            legacyKeys: ["clickAnimationEnabled", "mouseTrailEnabled", "swipePathEnabled"])
+        self.inputHUDEnabled = self.migratedVisualizerToggle(
+            key: "inputHUDEnabled",
+            legacyKeys: ["typeAnimationEnabled", "hotkeyOverlayEnabled", "scrollAnimationEnabled"])
+        self.captureIndicatorsEnabled = self.migratedVisualizerToggle(
+            key: "captureIndicatorsEnabled",
+            legacyKeys: ["screenshotFlashEnabled", "watchCaptureHUDEnabled"])
+        // Element boxes stay off until the user explicitly opts in.
+        self.elementDetectionEnabled = self.valueOrDefault(key: "elementDetectionEnabled", defaultValue: false)
+    }
+
+    private func save() {
+        guard !self.isLoading else { return }
+
+        self.userDefaults.set(self.selectedProvider, forKey: "\(self.keyPrefix)selectedProvider")
+        self.userDefaults.set(self.ollamaBaseURL, forKey: "\(self.keyPrefix)ollamaBaseURL")
+        self.userDefaults.set(self.selectedModel, forKey: "\(self.keyPrefix)selectedModel")
+        self.userDefaults.set(self.useCustomVisionModel, forKey: "\(self.keyPrefix)useCustomVisionModel")
+        self.userDefaults.set(self.customVisionProvider, forKey: "\(self.keyPrefix)customVisionProvider")
+        self.userDefaults.set(self.customVisionModel, forKey: "\(self.keyPrefix)customVisionModel")
+        self.userDefaults.set(self.temperature, forKey: "\(self.keyPrefix)temperature")
+        self.userDefaults.set(self.maxTokens, forKey: "\(self.keyPrefix)maxTokens")
+
+        self.userDefaults.set(self.alwaysOnTop, forKey: "\(self.keyPrefix)alwaysOnTop")
+        self.userDefaults.set(self.showInDock, forKey: "\(self.keyPrefix)showInDock")
+        self.userDefaults.set(self.launchAtLogin, forKey: "\(self.keyPrefix)launchAtLogin")
+
+        // Keyboard shortcuts are automatically saved by the KeyboardShortcuts library
+
+        self.userDefaults.set(self.agentModeEnabled, forKey: "\(self.keyPrefix)agentModeEnabled")
+        self.userDefaults.set(self.hapticFeedbackEnabled, forKey: "\(self.keyPrefix)hapticFeedbackEnabled")
+        self.userDefaults.set(self.soundEffectsEnabled, forKey: "\(self.keyPrefix)soundEffectsEnabled")
+        self.userDefaults.set(
+            self.showAutomationTargetIcons,
+            forKey: "\(self.keyPrefix)showAutomationTargetIcons")
+
+        // Save visualizer settings
+        self.userDefaults.set(self.visualizerEnabled, forKey: "\(self.keyPrefix)visualizerEnabled")
+        self.userDefaults.set(self.visualizerAnimationSpeed, forKey: "\(self.keyPrefix)visualizerAnimationSpeed")
+        self.userDefaults.set(self.visualizerEffectIntensity, forKey: "\(self.keyPrefix)visualizerEffectIntensity")
+        self.userDefaults.set(self.visualizerSoundEnabled, forKey: "\(self.keyPrefix)visualizerSoundEnabled")
+
+        self.userDefaults.set(self.agentCursorEnabled, forKey: "\(self.keyPrefix)agentCursorEnabled")
+        self.userDefaults.set(self.inputHUDEnabled, forKey: "\(self.keyPrefix)inputHUDEnabled")
+        self.userDefaults.set(self.captureIndicatorsEnabled, forKey: "\(self.keyPrefix)captureIndicatorsEnabled")
+        self.userDefaults.set(self.elementDetectionEnabled, forKey: "\(self.keyPrefix)elementDetectionEnabled")
+    }
+
+    private func loadFromWinkConfig() {
+        let wasLoading = self.isLoading
+        self.isLoading = true
+        defer { self.isLoading = wasLoading }
+
+        // Use ConfigurationManager to load from config.json
+        let config = self.configManager.loadConfiguration()
+
+        // config.json is the cross-process switch for element boxes (the CLI
+        // consults the same key before dispatching), so an explicit value there
+        // wins over the locally persisted toggle at launch.
+        if let elementBoxes = config?.visualizer?.elementDetectionEnabled {
+            self.elementDetectionEnabled = elementBoxes
+        }
+
+        // Don't copy environment variables into settings!
+        // Only load from credentials file if they exist there
+        // This allows proper environment variable detection in the UI
+
+        // Load provider and model from config
+        let selectedProvider = self.canonicalProviderIdentifier(self.configManager.getSelectedProvider())
+        if !selectedProvider.isEmpty {
+            self.selectedProvider = selectedProvider
+        }
+
+        // Load agent settings from config
+        if let model = configManager.getAgentModel() {
+            let selection = self.providerQualifiedModelSelection(from: model)
+            if let provider = selection.provider {
+                self.selectedProvider = provider
+            }
+            self.selectedModel = selection.model
+        } else if let model = self.firstConfiguredModel(
+            in: self.configManager.getAIProviders(),
+            matching: self.selectedProvider)
+        {
+            self.selectedModel = model
+        }
+
+        let configTemp = self.configManager.getAgentTemperature()
+        if configTemp != 0.7 { // Only update if not default
+            self.temperature = configTemp
+        }
+
+        let configTokens = self.configManager.getAgentMaxTokens()
+        if configTokens != 16384 { // Only update if not default
+            self.maxTokens = configTokens
+        }
+
+        // Load Ollama base URL
+        let ollamaURL = self.configManager.getOllamaBaseURL()
+        if ollamaURL != "http://localhost:11434" {
+            self.ollamaBaseURL = ollamaURL
+        }
+
+        // A failed load is not an intentional missing key. Leave the saved choice alone.
+        if let loadedConfig = config {
+            let visionModel = loadedConfig.agent?.visionModel?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !visionModel.isEmpty {
+                self.useCustomVisionModel = true
+                let selection = self.visionProviderQualifiedModelSelection(from: visionModel)
+                self.customVisionProvider = selection.provider ?? ""
+                self.customVisionModel = selection.model
+            } else if self.visionConfigAbsenceIsAuthoritative() {
+                self.useCustomVisionModel = false
+                self.customVisionProvider = ""
+                self.userDefaults.set(false, forKey: self.namespaced("useCustomVisionModel"))
+                self.userDefaults.set("", forKey: self.namespaced("customVisionProvider"))
+            }
+        }
+    }
+
+    private func migrateSettingsIfNeeded() {
+        // Check if we've already migrated
+        let migrationKey = "\(keyPrefix)migratedToConfigJson"
+        guard !self.userDefaults.bool(forKey: migrationKey) else { return }
+
+        if FileManager.default.fileExists(atPath: ConfigurationManager.configPath) {
+            self.userDefaults.set(true, forKey: migrationKey)
+            return
+        }
+
+        // Migrate settings from UserDefaults to config.json
+        do {
+            try self.configManager.updateConfiguration { config in
+                // Ensure structures exist
+                if config.agent == nil {
+                    config.agent = Configuration.AgentConfig()
+                }
+
+                // Migrate agent settings
+                config.agent?.defaultModel = self.agentDefaultModel()
+                config.agent?.temperature = self.temperature
+                config.agent?.maxTokens = self.maxTokens
+
+                // Update AI providers if needed
+                if config.aiProviders == nil {
+                    config.aiProviders = Configuration.AIProviderConfig()
+                }
+
+                // Build providers string based on selected provider and model
+                let providerString = switch self.selectedProvider {
+                case "openai":
+                    "openai/\(self.selectedModel)"
+                case "anthropic":
+                    "anthropic/\(self.selectedModel)"
+                case "grok":
+                    "grok/\(self.selectedModel)"
+                case "google":
+                    "google/\(self.selectedModel)"
+                case "minimax":
+                    "minimax/\(self.selectedModel)"
+                case "minimax-cn", "minimax_cn", "minimaxi":
+                    "minimax-cn/\(self.selectedModel)"
+                case "ollama":
+                    "ollama/\(self.selectedModel)"
+                case "lmstudio", "lm-studio":
+                    "lmstudio/\(self.selectedModel)"
+                case "openrouter":
+                    "openrouter/\(self.selectedModel)"
+                default:
+                    "anthropic/claude-opus-5"
+                }
+
+                // Set providers string with fallbacks
+                config.aiProviders?.providers = "\(providerString),ollama/llava:latest"
+
+                self.assignPersistedOllamaBaseURL(to: &config)
+            }
+
+            // Mark as migrated
+            self.userDefaults.set(true, forKey: migrationKey)
+
+            print("Successfully migrated settings to config.json")
+        } catch {
+            print("Failed to migrate settings to config.json: \(error)")
+        }
+    }
+
+    /// Writes only the Ollama URL. A full settings save would rewrite unrelated keys.
+    private func persistOllamaBaseURL() {
+        guard !self.isLoading else { return }
+        do {
+            try self.configManager.updateConfiguration { config in
+                self.assignPersistedOllamaBaseURL(to: &config)
+            }
+        } catch {
+            print("Failed to update Ollama base URL in config.json: \(error)")
+        }
+    }
+
+    /// Writes only `agent.visionModel`. A full settings save would rewrite unrelated keys.
+    /// False means the copy did not land, so a later launch can try again.
+    @discardableResult
+    private func persistVisionModel() -> Bool {
+        guard !self.isLoading else { return false }
+        do {
+            try self.configManager.updateConfiguration { config in
+                self.assignPersistedVisionModel(to: &config)
+            }
+            return true
+        } catch {
+            print("Failed to update vision model in config.json: \(error)")
+            return false
+        }
+    }
+
+    /// An enabled choice is stored as `provider/modelId`. Turning it off removes the key.
+    private func assignPersistedVisionModel(to config: inout Configuration) {
+        guard let value = self.persistedVisionModelValue() else {
+            config.agent?.visionModel = nil
+            return
+        }
+        if config.agent == nil {
+            config.agent = Configuration.AgentConfig()
+        }
+        config.agent?.visionModel = value
+    }
+
+    private func persistedVisionModelValue() -> String? {
+        guard self.useCustomVisionModel else { return nil }
+        let model = self.customVisionModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !model.isEmpty else { return nil }
+        let provider = self.customVisionProvider.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !provider.isEmpty else { return model }
+        let prefix = "\(provider)/"
+        if model.lowercased().hasPrefix(prefix.lowercased()) {
+            return model
+        }
+        return "\(provider)/\(model)"
+    }
+
+    /// Copies a pre-config vision toggle into `agent.visionModel` once.
+    /// After that, a missing config key stays missing.
+    private func backfillVisionModelIfNeeded() {
+        guard !self.visionConfigAbsenceIsAuthoritative() else { return }
+        guard let config = self.configManager.loadConfiguration() else { return }
+        if self.useCustomVisionModel {
+            let configured = config.agent?.visionModel?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if configured.isEmpty, !self.persistVisionModel() {
+                return
+            }
+        }
+        self.userDefaults.set(true, forKey: self.namespaced("visionModelConfigAuthoritative"))
+    }
+
+    private func visionConfigAbsenceIsAuthoritative() -> Bool {
+        self.userDefaults.bool(forKey: self.namespaced("visionModelConfigAuthoritative"))
+    }
+
+    /// The default URL clears a saved custom value. Otherwise the next launch reloads it.
+    private func assignPersistedOllamaBaseURL(to config: inout Configuration) {
+        if config.aiProviders == nil {
+            config.aiProviders = Configuration.AIProviderConfig()
+        }
+        if self.ollamaBaseURL == "http://localhost:11434" {
+            config.aiProviders?.ollamaBaseUrl = nil
+        } else {
+            config.aiProviders?.ollamaBaseUrl = self.ollamaBaseURL
+        }
+    }
+
+    private func updateConfigFile(excludingProvider excludedProvider: String? = nil) {
+        guard !self.isLoading else { return }
+
+        do {
+            try self.configManager.updateConfiguration { config in
+                // Ensure structures exist
+                if config.agent == nil {
+                    config.agent = Configuration.AgentConfig()
+                }
+
+                // Update agent settings
+                config.agent?.defaultModel = self.agentDefaultModel()
+                config.agent?.temperature = self.temperature
+                config.agent?.maxTokens = self.maxTokens
+
+                // Update AI providers
+                if config.aiProviders == nil {
+                    config.aiProviders = Configuration.AIProviderConfig()
+                }
+
+                let providerString = self.selectedProviderString()
+
+                // Update providers string
+                if let currentProviders = config.aiProviders?.providers {
+                    // Move the selected provider first while keeping every other fallback.
+                    let providers = currentProviders.split(separator: ",")
+                        .map { String($0).trimmingCharacters(in: .whitespaces) }
+                    var newProviders = [providerString]
+
+                    // Add other providers that aren't the same type
+                    for provider in providers {
+                        let providerType = provider.split(separator: "/").first.map(String.init) ?? ""
+                        if let excludedProvider,
+                           providerType.caseInsensitiveCompare(excludedProvider) == .orderedSame
+                        {
+                            continue
+                        }
+                        if self.canonicalProviderIdentifier(providerType) !=
+                            self.canonicalProviderIdentifier(self.selectedProvider)
+                        {
+                            newProviders.append(provider)
+                        }
+                    }
+
+                    // Ensure we have a fallback
+                    if newProviders.count == 1, !providerString.starts(with: "ollama/") {
+                        newProviders.append("ollama/llava:latest")
+                    }
+
+                    config.aiProviders?.providers = newProviders.joined(separator: ",")
+                } else {
+                    config.aiProviders?.providers = "\(providerString),ollama/llava:latest"
+                }
+
+                self.assignPersistedOllamaBaseURL(to: &config)
+
+                // Mirror the element-box toggle into config.json so the CLI's
+                // dispatch gate (SeeTool) follows the app setting.
+                if config.visualizer == nil {
+                    config.visualizer = Configuration.VisualizerConfig()
+                }
+                config.visualizer?.elementDetectionEnabled = self.elementDetectionEnabled
+            }
+        } catch {
+            print("Failed to update config.json: \(error)")
+        }
+    }
+
+    private func selectedProviderString() -> String {
+        switch self.selectedProvider {
+        case "openai":
+            "openai/\(self.selectedModel)"
+        case "anthropic":
+            "anthropic/\(self.selectedModel)"
+        case "grok":
+            "grok/\(self.selectedModel)"
+        case "google":
+            "google/\(self.selectedModel)"
+        case "minimax":
+            "minimax/\(self.selectedModel)"
+        case "minimax-cn", "minimax_cn", "minimaxi":
+            "minimax-cn/\(self.selectedModel)"
+        case "ollama":
+            "ollama/\(self.selectedModel)"
+        case "lmstudio", "lm-studio":
+            "lmstudio/\(self.selectedModel)"
+        case "openrouter":
+            "openrouter/\(self.selectedModel)"
+        default:
+            if self.customProviders[self.selectedProvider] != nil {
+                "\(self.selectedProvider)/\(self.selectedModel)"
+            } else {
+                "anthropic/claude-opus-5"
+            }
+        }
+    }
+
+    func connectServices(_ services: WinkServices) {
+        self.services = services
+    }
+
+    // MARK: - Custom Provider Management
+
+    func addCustomProvider(_ provider: Configuration.CustomProvider, id: String) throws {
+        try self.configManager.addCustomProvider(provider, id: id)
+        // UI updates automatically with @Observable
+    }
+
+    func selectCustomProvider(id: String) {
+        guard let provider = self.getCustomProvider(id: id),
+              provider.enabled,
+              let model = self.configuredModelForCustomProvider(id: id)
+        else { return }
+
+        let wasLoading = self.isLoading
+        self.isLoading = true
+        self.selectedProvider = id
+        self.selectedModel = model
+        self.isLoading = wasLoading
+
+        guard !wasLoading else { return }
+        self.save()
+        self.updateConfigFile()
+        self.services?.refreshAgentService()
+    }
+
+    func replaceCustomProvider(_ provider: Configuration.CustomProvider, id: String) throws {
+        let wasSelected = self.customProviderIdentifier(matching: self.selectedProvider) == id
+        try self.configManager.addCustomProvider(provider, id: id)
+
+        if wasSelected {
+            if let models = provider.models,
+               !models.isEmpty,
+               models[self.selectedModel] == nil,
+               let replacementModel = models.keys.min()
+            {
+                let wasLoading = self.isLoading
+                self.isLoading = true
+                self.selectedModel = replacementModel
+                self.isLoading = wasLoading
+                if !wasLoading {
+                    self.save()
+                }
+            }
+        }
+
+        self.updateConfigFile()
+        self.services?.refreshAgentService()
+    }
+
+    func removeCustomProvider(id: String) throws {
+        let wasSelected = self.selectedProvider.caseInsensitiveCompare(id) == .orderedSame
+        try self.configManager.removeCustomProvider(id: id)
+
+        if wasSelected {
+            let wasLoading = self.isLoading
+            self.isLoading = true
+            self.selectedProvider = "anthropic"
+            self.selectedModel = self.defaultModel(for: "anthropic")
+            self.isLoading = wasLoading
+
+            if !wasLoading {
+                self.save()
+            }
+        }
+
+        self.updateConfigFile(excludingProvider: id)
+        self.services?.refreshAgentService()
+    }
+
+    func getCustomProvider(id: String) -> Configuration.CustomProvider? {
+        self.configManager.getCustomProvider(id: id)
+    }
+
+    func testCustomProvider(id: String) async -> (success: Bool, error: String?) {
+        await self.configManager.testCustomProvider(id: id)
+    }
+
+    func discoverModelsForCustomProvider(id: String) async -> (models: [String], error: String?) {
+        await self.configManager.discoverModelsForCustomProvider(id: id)
+    }
+
+    private func namespaced(_ key: String) -> String {
+        "\(self.keyPrefix)\(key)"
+    }
+
+    private func nonZeroDouble(forKey key: String, fallback: Double) -> Double {
+        let value = self.userDefaults.double(forKey: self.namespaced(key))
+        return value == 0 ? fallback : value
+    }
+
+    private func nonZeroInt(forKey key: String, fallback: Int) -> Int {
+        let value = self.userDefaults.integer(forKey: self.namespaced(key))
+        return value == 0 ? fallback : value
+    }
+
+    private func valueOrDefault(key: String, defaultValue: Bool) -> Bool {
+        let namespacedKey = self.namespaced(key)
+        if self.userDefaults.object(forKey: namespacedKey) == nil {
+            self.userDefaults.set(defaultValue, forKey: namespacedKey)
+            return defaultValue
+        }
+        return self.userDefaults.bool(forKey: namespacedKey)
+    }
+
+    private func migratedVisualizerToggle(key: String, legacyKeys: [String]) -> Bool {
+        let namespacedKey = self.namespaced(key)
+        if self.userDefaults.object(forKey: namespacedKey) != nil {
+            return self.userDefaults.bool(forKey: namespacedKey)
+        }
+        let legacyValues = legacyKeys.compactMap { legacyKey -> Bool? in
+            let key = self.namespaced(legacyKey)
+            guard self.userDefaults.object(forKey: key) != nil else { return nil }
+            return self.userDefaults.bool(forKey: key)
+        }
+        // A collapsed group cannot preserve independent legacy choices. Keep
+        // any explicit opt-out instead of silently re-enabling that feedback.
+        let migrated = legacyValues.allSatisfy(\.self)
+        self.userDefaults.set(migrated, forKey: namespacedKey)
+        return migrated
+    }
+
+    private func ensureTrueFlag(markerKey: String, value: inout Bool) {
+        let namespacedKey = self.namespaced(markerKey)
+        if !self.userDefaults.bool(forKey: namespacedKey) {
+            value = true
+            self.userDefaults.set(true, forKey: namespacedKey)
+        }
+    }
+
+    private func detectedEnvironmentVariable(for keys: [String]) -> String? {
+        let environment = ProcessInfo.processInfo.environment
+        return keys.first { key in
+            guard let value = environment[key] else { return false }
+            return !value.isEmpty
+        }
+    }
+
+    private func hasCredentialValue(forAny keys: [String]) -> Bool {
+        keys.contains { key in
+            guard let value = self.configManager.credentialValue(for: key) else { return false }
+            return !value.isEmpty
+        }
+    }
+
+    private func firstConfiguredModel(in providers: String, matching selectedProvider: String) -> String? {
+        let selectedProvider = self.canonicalProviderIdentifier(selectedProvider)
+        for entry in providers.split(separator: ",") {
+            let parts = entry.trimmingCharacters(in: .whitespaces).split(separator: "/", maxSplits: 1)
+            guard parts.count == 2,
+                  self.canonicalProviderIdentifier(String(parts[0])) == selectedProvider
+            else { continue }
+            return String(parts[1])
+        }
+        return nil
+    }
+
+    private func configuredModelForCustomProvider(id: String) -> String? {
+        guard let provider = self.getCustomProvider(id: id), provider.enabled else { return nil }
+
+        if let modelID = provider.models?.keys.min() {
+            return modelID
+        }
+
+        if let configuredDefault = self.configManager.getAgentModel() {
+            let selection = self.providerQualifiedModelSelection(from: configuredDefault)
+            let configuredProvider = selection.provider ??
+                self.canonicalProviderIdentifier(self.configManager.getSelectedProvider())
+            if configuredProvider.caseInsensitiveCompare(id) == .orderedSame, !selection.model.isEmpty {
+                return selection.model
+            }
+        }
+
+        return self.firstConfiguredModel(
+            in: self.configManager.getAIProviders(),
+            matching: id)
+    }
+
+    private func defaultModel(for provider: String) -> String {
+        if let customProviderID = self.customProviderIdentifier(matching: provider),
+           self.customProviders[customProviderID] != nil
+        {
+            return self.configuredModelForCustomProvider(id: customProviderID) ?? ""
+        }
+
+        return switch provider {
+        case "openai":
+            "gpt-5.6-sol"
+        case "anthropic":
+            "claude-opus-5"
+        case "grok":
+            "grok-4.3"
+        case "google":
+            "gemini-3.5-flash"
+        case "minimax":
+            "MiniMax-M2.7"
+        case "minimax-cn", "minimax_cn", "minimaxi":
+            "MiniMax-M2.7"
+        case "lmstudio", "lm-studio":
+            "openai/gpt-oss-120b"
+        default:
+            "llava:latest"
+        }
+    }
+
+    private func agentDefaultModel() -> String {
+        if let customProviderID = self.customProviderIdentifier(matching: self.selectedProvider) {
+            return "\(customProviderID)/\(self.selectedModel)"
+        }
+
+        return switch self.selectedProvider {
+        case "minimax-cn", "minimax_cn", "minimaxi":
+            "minimax-cn/\(self.selectedModel)"
+        case "openrouter":
+            "openrouter/\(self.selectedModel)"
+        default:
+            self.selectedModel
+        }
+    }
+
+    private func canonicalProviderIdentifier(_ provider: String) -> String {
+        if let customProviderID = self.customProviderIdentifier(matching: provider) {
+            return customProviderID
+        }
+        return Self.canonicalProviderIdentifier(provider)
+    }
+
+    private func customProviderIdentifier(matching provider: String) -> String? {
+        let matches = self.customProviders.filter {
+            $0.value.enabled && $0.key.caseInsensitiveCompare(provider) == .orderedSame
+        }
+        return matches.count == 1 ? matches.first?.key : nil
+    }
+
+    private static func canonicalProviderIdentifier(_ provider: String) -> String {
+        switch provider.lowercased() {
+        case "openai", "anthropic", "minimax", "ollama", "openrouter":
+            provider.lowercased()
+        case "gemini", "google":
+            "google"
+        case "xai", "grok":
+            "grok"
+        case "minimax-cn", "minimax_cn", "minimaxi":
+            "minimax-cn"
+        case "lm-studio", "lmstudio":
+            "lmstudio"
+        default:
+            provider
+        }
+    }
+
+    /// Vision choices are not required to appear in the agent provider list.
+    private func visionProviderQualifiedModelSelection(from rawModel: String) -> (provider: String?, model: String) {
+        let parts = rawModel.split(separator: "/", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else {
+            return (nil, rawModel)
+        }
+        if let customProviderID = self.customProviderIdentifier(matching: parts[0]) {
+            return (customProviderID, parts[1])
+        }
+        let provider = Self.canonicalProviderIdentifier(parts[0])
+        guard Self.isKnownProviderIdentifier(provider) else {
+            return (nil, rawModel)
+        }
+        return (provider, parts[1])
+    }
+
+    private func providerQualifiedModelSelection(from rawModel: String) -> (provider: String?, model: String) {
+        let parts = rawModel.split(separator: "/", maxSplits: 1).map(String.init)
+        guard parts.count == 2 else {
+            return (nil, rawModel)
+        }
+
+        if let customProviderID = self.customProviderIdentifier(matching: parts[0]) {
+            return (customProviderID, parts[1])
+        }
+
+        let provider = Self.canonicalProviderIdentifier(parts[0])
+        let configuredProviders = Set(
+            self.configManager.getAIProviders()
+                .split(separator: ",")
+                .compactMap { entry -> String? in
+                    let provider = entry
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .split(separator: "/", maxSplits: 1)
+                        .first
+                        .map(String.init)
+                    return provider.map(self.canonicalProviderIdentifier)
+                })
+        if configuredProviders.contains(provider) ||
+            provider == self.canonicalProviderIdentifier(self.selectedProvider) ||
+            (!self.configManager.hasExplicitAIProviderList() && Self.isKnownProviderIdentifier(provider))
+        {
+            return (provider, parts[1])
+        }
+
+        return (nil, rawModel)
+    }
+
+    private static func isKnownProviderIdentifier(_ provider: String) -> Bool {
+        switch provider {
+        case "openai", "anthropic", "grok", "google", "minimax", "minimax-cn", "ollama", "lmstudio", "openrouter":
+            true
+        default:
+            false
+        }
+    }
+}

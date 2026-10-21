@@ -1,16 +1,16 @@
 ---
-summary: 'Peekaboo visual feedback architecture, animation catalog, and diagnostics'
+summary: 'Wink visual feedback architecture, animation catalog, and diagnostics'
 read_when:
   - Designing or debugging visualizer animations
   - Touching visual feedback settings or transport code
   - Investigating CLI → app visual feedback issues
 ---
 
-# Peekaboo Visual Feedback System
+# Wink Visual Feedback System
 
 ## Overview
 
-The Peekaboo Visual Feedback System provides quiet visual indicators for eligible capture and foreground operations. When Peekaboo.app is running, CLI and MCP operations can emit animations and visual cues without making feedback part of the automation result.
+The Wink Visual Feedback System provides quiet visual indicators for eligible capture and foreground operations. When Wink.app is running, CLI and MCP operations can emit animations and visual cues without making feedback part of the automation result.
 
 ### Background-first contract
 
@@ -19,9 +19,9 @@ Targeted background input never emits cursor or input-HUD overlays, even when th
 ## Architecture
 
 ### Core Design
-- **Integration**: Built directly into Peekaboo.app
-- **Communication**: Distributed notifications (`boo.peekaboo.visualizer.event`) + shared JSON envelopes written by `VisualizationClient`
-- **Storage**: Events live in `~/Library/Application Support/PeekabooShared/VisualizerEvents` (override with `PEEKABOO_VISUALIZER_STORAGE`)
+- **Integration**: Built directly into Wink.app
+- **Communication**: Distributed notifications (`boo.wink.visualizer.event`) + shared JSON envelopes written by `VisualizationClient`
+- **Storage**: Events live in `~/Library/Application Support/WinkShared/VisualizerEvents` (override with `WINK_VISUALIZER_STORAGE`)
 - **Fallback**: CLI/MCP work normally without visual feedback if the app isn't running (events are simply dropped)
 - **Performance**: GPU-accelerated SwiftUI animations with minimal overhead
 
@@ -31,17 +31,17 @@ Targeted background input never emits cursor or input-HUD overlays, even when th
    - The payload is persisted via `VisualizerEventStore.persist(_:)`, which writes `<uuid>.json` to the shared VisualizerEvents directory and logs the exact path (look for `[VisualizerEventStore][VisualizerSmoke] persisted event …` in CLI output when debugging).  
    - Immediately afterwards the client posts `DistributedNotificationCenter.default().post(name: .visualizerEventDispatched, object: "<uuid>|<kind>")`. No `userInfo` data is used so the bridge remains sandbox friendly.
 2. **Notification delivery**  
-   - Any listener (Peekaboo.app, smoke harnesses, or debugging scripts) can subscribe to `boo.peekaboo.visualizer.event`.  
-   - If Peekaboo.app isn’t running, the distributed notification goes nowhere and the JSON simply ages out (cleanup removes stale files after ~10 minutes).
+   - Any listener (Wink.app, smoke harnesses, or debugging scripts) can subscribe to `boo.wink.visualizer.event`.  
+   - If Wink.app isn’t running, the distributed notification goes nowhere and the JSON simply ages out (cleanup removes stale files after ~10 minutes).
 3. **Mac app reception**  
-   - `VisualizerEventReceiver` runs inside Peekaboo.app. It logs registration at launch (`Visualizer event receiver registered …`), listens for the distributed notification, parses the `<uuid>|<kind>` descriptor, and loads the referenced JSON via `VisualizerEventStore.loadEvent(id:)`.  
+   - `VisualizerEventReceiver` runs inside Wink.app. It logs registration at launch (`Visualizer event receiver registered …`), listens for the distributed notification, parses the `<uuid>|<kind>` descriptor, and loads the referenced JSON via `VisualizerEventStore.loadEvent(id:)`.  
    - Overlay windows do not inherit application hiding, so eligible feedback can appear even when deployment launched the companion with `open -gj`. The host stays hidden and inactive; overlays ignore mouse events and never become key/main windows. Sender gates, background-input suppression and ordinary-observation silence remain unchanged.
    - After successfully handing the payload off to `VisualizerCoordinator`, the receiver deletes the JSON (failed deletes are surfaced as `VisualizerEventReceiver: failed to delete event …` in the logs).  
-   - Cleanup safeguards: the CLI schedules periodic `VisualizerEventStore.cleanup(olderThan:)` calls so abandoned files disappear. For debugging you can set `PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true` to keep files on disk until the mac app consumes them.
+   - Cleanup safeguards: the CLI schedules periodic `VisualizerEventStore.cleanup(olderThan:)` calls so abandoned files disappear. For debugging you can set `WINK_VISUALIZER_DISABLE_CLEANUP=true` to keep files on disk until the mac app consumes them.
 
 ### Communication Flow
 ```
-MCP Server → peekaboo CLI → VisualizerEventStore → Distributed Notification → Peekaboo.app → Visual Feedback
+MCP Server → wink CLI → VisualizerEventStore → Distributed Notification → Wink.app → Visual Feedback
                                 ↓
                         (no app running)
                                 ↓
@@ -52,65 +52,65 @@ MCP Server → peekaboo CLI → VisualizerEventStore → Distributed Notificatio
 
 | Component | Location | Role |
 | --- | --- | --- |
-| `VisualizationClient` | `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Visualizer/VisualizationClient.swift` | Runs inside CLI/MCP processes, serializes payloads, persists them, and posts distributed notifications containing the event descriptor. |
-| `VisualizerEventStore` | `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Visualizer/VisualizerEventStore.swift` | Owns the shared storage directory, defines the `VisualizerEvent` schema, and exposes helpers to persist, load, and clean up JSON envelopes. |
-| `VisualizerEventReceiver` | `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Renderer/VisualizerEventReceiver.swift` | Hosted by Peekaboo.app, listens for `boo.peekaboo.visualizer.event`, loads the referenced JSON, and forwards it to `VisualizerCoordinator`. |
-| `VisualizerCoordinator` | `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Renderer/VisualizerCoordinator.swift` | Renders SwiftUI overlays (cursor feedback, HUD chips, swipe paths, annotations) and honors user settings such as animation speed and the three feedback-category switches. |
-| `VisualizerDesign` | `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Views/VisualizerDesign.swift` | The shared "Ghost HUD" design language: theme tokens, motion curves, HUD chip container, keycaps, and glyph badges every animation composes from. |
+| `VisualizationClient` | `Core/WinkVisualizer/Sources/WinkVisualizer/Visualizer/VisualizationClient.swift` | Runs inside CLI/MCP processes, serializes payloads, persists them, and posts distributed notifications containing the event descriptor. |
+| `VisualizerEventStore` | `Core/WinkVisualizer/Sources/WinkVisualizer/Visualizer/VisualizerEventStore.swift` | Owns the shared storage directory, defines the `VisualizerEvent` schema, and exposes helpers to persist, load, and clean up JSON envelopes. |
+| `VisualizerEventReceiver` | `Core/WinkVisualizer/Sources/WinkVisualizer/Renderer/VisualizerEventReceiver.swift` | Hosted by Wink.app, listens for `boo.wink.visualizer.event`, loads the referenced JSON, and forwards it to `VisualizerCoordinator`. |
+| `VisualizerCoordinator` | `Core/WinkVisualizer/Sources/WinkVisualizer/Renderer/VisualizerCoordinator.swift` | Renders SwiftUI overlays (cursor feedback, HUD chips, swipe paths, annotations) and honors user settings such as animation speed and the three feedback-category switches. |
+| `VisualizerDesign` | `Core/WinkVisualizer/Sources/WinkVisualizer/Views/VisualizerDesign.swift` | The shared "Ghost HUD" design language: theme tokens, motion curves, HUD chip container, keycaps, and glyph badges every animation composes from. |
 
 ## Smoke Testing
 
-- Run `peekaboo visualizer` to preview the three v4 feedback categories: agent cursor, input HUD, and capture indicators. This explicit smoke command bypasses the production background-input suppression so each category can be checked before releases or after visualizer changes.
+- Run `wink visualizer` to preview the three v4 feedback categories: agent cursor, input HUD, and capture indicators. This explicit smoke command bypasses the production background-input suppression so each category can be checked before releases or after visualizer changes.
 - Still keep the manual Visualizer Test view handy for ad-hoc previews or stress tests; the smoke command is intentionally short and non-interactive.
 
 ## Transport Storage & Format
 
-- **Directory**: `~/Library/Application Support/PeekabooShared/VisualizerEvents`. Override with `PEEKABOO_VISUALIZER_STORAGE=/custom/path`. When sandboxing the app, set `PEEKABOO_VISUALIZER_APP_GROUP=com.example.group` so the store lives inside the App Group container.
+- **Directory**: `~/Library/Application Support/WinkShared/VisualizerEvents`. Override with `WINK_VISUALIZER_STORAGE=/custom/path`. When sandboxing the app, set `WINK_VISUALIZER_APP_GROUP=com.example.group` so the store lives inside the App Group container.
 - **File name**: `<UUID>.json`. Each payload is written atomically so the receiver never reads partial data.
 - **Schema**: `VisualizerEvent` encodes `{ id, createdAt, payload }`. Payload is a `Codable` enum covering every animation type; any `Data` (screenshots, thumbnails) is base64-encoded by `JSONEncoder`.
-- **Lifetime**: Clients schedule `VisualizerEventStore.cleanup(olderThan:)` sweeps so abandoned files disappear after roughly 10 minutes. For deep debugging, `PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true` keeps envelopes on disk until manually removed.
+- **Lifetime**: Clients schedule `VisualizerEventStore.cleanup(olderThan:)` sweeps so abandoned files disappear after roughly 10 minutes. For deep debugging, `WINK_VISUALIZER_DISABLE_CLEANUP=true` keeps envelopes on disk until manually removed.
 
 ### Environment Flags
 
-- `PEEKABOO_VISUAL_FEEDBACK=false` – disable the client entirely (no files, no notifications).
-- `PEEKABOO_VISUAL_SCREENSHOTS=false` – skip screenshot flash events but allow the rest.
-- `PEEKABOO_VISUAL_ELEMENT_BOXES=true|false` – opt in to (or force off) the per-element bounding boxes during `see`; they default to off and the env var beats `visualizer.elementDetectionEnabled` in `config.json`.
-- `PEEKABOO_VISUALIZER_MASK_TYPED_TEXT=true` – always mask typed characters as bullets. By default the typing HUD shows the text verbatim (that's the point of the caption); secure text fields are detected and masked automatically before the event is persisted.
-- `PEEKABOO_VISUALIZER_STDOUT=true|false` – force VisualizationClient logs to stderr regardless of bundle context.
-- `PEEKABOO_VISUALIZER_STORAGE=/path` – override the shared directory.
-- `PEEKABOO_VISUALIZER_APP_GROUP=<group>` – resolve storage inside an App Group container.
-- `PEEKABOO_VISUALIZER_FORCE_APP=true` – force “mac-app context” so headless harnesses (e.g., VisualizerSmoke) can emit events without launching Peekaboo.app.
-- `PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true` – keep envelopes on disk for forensic analysis.
+- `WINK_VISUAL_FEEDBACK=false` – disable the client entirely (no files, no notifications).
+- `WINK_VISUAL_SCREENSHOTS=false` – skip screenshot flash events but allow the rest.
+- `WINK_VISUAL_ELEMENT_BOXES=true|false` – opt in to (or force off) the per-element bounding boxes during `see`; they default to off and the env var beats `visualizer.elementDetectionEnabled` in `config.json`.
+- `WINK_VISUALIZER_MASK_TYPED_TEXT=true` – always mask typed characters as bullets. By default the typing HUD shows the text verbatim (that's the point of the caption); secure text fields are detected and masked automatically before the event is persisted.
+- `WINK_VISUALIZER_STDOUT=true|false` – force VisualizationClient logs to stderr regardless of bundle context.
+- `WINK_VISUALIZER_STORAGE=/path` – override the shared directory.
+- `WINK_VISUALIZER_APP_GROUP=<group>` – resolve storage inside an App Group container.
+- `WINK_VISUALIZER_FORCE_APP=true` – force “mac-app context” so headless harnesses (e.g., VisualizerSmoke) can emit events without launching Wink.app.
+- `WINK_VISUALIZER_DISABLE_CLEANUP=true` – keep envelopes on disk for forensic analysis.
 
-Peekaboo.app still respects user-facing toggles via `PeekabooSettings`; the coordinator checks those before animating.
+Wink.app still respects user-facing toggles via `WinkSettings`; the coordinator checks those before animating.
 
 ## Logging & Diagnostics
 
-- **CLI / services**: `VisualizationClient` logs to the `boo.peekaboo.core` subsystem. Tail with `./scripts/visualizer-logs.sh --stream` (run inside tmux per AGENTS.md) to watch sender dispatch attempts and receiver/render diagnostics.
-- **Mac app**: `VisualizerEventReceiver`, `VisualizerCoordinator`, and `AnimationOverlayManager` log under `boo.peekaboo.visualizer`. Look for “Visualizer event receiver registered…” followed by “Processing visualizer event …”.
+- **CLI / services**: `VisualizationClient` logs to the `boo.wink.core` subsystem. Tail with `./scripts/visualizer-logs.sh --stream` (run inside tmux per AGENTS.md) to watch sender dispatch attempts and receiver/render diagnostics.
+- **Mac app**: `VisualizerEventReceiver`, `VisualizerCoordinator`, and `AnimationOverlayManager` log under `boo.wink.visualizer`. Look for “Visualizer event receiver registered…” followed by “Processing visualizer event …”.
 - **Query scope**: The helper includes available info/debug messages in history and stream modes without changing system logging or persistence settings. `--predicate` replaces the default filter verbatim; it is not combined with the visualizer filter. History cannot recover messages that were never persisted, and neither mode can recover compiled-out diagnostics. Missing records do not establish receiver readiness, rejection, or rendering.
-- **File inspection**: `ls ~/Library/Application\\ Support/PeekabooShared/VisualizerEvents` shows outstanding events. A growing list means the mac app hasn’t consumed them (maybe it isn’t running or failed to decode the JSON).
-- **Manual cleanup**: When you need a clean slate, run `rm ~/Library/Application\\ Support/PeekabooShared/VisualizerEvents/*.json`; both sides recreate the folder automatically.
-- **Smoke harness**: The `VisualizerSmoke` helper (used in CI) forces `PEEKABOO_VISUALIZER_FORCE_APP=true`, emits known payloads, and asserts that the JSON lands in the shared directory—handy when debugging the transport without the full CLI.
+- **File inspection**: `ls ~/Library/Application\\ Support/WinkShared/VisualizerEvents` shows outstanding events. A growing list means the mac app hasn’t consumed them (maybe it isn’t running or failed to decode the JSON).
+- **Manual cleanup**: When you need a clean slate, run `rm ~/Library/Application\\ Support/WinkShared/VisualizerEvents/*.json`; both sides recreate the folder automatically.
+- **Smoke harness**: The `VisualizerSmoke` helper (used in CI) forces `WINK_VISUALIZER_FORCE_APP=true`, emits known payloads, and asserts that the JSON lands in the shared directory—handy when debugging the transport without the full CLI.
 
 ## Failure Modes & Fixes
 
 | Symptom | Likely Cause | How to Fix |
 | --- | --- | --- |
-| CLI debug logs “Peekaboo.app is not running…” and visuals stop | UI isn’t launched (intended best-effort behavior) | Start Peekaboo.app or its login item; visuals resume automatically. |
+| CLI debug logs “Wink.app is not running…” and visuals stop | UI isn’t launched (intended best-effort behavior) | Start Wink.app or its login item; visuals resume automatically. |
 | JSON files accumulate but the app never animates | App missing permissions or `VisualizerEventReceiver` never started | Relaunch the app, grant Screen Recording/Accessibility, and confirm logs show receiver registration. |
-| `VisualizerEventStore` throws file I/O errors | Shared directory missing or unwritable | Make sure the parent path exists and is writable, or set `PEEKABOO_VISUALIZER_STORAGE` to a directory with proper permissions. |
-| Annotated screenshot payload fails to decode | File deleted before the app could read it (cleanup ran too soon) | Disable cleanup temporarily with `PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true` or increase the cleanup interval while debugging. |
+| `VisualizerEventStore` throws file I/O errors | Shared directory missing or unwritable | Make sure the parent path exists and is writable, or set `WINK_VISUALIZER_STORAGE` to a directory with proper permissions. |
+| Annotated screenshot payload fails to decode | File deleted before the app could read it (cleanup ran too soon) | Disable cleanup temporarily with `WINK_VISUALIZER_DISABLE_CLEANUP=true` or increase the cleanup interval while debugging. |
 | CLI debug logs mention `DistributedNotificationCenter` sandbox issues | Sender is sandboxed and tried to include `userInfo` | Keep using the `<uuid>|<kind>` object format and load payloads from disk; never rely on `userInfo`. |
 
 ## Smoke Test Checklist
 
-1. **Launch the UI** – Ensure Peekaboo.app is running (rebuild with `./scripts/build-mac-debug.sh` after changes). Confirm the log line `Visualizer event receiver registered`.
-2. **Trigger an event** – Run a CLI command that emits visuals, e.g. `peekaboo see --mode screen --annotate --path /tmp/peekaboo-see.png`.
+1. **Launch the UI** – Ensure Wink.app is running (rebuild with `./scripts/build-mac-debug.sh` after changes). Confirm the log line `Visualizer event receiver registered`.
+2. **Trigger an event** – Run a CLI command that emits visuals, e.g. `wink see --mode screen --annotate --path /tmp/wink-see.png`.
 3. **Watch logs** – In tmux, run `./scripts/visualizer-logs.sh --last 30s` for history or `./scripts/visualizer-logs.sh --stream` for ongoing collection. Correlate only the event identifiers and stages actually present; successful sender dispatch is not receiver or render acknowledgement.
 4. **Inspect storage** – Check the shared directory; files should appear momentarily and disappear after the mac app consumes them. A lingering file means the receiver failed to delete it (inspect logs for the error).
-5. **Negative test** – Quit Peekaboo.app and rerun the CLI command. With `--verbose` or higher logging, the client should emit a single “Peekaboo.app is not running” debug line and skip event creation until the UI returns.
-6. **Optional overrides** – Set `PEEKABOO_VISUALIZER_FORCE_APP=true` and re-run inside a headless harness to confirm the transport still works without the UI present (the files remain until you delete them).
+5. **Negative test** – Quit Wink.app and rerun the CLI command. With `--verbose` or higher logging, the client should emit a single “Wink.app is not running” debug line and skip event creation until the UI returns.
+6. **Optional overrides** – Set `WINK_VISUALIZER_FORCE_APP=true` and re-run inside a headless harness to confirm the transport still works without the UI present (the files remain until you delete them).
 
 ## Visual Feedback Designs — the "Ghost HUD" language
 
@@ -131,7 +131,7 @@ All animations share one design system (`VisualizerDesign.swift`): a single viol
 
 ### Typing Feedback ⌨️
 - **Style**: A caption pill at the eligible foreground target window's bottom edge streams the typed text verbatim with a blinking caret
-- **Privacy**: Typing into a secure text field (`AXSecureTextField`) masks the caption as bullets before the event is persisted or shown. Detection samples the actual delivery focus immediately before every non-empty foreground text segment, so focus-changing sequences such as Tab → password → Return cannot expose the middle segment; `PEEKABOO_VISUALIZER_MASK_TYPED_TEXT=true` masks everything for privacy-sensitive setups. Targeted background typing emits no visualizer event at all
+- **Privacy**: Typing into a secure text field (`AXSecureTextField`) masks the caption as bullets before the event is persisted or shown. Detection samples the actual delivery focus immediately before every non-empty foreground text segment, so focus-changing sequences such as Tab → password → Return cannot expose the middle segment; `WINK_VISUALIZER_MASK_TYPED_TEXT=true` masks everything for privacy-sensitive setups. Targeted background typing emits no visualizer event at all
 - **Special Keys**: Rendered inline as accent glyphs (⏎, ⇥, ⌫, ⎋)
 - **Cadence**: Reveal speed derives from the incoming `TypingCadence` (human WPM or fixed delay)
 - **Coalescing**: Consecutive type commands crossfade through a single caption slot instead of stacking pills
@@ -164,7 +164,7 @@ All animations share one design system (`VisualizerDesign.swift`): a single viol
 ### Window Operations 🪟
 - **Style**: The window outline plus a glyph badge naming the operation; accent color, red only for close
 - **Close**: Outline contracts and fades. **Minimize**: outline squashes toward the bottom. **Maximize/Focus**: outline expands with a glow pulse. **Move**: outline lifts and settles. **Resize/SetBounds**: corner brackets pulse inward
-- **Background contract**: Production close/minimize/restore/maximize/move/resize/set-bounds calls are silent by default. Focus and explicitly foreground-consented paths may show these effects; `peekaboo visualizer` exercises the full catalog on demand.
+- **Background contract**: Production close/minimize/restore/maximize/move/resize/set-bounds calls are silent by default. Focus and explicitly foreground-consented paths may show these effects; `wink visualizer` exercises the full catalog on demand.
 
 ### Menu Navigation 📋
 - **Effect**: The menu path renders as a breadcrumb chip ("File ▸ New ▸ Project"); segments illuminate in traversal order
@@ -179,7 +179,7 @@ All animations share one design system (`VisualizerDesign.swift`): a single viol
 - **Effect**: A macOS-style Spaces indicator chip: one dot per desktop, the active dot hops to the destination, and a "Desktop N" label updates with a direction arrow
 
 ### Element Detection (See) 👁️
-- **Default**: OFF — a box per detected control clutters the screen. Opt in via the "Element Detection Boxes" toggle in Peekaboo.app settings, `"visualizer": {"elementDetectionEnabled": true}` in `~/.peekaboo/config.json`, or `PEEKABOO_VISUAL_ELEMENT_BOXES=true` (env wins over config). The gate is sender-side: `SeeTool`/`VisualizationClient` skip emitting the event unless one of those opts in (mirroring `PEEKABOO_VISUAL_SCREENSHOTS`); the receiver renders whatever it is handed once Visual Feedback is on. The app toggle writes the same config key — and a long-running CLI/MCP process re-reads `config.json` when its modification date changes — so one switch governs both processes without a restart.
+- **Default**: OFF — a box per detected control clutters the screen. Opt in via the "Element Detection Boxes" toggle in Wink.app settings, `"visualizer": {"elementDetectionEnabled": true}` in `~/.peekaboo/config.json`, or `WINK_VISUAL_ELEMENT_BOXES=true` (env wins over config). The gate is sender-side: `SeeTool`/`VisualizationClient` skip emitting the event unless one of those opts in (mirroring `WINK_VISUAL_SCREENSHOTS`); the receiver renders whatever it is handed once Visual Feedback is on. The app toggle writes the same config key — and a long-running CLI/MCP process re-reads `config.json` when its modification date changes — so one switch governs both processes without a restart.
 - **Effect**: Every detected element gets an accent outline sized exactly to the control, with its opaque ID in a small HUD tag above
 - **Coordinates**: Element rects in the payload are AppKit screen coordinates. Senders convert global Accessibility bounds through `VisualizerScreenGeometry`, flipping once against `NSScreen.screens[0]` (the primary display); logical point sizes are preserved, so Retina scale is never multiplied into overlay geometry
 - **Rendering**: One overlay window per screen holds every highlight (`ElementOverlaySheetView`); degenerate and screen-filling container rects are dropped and the count is capped at 120, preferring the smallest rects
@@ -199,20 +199,20 @@ Agents fire actions in bursts, so the coordinator coalesces:
 
 - `VisualizationClient` encodes strongly typed `VisualizerEvent.Payload` values (screenshot flash, click feedback, annotated screenshot, etc.) and writes each event to `<UUID>.json` inside the shared VisualizerEvents directory.
 - After persisting the payload, the client posts `DistributedNotificationCenter.default().post(name: .visualizerEventDispatched, object: "<uuid>|<kind>")`. No `userInfo` is attached so the API remains sandbox-safe.
-- `VisualizerEventReceiver` (in Peekaboo.app) listens for that notification name, loads the referenced JSON via `VisualizerEventStore.loadEvent(id:)`, calls the appropriate method on `VisualizerCoordinator`, and then deletes the file. If the app isn’t running, nothing consumes the event—exactly the desired “best effort” semantics.
+- `VisualizerEventReceiver` (in Wink.app) listens for that notification name, loads the referenced JSON via `VisualizerEventStore.loadEvent(id:)`, calls the appropriate method on `VisualizerCoordinator`, and then deletes the file. If the app isn’t running, nothing consumes the event—exactly the desired “best effort” semantics.
 - Both sides periodically call `VisualizerEventStore.cleanup(olderThan:)` so abandoned files (e.g., when the app never launched) are removed automatically.
 
 ### Storage Layout
 
-- **Directory**: `~/Library/Application Support/PeekabooShared/VisualizerEvents`
+- **Directory**: `~/Library/Application Support/WinkShared/VisualizerEvents`
 - **Overrides**:
-  - `PEEKABOO_VISUALIZER_STORAGE=/custom/path` – force a different directory (great for tests)
-  - `PEEKABOO_VISUALIZER_APP_GROUP=com.example.group` – resolve the store inside an App Group container
+  - `WINK_VISUALIZER_STORAGE=/custom/path` – force a different directory (great for tests)
+  - `WINK_VISUALIZER_APP_GROUP=com.example.group` – resolve the store inside an App Group container
 - **Format**: JSON with ISO8601 timestamps, base64 `Data` blobs, and strongly typed enums (`ClickType`, `ScrollDirection`, `WindowOperation`, etc.)
 
 ### SwiftUI Animation Components
 
-Located in `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Views/`:
+Located in `Core/WinkVisualizer/Sources/WinkVisualizer/Views/`:
 - `VisualizerDesign.swift` - Shared theme, motion curves, HUD chip, keycap, corner brackets, glyph badge
 - `ScreenshotFlashView.swift` - Viewfinder brackets + shutter veil
 - `CursorGlyphView.swift` - Shared macOS-style cursor shape and rendering
@@ -243,27 +243,27 @@ Overlay invariants worth knowing when adding animations:
 
 ### Environment Variables
 ```bash
-PEEKABOO_VISUAL_FEEDBACK=false            # Disable all visual feedback
-PEEKABOO_VISUAL_SCREENSHOTS=false         # Disable just screenshot flash
-PEEKABOO_VISUAL_ELEMENT_BOXES=true        # Opt in to per-element bounding boxes during `see` (off by default)
-PEEKABOO_VISUALIZER_STDOUT=true           # Force VisualizationClient logs to stderr/stdout
-PEEKABOO_VISUALIZER_STORAGE=/tmp/events   # Override the shared events directory
-PEEKABOO_VISUALIZER_APP_GROUP=group.boo   # Resolve storage inside an App Group container
-PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true  # Keep JSON envelopes for forensic debugging (off by default)
-PEEKABOO_VISUALIZER_FORCE_APP=true        # Pretend the CLI is running inside the mac app bundle (forces in-app behavior)
+WINK_VISUAL_FEEDBACK=false            # Disable all visual feedback
+WINK_VISUAL_SCREENSHOTS=false         # Disable just screenshot flash
+WINK_VISUAL_ELEMENT_BOXES=true        # Opt in to per-element bounding boxes during `see` (off by default)
+WINK_VISUALIZER_STDOUT=true           # Force VisualizationClient logs to stderr/stdout
+WINK_VISUALIZER_STORAGE=/tmp/events   # Override the shared events directory
+WINK_VISUALIZER_APP_GROUP=group.boo   # Resolve storage inside an App Group container
+WINK_VISUALIZER_DISABLE_CLEANUP=true  # Keep JSON envelopes for forensic debugging (off by default)
+WINK_VISUALIZER_FORCE_APP=true        # Pretend the CLI is running inside the mac app bundle (forces in-app behavior)
 ```
 
 ### Debugging Tips
-- **Verify storage alignment**: the CLI and Peekaboo.app must point to the same `VisualizerEvents` directory. When testing, set `PEEKABOO_VISUALIZER_STORAGE=/tmp/visevents` for *both* processes so the mac app can load the JSON the CLI just wrote.
-- **Disable cleanup temporarily**: `PEEKABOO_VISUALIZER_DISABLE_CLEANUP=true` keeps envelopes on disk until you inspect or replay them. Handy when the UI isn’t consuming events yet.
-- **Listen to notifications**: A tiny Swift script that subscribes to `boo.peekaboo.visualizer.event` prints descriptors (`<uuid>|<kind>`) and proves the distributed notification is firing.
+- **Verify storage alignment**: the CLI and Wink.app must point to the same `VisualizerEvents` directory. When testing, set `WINK_VISUALIZER_STORAGE=/tmp/visevents` for *both* processes so the mac app can load the JSON the CLI just wrote.
+- **Disable cleanup temporarily**: `WINK_VISUALIZER_DISABLE_CLEANUP=true` keeps envelopes on disk until you inspect or replay them. Handy when the UI isn’t consuming events yet.
+- **Listen to notifications**: A tiny Swift script that subscribes to `boo.wink.visualizer.event` prints descriptors (`<uuid>|<kind>`) and proves the distributed notification is firing.
 - **Inspect payloads**: Every persisted file logs its path (`[VisualizerEventStore][process] persisted event …`). Use `cat`/`jq` to view the JSON and even re-post it via `DistributedNotificationCenter`.
-- **Mac-side breadcrumbs**: Registration, processing, and failure messages use the `boo.peekaboo.visualizer` subsystem. Detailed received-descriptor/execute/delete breadcrumbs additionally require a build with `VISUALIZER_VERBOSE_LOGS`. Tail available messages with `./scripts/visualizer-logs.sh --stream --predicate 'process == "Peekaboo" && subsystem == "boo.peekaboo.visualizer"'`.
+- **Mac-side breadcrumbs**: Registration, processing, and failure messages use the `boo.wink.visualizer` subsystem. Detailed received-descriptor/execute/delete breadcrumbs additionally require a build with `VISUALIZER_VERBOSE_LOGS`. Tail available messages with `./scripts/visualizer-logs.sh --stream --predicate 'process == "Wink" && subsystem == "boo.wink.visualizer"'`.
 - **Replay events**: If a notification failed, re-trigger it with  
-  `swift -e 'DistributedNotificationCenter.default().post(name: Notification.Name("boo.peekaboo.visualizer.event"), object: "UUID|screenshotFlash")'`.
+  `swift -e 'DistributedNotificationCenter.default().post(name: Notification.Name("boo.wink.visualizer.event"), object: "UUID|screenshotFlash")'`.
 - **Watch cleanup**: `VisualizerEventStore.cleanup` deletes envelopes older than ~10 minutes. Disable it (env var above) or inspect files quickly before they disappear.
 
-### User Preferences (in Peekaboo.app)
+### User Preferences (in Wink.app)
 - Visualizer master switch
 - Three feedback-category switches: Agent cursor, Input HUD, and Capture indicators
 - Animation speed and effect intensity controls
@@ -301,7 +301,7 @@ PEEKABOO_VISUALIZER_FORCE_APP=true        # Pretend the CLI is running inside th
 
 1. **No Screenshots**: Visual feedback doesn't capture screen content
 2. **Local Only**: No data leaves the machine
-3. **Permission Reuse**: Uses Peekaboo.app's existing permissions
+3. **Permission Reuse**: Uses Wink.app's existing permissions
 4. **Sandboxed**: Runs within app sandbox
 
 ## Future Enhancements
@@ -314,7 +314,7 @@ PEEKABOO_VISUALIZER_FORCE_APP=true        # Pretend the CLI is running inside th
 
 ## Summary
 
-The visual feedback system transforms Peekaboo agent operations from invisible automation into an engaging, understandable experience. By showing users exactly what the agent sees and does, we build trust and make automation accessible to everyone.
+The visual feedback system transforms Wink agent operations from invisible automation into an engaging, understandable experience. By showing users exactly what the agent sees and does, we build trust and make automation accessible to everyone.
 
 The playful touches (like the screenshot flash) add personality while remaining professional and non-intrusive. The system is designed to delight power users while helping newcomers understand automation.
 
@@ -325,17 +325,17 @@ Most importantly, it is completely optional: the CLI and MCP continue to work wi
 ### Phase 1: Foundation (Notification Bridge)
 
 #### Event Store & Transport
-- [x] Create `VisualizerEventStore.swift` in PeekabooCore
-- [x] Persist events as JSON (with base64 `Data`) inside `~/Library/Application Support/PeekabooShared/VisualizerEvents`
-- [x] Provide cleanup helpers and environment overrides (`PEEKABOO_VISUALIZER_STORAGE`, `PEEKABOO_VISUALIZER_APP_GROUP`)
+- [x] Create `VisualizerEventStore.swift` in WinkCore
+- [x] Persist events as JSON (with base64 `Data`) inside `~/Library/Application Support/WinkShared/VisualizerEvents`
+- [x] Provide cleanup helpers and environment overrides (`WINK_VISUALIZER_STORAGE`, `WINK_VISUALIZER_APP_GROUP`)
 
 #### Client Dispatch
 - [x] Update `VisualizationClient` to emit `VisualizerEvent.Payload` values instead of XPC RPCs
-- [x] Post distributed notifications (`boo.peekaboo.visualizer.event`) containing `<uuid>|<kind>`
-- [x] Respect `PEEKABOO_VISUAL_FEEDBACK`, `PEEKABOO_VISUAL_SCREENSHOTS`, and `PEEKABOO_VISUALIZER_STDOUT`
+- [x] Post distributed notifications (`boo.wink.visualizer.event`) containing `<uuid>|<kind>`
+- [x] Respect `WINK_VISUAL_FEEDBACK`, `WINK_VISUAL_SCREENSHOTS`, and `WINK_VISUALIZER_STDOUT`
 
 #### App Receiver
-- [x] Add `VisualizerEventReceiver` inside Peekaboo.app
+- [x] Add `VisualizerEventReceiver` inside Wink.app
 - [x] Load events via `VisualizerEventStore`, forward to `VisualizerCoordinator`, then delete consumed files
 - [x] Periodically clean stale events so the shared directory stays small
 
@@ -353,7 +353,7 @@ Most importantly, it is completely optional: the CLI and MCP continue to work wi
 
 ### Phase 2–4: Animation Components (shipped as the Ghost HUD redesign)
 
-All per-action views exist in `Core/PeekabooVisualizer/Sources/PeekabooVisualizer/Views/` and compose the shared design system in `VisualizerDesign.swift`:
+All per-action views exist in `Core/WinkVisualizer/Sources/WinkVisualizer/Views/` and compose the shared design system in `VisualizerDesign.swift`:
 
 - [x] `ScreenshotFlashView` — viewfinder brackets, shutter veil, 👻 easter egg (every 100th)
 - [x] `CursorGlyphView` — crisp macOS-style arrow with a top-leading hotspot
@@ -391,11 +391,11 @@ All per-action views exist in `Core/PeekabooVisualizer/Sources/PeekabooVisualize
 
 #### Configuration System
 - [ ] Add environment variable support
-  - [x] `PEEKABOO_VISUAL_FEEDBACK`
-  - [x] `PEEKABOO_VISUAL_SCREENSHOTS`
-  - [x] `PEEKABOO_VISUALIZER_STDOUT`
-  - [x] `PEEKABOO_VISUALIZER_STORAGE`
-  - [x] `PEEKABOO_VISUALIZER_APP_GROUP`
+  - [x] `WINK_VISUAL_FEEDBACK`
+  - [x] `WINK_VISUAL_SCREENSHOTS`
+  - [x] `WINK_VISUALIZER_STDOUT`
+  - [x] `WINK_VISUALIZER_STORAGE`
+  - [x] `WINK_VISUALIZER_APP_GROUP`
   - [ ] Per-action toggles
 - [ ] Add app preferences UI
   - [ ] Master on/off toggle
@@ -472,7 +472,7 @@ All per-action views exist in `Core/PeekabooVisualizer/Sources/PeekabooVisualize
 - [ ] Zero performance impact when disabled
 - [ ] < 5% CPU usage during animations
 - [ ] Works on all macOS versions (15.0+)
-- [ ] Graceful fallback without Peekaboo.app
+- [ ] Graceful fallback without Wink.app
 - [ ] Delightful user experience
 - [ ] Professional appearance
 - [ ] Fun but not distracting

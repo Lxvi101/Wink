@@ -7,11 +7,11 @@ import Testing
 /// Compiling automation tests does not authorize those ambient host interactions.
 private enum DaemonRuntimeTestEnvironment {
     nonisolated static var isEnabled: Bool {
-        #if PEEKABOO_SKIP_AUTOMATION
+        #if WINK_SKIP_AUTOMATION
         false
         #else
         CLIRuntimeEnvironment.runAmbientStateTests &&
-            ProcessInfo.processInfo.environment["PEEKABOO_INCLUDE_AUTOMATION_TESTS"]?.lowercased() == "true"
+            ProcessInfo.processInfo.environment["WINK_INCLUDE_AUTOMATION_TESTS"]?.lowercased() == "true"
         #endif
     }
 }
@@ -41,11 +41,11 @@ struct DaemonLaunchRuntimeTests {
 
         let environment = [
             "PEEKABOO_CONFIG_DIR": configDirectory.path,
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION": "1",
-            "PEEKABOO_ALLOW_UNSIGNED_SOCKET_CLIENTS": "1",
+            "WINK_CONFIG_DISABLE_MIGRATION": "1",
+            "WINK_ALLOW_UNSIGNED_SOCKET_CLIENTS": "1",
         ]
         do {
-            let start = try await TestChildProcess.runPeekaboo(
+            let start = try await TestChildProcess.runWink(
                 [
                     "daemon", "start",
                     "--bridge-socket", socketPath,
@@ -53,7 +53,7 @@ struct DaemonLaunchRuntimeTests {
                     "--wait", "30s",
                 ],
                 environment: environment,
-                executablePathOverride: "peekaboo",
+                executablePathOverride: "wink",
                 workingDirectory: workingDirectory
             )
             #expect(start.status == .exited(0), Comment(rawValue: start.standardError))
@@ -62,7 +62,7 @@ struct DaemonLaunchRuntimeTests {
             let startPID = try #require(parsedStartPID)
             #expect(kill(startPID, 0) == 0)
 
-            let status = try await TestChildProcess.runPeekaboo(
+            let status = try await TestChildProcess.runWink(
                 ["daemon", "status", "--bridge-socket", socketPath],
                 environment: environment,
                 workingDirectory: workingDirectory
@@ -75,7 +75,7 @@ struct DaemonLaunchRuntimeTests {
             #expect(FileManager.default.fileExists(atPath: configDirectory
                     .appendingPathComponent("daemon.log").path))
 
-            let stop = try await TestChildProcess.runPeekaboo(
+            let stop = try await TestChildProcess.runWink(
                 Self.stopArguments(socketPath: socketPath),
                 environment: environment,
                 workingDirectory: workingDirectory
@@ -93,7 +93,7 @@ struct DaemonLaunchRuntimeTests {
                 daemonPID = nil
             }
         } catch {
-            _ = try? await TestChildProcess.runPeekaboo(
+            _ = try? await TestChildProcess.runWink(
                 Self.stopArguments(socketPath: socketPath),
                 environment: environment,
                 workingDirectory: workingDirectory

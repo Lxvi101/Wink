@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const thinAssets = [
-  ['darwin_arm64', 'peekaboo-macos-arm64.tar.gz'],
-  ['darwin_amd64', 'peekaboo-macos-x86_64.tar.gz'],
+  ['darwin_arm64', 'wink-macos-arm64.tar.gz'],
+  ['darwin_amd64', 'wink-macos-x86_64.tar.gz'],
 ];
-const universalAsset = 'peekaboo-macos-universal.tar.gz';
+const universalAsset = 'wink-macos-universal.tar.gz';
 
 export function selectHomebrewReleaseAssets(release, tag) {
   if (!tag || release?.tag_name !== tag || release.draft !== false || !Array.isArray(release.assets)) {

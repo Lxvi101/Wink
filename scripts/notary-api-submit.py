@@ -343,7 +343,7 @@ def parse_args(argv=None):
     parser.add_argument("--api-base")
     parser.add_argument("--s3-endpoint")
     args = parser.parse_args(argv)
-    if args.fixture_profile != "__peekaboo_fixture__":
+    if args.fixture_profile != "__wink_fixture__":
         if (args.fixture_profile is not None or args.api_base is not None
                 or args.s3_endpoint is not None or args.poll_interval is not None):
             parser.error("endpoint and polling overrides are fixture-only")

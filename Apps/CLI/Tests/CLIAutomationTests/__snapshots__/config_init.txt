@@ -1,12 +1,12 @@
 [ok] Configuration file created at: /tmp/config.json
 
 Next steps (no secrets written yet):
-  peekaboo config credential set openai       # secure no-echo prompt
-  peekaboo config credential set anthropic
-  peekaboo config credential set grok         # aliases: xai
-  peekaboo config credential set gemini
-  peekaboo config login openai          # OAuth, no key stored
-  peekaboo config login anthropic
+  wink config credential set openai       # secure no-echo prompt
+  wink config credential set anthropic
+  wink config credential set grok         # aliases: xai
+  wink config credential set gemini
+  wink config login openai          # OAuth, no key stored
+  wink config login anthropic
 
-Use 'peekaboo config show --effective' to see detected env/creds,
-and 'peekaboo config edit' to tweak the JSONC file if needed.
+Use 'wink config show --effective' to see detected env/creds,
+and 'wink config edit' to tweak the JSONC file if needed.

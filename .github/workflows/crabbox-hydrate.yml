@@ -35,7 +35,7 @@ env:
 jobs:
   hydrate:
     name: hydrate
-    runs-on: [self-hosted, crabbox, openclaw, peekaboo, "${{ inputs.crabbox_runner_label }}"]
+    runs-on: [self-hosted, crabbox, openclaw, wink, "${{ inputs.crabbox_runner_label }}"]
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7

@@ -10,10 +10,10 @@ if [[ ! -f "${MANIFEST_PATH}" ]]; then
   exit 1
 fi
 
-fixture_dir="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-swiftpm-consumer.XXXXXX")"
+fixture_dir="$(mktemp -d "${TMPDIR:-/tmp}/wink-swiftpm-consumer.XXXXXX")"
 trap 'rm -rf "${fixture_dir}"' EXIT
 
-manifest_json="${fixture_dir}/peekaboo-package.json"
+manifest_json="${fixture_dir}/wink-package.json"
 swift package --package-path "${ROOT_DIR}" dump-package >"${manifest_json}"
 
 node - "${manifest_json}" <<'NODE'
@@ -21,10 +21,10 @@ const fs = require("node:fs");
 
 const manifest = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const expected = [
-  "PeekabooFoundation",
-  "PeekabooProtocols",
-  "PeekabooAutomationKit",
-  "PeekabooBridge",
+  "WinkFoundation",
+  "WinkProtocols",
+  "WinkAutomationKit",
+  "WinkBridge",
 ];
 const actual = manifest.products.map(product => product.name).sort();
 
@@ -43,41 +43,41 @@ if (actualAXVersion !== expectedAXVersion) {
 }
 NODE
 
-package_repo="${fixture_dir}/Peekaboo"
+package_repo="${fixture_dir}/Wink"
 mkdir -p \
-  "${package_repo}/Core/PeekabooFoundation/Sources" \
-  "${package_repo}/Core/PeekabooProtocols/Sources" \
-  "${package_repo}/Core/PeekabooAutomationKit/Sources" \
-  "${package_repo}/Core/PeekabooCore/Sources"
+  "${package_repo}/Core/WinkFoundation/Sources" \
+  "${package_repo}/Core/WinkProtocols/Sources" \
+  "${package_repo}/Core/WinkAutomationKit/Sources" \
+  "${package_repo}/Core/WinkCore/Sources"
 
 cp "${MANIFEST_PATH}" "${package_repo}/Package.swift"
 /usr/bin/ditto \
-  "${ROOT_DIR}/Core/PeekabooFoundation/Sources/PeekabooFoundation" \
-  "${package_repo}/Core/PeekabooFoundation/Sources/PeekabooFoundation"
+  "${ROOT_DIR}/Core/WinkFoundation/Sources/WinkFoundation" \
+  "${package_repo}/Core/WinkFoundation/Sources/WinkFoundation"
 /usr/bin/ditto \
-  "${ROOT_DIR}/Core/PeekabooProtocols/Sources/PeekabooProtocols" \
-  "${package_repo}/Core/PeekabooProtocols/Sources/PeekabooProtocols"
+  "${ROOT_DIR}/Core/WinkProtocols/Sources/WinkProtocols" \
+  "${package_repo}/Core/WinkProtocols/Sources/WinkProtocols"
 /usr/bin/ditto \
-  "${ROOT_DIR}/Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit" \
-  "${package_repo}/Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit"
+  "${ROOT_DIR}/Core/WinkAutomationKit/Sources/WinkAutomationKit" \
+  "${package_repo}/Core/WinkAutomationKit/Sources/WinkAutomationKit"
 /usr/bin/ditto \
-  "${ROOT_DIR}/Core/PeekabooCore/Sources/PeekabooBridge" \
-  "${package_repo}/Core/PeekabooCore/Sources/PeekabooBridge"
+  "${ROOT_DIR}/Core/WinkCore/Sources/WinkBridge" \
+  "${package_repo}/Core/WinkCore/Sources/WinkBridge"
 
 git -C "${package_repo}" init -q
 git -C "${package_repo}" add Package.swift Core
 git -C "${package_repo}" \
-  -c user.name='Peekaboo Consumer Contract' \
+  -c user.name='Wink Consumer Contract' \
   -c user.email='consumer-contract@invalid.example' \
   commit -qm 'fixture: exact public package revision'
 git -C "${package_repo}" \
-  -c user.name='Peekaboo Consumer Contract' \
+  -c user.name='Wink Consumer Contract' \
   -c user.email='consumer-contract@invalid.example' \
   -c tag.gpgSign=false \
   tag -am 'fixture: semantic package version' 4.1.1
 
-export PEEKABOO_CONSUMER_PACKAGE_URL="file://${package_repo}"
-export PEEKABOO_CONSUMER_PACKAGE_VERSION="4.1.1"
+export WINK_CONSUMER_PACKAGE_URL="file://${package_repo}"
+export WINK_CONSUMER_PACKAGE_VERSION="4.1.1"
 
 consumer_dir="${fixture_dir}/Consumer"
 mkdir -p "${consumer_dir}/Sources/Consumer"
@@ -88,11 +88,11 @@ cat >"${consumer_dir}/Package.swift" <<'EOF'
 import Foundation
 import PackageDescription
 
-let packageURL = ProcessInfo.processInfo.environment["PEEKABOO_CONSUMER_PACKAGE_URL"]!
-let packageVersion = ProcessInfo.processInfo.environment["PEEKABOO_CONSUMER_PACKAGE_VERSION"]!
+let packageURL = ProcessInfo.processInfo.environment["WINK_CONSUMER_PACKAGE_URL"]!
+let packageVersion = ProcessInfo.processInfo.environment["WINK_CONSUMER_PACKAGE_VERSION"]!
 
 let package = Package(
-    name: "PeekabooConsumer",
+    name: "WinkConsumer",
     platforms: [.macOS(.v14)],
     dependencies: [
         .package(url: packageURL, exact: Version(packageVersion)!),
@@ -101,20 +101,20 @@ let package = Package(
         .executableTarget(
             name: "Consumer",
             dependencies: [
-                .product(name: "PeekabooFoundation", package: "Peekaboo"),
-                .product(name: "PeekabooProtocols", package: "Peekaboo"),
-                .product(name: "PeekabooAutomationKit", package: "Peekaboo"),
-                .product(name: "PeekabooBridge", package: "Peekaboo"),
+                .product(name: "WinkFoundation", package: "Wink"),
+                .product(name: "WinkProtocols", package: "Wink"),
+                .product(name: "WinkAutomationKit", package: "Wink"),
+                .product(name: "WinkBridge", package: "Wink"),
             ]),
     ],
     swiftLanguageModes: [.v6])
 EOF
 
 cat >"${consumer_dir}/Sources/Consumer/main.swift" <<'EOF'
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooFoundation
-import PeekabooProtocols
+import WinkAutomationKit
+import WinkBridge
+import WinkFoundation
+import WinkProtocols
 
 func pendingReservationDisposition(
     for failure: some PendingSnapshotFailureDispositionProviding) -> Bool
@@ -141,17 +141,17 @@ func releasedRawEvidenceFactory() -> DesktopTargetIdentity.Evidence {
 _ = releasedRawEvidenceFactory
 
 @MainActor
-func makeEmbeddedRuntime() -> PeekabooEmbeddedBridgeRuntime {
-    PeekabooEmbeddedBridgeRuntime.make(configuration: .init(
-        socketPath: "/tmp/peekaboo-consumer-contract.sock",
+func makeEmbeddedRuntime() -> WinkEmbeddedBridgeRuntime {
+    WinkEmbeddedBridgeRuntime.make(configuration: .init(
+        socketPath: "/tmp/wink-consumer-contract.sock",
         allowlistedTeams: ["TEAMID"],
-        allowlistedBundles: ["com.example.PeekabooConsumer"]))
+        allowlistedBundles: ["com.example.WinkConsumer"]))
 }
 
 _ = makeEmbeddedRuntime
 EOF
 
 swift package --package-path "${consumer_dir}" resolve
-swift build ${PEEKABOO_BUILD_JOBS:+--jobs "$PEEKABOO_BUILD_JOBS"} --package-path "${consumer_dir}" --configuration release
+swift build ${WINK_BUILD_JOBS:+--jobs "$WINK_BUILD_JOBS"} --package-path "${consumer_dir}" --configuration release
 
 printf 'SwiftPM consumer contract passed for: %s\n' "${ROOT_DIR}"

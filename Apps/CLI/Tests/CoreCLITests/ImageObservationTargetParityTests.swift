@@ -1,8 +1,8 @@
 import Commander
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooCLI
+@testable import WinkAgentRuntime
+@testable import WinkCLI
 
 @Suite(.tags(.imageCapture, .unit))
 @MainActor

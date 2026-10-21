@@ -1,5 +1,5 @@
 ---
-summary: 'Test the Peekaboo MCP server from the current CLI build'
+summary: 'Test the Wink MCP server from the current CLI build'
 read_when:
   - 'changing MCP tools, schemas, transports, or startup'
   - 'verifying a local MCP build with Inspector or mcporter'
@@ -7,7 +7,7 @@ read_when:
 
 # MCP Server Testing Guide
 
-This guide explains how to test the MCP server shipped by `peekaboo mcp`. The same executable accepts `peekaboo mcp serve` explicitly.
+This guide explains how to test the MCP server shipped by `wink mcp`. The same executable accepts `wink mcp serve` explicitly.
 
 ## Build the Server Under Test
 
@@ -15,11 +15,11 @@ Build once and resolve the binary from SwiftPM:
 
 ```bash
 pnpm run build:cli
-PEEKABOO_BIN="$(swift build --package-path Apps/CLI --show-bin-path)/peekaboo"
-"$PEEKABOO_BIN" --version
+WINK_BIN="$(swift build --package-path Apps/CLI --show-bin-path)/wink"
+"$WINK_BIN" --version
 ```
 
-Use that absolute path throughout a run so an installed `peekaboo` cannot shadow the fresh build.
+Use that absolute path throughout a run so an installed `wink` cannot shadow the fresh build.
 
 ## Testing Approaches
 
@@ -28,7 +28,7 @@ Use that absolute path throughout a run so an installed `peekaboo` cannot shadow
 The official Inspector provides interactive schema and tool-call testing:
 
 ```bash
-npx @modelcontextprotocol/inspector "$PEEKABOO_BIN" mcp
+npx @modelcontextprotocol/inspector "$WINK_BIN" mcp
 ```
 
 Use it to inspect the tool list, validate inputs, call read-only tools first, and then exercise permission-bound automation.
@@ -38,8 +38,8 @@ Use it to inspect the tool list, validate inputs, call read-only tools first, an
 `mcporter` is useful for repeatable stdio smoke tests:
 
 ```bash
-mcporter list peekaboo-local --stdio "$PEEKABOO_BIN mcp" --timeout 20000 --schema
-mcporter call peekaboo-local.permissions --stdio "$PEEKABOO_BIN mcp" --timeout 15000
+mcporter list wink-local --stdio "$WINK_BIN mcp" --timeout 20000 --schema
+mcporter call wink-local.permissions --stdio "$WINK_BIN mcp" --timeout 15000
 ```
 
 These commands start a fresh stdio server, perform the MCP initialize handshake, and then list or call tools without a repository wrapper.
@@ -49,7 +49,7 @@ These commands start a fresh stdio server, perform the MCP initialize handshake,
 Register the absolute local build for a production-like client test:
 
 ```bash
-claude mcp add peekaboo-local -- "$PEEKABOO_BIN" mcp
+claude mcp add wink-local -- "$WINK_BIN" mcp
 claude mcp list
 ```
 
@@ -61,17 +61,17 @@ For low-level protocol testing, you can interact with the MCP server directly:
 
 ```bash
 # Start the server in stdio mode
-peekaboo mcp
+wink mcp
 
-# Send one JSON-RPC request; Peekaboo drains its response before exiting on EOF
-printf '%s\n' '{"jsonrpc":"2.0","method":"tools/list","id":1}' | peekaboo mcp
+# Send one JSON-RPC request; Wink drains its response before exiting on EOF
+printf '%s\n' '{"jsonrpc":"2.0","method":"tools/list","id":1}' | wink mcp
 ```
 
 ## Development Workflow
 
 ### Recommended Testing Cycle
 
-1. Run `pnpm run build:cli` and resolve `PEEKABOO_BIN`.
+1. Run `pnpm run build:cli` and resolve `WINK_BIN`.
 2. Use Inspector or `mcporter list ... --schema` to confirm initialization and schemas.
 3. Call `permissions`, `list`, or another read-only tool.
 4. Exercise the changed tool against the Playground fixture when behavior requires real UI.
@@ -82,14 +82,14 @@ printf '%s\n' '{"jsonrpc":"2.0","method":"tools/list","id":1}' | peekaboo mcp
 Set provider selection before starting the server when testing `agent` or `analyze`:
 
 ```bash
-PEEKABOO_AI_PROVIDERS="ollama/<model>" npx @modelcontextprotocol/inspector "$PEEKABOO_BIN" mcp
+WINK_AI_PROVIDERS="ollama/<model>" npx @modelcontextprotocol/inspector "$WINK_BIN" mcp
 ```
 
 Credential storage uses the normal CLI without putting the value in argv:
 
 ```bash
 printenv ANTHROPIC_API_KEY | \
-  "$PEEKABOO_BIN" config credential set ANTHROPIC_API_KEY --credential-stdin --no-input
+  "$WINK_BIN" config credential set ANTHROPIC_API_KEY --credential-stdin --no-input
 ```
 
 Do not paste live credential values into test logs or committed fixtures.
@@ -100,10 +100,10 @@ Do not paste live credential values into test logs or committed fixtures.
 
 The initialize handshake accepts arbitrary JSON values in `capabilities.experimental`, including the
 `{"codex/auth-change": {}}` declaration sent by Codex. Malformed known capabilities still fail decoding.
-`PeekabooMCPInitializationTests` sends raw requests through the production server and verifies that a successful
+`WinkMCPInitializationTests` sends raw requests through the production server and verifies that a successful
 initialize reaches `tools/list`, without invoking desktop tools.
 
-Peekaboo temporarily pins Swift MCP SDK commit `f7077e0d5cd57e0b2a497862017aa94ee344252f`, the single-commit
+Wink temporarily pins Swift MCP SDK commit `f7077e0d5cd57e0b2a497862017aa94ee344252f`, the single-commit
 decoder repair in [swift-sdk#276](https://github.com/modelcontextprotocol/swift-sdk/pull/276) on top of 0.12.1.
 Replace the Core and CLI manifest pins with a tagged SDK containing that repair when available, then regenerate
 the Core, Mac, and Xcode workspace lockfiles. The SDK's Swift `Client.Capabilities.experimental` type becomes
@@ -112,7 +112,7 @@ with `mapValues(Value.string)`. Dictionary literals and the CLI/MCP wire interfa
 
 - Confirm the changed tool appears once.
 - Inspect its description, required properties, and enum values.
-- Compare the schema with the corresponding implementation under `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools`.
+- Compare the schema with the corresponding implementation under `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools`.
 
 ### Screenshot and Observation
 
@@ -142,9 +142,9 @@ Provider-backed `agent` and `analyze` calls require configuration at server star
 
 ### npm wrapper shutdown
 
-Importing `PeekabooMCPWrapper` from `peekaboo-mcp.js` does not start a server. Eval, print-eval and stdin consumers remain imports even if an ordinary program argument names the wrapper or a symlink to it. Missing/non-directory entry metadata is treated as non-main; unrelated filesystem errors still propagate. Direct and symlinked script entrypoints retain startup behavior, including on the supported Node 22 baseline.
+Importing `WinkMCPWrapper` from `wink-mcp.js` does not start a server. Eval, print-eval and stdin consumers remain imports even if an ordinary program argument names the wrapper or a symlink to it. Missing/non-directory entry metadata is treated as non-main; unrelated filesystem errors still propagate. Direct and symlinked script entrypoints retain startup behavior, including on the supported Node 22 baseline.
 
-The npm `peekaboo-mcp` launcher owns its Swift server child and restarts it after crashes. On SIGINT or SIGTERM,
+The npm `wink-mcp` launcher owns its Swift server child and restarts it after crashes. On SIGINT or SIGTERM,
 it cancels pending restart backoff, sends SIGTERM to that child, and allows five seconds for exit before sending
 SIGKILL to the same still-owned child. Repeated shutdown requests do not restart or extend this deadline.
 Fatal wrapper errors and unhandled promise rejections trigger shutdown and exit with status 1; normal SIGINT or SIGTERM shutdown exits with status 0.
@@ -155,9 +155,9 @@ including the normal entrypoint's five-second deadline. It does not send desktop
 
 ### Server Won't Start
 
-- Run `"$PEEKABOO_BIN" mcp` directly and inspect stderr.
+- Run `"$WINK_BIN" mcp` directly and inspect stderr.
 - Confirm the CLI was rebuilt and the absolute binary path exists.
-- Check Screen Recording and Accessibility with `"$PEEKABOO_BIN" permissions status`.
+- Check Screen Recording and Accessibility with `"$WINK_BIN" permissions status`.
 
 ### Tools Not Available
 
@@ -182,9 +182,9 @@ including the normal entrypoint's five-second deadline. It does not send desktop
 ## Synthetic authority regression tests
 
 Run the temporary-clipboard authority, session-policy, context, paste, and browser-lifecycle regression suites serially
-with `--no-parallel`, with provider API-key/OAuth variables and `PEEKABOO_AI_PROVIDERS` absent from the test process.
+with `--no-parallel`, with provider API-key/OAuth variables and `WINK_AI_PROVIDERS` absent from the test process.
 Do not change `HOME`. The selected suites use the non-recursive `AuthorityTestIsolation()` suite trait from the test-only
-`PeekabooAgentRuntimeTestSupport` module. Each scope creates a fresh private configuration directory with empty config
+`WinkAgentRuntimeTestSupport` module. Each scope creates a fresh private configuration directory with empty config
 and credentials files, points `PEEKABOO_CONFIG_DIR` and Tachikoma's profile directory at it, disables legacy
 configuration migration, and installs `TachikomaConfiguration(loadFromEnvironment: false)` without touching `.current`.
 The empty primary credentials file also closes Tachikoma's legacy-file fallback. A provider factory override admits

@@ -1,15 +1,15 @@
 import Commander
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
 struct VerifyCaptureRuntimeTests {
     @Test(arguments: [nil, "auto", "modern"] as [String?])
     func `nonclassic screenshots retain conservative owner admission`(engine: String?) throws {
-        let environment = engine.map { ["PEEKABOO_CAPTURE_ENGINE": $0] } ?? [:]
+        let environment = engine.map { ["WINK_CAPTURE_ENGINE": $0] } ?? [:]
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(positional: [], options: ["screenshot": ["/synthetic/final.png"]], flags: []),
             commandType: VerifyCommand.self,
@@ -23,7 +23,7 @@ struct VerifyCaptureRuntimeTests {
 
     @Test
     func `local opt in never transports the verification engine to an explicit socket`() throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": "classic"]
+        let environment = ["WINK_CAPTURE_ENGINE": "classic"]
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(
                 positional: [],
@@ -41,12 +41,12 @@ struct VerifyCaptureRuntimeTests {
 
     @Test(arguments: [
         "desktopObservation",
-        PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
-        PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-        PeekabooBridgeHostCapability.desktopObservationInlinePixels,
+        WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+        WinkBridgeHostCapability.desktopObservationCaptureEngine,
+        WinkBridgeHostCapability.desktopObservationInlinePixels,
     ])
     func `classic verification refuses a host missing a required transport capability`(missing: String) throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": "classic"]
+        let environment = ["WINK_CAPTURE_ENGINE": "classic"]
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(
                 positional: [],
@@ -56,17 +56,17 @@ struct VerifyCaptureRuntimeTests {
             commandType: VerifyCommand.self,
             environment: environment
         ).applyingEnvironmentOverrides(environment: environment)
-        let handshake = PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+        let handshake = WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "fixture",
             supportedOperations: missing == "desktopObservation" ? [.invalidateImplicitLatestSnapshot] :
                 [.desktopObservation, .invalidateImplicitLatestSnapshot],
             permissions: .init(screenRecording: true, accessibility: true, appleScript: false, postEvent: false),
             hostCapabilities: [
-                PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.desktopObservationInlinePixels,
+                WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.desktopObservationInlinePixels,
             ].filter { $0 != missing }
         ).withProducerBoundSnapshotFixture()
         #expect(!BridgeCapabilityPolicy.supportsRemoteRequirements(for: handshake, options: options))
@@ -76,7 +76,7 @@ struct VerifyCaptureRuntimeTests {
 
     @Test(arguments: ["classic", "cg"])
     func `fixed classic screenshots do not inherit dynamic tool ownership`(engine: String) throws {
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": engine]
+        let environment = ["WINK_CAPTURE_ENGINE": engine]
         var options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(positional: [], options: ["screenshot": ["/synthetic/final.png"]], flags: []),
             commandType: VerifyCommand.self,
@@ -103,7 +103,7 @@ struct VerifyCaptureRuntimeTests {
         screenRecording: Bool
     ) async throws {
         let socket = "/synthetic/verify-classic-gui.sock"
-        let environment = ["PEEKABOO_CAPTURE_ENGINE": engine]
+        let environment = ["WINK_CAPTURE_ENGINE": engine]
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(
                 positional: [],
@@ -113,8 +113,8 @@ struct VerifyCaptureRuntimeTests {
             commandType: VerifyCommand.self,
             environment: environment
         ).applyingEnvironmentOverrides(environment: environment)
-        let handshake = PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+        let handshake = WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "classic-only-fixture",
             supportedOperations: [.desktopObservation, .invalidateImplicitLatestSnapshot],
@@ -126,9 +126,9 @@ struct VerifyCaptureRuntimeTests {
             ),
             enabledOperations: [.invalidateImplicitLatestSnapshot],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
-                PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                PeekabooBridgeHostCapability.desktopObservationInlinePixels,
+                WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+                WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                WinkBridgeHostCapability.desktopObservationInlinePixels,
             ]
         ).withProducerBoundSnapshotFixture()
         var handshakes: [String] = []
@@ -204,14 +204,14 @@ struct VerifyCaptureRuntimeTests {
     @Test(arguments: [nil, "auto", "modern", "classic"] as [String?])
     func `screenshot free verification keeps its host without probing capture`(engine: String?) async throws {
         let socket = "/synthetic/verify-gui.sock"
-        let environment = engine.map { ["PEEKABOO_CAPTURE_ENGINE": $0] } ?? [:]
+        let environment = engine.map { ["WINK_CAPTURE_ENGINE": $0] } ?? [:]
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(positional: [], options: ["bridge-socket": [socket]], flags: ["window-exists"]),
             commandType: VerifyCommand.self,
             environment: environment
         ).applyingEnvironmentOverrides(environment: environment)
-        let handshake = PeekabooBridgeHandshakeResponse(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+        let handshake = WinkBridgeHandshakeResponse(
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "fixture",
             supportedOperations: [.invalidateImplicitLatestSnapshot],

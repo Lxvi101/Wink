@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 /// Import the necessary types from the menu command
 private struct MenuListData: Codable {
     let app: String
@@ -169,7 +169,7 @@ struct MenuCommandTests {
         let data = Self.defaultMenuData()
         let menuService = StubMenuService(menusByApp: data.menusByApp, menuExtras: data.extras)
         let applicationService = StubApplicationService(applications: [data.appInfo])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applicationService,
             menu: menuService
         )
@@ -214,7 +214,7 @@ struct MenuCommandTests {
     }
 
     private struct MenuHarnessContext {
-        let services: PeekabooServices
+        let services: WinkServices
         let menuService: StubMenuService
         let applicationService: StubApplicationService
     }

@@ -97,7 +97,7 @@ function fakeCatalog() {
     current_build_source: { coordinator: { sha256: COORDINATOR_SHA } },
     trusted_monitor_team_ids: [TEAM_ID],
     monitor_contract: {
-      crash_report_prefixes: ['Peekaboo', 'peekaboo-certification-controller'],
+      crash_report_prefixes: ['Wink', 'wink-certification-controller'],
     },
   };
 }
@@ -132,7 +132,7 @@ case "$mode" in
       printf '{"timestamp":%s,"frontmostPID":%s,"frontmostBundleIdentifier":"test.sentinel",' \
         "$(date +%s)" "$FAKE_SENTINEL_PID"
       printf '"frontmostWindowID":%s,"cursor":{"x":1,"y":2},"clipboardChangeCount":7,' "$FAKE_SENTINEL_WINDOW"
-      printf '"clipboardDigest":"${'7'.repeat(64)}","peekabooWindowIDs":[],'
+      printf '"clipboardDigest":"${'7'.repeat(64)}","winkWindowIDs":[],'
       printf '"visibleScreenFramesTopLeft":[{"x":0,"y":0,"width":1000,"height":700}]}\n'
     } > "$output"
     ;;
@@ -179,7 +179,7 @@ const canonical = (value) => {
   return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
 };
 const aggregate = (domain, value) => createHash('sha256').update(Buffer.concat([
-  Buffer.from('peekaboo.multi-target-certification.' + domain + '.v2\0'),
+  Buffer.from('wink.multi-target-certification.' + domain + '.v2\0'),
   Buffer.from(JSON.stringify(canonical(value))),
 ])).digest('hex');
 const output = arg('--output');
@@ -635,7 +635,7 @@ function fixture() {
   const monitorWatch = path.join(root, 'fake-monitor-watch.mjs');
   const controllerExecutable = path.join(root, 'fake-controller.mjs');
   const finalizer = path.join(root, 'fake-finalizer.mjs');
-  const peekaboo = path.join(root, 'fake-peekaboo');
+  const wink = path.join(root, 'fake-wink');
   const catalogPath = path.join(root, 'catalog.json');
   const finalizerLog = path.join(root, 'finalizer.log');
   const foregroundActivity = path.join(root, 'foreground-activity.json');
@@ -644,13 +644,13 @@ function fixture() {
   writeExecutable(monitor, fakeMonitorScript(process.execPath, monitorWatch));
   writeExecutable(controllerExecutable, fakeControllerSource);
   writeExecutable(finalizer, fakeFinalizerSource);
-  writeExecutable(peekaboo, '#!/bin/sh\nexit 0\n');
+  writeExecutable(wink, '#!/bin/sh\nexit 0\n');
   writePrivate(catalogPath, fakeCatalog());
   writePrivate(finalizerLog, '');
   const plan = {
     version: 1,
     runs_directory: runs,
-    peekaboo_executable: peekaboo,
+    wink_executable: wink,
     controller_executable: controllerExecutable,
     monitor_executable: monitor,
     bridge: {
@@ -705,7 +705,7 @@ function fixture() {
 function coordinatorEnvironment(fix, extra = {}) {
   return {
     ...process.env,
-    PEEKABOO_COORDINATOR_TEST_RUNTIME: '1',
+    WINK_COORDINATOR_TEST_RUNTIME: '1',
     FAKE_FINALIZER_LOG: fix.finalizerLog,
     FAKE_SENTINEL_PID: String(SENTINEL_PID),
     FAKE_SENTINEL_WINDOW: String(SENTINEL_WINDOW),
@@ -792,7 +792,7 @@ test('help and version are stable operator surfaces', () => {
   const version = spawnSync(process.execPath, [coordinator, '--version'], { encoding: 'utf8' });
   assert.equal(help.status, 0);
   assert.match(help.stdout, /--plan OWNER_PRIVATE_PLAN\.json/);
-  assert.equal(version.stdout, 'peekaboo-live-multi-target-coordinator 1\n');
+  assert.equal(version.stdout, 'wink-live-multi-target-coordinator 1\n');
 });
 
 test('operator documentation exposes both bounded external marker handshakes', () => {
@@ -812,7 +812,7 @@ test('documented legacy overlap entry point provides an explicit v4 migration', 
   assert.match(help.stdout, /--plan \/private\/path\/to\/live-coordinator-plan\.json/);
   assert.match(help.stdout, /--artifacts PATH/);
 
-  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-overlap-wrapper-'));
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-overlap-wrapper-'));
   try {
     const scripts = path.join(sandbox, 'scripts');
     fs.mkdirSync(scripts);
@@ -855,7 +855,7 @@ test('documented legacy overlap entry point provides an explicit v4 migration', 
     assert.equal(invalid.status, 2);
   }
 
-  const invalidRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-background-root-'));
+  const invalidRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-background-root-'));
   try {
     fs.writeFileSync(path.join(invalidRoot, 'occupied'), 'occupied\n');
     const occupied = spawnSync(backgroundCertification, ['--artifacts', invalidRoot], { encoding: 'utf8' });
@@ -1318,7 +1318,7 @@ stdout.write = (chunk, ...args) => {
       assert.equal(Buffer.byteLength(controllerPlan.type_text, 'utf8'), 1000);
       assert.equal(controllerPlan.typing_delay_milliseconds, 50);
       assert.ok(controllerPlan.type_text.startsWith(
-        `peekaboo-certification-background:${completion.execution_nonce}:${controllerID}:`,
+        `wink-certification-background:${completion.execution_nonce}:${controllerID}:`,
       ));
       assert.equal(typingDurationMilliseconds, 50_000);
       assert.equal(
@@ -1357,7 +1357,7 @@ test('minimum 5-second external windows accept the exact operation budget with b
       assert.equal(Buffer.byteLength(controllerPlan.type_text, 'utf8'), 500);
       assert.equal(controllerPlan.typing_delay_milliseconds, 50);
       assert.ok(controllerPlan.type_text.startsWith(
-        `peekaboo-certification-background:${failed.execution_nonce}:${controllerID}:`,
+        `wink-certification-background:${failed.execution_nonce}:${controllerID}:`,
       ));
       assert.equal(typingDurationMilliseconds, 25_000);
       assert.equal(

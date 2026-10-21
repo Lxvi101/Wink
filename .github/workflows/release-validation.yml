@@ -30,16 +30,16 @@ jobs:
           - group: core
             job_minutes: 120
             test_minutes: 90
-            packages: Core/PeekabooCore
+            packages: Core/WinkCore
           - group: libraries-apps
             job_minutes: 140
             test_minutes: 130
             packages: |
-              Core/PeekabooAutomationKit
-              Core/PeekabooProtocols
-              Core/PeekabooVisualizer
-              Core/PeekabooUICore
-              Apps/PeekabooInspector
+              Core/WinkAutomationKit
+              Core/WinkProtocols
+              Core/WinkVisualizer
+              Core/WinkUICore
+              Apps/WinkInspector
               Apps/Playground
           - group: dependencies
             job_minutes: 100
@@ -59,8 +59,8 @@ jobs:
         shell: bash
     env:
       PACKAGE_PATHS: ${{ matrix.packages }}
-      PEEKABOO_CONFIG_DISABLE_MIGRATION: '1'
-      PEEKABOO_RUN_LIVE_AGENT_TESTS: '0'
+      WINK_CONFIG_DISABLE_MIGRATION: '1'
+      WINK_RUN_LIVE_AGENT_TESTS: '0'
     steps:
       - name: Validate exact source and hosted environment
         id: source
@@ -88,7 +88,7 @@ jobs:
           [[ "$GITHUB_ACTIONS" == true && "$RUNNER_ENVIRONMENT" == github-hosted && "$RUNNER_OS" == macOS ]]
           printf 'sha=%s\n' "$source_sha" >> "$GITHUB_OUTPUT"
           printf 'VALIDATION_RESULTS=%s/release-validation-results\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          printf 'PEEKABOO_CONFIG_DIR=%s/peekaboo-release-validation\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+          printf 'PEEKABOO_CONFIG_DIR=%s/wink-release-validation\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
 
       - name: Check out selected workflow revision
         if: github.event_name == 'workflow_dispatch'
@@ -125,7 +125,7 @@ jobs:
             echo 'Submodules must match the checked-out gitlinks' >&2
             exit 1
           fi
-          cp Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+          cp Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved \
             "$VALIDATION_RESULTS/workspace-Package.resolved"
 
       - name: Configure checkout-local Swift workspace
@@ -243,7 +243,7 @@ jobs:
         id: suites
         timeout-minutes: ${{ matrix.test_minutes }}
         env:
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: 'false'
+          WINK_INCLUDE_AUTOMATION_TESTS: 'false'
           RUN_AUTOMATION_TESTS: 'false'
           RUN_LOCAL_TESTS: 'false'
         run: |
@@ -285,7 +285,7 @@ jobs:
         env:
           DIAGNOSTIC_GROUP: ${{ matrix.group }}
           ORIGINAL_SUITE_OUTCOME: ${{ steps.suites.outcome }}
-          PEEKABOO_INCLUDE_AUTOMATION_TESTS: 'false'
+          WINK_INCLUDE_AUTOMATION_TESTS: 'false'
           RUN_AUTOMATION_TESTS: 'false'
           RUN_LOCAL_TESTS: 'false'
         run: python3 .github/scripts/core-sigpipe-diagnostic.py
@@ -308,7 +308,7 @@ jobs:
             printf 'A running/not-run status is incomplete, never a pass. No app packaging or release-toolchain proof.\n'
           } | tee "$VALIDATION_RESULTS/summary.md" >> "$GITHUB_STEP_SUMMARY"
           cmp "$VALIDATION_RESULTS/workspace-Package.resolved" \
-            Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved
+            Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
       - name: Summarize full safe suite and verify canonical workspace lock
         if: always() && steps.source.outcome == 'success' && matrix.group == 'full-safe'
@@ -336,7 +336,7 @@ jobs:
             printf 'Hosted suite evidence does not replace signed isolated desktop proof.\n'
           } | tee "$VALIDATION_RESULTS/summary.md" >> "$GITHUB_STEP_SUMMARY"
           cmp "$VALIDATION_RESULTS/workspace-Package.resolved" \
-            Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved
+            Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
       - name: Retain per-package evidence
         if: always() && steps.source.outcome == 'success'

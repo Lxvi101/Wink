@@ -1,11 +1,11 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ConfigGuidanceSnapshotTests {
     @Test
     func `init guidance matches snapshot`() throws {
-        let rendered = PeekabooConfigMessages.initGuidance(path: "/tmp/config.json")
+        let rendered = WinkConfigMessages.initGuidance(path: "/tmp/config.json")
             .joined(separator: "\n")
 
         guard let snapshotURL = Bundle.module.url(

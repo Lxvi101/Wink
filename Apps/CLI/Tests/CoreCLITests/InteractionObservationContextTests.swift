@@ -1,13 +1,13 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -567,7 +567,7 @@ extension InteractionObservationContextTests {
                 logger: Logger.shared
             )
             Issue.record("Expected rejected refresh certificate")
-        } catch let PeekabooError.snapshotStale(reason) {
+        } catch let WinkError.snapshotStale(reason) {
             #expect(reason.contains("overlapped another desktop mutation"))
         }
 
@@ -785,7 +785,7 @@ extension InteractionObservationContextTests {
                 logger: Logger.shared
             )
             Issue.record("Expected an unusable targeted refresh to fail")
-        } catch let PeekabooError.snapshotNotAvailable(message) {
+        } catch let WinkError.snapshotNotAvailable(message) {
             #expect(message.contains("did not produce a usable UI snapshot"))
         }
 
@@ -1047,7 +1047,7 @@ extension InteractionObservationContextTests {
             ]
         )
 
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             _ = try await InteractionTargetPointResolver.elementCenterResolution(
                 element: element,
                 elementId: "ocr_1",
@@ -1323,18 +1323,18 @@ private final class CoreSnapshotManagerStub: SnapshotManagerProtocol, @unchecked
     }
 
     func getSnapshotStoragePath() -> String {
-        "/tmp/peekaboo-snapshots"
+        "/tmp/wink-snapshots"
     }
 
     func storeScreenshot(_: SnapshotScreenshotRequest) async throws {}
 
     func storeAnnotatedScreenshot(snapshotId _: String, annotatedScreenshotPath _: String) async throws {}
 
-    func getElement(snapshotId _: String, elementId _: String) async throws -> PeekabooCore.UIElement? {
+    func getElement(snapshotId _: String, elementId _: String) async throws -> WinkCore.UIElement? {
         nil
     }
 
-    func findElements(snapshotId _: String, matching _: String) async throws -> [PeekabooCore.UIElement] {
+    func findElements(snapshotId _: String, matching _: String) async throws -> [WinkCore.UIElement] {
         []
     }
 

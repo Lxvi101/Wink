@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
 
 @Suite(.serialized, .tags(.safe))
@@ -43,7 +43,7 @@ struct PIDTargetingTests {
         let applicationService = await MainActor.run { ApplicationService() }
 
         for invalidPID in invalidPIDs {
-            await #expect(throws: PeekabooError.self) {
+            await #expect(throws: WinkError.self) {
                 _ = try await applicationService.findApplication(identifier: invalidPID)
             }
         }

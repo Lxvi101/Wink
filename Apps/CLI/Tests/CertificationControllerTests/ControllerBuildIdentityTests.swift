@@ -1,13 +1,13 @@
 import Foundation
 import Security
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification controller build identity")
 struct ControllerBuildIdentityTests {
     private let observed = CertificationControllerBuildReceipt(
         sourceCommit: String(repeating: "c", count: 40),
-        executablePath: "/private/tmp/peekaboo-certification-controller",
+        executablePath: "/private/tmp/wink-certification-controller",
         executableSHA256: String(repeating: "d", count: 64),
         teamID: "FWJYW4S8P8"
     )
@@ -148,7 +148,7 @@ struct ControllerBuildIdentityTests {
                 listenerInstanceID: "019c0000-0000-4000-8000-000000000002",
                 host: CertificationHostReceipt(
                     process: process,
-                    bundleIdentifier: "boo.peekaboo",
+                    bundleIdentifier: "boo.wink",
                     bundleShortVersion: "4.2.0",
                     bundleVersion: "4.2.0",
                     sourceCommit: String(repeating: "b", count: 40)
@@ -240,7 +240,7 @@ struct ControllerBuildIdentityTests {
     private static func expected() -> CertificationExpectedControllerBuild {
         CertificationExpectedControllerBuild(
             sourceCommit: String(repeating: "c", count: 40),
-            executablePath: "/private/tmp/peekaboo-certification-controller",
+            executablePath: "/private/tmp/wink-certification-controller",
             executableSHA256: String(repeating: "d", count: 64),
             teamID: "FWJYW4S8P8"
         )

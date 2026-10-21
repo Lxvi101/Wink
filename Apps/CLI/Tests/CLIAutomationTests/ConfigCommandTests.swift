@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct ConfigCommandTests {
@@ -10,7 +10,7 @@ struct ConfigCommandTests {
     private func makeRuntime(json: Bool = false) -> CommandRuntime {
         CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: json, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
     }
 
@@ -23,17 +23,17 @@ struct ConfigCommandTests {
 
         let environmentKeys = [
             "PEEKABOO_CONFIG_DIR",
-            "PEEKABOO_CONFIG_NONINTERACTIVE",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION",
+            "WINK_CONFIG_NONINTERACTIVE",
+            "WINK_CONFIG_DISABLE_MIGRATION",
         ]
         let previous = Dictionary(uniqueKeysWithValues: environmentKeys.map { key in
             (key, getenv(key).map { String(cString: $0) })
         })
         setenv("PEEKABOO_CONFIG_DIR", tempDir.path, 1)
-        setenv("PEEKABOO_CONFIG_NONINTERACTIVE", "1", 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
+        setenv("WINK_CONFIG_NONINTERACTIVE", "1", 1)
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
         #if DEBUG
-        PeekabooCore.ConfigurationManager.shared.resetForTesting()
+        WinkCore.ConfigurationManager.shared.resetForTesting()
         #endif
 
         defer {
@@ -45,7 +45,7 @@ struct ConfigCommandTests {
                 }
             }
             #if DEBUG
-            PeekabooCore.ConfigurationManager.shared.resetForTesting()
+            WinkCore.ConfigurationManager.shared.resetForTesting()
             #endif
             try? FileManager.default.removeItem(at: tempDir)
         }
@@ -55,10 +55,10 @@ struct ConfigCommandTests {
 
     @Test
     func `temporary config fixture restores caller environment`() async throws {
-        let keys = ["PEEKABOO_CONFIG_DIR", "PEEKABOO_CONFIG_NONINTERACTIVE", "PEEKABOO_CONFIG_DISABLE_MIGRATION"]
+        let keys = ["PEEKABOO_CONFIG_DIR", "WINK_CONFIG_NONINTERACTIVE", "WINK_CONFIG_DISABLE_MIGRATION"]
         let before = keys.map { getenv($0).map { String(cString: $0) } }
         try await self.withTempConfigDir { directory in
-            #expect(PeekabooCore.ConfigurationManager.configPath == directory.appendingPathComponent("config.json")
+            #expect(WinkCore.ConfigurationManager.configPath == directory.appendingPathComponent("config.json")
                 .path)
         }
         #expect(keys.map { getenv($0).map { String(cString: $0) } } == before)
@@ -71,7 +71,7 @@ struct ConfigCommandTests {
 
         // Check command configuration
         #expect(command.commandDescription.commandName == "config")
-        #expect(command.commandDescription.abstract == "Manage Peekaboo configuration")
+        #expect(command.commandDescription.abstract == "Manage Wink configuration")
 
         // Key-path map / closures over existential metatypes trip SILGen on the
         // CI toolchain; keep the explicit loop (same idiom as MenuCommandTests).
@@ -233,7 +233,7 @@ struct ConfigCommandTests {
             remove.dryRun = true
             try await remove.run(using: self.makeRuntime())
 
-            let providersAfter = PeekabooCore.ConfigurationManager.shared.listCustomProviders()
+            let providersAfter = WinkCore.ConfigurationManager.shared.listCustomProviders()
             #expect(providersAfter["keep"] != nil)
         }
     }
@@ -262,7 +262,7 @@ struct ConfigCommandTests {
             add.apiKey = "{env:LOCAL_API_KEY}"
             try await add.run(using: self.makeRuntime())
 
-            let providersAfterAdd = PeekabooCore.ConfigurationManager.shared.listCustomProviders()
+            let providersAfterAdd = WinkCore.ConfigurationManager.shared.listCustomProviders()
             #expect(providersAfterAdd["local"] != nil)
             #expect(providersAfterAdd["local"]?.options.baseURL == "https://api.local/v1")
 
@@ -271,7 +271,7 @@ struct ConfigCommandTests {
             remove.force = true
             try await remove.run(using: self.makeRuntime())
 
-            let providersAfterRemove = PeekabooCore.ConfigurationManager.shared.listCustomProviders()
+            let providersAfterRemove = WinkCore.ConfigurationManager.shared.listCustomProviders()
             #expect(providersAfterRemove["local"] == nil)
         }
     }

@@ -1,10 +1,10 @@
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import Testing
 import UniformTypeIdentifiers
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -40,7 +40,7 @@ struct PasteClipboardOwnershipTests {
             injectedNewerWrite = true
         }
         let applications = StubApplicationService(applications: [app])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation
@@ -165,7 +165,7 @@ struct PasteClipboardOwnershipTests {
     func `Legacy clipboard provider refuses before reads focus or input`() async throws {
         let fixture = OwnershipFixture()
         let legacy = LegacyClipboardService()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             clipboard: legacy,
             automation: fixture.automation
         )
@@ -203,7 +203,7 @@ private final class OwnershipFixture {
             bundleIdentifier: "synthetic.clipboard.target",
             name: "SyntheticClipboardTarget"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             clipboard: self.clipboard,
             automation: self.automation

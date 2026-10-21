@@ -82,15 +82,15 @@ disabled_rules:
 
 # Custom rules
 custom_rules:
-  no_direct_ax_in_peekaboo:
-    included: "Core/PeekabooCore"
-    excluded: "Core/PeekabooCore/Tests"
-    name: "No Direct AX/CG Event APIs in PeekabooCore"
+  no_direct_ax_in_wink:
+    included: "Core/WinkCore"
+    excluded: "Core/WinkCore/Tests"
+    name: "No Direct AX/CG Event APIs in WinkCore"
     regex: "\\bAXUIElement\\b|\\bCGEvent\\b"
     message: "Use AXorcist abstractions (Element/InputDriver/AXWindowResolver) instead of direct AXUIElement/CGEvent."
     severity: error
   no_ui_appservices_import:
-    included: "Core/PeekabooCore/Sources/PeekabooAutomation/Services/UI"
+    included: "Core/WinkCore/Sources/WinkAutomation/Services/UI"
     regex: "^import\\s+ApplicationServices"
     message: "Import AX/CG bindings via AXorcist; avoid direct ApplicationServices in UI services."
     severity: warning

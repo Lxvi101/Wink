@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
+import WinkAutomationKit
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Certification observe-only foreground witness")
 struct ObserveOnlyTests {
@@ -11,7 +11,7 @@ struct ObserveOnlyTests {
         let plan = try CertificationObserveOnlyPlan.decode(Self.validPlanData)
 
         #expect(plan.mode == .observeOnly)
-        #expect(plan.requestMarker == "peekaboo-foreground-postcondition:\(Self.nonce)")
+        #expect(plan.requestMarker == "wink-foreground-postcondition:\(Self.nonce)")
         #expect(plan.expectedValueSHA256 == CertificationPrivateArtifacts.sha256(Data(plan.requestMarker.utf8)))
         #expect(plan.observationURL.lastPathComponent == "foreground-observation.json")
         #expect(plan.restorationURL.lastPathComponent == "foreground-restoration.json")
@@ -35,7 +35,7 @@ struct ObserveOnlyTests {
         #expect(throws: CertificationControllerError.self) {
             try CertificationObserveOnlyPlan.decode(JSONSerialization.data(withJSONObject: object))
         }
-        object["observation_path"] = "/private/tmp/peekaboo-observer-artifacts/foreground-observation.json"
+        object["observation_path"] = "/private/tmp/wink-observer-artifacts/foreground-observation.json"
         object["semantic_element"] = ["role": "AXTextField", "identifier": NSNull(), "title": NSNull()]
         #expect(throws: CertificationControllerError.self) {
             try CertificationObserveOnlyPlan.decode(JSONSerialization.data(withJSONObject: object))
@@ -211,7 +211,7 @@ struct ObserveOnlyTests {
     }
 
     private static let nonce = String(repeating: "9", count: 64)
-    private static let marker = "peekaboo-foreground-postcondition:\(Self.nonce)"
+    private static let marker = "wink-foreground-postcondition:\(Self.nonce)"
     private static let expectedSHA256 = CertificationPrivateArtifacts.sha256(Data(Self.marker.utf8))
 
     static let validPlanData = Data("""
@@ -222,11 +222,11 @@ struct ObserveOnlyTests {
       "monitor_instance_id": "019c0000-0000-4000-8000-000000000021",
       "observer_id": "foreground-observer",
       "client_instance_id": "019c0000-0000-4000-8000-000000000020",
-      "socket_path": "/private/tmp/peekaboo-certification.sock",
+      "socket_path": "/private/tmp/wink-certification.sock",
       "trusted_bridge_host_team_ids": ["FWJYW4S8P8"],
       "expected_controller_build": {
         "source_commit": "\(String(repeating: "c", count: 40))",
-        "executable_path": "/private/tmp/peekaboo-certification-controller",
+        "executable_path": "/private/tmp/wink-certification-controller",
         "executable_sha256": "\(String(repeating: "d", count: 64))",
         "team_id": "FWJYW4S8P8"
       },
@@ -249,15 +249,15 @@ struct ObserveOnlyTests {
       "request_marker": "\(Self.marker)",
       "expected_value_sha256": "\(Self.expectedSHA256)",
       "baseline_value_sha256": "\(String(repeating: "1", count: 64))",
-      "artifacts_directory": "/private/tmp/peekaboo-observer-artifacts",
-      "ready_path": "/private/tmp/peekaboo-observer-artifacts/observer-ready.json",
-      "observation_request_path": "/private/tmp/peekaboo-observer-artifacts/observe-request.json",
-      "restoration_request_path": "/private/tmp/peekaboo-observer-artifacts/restore-request.json",
-      "release_path": "/private/tmp/peekaboo-observer-artifacts/release.json",
-      "observation_path": "/private/tmp/peekaboo-observer-artifacts/foreground-observation.json",
-      "restoration_path": "/private/tmp/peekaboo-observer-artifacts/foreground-restoration.json",
-      "witness_path": "/private/tmp/peekaboo-observer-artifacts/foreground-witness.json",
-      "attestation_socket_path": "/private/tmp/peekaboo-observer-artifacts/observer-attestation.sock",
+      "artifacts_directory": "/private/tmp/wink-observer-artifacts",
+      "ready_path": "/private/tmp/wink-observer-artifacts/observer-ready.json",
+      "observation_request_path": "/private/tmp/wink-observer-artifacts/observe-request.json",
+      "restoration_request_path": "/private/tmp/wink-observer-artifacts/restore-request.json",
+      "release_path": "/private/tmp/wink-observer-artifacts/release.json",
+      "observation_path": "/private/tmp/wink-observer-artifacts/foreground-observation.json",
+      "restoration_path": "/private/tmp/wink-observer-artifacts/foreground-restoration.json",
+      "witness_path": "/private/tmp/wink-observer-artifacts/foreground-witness.json",
+      "attestation_socket_path": "/private/tmp/wink-observer-artifacts/observer-attestation.sock",
       "wait_timeout_seconds": 600,
       "poll_interval_milliseconds": 50
     }
@@ -277,7 +277,7 @@ struct ObserveOnlyTests {
             value: value,
             frame: frame,
             applicationName: "Foreground Fixture",
-            bundleIdentifier: "boo.peekaboo.foreground-fixture",
+            bundleIdentifier: "boo.wink.foreground-fixture",
             processId: processID,
             windowID: windowID,
             identifier: identifier

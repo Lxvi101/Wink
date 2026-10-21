@@ -1,15 +1,15 @@
 import CoreGraphics
 import Foundation
 import MCP
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkFoundation
 import TachikomaMCP
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooCore
+@testable import WinkAgentRuntime
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.automation)
@@ -751,7 +751,7 @@ struct SpaceToolExecutionHostTests {
         applicationProcessIdentifier: Int32 = 999,
         windowOwnerProcessIdentifier: Int32? = nil
     ) -> (
-        services: PeekabooServices,
+        services: WinkServices,
         appName: String,
         windowInfo: ServiceWindowInfo,
         windowService: SpaceToolRecordingWindowService
@@ -792,7 +792,7 @@ struct SpaceToolExecutionHostTests {
 
         let windowsByApp = [appName: [windowInfo]]
         let windowService = SpaceToolRecordingWindowService(windowsByApp: windowsByApp)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [appInfo], windowsByApp: windowsByApp),
             windows: windowService
         )
@@ -802,8 +802,8 @@ struct SpaceToolExecutionHostTests {
 
     @MainActor
     private func makeToolContext(
-        services: PeekabooServices,
-        executionHost: PeekabooServiceExecutionHost,
+        services: WinkServices,
+        executionHost: WinkServiceExecutionHost,
         executionPolicy: MCPToolExecutionPolicy = .backgroundOnly
     ) -> MCPToolContext {
         MCPToolContext(

@@ -9,19 +9,19 @@ let approachableConcurrencySettings: [SwiftSetting] = [
 ]
 
 let package = Package(
-    name: "PeekabooTestHost",
+    name: "WinkTestHost",
     platforms: [
         .macOS(.v13),
     ],
     products: [
         .executable(
-            name: "PeekabooTestHost",
-            targets: ["PeekabooTestHost"]
+            name: "WinkTestHost",
+            targets: ["WinkTestHost"]
         ),
     ],
     targets: [
         .executableTarget(
-            name: "PeekabooTestHost",
+            name: "WinkTestHost",
             path: ".",
             sources: ["TestHostApp.swift", "ContentView.swift"],
             swiftSettings: approachableConcurrencySettings

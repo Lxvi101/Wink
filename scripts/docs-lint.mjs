@@ -9,22 +9,22 @@ import path from 'path';
 const docsRoot = path.resolve('docs');
 const failures = [];
 const extraMarkdownFiles = [path.resolve('README.md')];
-const skillMarkdownFiles = [path.resolve('skills/peekaboo/SKILL.md')];
+const skillMarkdownFiles = [path.resolve('skills/wink/SKILL.md')];
 const sourceContractFiles = [path.resolve('scripts/test-background-computer-use.sh')];
 const sourceCliDocsFiles = [];
 const staleCliPatterns = [
-  [/peekaboo capture --output\b/, 'use `peekaboo see --no-elements --path` or `peekaboo capture live --path`'],
-  [/peekaboo capture --window-focused\b/, 'use `peekaboo see --no-elements --mode frontmost`'],
-  [/--press-return\b/, 'chain `peekaboo press Return`'],
-  [/peekaboo image\b/, 'use `peekaboo see --no-elements`'],
-  [/peekaboo hotkey\b/, 'use `peekaboo press` with xdotool chord syntax'],
-  [/peekaboo swipe\b/, 'use `peekaboo drag`'],
-  [/peekaboo inspect-ui\b/, 'use `peekaboo see --tree --no-screenshot`'],
-  [/peekaboo perform-action\b/, 'use `peekaboo action`'],
-  [/peekaboo list\b/, 'use noun-based `app list`, `window list`, or `screen list`'],
+  [/wink capture --output\b/, 'use `wink see --no-elements --path` or `wink capture live --path`'],
+  [/wink capture --window-focused\b/, 'use `wink see --no-elements --mode frontmost`'],
+  [/--press-return\b/, 'chain `wink press Return`'],
+  [/wink image\b/, 'use `wink see --no-elements`'],
+  [/wink hotkey\b/, 'use `wink press` with xdotool chord syntax'],
+  [/wink swipe\b/, 'use `wink drag`'],
+  [/wink inspect-ui\b/, 'use `wink see --tree --no-screenshot`'],
+  [/wink perform-action\b/, 'use `wink action`'],
+  [/wink list\b/, 'use noun-based `app list`, `window list`, or `screen list`'],
   [/--(?:from|to)-coords\b/, 'pass coordinates directly to `--from` or `--to`'],
   [/--max-depth\b/, 'use `--depth`'],
-  [/peekaboo type[^\n]*--(?:return|escape|delete|tab)\b/, 'chain `peekaboo press` for key input'],
+  [/wink type[^\n]*--(?:return|escape|delete|tab)\b/, 'chain `wink press` for key input'],
   [/--delay-ms\b/, 'use `--delay`'],
   [/--timeout-seconds\b/, 'use `--timeout` with an `ms` or `s` suffix'],
   [/--focus-timeout-seconds\b/, 'use `--focus-timeout` with an `ms` or `s` suffix'],
@@ -48,14 +48,14 @@ const staleCliPatterns = [
   [/--label\b/, 'use positional query text or `--on`'],
   [/--ticks\b/, 'use `--amount`'],
   [/docs\/commands\/run\.md/, 'link to the current command that owns the workflow'],
-  [/peekaboo space (?:current|where-is)\b/, 'use `peekaboo space list --detailed`'],
+  [/wink space (?:current|where-is)\b/, 'use `wink space list --detailed`'],
   [/--space-switch\s+(?:always|never)\b/, 'use boolean `--space-switch`'],
   [/--(?:move-here|no-verify)\b/, 'use `--bring-to-current-space` or `--verify`'],
-  [/peekaboo space list --all\b/, 'use `peekaboo space list --detailed`'],
-  [/peekaboo space switch[^\n]*--no-wait\b/, 'remove the retired `--no-wait` flag'],
-  [/peekaboo (?:capture|drag|move)[^\n]*--duration\s+\d+(?:\.\d+)?(?:\s|$)/,
+  [/wink space list --all\b/, 'use `wink space list --detailed`'],
+  [/wink space switch[^\n]*--no-wait\b/, 'remove the retired `--no-wait` flag'],
+  [/wink (?:capture|drag|move)[^\n]*--duration\s+\d+(?:\.\d+)?(?:\s|$)/,
     'add an explicit `ms` or `s` duration suffix'],
-  [/peekaboo (?:click|press|type)[^\n]*--(?:delay|hold|wait-for)\s+\d+(?:\.\d+)?(?:\s|$)/,
+  [/wink (?:click|press|type)[^\n]*--(?:delay|hold|wait-for)\s+\d+(?:\.\d+)?(?:\s|$)/,
     'add an explicit `ms` or `s` timing suffix'],
   [/--(?:on|from|to)\s+[`"']?[BTMS]\d+\b/, 'use an opaque element ID copied from current output'],
   [/element IDs?\s+(?:(?:such as|like|for example)\s+)?[`"']?[BTMS]\d+\b/i,
@@ -131,7 +131,7 @@ async function checkFile(file) {
     await checkLocalLinks(file, text);
 
     for (const line of text.split('\n')) {
-      if (/peekaboo click\b.*--at\b/.test(line) &&
+      if (/wink click\b.*--at\b/.test(line) &&
           (!/--window-id\b/.test(line) || !/--snapshot\b/.test(line))) {
         failures.push(`${file}: coordinate click must include a fresh snapshot and exact --window-id target`);
       }

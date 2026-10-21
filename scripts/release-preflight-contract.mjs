@@ -4,7 +4,7 @@ import { basename, join } from 'node:path';
 export const EXPECTED_ROOT_COMMAND_COUNT = 34;
 
 export const MIGRATION_ADVISOR_PATH =
-  'Apps/CLI/Sources/PeekabooCLI/CLI/CommanderMigrationAdvisor.swift';
+  'Apps/CLI/Sources/WinkCLI/CLI/CommanderMigrationAdvisor.swift';
 
 export const REMOVED_ROOT_COMMANDS = Object.freeze([
   'image',
@@ -39,9 +39,9 @@ const versionFiles = Object.freeze({
   cliVersionJson: 'Apps/CLI/Sources/Resources/version.json',
   cliPlist: 'Apps/CLI/Sources/Resources/Info.plist',
   testHostPlist: 'Apps/CLI/TestHost/Info.plist',
-  mcpVersion: 'Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/PeekabooMCPVersion.swift',
-  macProject: 'Apps/Mac/Peekaboo.xcodeproj/project.pbxproj',
-  inspectorProject: 'Apps/PeekabooInspector/Inspector.xcodeproj/project.pbxproj',
+  mcpVersion: 'Core/WinkCore/Sources/WinkAgentRuntime/MCP/WinkMCPVersion.swift',
+  macProject: 'Apps/Mac/Wink.xcodeproj/project.pbxproj',
+  inspectorProject: 'Apps/WinkInspector/Inspector.xcodeproj/project.pbxproj',
   playgroundProject: 'Apps/Playground/Playground.xcodeproj/project.pbxproj'
 });
 
@@ -240,7 +240,7 @@ export function validateMigrationGuideContract({ advisorSource, migrationGuideSo
   }
 
   for (const command of REMOVED_ROOT_COMMANDS) {
-    const oldInvocation = `peekaboo ${command}`;
+    const oldInvocation = `wink ${command}`;
     const hasMapping = rows.some((row) => inlineCodeSpans(row.oldCell).some((span) =>
       span === command || span.startsWith(`${oldInvocation} `) || span === oldInvocation
     ) && row.newCell.length > 0);
@@ -373,8 +373,8 @@ export function validateVersionConsistency(projectRoot) {
     'CLI version.json': JSON.parse(read(versionFiles.cliVersionJson)).version,
     'CLI CFBundleShortVersionString': plistValue(cliPlist, 'CFBundleShortVersionString'),
     'CLI CFBundleVersion': plistValue(cliPlist, 'CFBundleVersion'),
-    'CLI PeekabooVersionDisplayString': plistValue(cliPlist, 'PeekabooVersionDisplayString')
-      ?.replace(/^Peekaboo\s+/, ''),
+    'CLI WinkVersionDisplayString': plistValue(cliPlist, 'WinkVersionDisplayString')
+      ?.replace(/^Wink\s+/, ''),
     'TestHost CFBundleShortVersionString': plistValue(testHostPlist, 'CFBundleShortVersionString'),
     'TestHost CFBundleVersion': plistValue(testHostPlist, 'CFBundleVersion'),
     'MCP server': mcpVersionValue(read(versionFiles.mcpVersion)),
@@ -392,7 +392,7 @@ export function validateSourceDocumentationContracts(projectRoot) {
   const commandDocsPath = join(projectRoot, 'docs', 'commands');
   const commandFailures = validateCommandDocsContract({
     registrySource: readFileSync(
-      join(projectRoot, 'Apps/CLI/Sources/PeekabooCLI/CLI/Configuration/CommandRegistry.swift'),
+      join(projectRoot, 'Apps/CLI/Sources/WinkCLI/CLI/Configuration/CommandRegistry.swift'),
       'utf8'
     ),
     commandPages: readdirSync(commandDocsPath).filter((name) => name.endsWith('.md')),

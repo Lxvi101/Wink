@@ -1,7 +1,7 @@
 import CoreGraphics
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct VisualizerCommandTests {

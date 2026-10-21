@@ -20,13 +20,13 @@ const POSITIVE_DECIMAL = /^[1-9][0-9]*$/;
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const UUID_V8 = /^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const UINT64_MAX = 0xffff_ffff_ffff_ffffn;
-const REQUEST_ID_DOMAIN = Buffer.from('peekaboo.bridge.operation-request.v1\0', 'utf8');
+const REQUEST_ID_DOMAIN = Buffer.from('wink.bridge.operation-request.v1\0', 'utf8');
 const ED25519_SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
 const BUILTIN_CATALOG_SHA256 = '0a2be0a8686a19ae55d01f1eecb7825c2cfb5c27cc5d97d48541a9f6e16a2ce8';
 const BUILTIN_DIGEST_SPEC_SHA256 = '6d80d6264a4d3b80c69cee0c68ce3b5c2fd801e8483bb4bbddd4402d87066a33';
 const CLI_VERSION = '2';
-const LIVE_CERTIFICATION_AUTHORITY = Symbol('peekaboo-live-certification-authority');
-const LIVE_CERTIFICATION_RESULT = Symbol('peekaboo-live-certification-result');
+const LIVE_CERTIFICATION_AUTHORITY = Symbol('wink-live-certification-authority');
+const LIVE_CERTIFICATION_RESULT = Symbol('wink-live-certification-result');
 const FINALIZER_CATALOG_DIGEST_PROJECTION = 'normalize-builtin-catalog-sha256-to-zero-v1';
 const SUPPORTED_LIVE_VALIDATOR_HOST_PROTOCOLS = new Set(['1.31', '1.32']);
 
@@ -43,40 +43,40 @@ class LosslessJSONInteger {
     Object.freeze(this);
   }
 }
-const CONTROLLER_SOURCE_DIRECTORY = 'Apps/CLI/Sources/PeekabooCertificationController/';
+const CONTROLLER_SOURCE_DIRECTORY = 'Apps/CLI/Sources/WinkCertificationController/';
 const CONTROLLER_SOURCE_PATHS = [
-  'Apps/CLI/Sources/PeekabooCertificationController/CodeIdentityRunner.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ControllerBuildIdentity.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ControllerEvidence.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ControllerMain.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ControllerPlan.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ControllerRunner.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ForegroundSemanticObserver.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/HeldPointerPlan.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/HeldPointerRunner.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/LiveCertificationBridge.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/LocalPIDAttestation.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/MonitorAttestationRunner.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ObserveOnlyRunner.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/ObserverPlan.swift',
-  'Apps/CLI/Sources/PeekabooCertificationController/PrivateArtifacts.swift',
+  'Apps/CLI/Sources/WinkCertificationController/CodeIdentityRunner.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ControllerBuildIdentity.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ControllerEvidence.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ControllerMain.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ControllerPlan.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ControllerRunner.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ForegroundSemanticObserver.swift',
+  'Apps/CLI/Sources/WinkCertificationController/HeldPointerPlan.swift',
+  'Apps/CLI/Sources/WinkCertificationController/HeldPointerRunner.swift',
+  'Apps/CLI/Sources/WinkCertificationController/LiveCertificationBridge.swift',
+  'Apps/CLI/Sources/WinkCertificationController/LocalPIDAttestation.swift',
+  'Apps/CLI/Sources/WinkCertificationController/MonitorAttestationRunner.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ObserveOnlyRunner.swift',
+  'Apps/CLI/Sources/WinkCertificationController/ObserverPlan.swift',
+  'Apps/CLI/Sources/WinkCertificationController/PrivateArtifacts.swift',
 ];
 const CLI_HELP = `\
-Finalize one authenticated live-physical multi-target Peekaboo certification run.
+Finalize one authenticated live-physical multi-target Wink certification run.
 
 Usage:
-  peekaboo-certify finalize --artifacts DIR --peekaboo PATH [--output FILE]
-  peekaboo-certify prepare --controller-receipts DIR --bundles DIR --artifacts DIR
+  wink-certify finalize --artifacts DIR --wink PATH [--output FILE]
+  wink-certify prepare --controller-receipts DIR --bundles DIR --artifacts DIR
                     --monitor-evidence FILE --foreground-postcondition FILE
-                    --peekaboo PATH [--output FILE]
-  peekaboo-certify digest --kind KIND --input FILE [--projection NAME]
-  peekaboo-certify digest --spec
-  peekaboo-certify verify-digests --artifacts DIR --summary FILE
+                    --wink PATH [--output FILE]
+  wink-certify digest --kind KIND --input FILE [--projection NAME]
+  wink-certify digest --spec
+  wink-certify verify-digests --artifacts DIR --summary FILE
 
 Required:
   --artifacts DIR   Owner-private directory containing contract.json,
                     operation-manifest.json, raw-evidence.json, and bundles/
-  --peekaboo PATH   Exact signed Peekaboo executable used for live receipt validation
+  --wink PATH   Exact signed Wink executable used for live receipt validation
 
 Prepare input:
   --controller-receipts DIR
@@ -149,7 +149,7 @@ export function canonicalSHA256(value) {
 
 export function aggregateSHA256(name, value) {
   return sha256(Buffer.concat([
-    Buffer.from(`peekaboo.multi-target-certification.${name}.v2\0`, 'utf8'),
+    Buffer.from(`wink.multi-target-certification.${name}.v2\0`, 'utf8'),
     canonicalBytes(value),
   ]));
 }
@@ -621,7 +621,7 @@ const LIVE_CERTIFICATION_KIND = 'live-physical';
 const LIVE_CLAIM_SCOPE = 'multi-target-background-with-attributed-foreground-overlap';
 
 function expectedForegroundValueSHA256(executionNonce) {
-  return sha256(Buffer.from(`peekaboo-foreground-postcondition:${executionNonce}`, 'utf8'));
+  return sha256(Buffer.from(`wink-foreground-postcondition:${executionNonce}`, 'utf8'));
 }
 
 export function validateCatalog(catalog) {
@@ -676,13 +676,13 @@ export function validateCatalog(catalog) {
   if (!exactKeys(currentBuild, [
     'kind', 'version', 'commit_derivation', 'controller_source_manifest',
     'coordinator', 'receipt_validator', 'finalizer',
-  ]) || currentBuild.kind !== 'peekaboo-current-build-source'
+  ]) || currentBuild.kind !== 'wink-current-build-source'
       || currentBuild.version !== 1 || currentBuild.commit_derivation !== 'clean-git-head'
       || !Array.isArray(controllerManifest) || controllerManifest.length === 0
       || controllerManifest.some((entry) => !exactKeys(entry, ['path', 'sha256'])
         || typeof entry.path !== 'string'
         || !entry.path.startsWith(CONTROLLER_SOURCE_DIRECTORY)
-        || !/^Apps\/CLI\/Sources\/PeekabooCertificationController\/[A-Za-z0-9+._-]+\.swift$/.test(entry.path)
+        || !/^Apps\/CLI\/Sources\/WinkCertificationController\/[A-Za-z0-9+._-]+\.swift$/.test(entry.path)
         || !HEX64.test(entry.sha256 ?? ''))
       || new Set(controllerPaths).size !== controllerPaths.length
       || !sameJSON(controllerPaths, CONTROLLER_SOURCE_PATHS)
@@ -691,7 +691,7 @@ export function validateCatalog(catalog) {
       || !HEX64.test(currentBuild.coordinator.sha256 ?? '')
       || !exactKeys(currentBuild.receipt_validator, ['path', 'sha256'])
       || currentBuild.receipt_validator.path
-        !== 'Apps/CLI/Sources/PeekabooCLI/Commands/Core/BridgeCommand+Receipt.swift'
+        !== 'Apps/CLI/Sources/WinkCLI/Commands/Core/BridgeCommand+Receipt.swift'
       || !HEX64.test(currentBuild.receipt_validator.sha256 ?? '')
       || !exactKeys(currentBuild.finalizer, ['path', 'projection', 'projected_sha256'])
       || currentBuild.finalizer.path !== 'scripts/finalize-multi-target-certification.mjs'
@@ -860,7 +860,7 @@ function validateContract(catalog, catalogSHA256, contract) {
     'id', 'source_commit', 'executable_sha256', 'code_signature_hash', 'team_id',
     'runtime_libraries', 'trusted_host_team_ids',
   ])
-      || contract.first_party_validator.id !== 'peekaboo-bridge-receipt-validate-v1'
+      || contract.first_party_validator.id !== 'wink-bridge-receipt-validate-v1'
       || !HEX40.test(contract.first_party_validator.source_commit ?? '')
       || contract.first_party_validator.source_commit !== currentBuildCommit
       || !HEX64.test(contract.first_party_validator.executable_sha256 ?? '')
@@ -1015,7 +1015,7 @@ function validateContract(catalog, catalogSHA256, contract) {
         || !exactKeys(slot.request_binding, ['path', 'value'])
         || !sameJSON(slot.request_binding.path, template.request_binding_path)
         || slot.request_binding.value
-          !== `peekaboo-certification-run:${contract.execution_nonce}:slot:${slot.slot_id}`
+          !== `wink-certification-run:${contract.execution_nonce}:slot:${slot.slot_id}`
         || typeof slot.request_case !== 'string' || slot.request_case.length === 0
         || typeof slot.response_envelope_case !== 'string' || slot.response_envelope_case.length === 0
         || typeof slot.response_case !== 'string' || slot.response_case.length === 0
@@ -2037,7 +2037,7 @@ function validFirstPartyVerdict(value, slot, manifestRow, contract) {
   ];
   return exactKeys(value, keys)
     && value.valid === true
-    && value.validator_id === 'peekaboo-bridge-receipt-validate-v1'
+    && value.validator_id === 'wink-bridge-receipt-validate-v1'
     && value.trust_source === 'authenticated_live_listener'
     && value.minimum_protocol_version === '1.29'
     && isSupportedQualificationHostProtocol(value.host_protocol_version)
@@ -2332,7 +2332,7 @@ function validateLiveMonitorEvidence(catalog, contract, monitorEvidence) {
     'observer_attestation_socket_path',
   ])
       || monitorEvidence.foreground_plan.request_marker
-        !== `peekaboo-foreground-postcondition:${contract.execution_nonce}`
+        !== `wink-foreground-postcondition:${contract.execution_nonce}`
       || monitorEvidence.foreground_plan.expected_value_sha256
         !== expectedForegroundValueSHA256(contract.execution_nonce)
       || !HEX64.test(monitorEvidence.foreground_plan.baseline_value_sha256 ?? '')
@@ -2938,7 +2938,7 @@ export function validateSuccessfulCertificationSummary(summary, label = 'certifi
         || !HEX64.test(row.file_sha256 ?? '')
         || !exactKeys(row.verdict, SUMMARY_FIRST_PARTY_VERDICT_KEYS)
         || row.verdict.valid !== true
-        || row.verdict.validator_id !== 'peekaboo-bridge-receipt-validate-v1'
+        || row.verdict.validator_id !== 'wink-bridge-receipt-validate-v1'
         || row.verdict.trust_source !== 'authenticated_live_listener'
         || row.verdict.minimum_protocol_version !== '1.29'
         || !isSupportedQualificationHostProtocol(row.verdict.host_protocol_version)
@@ -3584,7 +3584,7 @@ function controllerReceiptSlot(receipt, template) {
   if (!onlyKeys(slot, slotKeys) || requiredSlotKeys.some((key) => !(key in slot))
       || slot.kind !== template.kind || slot.operation !== template.operation
       || (slot.checkpoint ?? null) !== template.checkpoint
-      || slot.marker !== `peekaboo-certification-run:${receipt.execution_nonce}:slot:${template.slot_id}`
+      || slot.marker !== `wink-certification-run:${receipt.execution_nonce}:slot:${template.slot_id}`
       || slot.listener_instance_id !== receipt.handshake.listener_instance_id
       || slot.session_id !== receipt.handshake.session.id
       || normalizedUUID(slot.request_id, UUID_V8) === null
@@ -3964,10 +3964,10 @@ function parseArguments(argv) {
     if (command === 'prepare') {
       options = [
         '--controller-receipts', '--bundles', '--monitor-evidence', '--foreground-postcondition',
-        '--artifacts', '--peekaboo', '--output',
+        '--artifacts', '--wink', '--output',
       ];
     } else if (command === 'finalize') {
-      options = ['--artifacts', '--peekaboo', '--output'];
+      options = ['--artifacts', '--wink', '--output'];
     } else if (command === 'digest') {
       options = ['--kind', '--input', '--projection'];
     } else {
@@ -3980,8 +3980,8 @@ function parseArguments(argv) {
       throw new TypeError(`Unknown or incomplete argument: ${value}`);
     }
   }
-  if (['prepare', 'finalize'].includes(command) && (!result.artifacts || !result.peekaboo)) {
-    throw new TypeError('--artifacts and --peekaboo are required');
+  if (['prepare', 'finalize'].includes(command) && (!result.artifacts || !result.wink)) {
+    throw new TypeError('--artifacts and --wink are required');
   }
   if (command === 'prepare' && (
     !result['controller-receipts'] || !result.bundles || !result['monitor-evidence']
@@ -4109,10 +4109,10 @@ export function embeddedSourceCommit(executable, label = 'signed executable', {
   } catch {
     throw new TypeError(`${label} info plist is unreadable`);
   }
-  if (!HEX40.test(value?.PeekabooSourceCommit ?? '')) {
+  if (!HEX40.test(value?.WinkSourceCommit ?? '')) {
     throw new TypeError(`${label} has no exact source stamp`);
   }
-  return value.PeekabooSourceCommit;
+  return value.WinkSourceCommit;
 }
 
 function appleAnchorVerificationResult(subject, teamID, runner = spawnSync) {
@@ -4278,7 +4278,7 @@ export async function inspectCodeIdentity({
 }) {
   assertCodeIdentityInspectorStage(inspectorStage);
   const temporaryDirectory = fs.realpathSync(
-    fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-code-identity-')),
+    fs.mkdtempSync(path.join(os.tmpdir(), 'wink-code-identity-')),
   );
   fs.chmodSync(temporaryDirectory, 0o700);
   const planPath = path.join(temporaryDirectory, 'plan.json');
@@ -4414,10 +4414,10 @@ export async function stageCodeIdentityInspector(sourceExecutable, allowedTeamID
   const sourcePath = fs.realpathSync(path.resolve(sourceExecutable));
   const source = readStableRegularFile(sourcePath, 'source code-identity inspector');
   const directory = fs.realpathSync(
-    fs.mkdtempSync(path.join(parentDirectory, 'peekaboo-code-inspector-')),
+    fs.mkdtempSync(path.join(parentDirectory, 'wink-code-inspector-')),
   );
   fs.chmodSync(directory, 0o700);
-  const executable = path.join(directory, 'peekaboo-certification-controller');
+  const executable = path.join(directory, 'wink-certification-controller');
   try {
     fs.writeFileSync(executable, source.bytes, { mode: 0o500, flag: 'wx' });
     const sourceDirectory = path.dirname(sourcePath);
@@ -4429,7 +4429,7 @@ export async function stageCodeIdentityInspector(sourceExecutable, allowedTeamID
       fs.writeFileSync(path.join(directory, name), library.bytes, { mode: 0o500, flag: 'wx' });
     }
     const filePaths = [
-      ['peekaboo-certification-controller', executable],
+      ['wink-certification-controller', executable],
       ...runtimeNames.map((name) => [name, path.join(directory, name)]),
     ];
     const files = filePaths.map(([name, pathname]) => ({ name, ...stagedCodeFile(pathname, name) }));
@@ -4567,9 +4567,9 @@ function createFirstPartyExecutableStage(executablePath, contract = null) {
   if (contract && sourceSHA256 !== contract.first_party_validator.executable_sha256) {
     throw new TypeError('first-party validator bytes differ from the contracted executable');
   }
-  const stageDirectory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-validator.')));
+  const stageDirectory = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'wink-validator.')));
   fs.chmodSync(stageDirectory, 0o700);
-  const executable = path.join(stageDirectory, 'peekaboo');
+  const executable = path.join(stageDirectory, 'wink');
   try {
     fs.writeFileSync(executable, source.bytes, { mode: 0o500, flag: 'wx' });
     const sourceDirectory = path.dirname(sourceExecutable);
@@ -4591,7 +4591,7 @@ function createFirstPartyExecutableStage(executablePath, contract = null) {
       fs.writeFileSync(stagedLibrary, library.bytes, { mode: 0o500, flag: 'wx' });
     }
     const filePaths = [
-      ['peekaboo', executable],
+      ['wink', executable],
       ...runtimeNames.map((name) => [name, path.join(stageDirectory, name)]),
     ];
     const files = filePaths.map(([name, pathname]) => ({ name, ...stagedCodeFile(pathname, name) }));
@@ -4655,7 +4655,7 @@ export function inspectFirstPartyExecutable(sourceExecutable, catalog, { runner 
       };
     });
     return {
-      id: 'peekaboo-bridge-receipt-validate-v1',
+      id: 'wink-bridge-receipt-validate-v1',
       source_commit: sourceCommit,
       executable_sha256: stage.executableFile.sha256,
       code_signature_hash: identity.code_signature_hash,
@@ -5114,7 +5114,7 @@ async function runLivePIDAttestation(contract, evidence, responseKind, inspector
     : foregroundPlan.observer;
   const label = monitor ? 'live monitor attestation' : 'foreground observer attestation';
   const socketBefore = ownerPrivateSocketSnapshot(socketPath, `${label} endpoint`);
-  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-pid-attestation-'));
+  const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-pid-attestation-'));
   fs.chmodSync(temporaryDirectory, 0o700);
   const planPath = path.join(temporaryDirectory, 'plan.json');
   const outputPath = path.join(temporaryDirectory, 'response.json');
@@ -5293,7 +5293,7 @@ async function executeFinalization(args, catalog, catalogBytes, artifacts) {
     await verifyLiveForegroundObserverRuntime(artifacts.contract, artifacts.evidence, inspectorStage);
     verifyLiveForegroundPostconditionRuntime(artifacts.contract, artifacts.evidence);
     await verifyLivePIDAttestations(artifacts.contract, artifacts.evidence, inspectorStage);
-    const stage = stageFirstPartyExecutable(args.peekaboo, catalog, artifacts.contract);
+    const stage = stageFirstPartyExecutable(args.wink, catalog, artifacts.contract);
     try {
       const summary = await finalizeLiveMultiTargetCertification({
         catalog,
@@ -5336,7 +5336,7 @@ async function runCLI() {
     return;
   }
   if (args.action === 'version') {
-    process.stdout.write(`peekaboo-certify ${CLI_VERSION}\n`);
+    process.stdout.write(`wink-certify ${CLI_VERSION}\n`);
     return;
   }
   if (args.command === 'digest') {
@@ -5406,7 +5406,7 @@ async function runCLI() {
       throw new TypeError('controller receipts do not bind one exact Bridge socket');
     }
     const socketEvidence = currentSocketEvidence(socketPath);
-    const firstPartyValidator = inspectFirstPartyExecutable(args.peekaboo, catalog);
+    const firstPartyValidator = inspectFirstPartyExecutable(args.wink, catalog);
     const contract = makeLiveCertificationContract({
       catalog,
       catalogSHA256,

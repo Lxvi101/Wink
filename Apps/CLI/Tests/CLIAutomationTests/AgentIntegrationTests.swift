@@ -1,8 +1,8 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 
 @Suite(
     .serialized,
@@ -24,7 +24,7 @@ struct AgentIntegrationTests {
         // Build command arguments
         let args = [
             "agent",
-            "Open TextEdit and type 'Peekaboo Agent Test'",
+            "Open TextEdit and type 'Wink Agent Test'",
             "--json",
             "--max-steps", "10",
         ]
@@ -48,8 +48,8 @@ struct AgentIntegrationTests {
             }
             return commands
         }()
-        #expect(stepCommands.contains("peekaboo_app") || stepCommands.contains("peekaboo_see"))
-        #expect(stepCommands.contains("peekaboo_type"))
+        #expect(stepCommands.contains("wink_app") || stepCommands.contains("wink_see"))
+        #expect(stepCommands.contains("wink_type"))
 
         // No temp files to remove when running in-process
     }
@@ -88,8 +88,8 @@ struct AgentIntegrationTests {
                 }
                 return commands
             }()
-            #expect(stepCommands.contains("peekaboo_app") || stepCommands.contains("peekaboo_window"))
-            #expect(stepCommands.contains("peekaboo_sleep"))
+            #expect(stepCommands.contains("wink_app") || stepCommands.contains("wink_window"))
+            #expect(stepCommands.contains("wink_sleep"))
         }
     }
 
@@ -119,7 +119,7 @@ struct AgentIntegrationTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["RUN_AGENT_TESTS"] == "true"))
-    func `Direct Peekaboo invocation`() async throws {
+    func `Direct Wink invocation`() async throws {
         guard ProcessInfo.processInfo.environment["OPENAI_API_KEY"] != nil else {
             throw TestError.missingAPIKey
         }
@@ -136,7 +136,7 @@ struct AgentIntegrationTests {
 
         #expect(output.success == true)
         let hasImageOrSeeCommand = output.data?.steps.contains { step in
-            step.command == "peekaboo_image" || step.command == "peekaboo_see"
+            step.command == "wink_image" || step.command == "wink_see"
         } ?? false
         #expect(hasImageOrSeeCommand == true)
     }

@@ -1,12 +1,12 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomation
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkAutomation
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 
 // MARK: - Read-only scenarios
 
@@ -18,14 +18,14 @@ import Testing
 struct SpaceCommandReadTests {
     @Test
     func `space command exists in help`() async throws {
-        let output = try await self.runPeekaboo(["--help"])
+        let output = try await self.runWink(["--help"])
         #expect(output.contains("space"))
         #expect(output.contains("Manage macOS Spaces"))
     }
 
     @Test
     func `space command help shows subcommands`() async throws {
-        let output = try await self.runPeekaboo(["space", "--help"])
+        let output = try await self.runWink(["space", "--help"])
         #expect(output.contains("Manage macOS Spaces (virtual desktops)"))
         #expect(output.contains("list"))
         #expect(output.contains("switch"))
@@ -34,7 +34,7 @@ struct SpaceCommandReadTests {
 
     @Test
     func `space switch command help`() async throws {
-        let output = try await self.runPeekaboo(["space", "switch", "--help"])
+        let output = try await self.runWink(["space", "switch", "--help"])
         #expect(output.contains("Switch to a different Space"))
         #expect(output.contains("--to"))
         #expect(output.contains("--foreground"))
@@ -42,20 +42,20 @@ struct SpaceCommandReadTests {
 
     @Test
     func `space list command`() async throws {
-        let output = try await self.runPeekaboo(["space", "list"])
+        let output = try await self.runWink(["space", "list"])
         #expect(!output.isEmpty)
     }
 
     @Test
     func `space list with JSON output`() async throws {
-        let output = try await self.runPeekaboo(["space", "list", "--json"])
+        let output = try await self.runWink(["space", "list", "--json"])
         let response = try JSONDecoder().decode(CodableJSONResponse<SpaceListData>.self, from: Data(output.utf8))
         #expect(response.success)
     }
 
     @Test
     func `space list detailed flag`() async throws {
-        let output = try await self.runPeekaboo(["space", "list", "--detailed"])
+        let output = try await self.runWink(["space", "list", "--detailed"])
         #expect(output.contains("Space"))
     }
 
@@ -120,7 +120,7 @@ struct SpaceCommandReadTests {
         #expect(command.app == nil)
     }
 
-    private func runPeekaboo(_ arguments: [String]) async throws -> String {
+    private func runWink(_ arguments: [String]) async throws -> String {
         let context = self.makeTestContext()
         let result = try await InProcessCommandRunner.run(
             arguments,
@@ -131,11 +131,11 @@ struct SpaceCommandReadTests {
     }
 
     @MainActor
-    func makeTestContext() -> (services: PeekabooServices, spaceService: any SpaceCommandSpaceService) {
+    func makeTestContext() -> (services: WinkServices, spaceService: any SpaceCommandSpaceService) {
         let applications = Self.testApplications()
         let windowsByApp = Self.windowsByApp()
 
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: applications, windowsByApp: windowsByApp),
             windows: StubWindowService(windowsByApp: windowsByApp),
             menu: StubMenuService(menusByApp: [:]),
@@ -606,7 +606,7 @@ struct SpaceCommandActionTests {
                 )
             )
         }
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(
                 applications: [appInfo],
                 windowsByApp: [appName: windows]
@@ -632,7 +632,7 @@ struct SpaceCommandActionTests {
 }
 
 private struct SpaceHarnessContext {
-    let services: PeekabooServices
+    let services: WinkServices
     let spaceService: StubSpaceService
 }
 

@@ -17,23 +17,23 @@ let automationTargetSettings = approachableConcurrencySettings + [
 ]
 
 let package = Package(
-    name: "Peekaboo",
+    name: "Wink",
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .library(
-            name: "PeekabooFoundation",
-            targets: ["PeekabooFoundation"]),
+            name: "WinkFoundation",
+            targets: ["WinkFoundation"]),
         .library(
-            name: "PeekabooProtocols",
-            targets: ["PeekabooProtocols"]),
+            name: "WinkProtocols",
+            targets: ["WinkProtocols"]),
         .library(
-            name: "PeekabooAutomationKit",
-            targets: ["PeekabooAutomationKit"]),
+            name: "WinkAutomationKit",
+            targets: ["WinkAutomationKit"]),
         .library(
-            name: "PeekabooBridge",
-            targets: ["PeekabooBridge"]),
+            name: "WinkBridge",
+            targets: ["WinkBridge"]),
     ],
     dependencies: [
         .package(url: "https://github.com/openclaw/AXorcist.git", exact: "0.2.2"),
@@ -41,34 +41,34 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "PeekabooFoundation",
-            path: "Core/PeekabooFoundation/Sources/PeekabooFoundation",
+            name: "WinkFoundation",
+            path: "Core/WinkFoundation/Sources/WinkFoundation",
             swiftSettings: approachableConcurrencySettings),
         .target(
-            name: "PeekabooProtocols",
+            name: "WinkProtocols",
             dependencies: [
-                "PeekabooFoundation",
+                "WinkFoundation",
             ],
-            path: "Core/PeekabooProtocols/Sources/PeekabooProtocols",
+            path: "Core/WinkProtocols/Sources/WinkProtocols",
             swiftSettings: protocolTargetSettings),
         .target(
-            name: "PeekabooAutomationKit",
+            name: "WinkAutomationKit",
             dependencies: [
-                "PeekabooFoundation",
-                "PeekabooProtocols",
+                "WinkFoundation",
+                "WinkProtocols",
                 .product(name: "AXorcist", package: "AXorcist"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
             ],
-            path: "Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit",
+            path: "Core/WinkAutomationKit/Sources/WinkAutomationKit",
             exclude: ["Core/README.md"],
             swiftSettings: automationTargetSettings),
         .target(
-            name: "PeekabooBridge",
+            name: "WinkBridge",
             dependencies: [
-                "PeekabooAutomationKit",
-                "PeekabooFoundation",
+                "WinkAutomationKit",
+                "WinkFoundation",
             ],
-            path: "Core/PeekabooCore/Sources/PeekabooBridge",
+            path: "Core/WinkCore/Sources/WinkBridge",
             swiftSettings: approachableConcurrencySettings,
             linkerSettings: [.linkedLibrary("bsm")]),
     ],

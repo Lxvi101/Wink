@@ -5,7 +5,7 @@ swift-cli/Tests/
 
 # Test files
 tests/
-test_peekaboo.sh
+test_wink.sh
 jest.config.cjs
 coverage/
 *.test.ts
@@ -59,4 +59,4 @@ swift-cli/.build/
 swift-cli/.swiftpm/
 
 # Keep only the compiled binary
-!peekaboo
+!wink

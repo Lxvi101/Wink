@@ -1,5 +1,5 @@
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ClickCommandFocusVerificationTests {
     @Test

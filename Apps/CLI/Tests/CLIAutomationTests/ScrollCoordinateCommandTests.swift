@@ -1,11 +1,11 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -142,7 +142,7 @@ struct ScrollCoordinateCommandTests {
             automation: automation,
             applications: applications,
             windows: windows,
-            services: TestServicesFactory.makePeekabooServices(
+            services: TestServicesFactory.makeWinkServices(
                 applications: applications, windows: windows, snapshots: snapshots, automation: automation
             )
         )
@@ -153,6 +153,6 @@ struct ScrollCoordinateCommandTests {
         let automation: OutcomeStubAutomationService
         let applications: StubApplicationService
         let windows: StubWindowService
-        let services: PeekabooServices
+        let services: WinkServices
     }
 }

@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct BridgeReceiptCommandTests {
@@ -33,7 +33,7 @@ struct BridgeReceiptCommandTests {
     func `Commander resolves nested anchored receipt validation`() throws {
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let invocation = try Program(descriptors: descriptors.map(\.metadata)).resolve(argv: [
-            "peekaboo", "bridge", "receipt", "validate",
+            "wink", "bridge", "receipt", "validate",
             "--bundle", "/private/tmp/receipt.json",
             "--bridge-socket", "/private/tmp/bridge.sock",
             "--trusted-host-team-id", "TEAMONE",
@@ -85,7 +85,7 @@ struct BridgeReceiptCommandTests {
             let socketPath = root.appendingPathComponent("bridge.sock").path
             let exportDirectory = root.appendingPathComponent("exports", isDirectory: true)
 
-            let server = PeekabooBridgeServer(
+            let server = WinkBridgeServer(
                 services: CLISnapshotBridgeServices(snapshots: InMemorySnapshotManager(), directory: root),
                 allowlistedTeams: [],
                 allowlistedBundles: [],
@@ -96,7 +96,7 @@ struct BridgeReceiptCommandTests {
                 screenCaptureKitOwnerClaimProvider: CLISnapshotBridgeServices.unexpectedScreenCaptureKitClaim,
                 permissionStatusEvaluator: { _ in CLISnapshotBridgeServices.grantedPermissions() }
             )
-            let host = PeekabooBridgeHost(
+            let host = WinkBridgeHost(
                 socketPath: socketPath,
                 server: server,
                 allowedTeamIDs: [],
@@ -127,7 +127,7 @@ struct BridgeReceiptCommandTests {
             #expect(report.valid)
             #expect(report.trustSource == "authenticated_live_listener")
             #expect(report.listenerInstanceID == bundle.operationAttestation.listenerInstanceID.uuidString.lowercased())
-            #expect(report.operation == PeekabooBridgeOperation.permissionsStatus.rawValue)
+            #expect(report.operation == WinkBridgeOperation.permissionsStatus.rawValue)
             #expect(report.hostSourceCommit == handshake.hostIdentity?.sourceCommit)
             #expect(
                 report.hostProtocolVersion ==
@@ -152,8 +152,8 @@ struct BridgeReceiptCommandTests {
     @Test
     func `different valid listener rejects an otherwise valid bundle`() throws {
         let data = try Self.fixtureData("valid-read-only-receipt")
-        let otherListener = try JSONDecoder.peekabooBridgeDecoder().decode(
-            PeekabooBridgeListenerAttestation.self,
+        let otherListener = try JSONDecoder.winkBridgeDecoder().decode(
+            WinkBridgeListenerAttestation.self,
             from: Self.fixtureData("other-listener-attestation")
         )
 
@@ -192,7 +192,7 @@ struct BridgeReceiptCommandTests {
         }
 
         let unattested = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.attestedOperationReceiptVersion,
+            negotiatedVersion: WinkBridgeConstants.attestedOperationReceiptVersion,
             supportedOperations: []
         )
         #expect(throws: BridgeReceiptValidationError.listenerTrustUnavailable) {
@@ -225,7 +225,7 @@ struct BridgeReceiptCommandTests {
                 trustedHostTeamIDs: ["TEAMID"],
                 makeClient: { socketPath, timeout, teams in
                     clientConstructed = true
-                    return PeekabooBridgeClient(
+                    return WinkBridgeClient(
                         socketPath: socketPath,
                         requestTimeoutSec: timeout,
                         trustedHostTeamIDs: teams
@@ -248,7 +248,7 @@ struct BridgeReceiptCommandTests {
                 trustedHostTeamIDs: [],
                 makeClient: { socketPath, timeout, teams in
                     clientConstructed = true
-                    return PeekabooBridgeClient(
+                    return WinkBridgeClient(
                         socketPath: socketPath,
                         requestTimeoutSec: timeout,
                         trustedHostTeamIDs: teams
@@ -263,15 +263,15 @@ struct BridgeReceiptCommandTests {
     func `receipt validator reuses canonical socket trust policy and normalizes explicit teams`() throws {
         #expect(
             try BridgeReceiptVerifier.trustedHostTeamIDs(
-                for: PeekabooBridgeConstants.peekabooSocketPath,
+                for: WinkBridgeConstants.winkSocketPath,
                 explicitValues: []
-            ) == PeekabooBridgeConstants.trustedReleaseTeamIDs
+            ) == WinkBridgeConstants.trustedReleaseTeamIDs
         )
         #expect(
             try BridgeReceiptVerifier.trustedHostTeamIDs(
-                for: (PeekabooBridgeConstants.peekabooSocketPath as NSString).abbreviatingWithTildeInPath,
+                for: (WinkBridgeConstants.winkSocketPath as NSString).abbreviatingWithTildeInPath,
                 explicitValues: []
-            ) == PeekabooBridgeConstants.trustedReleaseTeamIDs
+            ) == WinkBridgeConstants.trustedReleaseTeamIDs
         )
         #expect(
             try BridgeReceiptVerifier.trustedHostTeamIDs(
@@ -295,7 +295,7 @@ struct BridgeReceiptCommandTests {
 
     @Test
     func `validator expands tilde bundle and socket paths before file or client access`() async throws {
-        let relativeRoot = ".peekaboo-receipt-path-tests-\(UUID().uuidString)"
+        let relativeRoot = ".wink-receipt-path-tests-\(UUID().uuidString)"
         let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(
             relativeRoot,
             isDirectory: true
@@ -315,7 +315,7 @@ struct BridgeReceiptCommandTests {
                 trustedHostTeamIDs: ["TEAMID"],
                 makeClient: { socketPath, timeout, teams in
                     receivedSocket = socketPath
-                    return PeekabooBridgeClient(
+                    return WinkBridgeClient(
                         socketPath: socketPath,
                         requestTimeoutSec: timeout,
                         trustedHostTeamIDs: teams
@@ -329,7 +329,7 @@ struct BridgeReceiptCommandTests {
     @Test
     func `bundle file must be private and cannot be a symlink`() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "peekaboo-receipt-file-tests-\(UUID().uuidString)",
+            "wink-receipt-file-tests-\(UUID().uuidString)",
             isDirectory: true
         )
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -393,7 +393,7 @@ struct BridgeReceiptCommandTests {
         socketPath: String,
         requestTimeoutSec: TimeInterval,
         trustedHostTeamIDs: Set<String>
-    ) -> PeekabooBridgeClient {
+    ) -> WinkBridgeClient {
         BridgeTestFixtures.authenticatedClient(
             socketPath: socketPath,
             requestTimeoutSec: requestTimeoutSec,
@@ -415,7 +415,7 @@ struct BridgeReceiptCommandTests {
 
     private static func privateBundleFile(_ data: Data) throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "peekaboo-receipt-preflight-\(UUID().uuidString)",
+            "wink-receipt-preflight-\(UUID().uuidString)",
             isDirectory: true
         )
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -425,7 +425,7 @@ struct BridgeReceiptCommandTests {
         return bundle
     }
 
-    private static func decodeBundle(_ data: Data) throws -> PeekabooBridgeOperationReceiptBundle {
-        try JSONDecoder.peekabooBridgeDecoder().decode(PeekabooBridgeOperationReceiptBundle.self, from: data)
+    private static func decodeBundle(_ data: Data) throws -> WinkBridgeOperationReceiptBundle {
+        try JSONDecoder.winkBridgeDecoder().decode(WinkBridgeOperationReceiptBundle.self, from: data)
     }
 }

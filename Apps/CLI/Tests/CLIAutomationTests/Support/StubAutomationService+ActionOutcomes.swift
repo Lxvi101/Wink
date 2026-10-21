@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkFoundation
 
 @MainActor
 final class OutcomeStubAutomationService: StubAutomationService, ScriptedUIAutomationActionOutcomeProviding,
@@ -99,7 +99,7 @@ final class OutcomeStubAutomationService: StubAutomationService, ScriptedUIAutom
         self.guardedHotkeyClaims.append(clipboardClaim)
         try self.beforeGuardedHotkey?()
         guard let focused = target.focusedElement else {
-            throw PeekabooError.invalidInput("Missing retained focus")
+            throw WinkError.invalidInput("Missing retained focus")
         }
         let keyboardTarget = ExactWindowKeyboardTarget(
             windowIdentity: target.identity,

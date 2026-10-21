@@ -1,8 +1,8 @@
 import CoreGraphics
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 struct WindowReadbackIdentityTests {
     private let originalBounds = CGRect(x: 10, y: 20, width: 640, height: 480)
@@ -23,7 +23,7 @@ struct WindowReadbackIdentityTests {
             )
         )
 
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             _ = try validatedPostMutationWindowReadback(
                 replacement,
                 expectedIdentity: expected,
@@ -49,7 +49,7 @@ struct WindowReadbackIdentityTests {
             )
         )
 
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             _ = try validatedPostMutationWindowReadback(
                 drifted,
                 expectedIdentity: expected,

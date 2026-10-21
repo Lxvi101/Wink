@@ -1,21 +1,21 @@
 ---
-summary: 'Systematic Peekaboo tool verification plan using Playground and file logs'
+summary: 'Systematic Wink tool verification plan using Playground and file logs'
 read_when:
   - 'planning or executing the comprehensive tool regression pass'
   - 'picking up the Playground-based test assignment'
 ---
 
-# Peekaboo Tool Playground Test Plan
+# Wink Tool Playground Test Plan
 
 For the strict non-interruption matrix (foreground sentinel, cursor/clipboard/overlay leak detection, and a quarantined
 physical-pointer phase), use [Background computer-use validation](background-computer-use.md).
 
 ## Assignment & Expectations
-- Validate every native Peekaboo tool/CLI command (see the CLI command reference) against the Playground app so future automation runs have deterministic coverage.
+- Validate every native Wink tool/CLI command (see the CLI command reference) against the Playground app so future automation runs have deterministic coverage.
 - For each tool run, capture an OSLog transcript with `Apps/Playground/scripts/playground-log.sh --output <file>` so we have durable evidence that the action completed (e.g., `[Click]`, `[Scroll]` entries).
 - Update this document every time you start/finish a tool, and log deeper repro notes or bugs under `Apps/Playground/PLAYGROUND_TEST.md` so the next person can keep going.
 - Fix any issues you discover while executing the plan. If a fix is large, land it first, then rerun the affected tool plan and refresh the log artifacts.
-- Rebuild the CLI before testing so you never test stale bits: `pnpm run build:cli`, then run `Apps/CLI/.build/debug/peekaboo <command>`.
+- Rebuild the CLI before testing so you never test stale bits: `pnpm run build:cli`, then run `Apps/CLI/.build/debug/wink <command>`.
   - For long runs, use tmux.
 
 ## Environment & Logging Setup
@@ -26,19 +26,19 @@ physical-pointer phase), use [Background computer-use validation](background-com
    LOG_ROOT=${LOG_ROOT:-$PWD/.artifacts/playground-tools}
    mkdir -p "$LOG_ROOT"
    ```
-4. Before you run any Peekaboo tool, arm a category-specific log capture so we can diff pre/post state:
+4. Before you run any Wink tool, arm a category-specific log capture so we can diff pre/post state:
    ```bash
    TOOL=Click   # e.g. Click/Text/Menu/Window/Scroll/Drag/Keyboard/Focus/Gesture/Control/App
    LOG_FILE="$LOG_ROOT/$(date +%Y%m%d-%H%M%S)-${TOOL,,}.log"
    ./Apps/Playground/scripts/playground-log.sh -c "$TOOL" --last 10m --all -o "$LOG_FILE"
    ```
    - **Note**: On some macOS 26 setups, unified logging may not retain `info` lines for long. When collecting evidence, prefer smaller windows (e.g. `--last 2m`) immediately after each action.
-5. Keep the Playground UI on the matching view (ClickTestingView, TextInputView, etc.) and run `peekaboo see --app Playground` anytime you need a fresh snapshot ID for element targeting. Record the snapshot ID in your notes.
+5. Keep the Playground UI on the matching view (ClickTestingView, TextInputView, etc.) and run `wink see --app Playground` anytime you need a fresh snapshot ID for element targeting. Record the snapshot ID in your notes.
 6. After executing the tool, append verification notes (log file path, snapshot ID, observed behavior) to the table below and add detailed findings to `Apps/Playground/PLAYGROUND_TEST.md`.
 
 ## Execution Loop
 1. Pick a tool from the matrix (start with Interaction tools, then cover window/app utilities, then the remaining system/automation commands).
-2. Review the tool doc under `docs/commands/<tool>.md` and skim the command implementation in `Apps/CLI/Sources/PeekabooCLI/Commands/**` so you understand its parameters and edge cases before running it.
+2. Review the tool doc under `docs/commands/<tool>.md` and skim the command implementation in `Apps/CLI/Sources/WinkCLI/Commands/**` so you understand its parameters and edge cases before running it.
 3. Stage the Playground view + log capture as described above.
 4. Run the suggested CLI smoke tests plus the extra edge cases listed per tool (invalid targets, timing edge cases, multi-step flows).
 5. Confirm Playground reflects the action (UI changes + OSLog evidence). Capture screenshots if a regression needs a visual repro.
@@ -50,7 +50,7 @@ physical-pointer phase), use [Background computer-use validation](background-com
 - Use `pnpm run benchmark:tools` to run a command repeatedly and write a `*-summary.json` alongside the per-run JSON payloads. The helper reads command timing fields such as `data.execution_time` or `data.executionTime` when available, falls back to wall time, and exits non-zero if a measured run fails:
   ```bash
   pnpm run benchmark:tools --name see-click-fixture --runs 10 --warmups 1 -- \
-    see --app boo.peekaboo.playground.debug --mode window --window-title "Click Fixture" --json-output
+    see --app boo.wink.playground.debug --mode window --window-title "Click Fixture" --json-output
   ```
 - See [benchmarks.md](benchmarks.md) for the full local benchmarking workflow.
 - Current reference baseline (2025-12-17, Click Fixture): `see` p95 ≈ 0.97s, `click` p95 ≈ 0.18s (`.artifacts/playground-tools/20251217-174822-perf-see-click-clickfixture-summary.json`).
@@ -62,46 +62,46 @@ physical-pointer phase), use [Background computer-use validation](background-com
 ### Vision & Capture
 | Tool | Playground coverage | Log focus | Sample CLI entry point | Status | Latest log |
 | --- | --- | --- | --- | --- | --- |
-| `see` | Prefer fixture windows (“Click Fixture”, “Scroll Fixture”, etc.) | Capture snapshot metadata via CLI output + optional Playground logs for follow-on actions | `peekaboo see --app Playground --mode window --window-title "Click Fixture"` | Verified – `--window-title` now resolves against ScreenCaptureKit windows and element detection is pinned to the captured `CGWindowID` | `.artifacts/playground-tools/20251217-153107-see-click-for-move.json` |
-| `see --no-elements` | Playground window (full or element-specific) | Use screenshot artifacts; note timestamp in `LOG_FILE` | `peekaboo see --no-elements --mode window --app Playground --path /tmp/playground-window.png` | Replaces the former image CLI path | Historical image artifacts remain valid evidence. |
-| `capture` | `capture live` against Playground (5–10s) + `capture video` ingest smoke | Verify artifacts (`metadata.json`, `contact.png`, frames) + optional MP4 (`--video-out`) | `peekaboo capture live --mode window --app Playground --duration 5s --threshold 0 --json-output` | Verified – live writes contact sheet + metadata; video ingest + `--video-out` covered | `.artifacts/playground-tools/20251217-133751-capture-live.json`, `.artifacts/playground-tools/20251217-180155-capture-video.json`, `.artifacts/playground-tools/20251217-184010-capture-live-videoout.json`, `.artifacts/playground-tools/20251217-184010-capture-video-videoout.json` |
-| noun-based inventory | Validate `app list`, `window list`, `screen list`, `menubar list`, and `permissions status` while Playground is running | `playground-log` optional (`Window` for focus changes) | `peekaboo window list --app Playground` etc. | Verified | Existing inventory artifacts remain historical evidence. |
-| `tools` | Compare CLI output against ToolRegistry | No Playground log required; attach output to notes | `peekaboo tools > $LOG_ROOT/tools.txt` | Verified – native tool listing captured 2025-12-19 | `.artifacts/playground-tools/20251219-001215-tools.txt` |
-| `clean` | Snapshot cache after `see` runs | Inspect `~/.peekaboo/snapshots` & ensure Playground unaffected | `peekaboo clean --snapshot <id>` | Verified – removed snapshot 5408D893… and confirmed re-run reports none | `.peekaboo/snapshots/5408D893-E9CF-4A79-9B9B-D025BF9C80BE (deleted)` |
-| `clipboard` | Clipboard smoke (text/file/image + save/restore) | Verify readback + binary export + restore user clipboard | `peekaboo clipboard set --file-path assets/peekaboo.png --json` | Verified – CLI set/get (file+image) and cross-invocation save/restore (2025-12-17) | `.artifacts/playground-tools/20251217-192349-clipboard-get-image.json` |
-| `config` | Validate config commands while Playground idle | N/A | `peekaboo config show` | Verified – show/validate outputs captured 2025-11-16 | `.artifacts/playground-tools/20251116-051200-config-show-effective.json` |
-| `permissions` | Ensure status/grant flow works with Playground | `playground-log` `App` category (should log when permissions toggled) | `peekaboo permissions status` | Verified – Screen Recording & Accessibility granted | `.artifacts/playground-tools/20251116-051000-permissions-status.json` |
-| `learn` | Dump agent guide | N/A | `peekaboo learn > $LOG_ROOT/learn.txt` | Verified – latest dump saved 2025-11-16 | `.artifacts/playground-tools/20251116-051300-learn.txt` |
-| `bridge` | Bridge host connectivity (local vs Peekaboo.app/Clawdbot) | N/A | `peekaboo bridge status --json-output` | Verified – local selection + unauthorized host responses are now structured (no EOF) | `.artifacts/playground-tools/20251217-133751-bridge-status.json` |
+| `see` | Prefer fixture windows (“Click Fixture”, “Scroll Fixture”, etc.) | Capture snapshot metadata via CLI output + optional Playground logs for follow-on actions | `wink see --app Playground --mode window --window-title "Click Fixture"` | Verified – `--window-title` now resolves against ScreenCaptureKit windows and element detection is pinned to the captured `CGWindowID` | `.artifacts/playground-tools/20251217-153107-see-click-for-move.json` |
+| `see --no-elements` | Playground window (full or element-specific) | Use screenshot artifacts; note timestamp in `LOG_FILE` | `wink see --no-elements --mode window --app Playground --path /tmp/playground-window.png` | Replaces the former image CLI path | Historical image artifacts remain valid evidence. |
+| `capture` | `capture live` against Playground (5–10s) + `capture video` ingest smoke | Verify artifacts (`metadata.json`, `contact.png`, frames) + optional MP4 (`--video-out`) | `wink capture live --mode window --app Playground --duration 5s --threshold 0 --json-output` | Verified – live writes contact sheet + metadata; video ingest + `--video-out` covered | `.artifacts/playground-tools/20251217-133751-capture-live.json`, `.artifacts/playground-tools/20251217-180155-capture-video.json`, `.artifacts/playground-tools/20251217-184010-capture-live-videoout.json`, `.artifacts/playground-tools/20251217-184010-capture-video-videoout.json` |
+| noun-based inventory | Validate `app list`, `window list`, `screen list`, `menubar list`, and `permissions status` while Playground is running | `playground-log` optional (`Window` for focus changes) | `wink window list --app Playground` etc. | Verified | Existing inventory artifacts remain historical evidence. |
+| `tools` | Compare CLI output against ToolRegistry | No Playground log required; attach output to notes | `wink tools > $LOG_ROOT/tools.txt` | Verified – native tool listing captured 2025-12-19 | `.artifacts/playground-tools/20251219-001215-tools.txt` |
+| `clean` | Snapshot cache after `see` runs | Inspect `~/.peekaboo/snapshots` & ensure Playground unaffected | `wink clean --snapshot <id>` | Verified – removed snapshot 5408D893… and confirmed re-run reports none | `.peekaboo/snapshots/5408D893-E9CF-4A79-9B9B-D025BF9C80BE (deleted)` |
+| `clipboard` | Clipboard smoke (text/file/image + save/restore) | Verify readback + binary export + restore user clipboard | `wink clipboard set --file-path assets/wink.png --json` | Verified – CLI set/get (file+image) and cross-invocation save/restore (2025-12-17) | `.artifacts/playground-tools/20251217-192349-clipboard-get-image.json` |
+| `config` | Validate config commands while Playground idle | N/A | `wink config show` | Verified – show/validate outputs captured 2025-11-16 | `.artifacts/playground-tools/20251116-051200-config-show-effective.json` |
+| `permissions` | Ensure status/grant flow works with Playground | `playground-log` `App` category (should log when permissions toggled) | `wink permissions status` | Verified – Screen Recording & Accessibility granted | `.artifacts/playground-tools/20251116-051000-permissions-status.json` |
+| `learn` | Dump agent guide | N/A | `wink learn > $LOG_ROOT/learn.txt` | Verified – latest dump saved 2025-11-16 | `.artifacts/playground-tools/20251116-051300-learn.txt` |
+| `bridge` | Bridge host connectivity (local vs Wink.app/Clawdbot) | N/A | `wink bridge status --json-output` | Verified – local selection + unauthorized host responses are now structured (no EOF) | `.artifacts/playground-tools/20251217-133751-bridge-status.json` |
 
 ### Interaction Tools
 | Tool | Playground surface | Log category | Sample CLI | Status | Latest log |
 | --- | --- | --- | --- | --- | --- |
-| `click` | Click Fixture window | `Click` | `peekaboo click "Single Click" --app boo.peekaboo.playground.debug --snapshot <id>` | Verified – Click Fixture E2E incl. double/right/context menu (2025-12-18) | `.artifacts/playground-tools/20251218-004335-click.log`, `.artifacts/playground-tools/20251218-004335-menu.log` |
-| `type` | Text Fixture window | `Text` + `Focus` | `peekaboo type "Hello Playground" --clear --snapshot <id>` | Verified – Text Fixture E2E + text-field focusing (2025-12-18) | `.artifacts/playground-tools/20251218-001923-text.log` |
-| `press` | Keyboard Fixture window and menu shortcuts | `Keyboard` & `Menu` | `peekaboo press cmd+1 --foreground` | Covers explicit-foreground bare keys, repeats, and xdotool-style chords | Historical keypress/hotkey logs remain valid evidence. |
-| `scroll` | Scroll Fixture window | `Scroll` | `peekaboo scroll --direction down --amount 8 --on vertical-scroll --snapshot <id>` | Verified – scroll offsets logged (2025-12-18) | `.artifacts/playground-tools/20251218-012323-scroll.log` |
-| `drag` | Drag Fixture and gesture area | `Drag` / `Gesture` | `peekaboo drag --from <id-or-x,y> --to <id-or-x,y> --snapshot <id>` | Covers element/coordinate endpoints and left/right buttons | Historical drag/swipe logs remain valid evidence. |
-| `move` | Click Fixture mouse probe | `Control` | `peekaboo move --on <elem> --snapshot <id> --smooth --foreground` | Verified – cursor movement emits deterministic probe logs (2025-12-17) | `.artifacts/playground-tools/20251217-153107-control.log` |
+| `click` | Click Fixture window | `Click` | `wink click "Single Click" --app boo.wink.playground.debug --snapshot <id>` | Verified – Click Fixture E2E incl. double/right/context menu (2025-12-18) | `.artifacts/playground-tools/20251218-004335-click.log`, `.artifacts/playground-tools/20251218-004335-menu.log` |
+| `type` | Text Fixture window | `Text` + `Focus` | `wink type "Hello Playground" --clear --snapshot <id>` | Verified – Text Fixture E2E + text-field focusing (2025-12-18) | `.artifacts/playground-tools/20251218-001923-text.log` |
+| `press` | Keyboard Fixture window and menu shortcuts | `Keyboard` & `Menu` | `wink press cmd+1 --foreground` | Covers explicit-foreground bare keys, repeats, and xdotool-style chords | Historical keypress/hotkey logs remain valid evidence. |
+| `scroll` | Scroll Fixture window | `Scroll` | `wink scroll --direction down --amount 8 --on vertical-scroll --snapshot <id>` | Verified – scroll offsets logged (2025-12-18) | `.artifacts/playground-tools/20251218-012323-scroll.log` |
+| `drag` | Drag Fixture and gesture area | `Drag` / `Gesture` | `wink drag --from <id-or-x,y> --to <id-or-x,y> --snapshot <id>` | Covers element/coordinate endpoints and left/right buttons | Historical drag/swipe logs remain valid evidence. |
+| `move` | Click Fixture mouse probe | `Control` | `wink move --on <elem> --snapshot <id> --smooth --foreground` | Verified – cursor movement emits deterministic probe logs (2025-12-17) | `.artifacts/playground-tools/20251217-153107-control.log` |
 
 ### Windows, Menus, Apps
 | Tool | Playground validation target | Log category | Sample CLI | Status | Latest log |
 | --- | --- | --- | --- | --- | --- |
-| `window` | Window Fixture window + `window list` bounds | `Window` | `peekaboo window move --app boo.peekaboo.playground.debug --window-title "Window Fixture"` | Verified – focus/move/resize + minimize/maximize covered (2025-12-17) | `.artifacts/playground-tools/20251217-183242-window.log` |
-| `space` | macOS Spaces while Playground anchored on Space 1 | `Space` | `peekaboo space list --detailed` | Verified – list/switch/move now emit `[Space]` logs (instr. added 2025-11-16) | `.artifacts/playground-tools/20251116-205548-space.log` |
-| `menu` | Playground “Test Menu” | `Menu` | `peekaboo menu click --app boo.peekaboo.playground.debug --path "Test Menu>Submenu>Nested Action A"` | Verified – nested menu click logged (2025-12-18) | `.artifacts/playground-tools/20251218-002308-menu.log` |
-| `menubar` | macOS menu extras (Wi-Fi, Clock) plus Playground status icons | `Menu` (system) | `peekaboo menubar list --json-output` | Verified – list + click captured; logs via Control Center predicate | `.artifacts/playground-tools/20251116-053932-menubar.log` |
-| `app` | Launch/quit/focus Playground + helper apps (TextEdit) | `App` + `Focus` | `peekaboo app list --include-hidden --json-output` | Verified – Playground app list/switch/hide/launch captured 2025-11-16 | `.artifacts/playground-tools/20251116-195420-app.log` |
-| `app launch --open` | Open Playground fixtures/documents | `App`/`Focus` | `peekaboo app launch TextEdit --open Apps/Playground/README.md --json-output` | Covered by app launch validation. | Historical open-command artifacts remain archived. |
-| `dock` | Dock item interactions w/ Playground icon | `App` + `Window` | `peekaboo dock list --json-output` | Verified – right-click + menu selection now captured with `[Dock]` logs | `.artifacts/playground-tools/20251116-205850-dock.log` |
-| `dialog` | Dialogs tab (Save/Open panels + alerts w/ text field) | `Dialog` | `peekaboo dialog list --app Playground` | Verified – use Playground’s built-in dialog fixtures (no TextEdit required) | `.artifacts/playground-tools/20251116-054316-dialog.log` |
-| `visualizer` | Visual feedback overlays while Playground is visible | Visual confirmation (overlays render) + JSON dispatch report | `peekaboo visualizer --json-output` | Verified – dispatch report + manual overlay check | `.artifacts/playground-tools/20251217-204548-visualizer.json` |
+| `window` | Window Fixture window + `window list` bounds | `Window` | `wink window move --app boo.wink.playground.debug --window-title "Window Fixture"` | Verified – focus/move/resize + minimize/maximize covered (2025-12-17) | `.artifacts/playground-tools/20251217-183242-window.log` |
+| `space` | macOS Spaces while Playground anchored on Space 1 | `Space` | `wink space list --detailed` | Verified – list/switch/move now emit `[Space]` logs (instr. added 2025-11-16) | `.artifacts/playground-tools/20251116-205548-space.log` |
+| `menu` | Playground “Test Menu” | `Menu` | `wink menu click --app boo.wink.playground.debug --path "Test Menu>Submenu>Nested Action A"` | Verified – nested menu click logged (2025-12-18) | `.artifacts/playground-tools/20251218-002308-menu.log` |
+| `menubar` | macOS menu extras (Wi-Fi, Clock) plus Playground status icons | `Menu` (system) | `wink menubar list --json-output` | Verified – list + click captured; logs via Control Center predicate | `.artifacts/playground-tools/20251116-053932-menubar.log` |
+| `app` | Launch/quit/focus Playground + helper apps (TextEdit) | `App` + `Focus` | `wink app list --include-hidden --json-output` | Verified – Playground app list/switch/hide/launch captured 2025-11-16 | `.artifacts/playground-tools/20251116-195420-app.log` |
+| `app launch --open` | Open Playground fixtures/documents | `App`/`Focus` | `wink app launch TextEdit --open Apps/Playground/README.md --json-output` | Covered by app launch validation. | Historical open-command artifacts remain archived. |
+| `dock` | Dock item interactions w/ Playground icon | `App` + `Window` | `wink dock list --json-output` | Verified – right-click + menu selection now captured with `[Dock]` logs | `.artifacts/playground-tools/20251116-205850-dock.log` |
+| `dialog` | Dialogs tab (Save/Open panels + alerts w/ text field) | `Dialog` | `wink dialog list --app Playground` | Verified – use Playground’s built-in dialog fixtures (no TextEdit required) | `.artifacts/playground-tools/20251116-054316-dialog.log` |
+| `visualizer` | Visual feedback overlays while Playground is visible | Visual confirmation (overlays render) + JSON dispatch report | `wink visualizer --json-output` | Verified – dispatch report + manual overlay check | `.artifacts/playground-tools/20251217-204548-visualizer.json` |
 
 ### Automation & Integrations
 | Tool | Playground coverage | Log category | Sample CLI | Status | Latest log |
 | --- | --- | --- | --- | --- | --- |
-| `agent` | Run natural-language tasks scoped to Playground (“click the single button”) | Captures whichever sub-tools fire (`Click`, `Text`, etc.) | `peekaboo agent "Say hi" --max-steps 1` | Verified – GPT-5.1 runs logged 2025-11-17 (see notes re: tool count bug) | `.artifacts/playground-tools/20251117-011345-agent.log` |
-| `mcp` | Verify MCP server can enumerate tools via stdio | `MCP` | `MCPORTER list peekaboo-local --stdio "$PEEKABOO_BIN mcp" --timeout 20` | Verified – MCP tools list captured (2025-12-19) | `.artifacts/playground-tools/20251219-001200-mcp-list.log` |
+| `agent` | Run natural-language tasks scoped to Playground (“click the single button”) | Captures whichever sub-tools fire (`Click`, `Text`, etc.) | `wink agent "Say hi" --max-steps 1` | Verified – GPT-5.1 runs logged 2025-11-17 (see notes re: tool count bug) | `.artifacts/playground-tools/20251117-011345-agent.log` |
+| `mcp` | Verify MCP server can enumerate tools via stdio | `MCP` | `MCPORTER list wink-local --stdio "$WINK_BIN mcp" --timeout 20` | Verified – MCP tools list captured (2025-12-19) | `.artifacts/playground-tools/20251219-001200-mcp-list.log` |
 
 > **Status Legend:** `Not started` = no logs yet, `In progress` = partial run logged, `Blocked` = awaiting fix, `Verified` = passing with log path recorded.
 
@@ -113,32 +113,32 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `see`
 - **View**: Any (start with ClickTestingView to guarantee clear elements).
 - **Steps**:
-  1. Bring Playground to front (`peekaboo app switch --to Playground`).
-  2. `peekaboo see --app Playground --path "$LOG_ROOT/see-playground.png"`.
+  1. Bring Playground to front (`wink app switch --to Playground`).
+  2. `wink see --app Playground --path "$LOG_ROOT/see-playground.png"`.
   3. Record the snapshot ID printed to stdout, then verify `~/.peekaboo/snapshots/<id>/snapshot.json` references Playground elements (`single-click-button`, etc.).
 - **Log capture**: Optional `Click` capture if you immediately chain interactions with the new snapshot; otherwise store the PNG + snapshot metadata path.
 - **Pass criteria**: Snapshot folder exists, UI map contains Playground identifiers, CLI exits 0.
-- **2025-11-16 verification**: Re-enabled the ScreenCaptureKit path inside `Core/PeekabooCore/Sources/PeekabooAutomation/Services/Capture/ScreenCaptureService.swift` so the modern API runs before falling back to CGWindowList. `peekaboo see --app Playground --json-output --path .artifacts/playground-tools/20251116-082056-see-playground.png` now succeeds (snapshot `5B5A2C09-4F4C-4893-B096-C7B4EB38E614`) and drops `.artifacts/playground-tools/20251116-082056-see-playground.{json,png}`.
-- **2025-12-17 rerun**: `Apps/CLI/.build/debug/peekaboo see --app Playground --path .artifacts/playground-tools/20251217-132837-see-playground.png --json > .artifacts/playground-tools/20251217-132837-see-playground.json` succeeded (Peekaboo `main/842434be-dirty`).
+- **2025-11-16 verification**: Re-enabled the ScreenCaptureKit path inside `Core/WinkCore/Sources/WinkAutomation/Services/Capture/ScreenCaptureService.swift` so the modern API runs before falling back to CGWindowList. `wink see --app Playground --json-output --path .artifacts/playground-tools/20251116-082056-see-playground.png` now succeeds (snapshot `5B5A2C09-4F4C-4893-B096-C7B4EB38E614`) and drops `.artifacts/playground-tools/20251116-082056-see-playground.{json,png}`.
+- **2025-12-17 rerun**: `Apps/CLI/.build/debug/wink see --app Playground --path .artifacts/playground-tools/20251217-132837-see-playground.png --json > .artifacts/playground-tools/20251217-132837-see-playground.json` succeeded (Wink `main/842434be-dirty`).
 #### Screenshot-only `see`
 - **View**: Keep Playground on ScrollTestingView to capture dynamic content.
 - **Steps**:
-  1. `peekaboo see --no-elements --app Playground --mode window --path "$LOG_ROOT/screenshot-playground.png"`.
+  1. `wink see --no-elements --app Playground --mode window --path "$LOG_ROOT/screenshot-playground.png"`.
   2. Repeat with `--mode area --region 100,100,800,600 --path "$LOG_ROOT/screenshot-area.png"` to cover coordinate cropping.
 - **2025-11-16 verification**: After restoring the ScreenCaptureKit → CGWindowList fallback order, both window and screen captures succeed. Saved `.artifacts/playground-tools/20251116-082109-image-window-playground.{json,png}` and `.artifacts/playground-tools/20251116-082125-image-screen0.{json,png}`; CLI debug logs still note tiny background windows but the primary Playground window captures at 1200×852.
 
 #### `capture`
 - **View**: Any; keep Playground frontmost so the window is captureable.
 - **Steps**:
-  1. `peekaboo capture live --mode window --app Playground --duration 5s --threshold 0 --json-output > "$LOG_ROOT/capture-live.json"`.
+  1. `wink capture live --mode window --app Playground --duration 5s --threshold 0 --json-output > "$LOG_ROOT/capture-live.json"`.
   2. Confirm the JSON points at the expected output directory (kept frames + `contact.png` + `metadata.json`).
   3. Optional: repeat with `--highlight-changes` to ensure highlight rendering doesn’t crash.
 - **Video ingest add-on**:
-  1. Generate a deterministic motion video: `ffmpeg -hide_banner -loglevel error -y -f lavfi -i testsrc2=size=960x540:rate=30 -t 2 /tmp/peekaboo-capture-src.mp4`.
-  2. Run: `peekaboo capture video /tmp/peekaboo-capture-src.mp4 --sample-fps 4 --no-diff --json-output > "$LOG_ROOT/capture-video.json"`.
+  1. Generate a deterministic motion video: `ffmpeg -hide_banner -loglevel error -y -f lavfi -i testsrc2=size=960x540:rate=30 -t 2 /tmp/wink-capture-src.mp4`.
+  2. Run: `wink capture video /tmp/wink-capture-src.mp4 --sample-fps 4 --no-diff --json-output > "$LOG_ROOT/capture-video.json"`.
   3. Confirm `framesKept` ≥ 2 and the output directory contains `keep-*.png`, `contact.png`, and `metadata.json`.
 - **MP4 add-on**:
-  1. Re-run either live or video ingest with `--video-out /tmp/peekaboo-capture.mp4`.
+  1. Re-run either live or video ingest with `--video-out /tmp/wink-capture.mp4`.
   2. Confirm the JSON includes `videoOut` and the MP4 exists and is non-empty.
 - **Pass criteria**: ≥1 kept frame, `metadata.json` exists, and the run exits 0 (a `noMotion` warning is acceptable for static inputs).
 - **Schema check**: Cross-check capture metadata fields in `docs/commands/capture.md` against the JSON payload.
@@ -155,17 +155,17 @@ The following subsections spell out the concrete steps, required Playground surf
 - **Logs**: Use `playground-log` `Window` category when forcing focus changes to validate `app switch` interplay.
 #### `tools`
 - **Steps**:
-  1. `peekaboo tools > "$LOG_ROOT/tools.txt"`.
+  1. `wink tools > "$LOG_ROOT/tools.txt"`.
   2. Compare entries to the Interaction/Window commands listed here; flag gaps.
 - **Verification**: Output includes click/type/etc. with descriptions.
 
 #### `clean`
 - **Steps**:
   1. Generate two snapshots via `see`.
-  2. `peekaboo clean --older-than 1m` and confirm only newest snapshot remains.
+  2. `wink clean --older-than 1m` and confirm only newest snapshot remains.
   3. Attempt to interact using purged snapshot ID and assert command fails with helpful error.
 - **Artifacts**: Directory listing before/after.
-- **2025-11-16 run**: Created snapshots `5408D893-…` and `129101F5-…` via back-to-back `see` captures (artifacts saved under `.artifacts/playground-tools/*clean-see*.png`). Ran `peekaboo clean --snapshot 5408D893-…` (freed 453 KB), verified folder removal (`ls ~/.peekaboo/snapshots`). Re-running the same clean command returned “No snapshots to clean”, confirming deletion.
+- **2025-11-16 run**: Created snapshots `5408D893-…` and `129101F5-…` via back-to-back `see` captures (artifacts saved under `.artifacts/playground-tools/*clean-see*.png`). Ran `wink clean --snapshot 5408D893-…` (freed 453 KB), verified folder removal (`ls ~/.peekaboo/snapshots`). Re-running the same clean command returned “No snapshots to clean”, confirming deletion.
 - **2025-12-17 rerun**: Using a cleaned snapshot now yields `SNAPSHOT_NOT_FOUND` for snapshot-scoped commands (instead of `ELEMENT_NOT_FOUND`), which is much clearer for end-to-end scripts.
   - Snapshot + clean: `.artifacts/playground-tools/20251217-201134-see-for-snapshot-missing.json`, `.artifacts/playground-tools/20251217-201134-clean-snapshot.json`
   - Command failures:
@@ -178,44 +178,44 @@ The following subsections spell out the concrete steps, required Playground surf
 
 #### `clipboard`
 - **Steps**:
-  1. Cross-invocation save/restore: `peekaboo clipboard save --slot original`, then `clipboard clear`, then `clipboard restore --slot original`.
-  2. File payload: `peekaboo clipboard set --file-path /tmp/peekaboo-clipboard-smoke.txt --json`.
-  3. Image payload + export: `peekaboo clipboard set --file-path assets/peekaboo.png --also-text "Peekaboo clipboard image smoke" --json`, then `peekaboo clipboard get --prefer public.png --output /tmp/peekaboo-clipboard-out.png --json`.
+  1. Cross-invocation save/restore: `wink clipboard save --slot original`, then `clipboard clear`, then `clipboard restore --slot original`.
+  2. File payload: `wink clipboard set --file-path /tmp/wink-clipboard-smoke.txt --json`.
+  3. Image payload + export: `wink clipboard set --file-path assets/wink.png --also-text "Wink clipboard image smoke" --json`, then `wink clipboard get --prefer public.png --output /tmp/wink-clipboard-out.png --json`.
 - **Pass criteria**: Clipboard payloads round-trip and the original clipboard is restored.
-- **2025-12-17 CLI evidence**: `.artifacts/playground-tools/20251217-192349-clipboard-{save-original,set-file,get-file-text,set-image,get-image,restore-original}.json` plus exported `/tmp/peekaboo-clipboard-out.png`.
+- **2025-12-17 CLI evidence**: `.artifacts/playground-tools/20251217-192349-clipboard-{save-original,set-file,get-file-text,set-image,get-image,restore-original}.json` plus exported `/tmp/wink-clipboard-out.png`.
 
 #### `config`
 - **Focus**: `config show`, `config validate`, `config provider models`.
 - **Steps**:
   1. Snapshot `~/.peekaboo/config.json` (read-only).
-  2. Run `peekaboo config validate --verbose`.
+  2. Run `wink config validate --verbose`.
   3. Document provider list for later cross-check.
 - **Notes**: No Playground tie-in; just ensure CLI stability.
-- **2025-11-16 run**: `peekaboo config show --effective --json-output > .artifacts/playground-tools/20251116-051200-config-show-effective.json` plus `peekaboo config validate` both succeeded; output confirms OpenAI key set + default save path. No edits performed.
+- **2025-11-16 run**: `wink config show --effective --json-output > .artifacts/playground-tools/20251116-051200-config-show-effective.json` plus `wink config validate` both succeeded; output confirms OpenAI key set + default save path. No edits performed.
 
 #### `permissions`
 - **Steps**:
-  1. `peekaboo permissions status` to confirm Accessibility/Screen Recording show Granted.
+  1. `wink permissions status` to confirm Accessibility/Screen Recording show Granted.
   2. If a permission is missing, follow docs/permissions.md to re-grant and note the steps.
   3. Capture console output.
-- **2025-11-16 run**: `peekaboo permissions status --json-output > .artifacts/playground-tools/20251116-051000-permissions-status.json` returned both Screen Recording and Accessibility as granted (matching expectations); no Playground interaction required.
+- **2025-11-16 run**: `wink permissions status --json-output > .artifacts/playground-tools/20251116-051000-permissions-status.json` returned both Screen Recording and Accessibility as granted (matching expectations); no Playground interaction required.
 
 #### `learn`
-- **Steps**: `peekaboo learn > "$LOG_ROOT/learn-latest.txt"`; record commit hash displayed at top.
-- **2025-11-16 run**: Saved `.artifacts/playground-tools/20251116-051300-learn.txt` for reference; includes commit metadata from peekaboo binary.
+- **Steps**: `wink learn > "$LOG_ROOT/learn-latest.txt"`; record commit hash displayed at top.
+- **2025-11-16 run**: Saved `.artifacts/playground-tools/20251116-051300-learn.txt` for reference; includes commit metadata from wink binary.
 
 #### `bridge`
 - **Steps**:
-  1. `peekaboo bridge status` and confirm it reports local execution vs. a remote host (Peekaboo.app / Clawdbot).
-  2. `peekaboo bridge status --verbose --json-output > "$LOG_ROOT/bridge-status.json"` and sanity-check the selected host + probed sockets.
+  1. `wink bridge status` and confirm it reports local execution vs. a remote host (Wink.app / Clawdbot).
+  2. `wink bridge status --verbose --json-output > "$LOG_ROOT/bridge-status.json"` and sanity-check the selected host + probed sockets.
   3. Repeat with `--no-remote` to confirm local-only mode is explicit and stable.
 - **Unauthorized host behavior**:
   - If a remote host rejects the CLI due to TeamID allowlisting, the host should reply with `unauthorizedClient` (not close the socket/EOF).
-  - This is regression-covered by `Apps/CLI/Tests/CoreCLITests/PeekabooBridgeHostUnauthorizedResponseTests.swift` (landed 2025-12-18).
+  - This is regression-covered by `Apps/CLI/Tests/CoreCLITests/WinkBridgeHostUnauthorizedResponseTests.swift` (landed 2025-12-18).
 - **Pass criteria**: Clear host selection output and no crashes.
 - **2025-12-18 run**:
   - Remote sockets were probed but both candidates returned `internalError` (“Bridge host returned no response”), so the CLI selected `source=local` as expected.
-  - Note: this typically indicates an older Peekaboo/Clawdbot host build. Hosts built from `main` after 2025-12-18 should respond with a structured `unauthorizedClient` error instead.
+  - Note: this typically indicates an older Wink/Clawdbot host build. Hosts built from `main` after 2025-12-18 should respond with a structured `unauthorizedClient` error instead.
   - Evidence: `.artifacts/playground-tools/20251218-022612-bridge-status.json`, `.artifacts/playground-tools/20251218-022612-bridge-status-verbose.json`, `.artifacts/playground-tools/20251218-022612-bridge-status-no-remote.json`.
 
 ### Interaction Tools
@@ -224,17 +224,17 @@ The following subsections spell out the concrete steps, required Playground surf
 - **View**: ClickTestingView.
 - **Log capture**: `./Apps/Playground/scripts/playground-log.sh -c Click --last 10m --all -o "$LOG_ROOT/click-$(date +%s).log"`.
 - **Test cases**:
-  1. Query-based click: `peekaboo click "Single Click"` (expect `Click` log + counter increment).
-  2. ID-based click: copy the opaque ID from current `see` output, then run `peekaboo click --on "$ELEMENT_ID" --snapshot <id>` targeting `single-click-button`.
-  3. Coordinate click: run an exact-window `see`, then use its receipts with `peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 400,400` to hit the nested area without moving focus.
-  4. Coordinate validation: `peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at , --json` should fail with `VALIDATION_ERROR` (no crash).
+  1. Query-based click: `wink click "Single Click"` (expect `Click` log + counter increment).
+  2. ID-based click: copy the opaque ID from current `see` output, then run `wink click --on "$ELEMENT_ID" --snapshot <id>` targeting `single-click-button`.
+  3. Coordinate click: run an exact-window `see`, then use its receipts with `wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 400,400` to hit the nested area without moving focus.
+  4. Coordinate validation: `wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at , --json` should fail with `VALIDATION_ERROR` (no crash).
   5. Error path: attempt to click disabled button and confirm descriptive `elementNotFound` guidance.
 - **Verification**: Playground counter increments, log file shows `[Click] Single click...` entries.
 - **2025-11-16 run**:
   - Captured Click logs to `.artifacts/playground-tools/20251116-051025-click.log`.
   - Generated fresh snapshot `263F8CD6-E809-4AC6-A7B3-604704095011` via `see` (`.artifacts/playground-tools/20251116-051120-click-see.{json,png}`).
-  - `peekaboo click "Single Click" --snapshot <legacy snapshot>` succeeded but targeted Ghostty (click hit terminal input); highlighting importance of focusing Playground first.
-  - `peekaboo app switch --to Playground` followed by `peekaboo click --on elem_6 --snapshot 263F8CD6-...` successfully hit the “View Logs” button (Playground log recorded the click).
+  - `wink click "Single Click" --snapshot <legacy snapshot>` succeeded but targeted Ghostty (click hit terminal input); highlighting importance of focusing Playground first.
+  - `wink app switch --to Playground` followed by `wink click --on elem_6 --snapshot 263F8CD6-...` successfully hit the “View Logs” button (Playground log recorded the click).
   - Coordinate click `--window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 600,500` succeeded (see log); attempting the disabled element ID produced the expected `elementNotFound` error.
   - Element IDs are opaque and unstable; always copy the exact ID from current `see` output.
 - **2025-12-17 Controls Fixture add-on**:
@@ -247,48 +247,48 @@ The following subsections spell out the concrete steps, required Playground surf
 - **Log capture**: `Text` + `Focus` categories.
 - **Test cases**:
   1. Use a fresh `see`, then `click --on "$FIELD_ID" --snapshot "$SNAPSHOT_ID"` to select the basic field.
-  2. Run `peekaboo type "Hello Playground" --clear --pid "$PLAYGROUND_PID"`, then type more text to verify appending.
-  3. Run `peekaboo press Tab --count 2 --pid "$PLAYGROUND_PID" --foreground` to reach the secure field.
+  2. Run `wink type "Hello Playground" --clear --pid "$PLAYGROUND_PID"`, then type more text to verify appending.
+  3. Run `wink press Tab --count 2 --pid "$PLAYGROUND_PID" --foreground` to reach the secure field.
   4. Unicode input (emoji) to ensure no crash.
 - **Verification**: Field contents update, log shows `[Text] Basic field changed` entries.
 - **2025-11-16 run**:
   - Logged `.artifacts/playground-tools/20251116-051202-text.log`.
-  - Focused field via `peekaboo click "Focus Basic Field" --snapshot 263F8CD6-…` (snapshot from `.artifacts/playground-tools/20251116-051120-click-see.json`).
-  - `peekaboo type "Hello Playground" --clear --snapshot 263F8CD6-…` updated the Basic Text Field (log shows “Basic text changed …”).
-  - `peekaboo press Tab --snapshot 263F8CD6-… --foreground` advanced focus to the Number field, followed by `peekaboo type "42" --snapshot 263F8CD6-…`.
-  - Validation error confirmed via `peekaboo type "bad" --profile warp` (proper error message).
+  - Focused field via `wink click "Focus Basic Field" --snapshot 263F8CD6-…` (snapshot from `.artifacts/playground-tools/20251116-051120-click-see.json`).
+  - `wink type "Hello Playground" --clear --snapshot 263F8CD6-…` updated the Basic Text Field (log shows “Basic text changed …”).
+  - `wink press Tab --snapshot 263F8CD6-… --foreground` advanced focus to the Number field, followed by `wink type "42" --snapshot 263F8CD6-…`.
+  - Validation error confirmed via `wink type "bad" --profile warp` (proper error message).
   - Note: prefer `--app`, `--pid`, `--window-id`, or `--snapshot` so `type` can use background delivery; use helper buttons and `click` to set field focus when a view requires it. Legacy `--on` / `--query` flags no longer exist.
 
 #### `press`
 - **View**: KeyboardView “Key Press Detection” field (Keyboard tab).
 - **Test cases**:
-  1. `peekaboo press return --snapshot <id> --foreground` after focusing the detection text field.
-  2. `peekaboo press up --count 3 --snapshot <id> --foreground` to ensure repeated presses log individually.
-  3. Invalid key handling (`peekaboo press foo`) should error.
+  1. `wink press return --snapshot <id> --foreground` after focusing the detection text field.
+  2. `wink press up --count 3 --snapshot <id> --foreground` to ensure repeated presses log individually.
+  3. Invalid key handling (`wink press foo`) should error.
 - **2025-11-16 verification**:
-  - Switched to the Keyboard tab via `peekaboo press cmd+option+7 --foreground`, captured `.artifacts/playground-tools/20251116-090141-see-keyboardtab.{json,png}` (snapshot `C106D508-930C-4996-A4F4-A50E2E0BA91A`), and focused the “Press keys here…” field with the exact capture receipt (`click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 760,300`).
-  - Explicit-foreground `peekaboo press return --snapshot C106D508-… --foreground` and `peekaboo press up --count 3 --snapshot C106D508-… --foreground` produced `[boo.peekaboo.playground:Keyboard] Key pressed: …` entries in `.artifacts/playground-tools/20251116-090455-keyboard.log`.
-  - `peekaboo press foo` reports `Unknown key: 'foo'. Run 'peekaboo press --help' for available keys.` confirming validation and documenting the negative path.
+  - Switched to the Keyboard tab via `wink press cmd+option+7 --foreground`, captured `.artifacts/playground-tools/20251116-090141-see-keyboardtab.{json,png}` (snapshot `C106D508-930C-4996-A4F4-A50E2E0BA91A`), and focused the “Press keys here…” field with the exact capture receipt (`click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 760,300`).
+  - Explicit-foreground `wink press return --snapshot C106D508-… --foreground` and `wink press up --count 3 --snapshot C106D508-… --foreground` produced `[boo.wink.playground:Keyboard] Key pressed: …` entries in `.artifacts/playground-tools/20251116-090455-keyboard.log`.
+  - `wink press foo` reports `Unknown key: 'foo'. Run 'wink press --help' for available keys.` confirming validation and documenting the negative path.
 
 #### `press` chord sequences
 - **View**: KeyboardView chord demo or main window (use `cmd+shift+l` to open the log viewer).
 - **Test cases**:
-  1. `peekaboo press cmd+shift+l --pid "$PLAYGROUND_PID" --foreground` should toggle the “Clear All Logs” command (log viewer clears entries).
-  2. `peekaboo press cmd+1 --pid "$PLAYGROUND_PID" --foreground` triggers the Test Menu action; watch `Menu` logs.
+  1. `wink press cmd+shift+l --pid "$PLAYGROUND_PID" --foreground` should toggle the “Clear All Logs” command (log viewer clears entries).
+  2. `wink press cmd+1 --pid "$PLAYGROUND_PID" --foreground` triggers the Test Menu action; watch `Menu` logs.
   3. Negative test: provide invalid chord order to ensure validation message.
 - **Verification**: Playground `Keyboard` log file shows the keystrokes fired.
 - **2025-11-16 run**:
   - The archived keyboard chord log contains entries for `L` and `1` corresponding to both combinations.
-  - `peekaboo press --key cmd+shift+l --snapshot 11227301-05DE-4540-8BE7-617F99A74156 --foreground` clears logs via the shortcut.
-  - `peekaboo press --key cmd+1 --snapshot "$SNAPSHOT_ID" --foreground` switches Playground tabs.
-  - `peekaboo press foo+bar --pid "$PLAYGROUND_PID"` correctly fails with an unknown-key error.
+  - `wink press --key cmd+shift+l --snapshot 11227301-05DE-4540-8BE7-617F99A74156 --foreground` clears logs via the shortcut.
+  - `wink press --key cmd+1 --snapshot "$SNAPSHOT_ID" --foreground` switches Playground tabs.
+  - `wink press foo+bar --pid "$PLAYGROUND_PID"` correctly fails with an unknown-key error.
 
 #### `scroll`
-- **View**: ScrollTestingView vertical/horizontal sections (switch using `peekaboo press cmd+option+4 --pid "$PLAYGROUND_PID" --foreground` to trigger the Test Menu shortcut).
+- **View**: ScrollTestingView vertical/horizontal sections (switch using `wink press cmd+option+4 --pid "$PLAYGROUND_PID" --foreground` to trigger the Test Menu shortcut).
 - **Test cases**:
-  1. `peekaboo scroll --direction down --amount 6 --snapshot <id>` for vertical movement.
-  2. `peekaboo scroll --direction right --amount 4 --smooth --snapshot <id>` for horizontal smooth scrolling.
-  3. `peekaboo scroll --direction down --amount 6 --on vertical-scroll --snapshot <id>` and `... --direction right --amount 4 --on horizontal-scroll --snapshot <id>` to prove the new identifiers work end-to-end.
+  1. `wink scroll --direction down --amount 6 --snapshot <id>` for vertical movement.
+  2. `wink scroll --direction right --amount 4 --smooth --snapshot <id>` for horizontal smooth scrolling.
+  3. `wink scroll --direction down --amount 6 --on vertical-scroll --snapshot <id>` and `... --direction right --amount 4 --on horizontal-scroll --snapshot <id>` to prove the new identifiers work end-to-end.
   4. Nested scroll targeting: `--on nested-inner-scroll` and `--on nested-outer-scroll` (Scroll Fixture “Nested Scroll Views” section).
 - **2025-11-16 verification**:
   - Captured snapshot `.artifacts/playground-tools/20251116-194615-see-scrolltab.json` (snapshot `649EB632-ED4B-4935-9F1F-1866BB763804`) and re-ran both `scroll` commands with `--on vertical-scroll` and `--on horizontal-scroll`. The CLI outputs live at `.artifacts/playground-tools/20251116-194652-scroll-vertical.json` and `.artifacts/playground-tools/20251116-194708-scroll-horizontal.json` (both ✅ now that the Playground view exposes identifiers and the ScrollService snapshot cache preserves them).
@@ -305,26 +305,26 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `drag` gesture coverage
 - **View**: Gesture Testing area.
 - **Test cases**:
-  1. `peekaboo drag --from 1100,520 --to 700,520 --duration 600ms --foreground`.
-  2. `peekaboo drag --from 850,600 --to 850,350 --duration 800ms --profile human --foreground`.
-  3. Negative test: `peekaboo drag --from 900,520 --to 700,520 --button middle --foreground` should error.
+  1. `wink drag --from 1100,520 --to 700,520 --duration 600ms --foreground`.
+  2. `wink drag --from 850,600 --to 850,350 --duration 800ms --profile human --foreground`.
+  3. Negative test: `wink drag --from 900,520 --to 700,520 --button middle --foreground` should error.
 - **2025-11-16 verification**:
   - Used snapshot `DBFDD053-4513-4603-B7C3-9170E7386BA7` (see `.artifacts/playground-tools/20251116-085714-see-scrolltab.{json,png}`) to keep the tab selection stable.
-  - Horizontal and vertical commands above completed successfully; Playground log `.artifacts/playground-tools/20251116-090041-gesture.log` shows `[boo.peekaboo.playground:Gesture]` entries with exact coordinates, profiles, and step counts.
-  - `peekaboo drag --from 900,520 --to 700,520 --button right --foreground` exercises right-button dragging.
+  - Horizontal and vertical commands above completed successfully; Playground log `.artifacts/playground-tools/20251116-090041-gesture.log` shows `[boo.wink.playground:Gesture]` entries with exact coordinates, profiles, and step counts.
+  - `wink drag --from 900,520 --to 700,520 --button right --foreground` exercises right-button dragging.
 - **2025-12-18 rerun**:
   - Verified swipe-direction logging + long-press detection on the Scroll Fixture gesture tiles.
   - Evidence: `.artifacts/playground-tools/20251218-012323-gesture.log` plus `.artifacts/playground-tools/20251218-012323-swipe-right.json` and `.artifacts/playground-tools/20251218-012323-long-press.json`.
 
 #### `drag`
-- **View**: DragDropView (tab is hidden on launch—run `peekaboo click --snapshot <id> --on elem_79` right after `see` to activate the “Drag & Drop” tab radio button).
+- **View**: DragDropView (tab is hidden on launch—run `wink click --snapshot <id> --on elem_79` right after `see` to activate the “Drag & Drop” tab radio button).
 - **Test cases**:
   1. Drag Item A (`elem_15`) into drop zone 1 (`elem_24`) via `--from/--to`.
   2. Drag Item B (`elem_17`) into drop zone 2 (`elem_26`) and capture JSON output for artifacting.
   3. (Optional) Drag the reorderable list rows (`elem_37`…`elem_57`) once additional coverage is needed.
 - **2025-11-16 verification**:
   - A reusable `PlaygroundTabRouter` + header “Go to Drag & Drop” control keep the TabView state predictable, and more importantly `elem_79` now works deterministically—clicking it flips the TabView so subsequent `see` runs expose DragDropView element IDs (see `.artifacts/playground-tools/20251116-085142-see-afterclick-elem79.{json,png}` with snapshot `BBF9D6B9-26CB-4370-8460-6C8188E7466C`).
-  - `peekaboo drag --snapshot BBF9D6B9-26CB-4370-8460-6C8188E7466C --from elem_15 --to elem_24 --duration 800ms --steps 40 --foreground` succeeded; Playground log `.artifacts/playground-tools/20251116-085233-drag.log` shows “Started dragging: Item A”, “Hovering over zone1”, and “Item dropped… zone1”, plus the CLI-side `[boo.peekaboo.playground:Drag] drag from=…` entry.
+  - `wink drag --snapshot BBF9D6B9-26CB-4370-8460-6C8188E7466C --from elem_15 --to elem_24 --duration 800ms --steps 40 --foreground` succeeded; Playground log `.artifacts/playground-tools/20251116-085233-drag.log` shows “Started dragging: Item A”, “Hovering over zone1”, and “Item dropped… zone1”, plus the CLI-side `[boo.wink.playground:Drag] drag from=…` entry.
   - Captured a second run with JSON output (`.artifacts/playground-tools/20251116-085346-drag-elem17.json`) dragging Item B to zone2 so we have structured metadata (coords, duration, profile) for regression diffs.
   - We still keep the older coordinate-only recipe around as a fallback, but the default regression loop is now: **focus Playground → `see` → `click --on elem_79` → `drag --snapshot … --from elem_XX --to elem_YY` → archive the Drag log + CLI JSON.**
 - **2025-12-17 Controls Fixture add-on**:
@@ -334,11 +334,11 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `move`
 - **View**: ClickTestingView (target nested button) or ScrollTestingView.
 - **Test cases**:
-  1. `peekaboo move --at 600,600 --foreground` for instant pointer relocation.
-  2. Smooth element move: `peekaboo move --on <id> --snapshot <snapshot> --smooth --foreground`.
-  3. `peekaboo move --at 600,600 --duration 300ms --steps 15 --foreground`.
-  4. `peekaboo move --at 600,600 --foreground`.
-  5. Negative test: `peekaboo move --at 1,2 --on <id> --foreground` should error (conflicting targets).
+  1. `wink move --at 600,600 --foreground` for instant pointer relocation.
+  2. Smooth element move: `wink move --on <id> --snapshot <snapshot> --smooth --foreground`.
+  3. `wink move --at 600,600 --duration 300ms --steps 15 --foreground`.
+  4. `wink move --at 600,600 --foreground`.
+  5. Negative test: `wink move --at 1,2 --on <id> --foreground` should error (conflicting targets).
 - **2025-11-16 verification**:
   - Commands above rerun with snapshot `DBFDD053-4513-4603-B7C3-9170E7386BA7`; CLI outputs saved implicitly (no JSON mode). Pointer jumps succeeded with `move --at`.
   - `move --on <id> --snapshot ... --smooth --foreground` works with snapshot-based targeting; repeated runs confirm the lookup is stable.
@@ -356,11 +356,11 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `window`
 - **View**: WindowTestingView (or any app with a movable window; Playground itself works for focus/move/resize).
 - **Test cases**:
-  1. `peekaboo window focus --app Playground`.
-  2. `peekaboo window move --app Playground -x 100 -y 100`.
-  3. `peekaboo window resize --app Playground --width 900 --height 600`.
-  4. `peekaboo window set-bounds --app Playground --x 200 --y 200 --width 1100 --height 700`.
-  5. `peekaboo window list --app Playground --json-output`.
+  1. `wink window focus --app Playground`.
+  2. `wink window move --app Playground -x 100 -y 100`.
+  3. `wink window resize --app Playground --width 900 --height 600`.
+  4. `wink window set-bounds --app Playground --x 200 --y 200 --width 1100 --height 700`.
+  5. `wink window list --app Playground --json-output`.
 - **2025-11-16 verification**:
   - Commands rerun with Playground as the target: `.artifacts/playground-tools/20251116-194858-window-list-playground.json`, `...-window-move-playground.json`, `...-window-resize-playground.json`, `...-window-setbounds-playground.json`, and `...-window-focus-playground.json` capture each CLI invocation.
   - Window log `.artifacts/playground-tools/20251116-194900-window.log` shows `[Window] focus`, `move`, `resize`, and `set_bounds` entries with updated bounds, confirming instrumentation now covers the Playground window itself.
@@ -371,9 +371,9 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `space`
 - **Scenario**: Single Space (current setup). Need additional Space to test multi-space behavior.
 - **Test cases**:
-  1. `peekaboo space list --detailed --json-output`.
-  2. `peekaboo space switch --to 1` (happy path) and expect error for `--to 2` when only one Space exists.
-  3. `peekaboo space move-window --app Playground --window-index 0 --to 1 --follow --foreground`.
+  1. `wink space list --detailed --json-output`.
+  2. `wink space switch --to 1` (happy path) and expect error for `--to 2` when only one Space exists.
+  3. `wink space move-window --app Playground --window-index 0 --to 1 --follow --foreground`.
 - **2025-11-16 run**:
   - Latest artifacts: `.artifacts/playground-tools/20251116-205527-space-list.json`, `...205532-space-list-detailed.json`, `...205536-space-switch-1.json`, `...205541-space-move-window.json`, plus `...195602-space-switch-2.json` for the expected validation error.
   - AutomationEventLogger now emits `[Space]` entries (list count + actions) captured via `.artifacts/playground-tools/20251116-205548-space.log`.
@@ -382,9 +382,9 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `menu`
 - **View**: Playground’s “Test Menu” items (standard menu bar). Context menus on the `right-click-area` still require `click` rather than `menu` because `menu click` doesn’t accept coordinate targets yet.
 - **Test cases**:
-  1. `peekaboo menu click --app Playground --path "Test Menu>Test Action 1"`.
-  2. `peekaboo menu click --app Playground --path "Test Menu>Submenu>Nested Action A"`.
-  3. Disabled menu handling: `peekaboo menu click --app Playground --path "Test Menu>Disabled Action"` should fail with a descriptive error.
+  1. `wink menu click --app Playground --path "Test Menu>Test Action 1"`.
+  2. `wink menu click --app Playground --path "Test Menu>Submenu>Nested Action A"`.
+  3. Disabled menu handling: `wink menu click --app Playground --path "Test Menu>Disabled Action"` should fail with a descriptive error.
 - **2025-11-16 verification**:
   - Re-ran the command set; artifacts include `.artifacts/playground-tools/20251116-195020-menu-click-action.json`, `...195024-menu-click-submenu.json`, and `...195022-menu-click-disabled.json` (the last exits with `INTERACTION_FAILED` and message `Menu item is disabled: ...`).
   - Playground Menu log `.artifacts/playground-tools/20251116-195020-menu.log` now shows each click (`Test Action 1`, `Submenu > Nested Action A`, and the disabled error), proving `AutomationEventLogger` coverage.
@@ -396,33 +396,33 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `menubar`
 - **Target**: macOS status items (Wi-Fi, Battery) or custom extras.
 - **Test cases**:
-  1. `peekaboo menubar list --json-output > .artifacts/playground-tools/20251116-141824-menubar-list.json`.
-  2. `peekaboo menubar click "Wi-Fi" --foreground` (or `--index 9 --foreground`) and close Control Center manually afterward.
-  3. `peekaboo menubar click --index 2 --foreground` to exercise Control Center by index.
+  1. `wink menubar list --json-output > .artifacts/playground-tools/20251116-141824-menubar-list.json`.
+  2. `wink menubar click "Wi-Fi" --foreground` (or `--index 9 --foreground`) and close Control Center manually afterward.
+  3. `wink menubar click --index 2 --foreground` to exercise Control Center by index.
 - **2025-11-16 run**: Commands above succeeded; no dedicated Playground log yet (menu bar actions don’t flow through the app logger). The new list artifact reflects the current order, and the CLI output confirms the clicked items (Wi-Fi and Control Center).
 
 #### `app`
 - **Scenarios**:
-  1. `peekaboo app list --include-hidden --json-output > $LOG_ROOT/app-list.json`
-  2. `peekaboo app switch --to Playground`
-  3. `peekaboo app hide --app Playground` / `peekaboo app unhide --app Playground`
-  4. `peekaboo app launch "TextEdit" --json-output` followed by `peekaboo app quit --app TextEdit --json-output`
+  1. `wink app list --include-hidden --json-output > $LOG_ROOT/app-list.json`
+  2. `wink app switch --to Playground`
+  3. `wink app hide --app Playground` / `wink app unhide --app Playground`
+  4. `wink app launch "TextEdit" --json-output` followed by `wink app quit --app TextEdit --json-output`
 - **2025-11-16 verification**:
   - Re-ran the flow: `.artifacts/playground-tools/20251116-195420-app-list.json`, `...195421-app-switch.json`, `...195422-app-hide.json`, `...195423-app-unhide.json`, `...195424-app-launch-textedit.json`, and `...195425-app-quit-textedit.json` capture the CLI outputs.
   - App log `.artifacts/playground-tools/20251116-195420-app.log` shows the matching `[App] list`, `switch`, `hide`, `unhide`, `launch`, and `quit` entries with bundle IDs + PIDs.
 
 #### `app launch --open`
 - **Tests**:
-  1. `peekaboo app launch TextEdit --open Apps/Playground/README.md --json-output`.
-  2. `peekaboo app launch Safari --open https://example.com --json-output`.
+  1. `wink app launch TextEdit --open Apps/Playground/README.md --json-output`.
+  2. `wink app launch Safari --open https://example.com --json-output`.
   3. Add `--wait-ready` when the next step depends on LaunchServices startup completion.
 
 #### `dock`
 - **Tests**:
-  1. `peekaboo dock list --json-output` (artifact `.artifacts/playground-tools/20251116-200750-dock-list.json`).
-  2. `peekaboo dock launch Playground`.
-  3. `peekaboo dock hide` / `peekaboo dock show`.
-  4. `peekaboo dock right-click --app Finder --select "New Finder Window"` (JSON artifact `.artifacts/playground-tools/20251116-205828-dock-right-click.json`).
+  1. `wink dock list --json-output` (artifact `.artifacts/playground-tools/20251116-200750-dock-list.json`).
+  2. `wink dock launch Playground`.
+  3. `wink dock hide` / `wink dock show`.
+  4. `wink dock right-click --app Finder --select "New Finder Window"` (JSON artifact `.artifacts/playground-tools/20251116-205828-dock-right-click.json`).
 - **2025-11-16 verification**:
   - `[Dock]` logger entries captured via `.artifacts/playground-tools/20251116-205850-dock.log` show `list`, `launch Playground`, `hide`, `show`, and the Finder right-click with `selection=New Finder Window`.
   - Context menu selection works once Finder is present in the Dock; if the menu doesn’t surface, re-run after focusing the Dock. No additional code changes required.
@@ -434,18 +434,18 @@ The following subsections spell out the concrete steps, required Playground surf
   2. Click “Show Save Panel” (or “Show Save Panel (Overwrite /tmp)” to exercise Replace flows). Use “Show Save Panel (TextEdit-like)” to add a file-format accessory view + tags field closer to real-world apps.
   3. Optional: Click “Show Alert (Text Field)” to exercise `dialog input` against a sheet-local text field.
 - **Tests**:
-  1. `peekaboo dialog list --app Playground --json-output > .artifacts/playground-tools/<timestamp>-dialog-list.json`.
-  2. `peekaboo dialog click --button "Cancel" --app Playground --json-output > .artifacts/playground-tools/<timestamp>-dialog-click-cancel.json`.
-  3. (Alert w/ text field) `peekaboo dialog input --app Playground --index 0 --text "NAME0" --clear --json-output > .artifacts/playground-tools/<timestamp>-dialog-input.json`.
-  4. (Save panel) `peekaboo dialog file --app Playground --path /tmp --name playground-dialog-out.txt --ensure-expanded --select default --json-output > .artifacts/playground-tools/<timestamp>-dialog-file-save.json`.
+  1. `wink dialog list --app Playground --json-output > .artifacts/playground-tools/<timestamp>-dialog-list.json`.
+  2. `wink dialog click --button "Cancel" --app Playground --json-output > .artifacts/playground-tools/<timestamp>-dialog-click-cancel.json`.
+  3. (Alert w/ text field) `wink dialog input --app Playground --index 0 --text "NAME0" --clear --json-output > .artifacts/playground-tools/<timestamp>-dialog-input.json`.
+  4. (Save panel) `wink dialog file --app Playground --path /tmp --name playground-dialog-out.txt --ensure-expanded --select default --json-output > .artifacts/playground-tools/<timestamp>-dialog-file-save.json`.
 - **Verification notes**:
   - Prefer Playground’s Dialogs tab over TextEdit for repeatable coverage (no “dirty document” preconditions).
   - Capture a Playground log excerpt for each run (category `Dialog`) so the result is verifiable without screenshots.
 
 #### `visualizer`
-- **Setup**: Ensure `Peekaboo.app` is running (visual feedback host) and keep Playground visible so you can quickly spot overlays.
+- **Setup**: Ensure `Wink.app` is running (visual feedback host) and keep Playground visible so you can quickly spot overlays.
 - **Steps**:
-  1. `peekaboo visualizer --json-output > .artifacts/playground-tools/<timestamp>-visualizer.json`
+  1. `wink visualizer --json-output > .artifacts/playground-tools/<timestamp>-visualizer.json`
   2. Visually confirm you see (in order): screenshot flash, capture HUD, cursor click, typing overlay, scroll indicator, cursor movement trail, swipe path, hotkey HUD, window move overlay, app launch/quit animation, menu breadcrumb, dialog highlight, space switch indicator, and element detection overlay.
 - **Pass criteria**: No CLI errors, the JSON report shows every step `dispatched=true`, and the full overlay sequence renders end-to-end.
 - **2025-12-18 run**:
@@ -457,11 +457,11 @@ The following subsections spell out the concrete steps, required Playground surf
 #### `agent`
 - **Scope**: Playground-specific instructions to exercise multiple tools automatically.
 - **Tests**:
-  1. `peekaboo agent sessions --json > .artifacts/playground-tools/20251117-010912-agent-list.json`.
-  2. `peekaboo agent "Say hi to the Playground app." --model gpt-5.5 --max-steps 2 --json-output > .artifacts/playground-tools/20251117-010919-agent-hi.json`.
-  3. `peekaboo agent "Switch to Playground and press the Single Click button once." --model gpt-5.5 --max-steps 4 --json-output > .artifacts/playground-tools/20251117-010935-agent-single-click.json`.
-  4. For long interactive runs, use tmux: `tmux new-session -- bash -lc 'peekaboo agent "Click the Single Click button in Playground." --model gpt-5.5 --max-steps 6 --no-cache | tee .artifacts/playground-tools/20251117-011500-agent-single-click.log'`.
-  5. Spot-check metadata: `peekaboo agent "Say hi to Playground again." --model gpt-5.5 --max-steps 2 --json-output > .artifacts/playground-tools/20251117-012655-agent-hi.json`.
+  1. `wink agent sessions --json > .artifacts/playground-tools/20251117-010912-agent-list.json`.
+  2. `wink agent "Say hi to the Playground app." --model gpt-5.5 --max-steps 2 --json-output > .artifacts/playground-tools/20251117-010919-agent-hi.json`.
+  3. `wink agent "Switch to Playground and press the Single Click button once." --model gpt-5.5 --max-steps 4 --json-output > .artifacts/playground-tools/20251117-010935-agent-single-click.json`.
+  4. For long interactive runs, use tmux: `tmux new-session -- bash -lc 'wink agent "Click the Single Click button in Playground." --model gpt-5.5 --max-steps 6 --no-cache | tee .artifacts/playground-tools/20251117-011500-agent-single-click.log'`.
+  5. Spot-check metadata: `wink agent "Say hi to Playground again." --model gpt-5.5 --max-steps 2 --json-output > .artifacts/playground-tools/20251117-012655-agent-hi.json`.
 - **2025-11-17 run**:
   - GPT-5.5 executes happily; Playground `[Agent]` log is captured in `.artifacts/playground-tools/20251117-011345-agent.log`.
   - Non-tmux invocations can time out; move anything beyond quick dry-runs into `tmux ...` so long runs complete.
@@ -470,11 +470,11 @@ The following subsections spell out the concrete steps, required Playground surf
 
 #### `mcp`
 - **Steps**:
-  1. `MCPORTER list peekaboo-local --stdio "$PEEKABOO_BIN mcp" --timeout 20 --schema > .artifacts/playground-tools/20251219-001230-mcp-list.json`.
-  2. `MCPORTER call peekaboo-local.permissions --stdio "$PEEKABOO_BIN mcp" --timeout 15 > .artifacts/playground-tools/20251219-001245-mcp-call-permissions.json`.
+  1. `MCPORTER list wink-local --stdio "$WINK_BIN mcp" --timeout 20 --schema > .artifacts/playground-tools/20251219-001230-mcp-list.json`.
+  2. `MCPORTER call wink-local.permissions --stdio "$WINK_BIN mcp" --timeout 15 > .artifacts/playground-tools/20251219-001245-mcp-call-permissions.json`.
   3. Capture the OSLog stream with `./Apps/Playground/scripts/playground-log.sh -c MCP --last 15m --all -o .artifacts/playground-tools/20251219-001255-mcp.log`.
 - **2025-12-19 verification**:
-  - `MCPORTER list` returns the native Peekaboo tool catalog via stdio.
+  - `MCPORTER list` returns the native Wink tool catalog via stdio.
   - `permissions` call returns the expected `Screen Recording` + `Accessibility` statuses.
   - Playground `[MCP]` log records the server requests for later regression diffs.
 

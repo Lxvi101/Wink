@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 export function logScriptFixture(t, script) {
-  const directory = mkdtempSync(path.join(tmpdir(), 'peekaboo-log-script-'));
+  const directory = mkdtempSync(path.join(tmpdir(), 'wink-log-script-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const argsPath = path.join(directory, 'log-args');
   const sudoArgsPath = path.join(directory, 'sudo-args');

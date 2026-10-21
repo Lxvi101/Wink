@@ -1,16 +1,16 @@
 ---
-summary: 'Review Peekaboo CLI Comprehensive Testing Report guidance'
+summary: 'Review Wink CLI Comprehensive Testing Report guidance'
 read_when:
-  - 'planning work related to peekaboo cli comprehensive testing report'
+  - 'planning work related to wink cli comprehensive testing report'
   - 'debugging or extending features described here'
 ---
 
-# Peekaboo CLI Comprehensive Testing Report
+# Wink CLI Comprehensive Testing Report
 
 > **Historical record:** Commands and outputs are preserved as observed when this report was written. See the
-> [Peekaboo 4 migration guide](../v4-migration.md) for current CLI syntax.
+> [Wink 4 migration guide](../v4-migration.md) for current CLI syntax.
 
-This document tracks comprehensive testing of all Peekaboo CLI commands using the Playground app as a test target.
+This document tracks comprehensive testing of all Wink CLI commands using the Playground app as a test target.
 
 ## Testing Methodology
 
@@ -25,8 +25,8 @@ This document tracks comprehensive testing of all Peekaboo CLI commands using th
 ## Test Environment
 
 - **Date**: 2025-01-28
-- **Peekaboo Version**: 3.1.1 (main/29b698d, built: 2026-05-11T18:58:00+01:00)
-- **Test App**: Playground (boo.peekaboo.mac.debug)
+- **Wink Version**: 3.1.1 (main/29b698d, built: 2026-05-11T18:58:00+01:00)
+- **Test App**: Playground (boo.wink.mac.debug)
 - **macOS Version**: Darwin 25.0.0
 - **Poltergeist Status**: Active and monitoring
 
@@ -37,11 +37,11 @@ This document tracks comprehensive testing of all Peekaboo CLI commands using th
 **Help Output**:
 ```
 OVERVIEW: Capture screenshots
-USAGE: peekaboo image [--app <app>] [--window-id <window-id>] [--window-title <window-title>] [--pid <pid>] [--mode <mode>] [--path <path>] [--format <format>] [--quality <quality>] [--json-output]
+USAGE: wink image [--app <app>] [--window-id <window-id>] [--window-title <window-title>] [--pid <pid>] [--mode <mode>] [--path <path>] [--format <format>] [--quality <quality>] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic capture: `./scripts/peekaboo-wait.sh image --app Playground --path /tmp/playground-test.png`
+- ✅ Basic capture: `./scripts/wink-wait.sh image --app Playground --path /tmp/playground-test.png`
   - Successfully captured screenshot (130265 bytes)
   - File created at specified path
 
@@ -55,7 +55,7 @@ USAGE: peekaboo image [--app <app>] [--window-id <window-id>] [--window-title <w
 **Help Output**:
 ```
 OVERVIEW: List running applications, windows, or check permissions
-USAGE: peekaboo list <subcommand>
+USAGE: wink list <subcommand>
 SUBCOMMANDS:
   apps                    List all running applications
   windows                 List windows for an application
@@ -63,10 +63,10 @@ SUBCOMMANDS:
 ```
 
 **Testing Results**:
-- ✅ List apps: `./scripts/peekaboo-wait.sh list apps`
+- ✅ List apps: `./scripts/wink-wait.sh list apps`
   - Successfully listed 75 running applications
   - Playground app found with PID 69853
-- ✅ List windows: `./scripts/peekaboo-wait.sh list windows --app Playground`
+- ✅ List windows: `./scripts/wink-wait.sh list windows --app Playground`
   - Successfully listed 1 window: "Playground"
 
 **Parameter Observations**:
@@ -79,11 +79,11 @@ SUBCOMMANDS:
 **Help Output**:
 ```
 OVERVIEW: Capture screen and map UI elements
-USAGE: peekaboo see [--app <app>] [--window-id <window-id>] [--window-title <window-title>] [--pid <pid>] [--mode <mode>] [--path <path>] [--format <format>] [--quality <quality>] [--json-output]
+USAGE: wink see [--app <app>] [--window-id <window-id>] [--window-title <window-title>] [--pid <pid>] [--mode <mode>] [--path <path>] [--format <format>] [--quality <quality>] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic UI mapping: `./scripts/peekaboo-wait.sh see --app Playground --path /tmp/playground-see.png`
+- ✅ Basic UI mapping: `./scripts/wink-wait.sh see --app Playground --path /tmp/playground-see.png`
   - Successfully captured and analyzed UI
   - Found 51 UI elements (26 interactive)
   - Created session 1753686072886-3831
@@ -96,14 +96,14 @@ USAGE: peekaboo see [--app <app>] [--window-id <window-id>] [--window-title <win
 **Help Output**:
 ```
 OVERVIEW: Click on UI elements or coordinates
-USAGE: peekaboo click [<query>] [--snapshot <snapshot>] [--on <on>] [--coords <coords>] [--wait-for <wait-for>] [--double] [--right] [--json-output]
+USAGE: wink click [<query>] [--snapshot <snapshot>] [--on <on>] [--coords <coords>] [--wait-for <wait-for>] [--double] [--right] [--json-output]
 ```
 
 **Testing Results**:
-- ❌ Initial confusion: Tried `./scripts/peekaboo-wait.sh click --app Playground "Click Me!"`
+- ❌ Initial confusion: Tried `./scripts/wink-wait.sh click --app Playground "Click Me!"`
   - Error: Unknown option '--app'
   - **Learning**: The `--on` parameter is for element IDs, not app names
-- ✅ Successful: `./scripts/peekaboo-wait.sh click "View Logs"`
+- ✅ Successful: `./scripts/wink-wait.sh click "View Logs"`
   - Successfully clicked the View Logs button
   - Opened log viewer window as expected
   - Log showed: "Left click at window: (914, 742), screen: (1634, 148)"
@@ -126,14 +126,14 @@ USAGE: peekaboo click [<query>] [--snapshot <snapshot>] [--on <on>] [--coords <c
 **Help Output**:
 ```
 OVERVIEW: Type text or send keyboard input
-USAGE: peekaboo type [<text>] [--snapshot <snapshot>] [--delay <delay>] [--press-return] [--tab <tab>] [--escape] [--delete] [--clear] [--json-output]
+USAGE: wink type [<text>] [--snapshot <snapshot>] [--delay <delay>] [--press-return] [--tab <tab>] [--escape] [--delete] [--clear] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic typing: `./scripts/peekaboo-wait.sh type "Hello from Peekaboo!"`
+- ✅ Basic typing: `./scripts/wink-wait.sh type "Hello from Wink!"`
   - Successfully typed text into focused field
   - Execution time: 0.08s (much faster than click)
-- ✅ Type with return: `./scripts/peekaboo-wait.sh type " - with return" --press-return`
+- ✅ Type with return: `./scripts/wink-wait.sh type " - with return" --press-return`
   - Successfully typed text and pressed return
   - Log showed: "Text input view appeared"
 
@@ -149,11 +149,11 @@ USAGE: peekaboo type [<text>] [--snapshot <snapshot>] [--delay <delay>] [--press
 **Help Output**:
 ```
 OVERVIEW: Scroll the mouse wheel in any direction
-USAGE: peekaboo scroll --direction <direction> [--amount <amount>] [--on <on>] [--snapshot <snapshot>] [--delay <delay>] [--smooth] [--json-output]
+USAGE: wink scroll --direction <direction> [--amount <amount>] [--on <on>] [--snapshot <snapshot>] [--delay <delay>] [--smooth] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic scroll: `./scripts/peekaboo-wait.sh scroll --direction down --amount 5`
+- ✅ Basic scroll: `./scripts/wink-wait.sh scroll --direction down --amount 5`
   - Successfully scrolled down 5 ticks
   - Very fast execution: 0.02s
   - Logs showed visible items changing (items 1, 15, 30 became visible)
@@ -171,11 +171,11 @@ USAGE: peekaboo scroll --direction <direction> [--amount <amount>] [--on <on>] [
 **Help Output**:
 ```
 OVERVIEW: Press keyboard shortcuts and key combinations
-USAGE: peekaboo hotkey --keys <keys> [--hold-duration <hold-duration>] [--snapshot <snapshot>] [--json-output]
+USAGE: wink hotkey --keys <keys> [--hold-duration <hold-duration>] [--snapshot <snapshot>] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic hotkey: `./scripts/peekaboo-wait.sh hotkey --keys "cmd,c"`
+- ✅ Basic hotkey: `./scripts/wink-wait.sh hotkey --keys "cmd,c"`
   - Successfully pressed cmd+c
   - Fast execution: 0.07s
   - Command executed (likely copied logs based on UI)
@@ -197,7 +197,7 @@ SUBCOMMANDS: close, minimize, maximize, move, resize, set-bounds, focus, list
 ```
 
 **Testing Results**:
-- ✅ List windows: `./scripts/peekaboo-wait.sh window list --app Playground`
+- ✅ List windows: `./scripts/wink-wait.sh window list --app Playground`
   - Successfully listed 1 window
 - ✅ All subcommands now working after ArgumentParser fix
   - Fixed inheritance issue by converting class-based commands to structs
@@ -219,12 +219,12 @@ SUBCOMMANDS: click, click-extra, list, list-all
 ```
 
 **Testing Results**:
-- ✅ List menu items: `./scripts/peekaboo-wait.sh menu list --app Playground`
+- ✅ List menu items: `./scripts/wink-wait.sh menu list --app Playground`
   - Successfully listed complete menu hierarchy
   - Shows all menu items including keyboard shortcuts
-- ✅ Click by item name: `./scripts/peekaboo-wait.sh menu click --app Playground --item "Test Action 1"`
+- ✅ Click by item name: `./scripts/wink-wait.sh menu click --app Playground --item "Test Action 1"`
   - Works correctly after fix (added recursive search)
-- ✅ Click by path: `./scripts/peekaboo-wait.sh menu click --app Playground --path "Test Menu > Test Action 1"`
+- ✅ Click by path: `./scripts/wink-wait.sh menu click --app Playground --path "Test Menu > Test Action 1"`
   - Successfully clicked menu item
   - Logs confirmed: "Test Action 1 clicked"
 
@@ -243,11 +243,11 @@ SUBCOMMANDS: launch, quit, hide, unhide, switch, list
 ```
 
 **Testing Results**:
-- ✅ Hide app: `./scripts/peekaboo-wait.sh app hide --app Playground`
+- ✅ Hide app: `./scripts/wink-wait.sh app hide --app Playground`
   - Successfully hid Playground
-- ✅ Show app: `./scripts/peekaboo-wait.sh app unhide --app Playground`
+- ✅ Show app: `./scripts/wink-wait.sh app unhide --app Playground`
   - Successfully showed Playground again
-- ✅ Switch apps: `./scripts/peekaboo-wait.sh app switch --to Finder`
+- ✅ Switch apps: `./scripts/wink-wait.sh app switch --to Finder`
   - Successfully switched to Finder
   - Also tested switching back to Playground
 
@@ -263,11 +263,11 @@ SUBCOMMANDS: launch, quit, hide, unhide, switch, list
 **Help Output**:
 ```
 OVERVIEW: Move the mouse cursor to coordinates or UI elements
-USAGE: peekaboo move [<coordinates>] [--to <to>] [--id <id>] [--center] [--smooth] [--duration <duration>] [--steps <steps>] [--snapshot <snapshot>] [--json-output]
+USAGE: wink move [<coordinates>] [--to <to>] [--id <id>] [--center] [--smooth] [--duration <duration>] [--steps <steps>] [--snapshot <snapshot>] [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Move to coordinates: `./scripts/peekaboo-wait.sh move 500,300`
+- ✅ Move to coordinates: `./scripts/wink-wait.sh move 500,300`
   - Successfully moved mouse to (500, 300)
   - Very fast: 0.01s
   - Shows distance moved: 558 pixels
@@ -279,11 +279,11 @@ USAGE: peekaboo move [<coordinates>] [--to <to>] [--id <id>] [--center] [--smoot
 **Help Output**:
 ```
 OVERVIEW: Pause execution for a specified duration
-USAGE: peekaboo sleep <duration> [--json-output]
+USAGE: wink sleep <duration> [--json-output]
 ```
 
 **Testing Results**:
-- ✅ Basic sleep: `./scripts/peekaboo-wait.sh sleep 100`
+- ✅ Basic sleep: `./scripts/wink-wait.sh sleep 100`
   - Successfully paused for 0.1s
   - Simple and effective
 
@@ -298,14 +298,14 @@ SUBCOMMANDS: launch, right-click, hide, show, list
 ```
 
 **Testing Results**:
-- ✅ List dock items: `./scripts/peekaboo-wait.sh dock list`
+- ✅ List dock items: `./scripts/wink-wait.sh dock list`
   - Successfully listed 40 dock items including running apps, folders, and trash
   - Shows which apps are running (•)
-- ✅ Launch from dock: `./scripts/peekaboo-wait.sh dock launch Safari`
+- ✅ Launch from dock: `./scripts/wink-wait.sh dock launch Safari`
   - Successfully launched Safari from dock
-- ✅ Hide/Show dock: `./scripts/peekaboo-wait.sh dock hide && sleep 2 && ./scripts/peekaboo-wait.sh dock show`
+- ✅ Hide/Show dock: `./scripts/wink-wait.sh dock hide && sleep 2 && ./scripts/wink-wait.sh dock show`
   - Successfully hid and showed the dock
-- ✅ Right-click dock item: `./scripts/peekaboo-wait.sh dock right-click --app Playground`
+- ✅ Right-click dock item: `./scripts/wink-wait.sh dock right-click --app Playground`
   - Successfully right-clicked Playground in dock
 
 **Parameter Observations**:
@@ -322,13 +322,13 @@ SUBCOMMANDS: launch, right-click, hide, show, list
 OVERVIEW: Perform drag and drop operations
 EXAMPLES:
   # Drag between UI elements
-  peekaboo drag --from B1 --to T2
+  wink drag --from B1 --to T2
   # Drag with coordinates
-  peekaboo drag --from-coords "100,200" --to-coords "400,300"
+  wink drag --from-coords "100,200" --to-coords "400,300"
 ```
 
 **Testing Results**:
-- ✅ Basic coordinate drag: `./scripts/peekaboo-wait.sh drag --from-coords "400,300" --to-coords "600,300" --duration 1000`
+- ✅ Basic coordinate drag: `./scripts/wink-wait.sh drag --from-coords "400,300" --to-coords "600,300" --duration 1000`
   - Successfully performed drag operation
   - Duration: 1000ms with 20 steps
   - Smooth animation between points
@@ -350,7 +350,7 @@ Performs a drag/swipe gesture between two points or elements.
 ```
 
 **Testing Results**:
-- ✅ Vertical swipe: `./scripts/peekaboo-wait.sh swipe --from-coords "500,400" --to-coords "500,200" --duration 1500`
+- ✅ Vertical swipe: `./scripts/wink-wait.sh swipe --from-coords "500,400" --to-coords "500,200" --duration 1500`
   - Successfully performed swipe gesture
   - Distance: 200 pixels
   - Duration: 1500ms
@@ -373,7 +373,7 @@ SUBCOMMANDS: click, input, file, dismiss, list
 ```
 
 **Testing Results**:
-- ✅ List dialog elements: `./scripts/peekaboo-wait.sh dialog list`
+- ✅ List dialog elements: `./scripts/wink-wait.sh dialog list`
   - Correctly reported "No active dialog window found" when no dialog was open
   - Command works properly, just needs a dialog to test with
 
@@ -393,7 +393,7 @@ Snapshots are stored in ~/.peekaboo/snapshots/<snapshot-id>/
 ```
 
 **Testing Results**:
-- ✅ Dry run test: `./scripts/peekaboo-wait.sh clean --dry-run --older-than 1`
+- ✅ Dry run test: `./scripts/wink-wait.sh clean --dry-run --older-than 1`
   - Would remove 44 snapshots
   - Space to be freed: 2.8 MB
   - Dry run mode prevents actual deletion
@@ -409,13 +409,13 @@ Snapshots are stored in ~/.peekaboo/snapshots/<snapshot-id>/
 
 **Help Output**:
 ```
-OVERVIEW: Execute a Peekaboo automation script
+OVERVIEW: Execute a Wink automation script
 Scripts are JSON files that define a series of UI automation steps.
 ```
 
 **Testing Results**:
 - ✅ Help documentation reviewed
-  - Command expects .peekaboo.json script files
+  - Command expects .wink.json script files
   - Supports fail-fast and verbose modes
   - Can save results to output file
 
@@ -430,14 +430,14 @@ Scripts are JSON files that define a series of UI automation steps.
 
 **Help Output**:
 ```
-OVERVIEW: Manage Peekaboo configuration
+OVERVIEW: Manage Wink configuration
 Configuration locations:
 • Config file: ~/.peekaboo/config.json
 • Credentials: ~/.peekaboo/credentials
 ```
 
 **Testing Results**:
-- ✅ Show config: `./scripts/peekaboo-wait.sh config show`
+- ✅ Show config: `./scripts/wink-wait.sh config show`
   - Displays current configuration in JSON format
   - Shows agent settings, AI providers, defaults, and logging config
   - Uses JSONC format with comment support
@@ -452,7 +452,7 @@ Configuration locations:
 ### ✅ 20. permissions - Check system permissions
 
 **Testing Results**:
-- ✅ Check permissions: `./scripts/peekaboo-wait.sh permissions`
+- ✅ Check permissions: `./scripts/wink-wait.sh permissions`
   - Screen Recording: ✅ Granted
   - Accessibility: ✅ Granted
   - Simple and clear output
@@ -474,11 +474,11 @@ Uses OpenAI Chat Completions API to break down and execute complex automation ta
   - Multiple output modes (verbose, quiet)
   - Model selection support
 - ⚠️ GPT-4.1 Testing (2025-01-28):
-  - ✅ Basic text responses work: `PEEKABOO_AI_PROVIDERS="openai/gpt-4.1" ./scripts/peekaboo-wait.sh agent --quiet "Say hello"`
+  - ✅ Basic text responses work: `WINK_AI_PROVIDERS="openai/gpt-4.1" ./scripts/wink-wait.sh agent --quiet "Say hello"`
   - ⚠️ UI automation tasks appear to hang or execute very slowly with verbose mode
   - ⚠️ The agent starts thinking but gets stuck on tool execution (e.g., list_windows)
   - **Workaround**: Use Claude models (default) for complex UI automation tasks
-  - **Note**: Model configuration warning appears when PEEKABOO_AI_PROVIDERS differs from config.json
+  - **Note**: Model configuration warning appears when WINK_AI_PROVIDERS differs from config.json
 
 **Key Features**:
 - Resume sessions with --resume or --resume-session
@@ -546,7 +546,7 @@ Uses OpenAI Chat Completions API to break down and execute complex automation ta
 ### 4. ✅ FIXED: AppCommand ServiceError
 - **Severity**: High
 - **Impact**: Build failure due to undefined ServiceError type
-- **Fix Applied**: Changed to use PeekabooError types appropriately
+- **Fix Applied**: Changed to use WinkError types appropriately
 - **Status**: FIXED & TESTED
 
 ## Performance Observations
@@ -572,7 +572,7 @@ Uses OpenAI Chat Completions API to break down and execute complex automation ta
 4. **Logging**: Excellent debugging support
 5. **Performance**: Most commands execute very quickly
 6. **Poltergeist**: Automatic rebuilding works seamlessly
-7. **Smart Wrapper**: `peekaboo-wait.sh` handles build staleness gracefully
+7. **Smart Wrapper**: `wink-wait.sh` handles build staleness gracefully
 
 ## Recommendations
 
@@ -586,7 +586,7 @@ Uses OpenAI Chat Completions API to break down and execute complex automation ta
 1. **Click Fallback Performance**: Investigate why element search without snapshot is slow
 2. **Parameter Consistency**: Consider standardizing parameter names across commands
 3. **Progress Indicators**: Add progress bars for long-running operations
-4. **Script Templates**: Provide example .peekaboo.json scripts
+4. **Script Templates**: Provide example .wink.json scripts
 
 ## Testing Methodology Success
 
@@ -608,7 +608,7 @@ The Playground app is an excellent test harness with:
 
 ## Conclusion
 
-All 21 Peekaboo CLI commands have been tested and are working correctly. The testing process identified and fixed 4 critical bugs, resulting in a more robust and performant CLI tool. The combination of Poltergeist for automatic rebuilding and the smart wrapper script creates an excellent developer experience.
+All 21 Wink CLI commands have been tested and are working correctly. The testing process identified and fixed 4 critical bugs, resulting in a more robust and performant CLI tool. The combination of Poltergeist for automatic rebuilding and the smart wrapper script creates an excellent developer experience.
 
 ### Model-Specific Testing Notes
 

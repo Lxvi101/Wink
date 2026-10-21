@@ -52,7 +52,7 @@ private struct SystemSample: Codable {
     let cursor: Point
     let clipboardChangeCount: Int
     let clipboardDigest: String
-    let peekabooWindowIDs: [UInt32]
+    let winkWindowIDs: [UInt32]
     let visibleScreenFramesTopLeft: [Rectangle]
 }
 
@@ -246,7 +246,7 @@ private enum InvariantSlot: Int, CaseIterable {
     case physicalCursor
     case globalInputEvent
     case clipboardChangeCount
-    case peekabooOverlayWindow
+    case winkOverlayWindow
 }
 
 private let cursorPositionViolationKind = "cursor_position"
@@ -1303,10 +1303,10 @@ private func inputEventEvidence(
     return (source: source, sessionFocus: sessionFocus)
 }
 
-private func peekabooWindowIDs(windows: [[String: Any]]) -> [UInt32] {
+private func winkWindowIDs(windows: [[String: Any]]) -> [UInt32] {
     let pids = Set(NSWorkspace.shared.runningApplications.compactMap { app -> Int32? in
         guard let bundleIdentifier = app.bundleIdentifier?.lowercased(),
-              bundleIdentifier.contains("peekaboo"),
+              bundleIdentifier.contains("wink"),
               !bundleIdentifier.contains("playground")
         else {
             return nil
@@ -1376,7 +1376,7 @@ private func sample(includeClipboardDigest: Bool = true) throws -> SystemSample 
         cursor: Point(x: event.location.x, y: event.location.y),
         clipboardChangeCount: pasteboard.changeCount,
         clipboardDigest: includeClipboardDigest ? clipboardDigest(pasteboard) : "",
-        peekabooWindowIDs: peekabooWindowIDs(windows: windows),
+        winkWindowIDs: winkWindowIDs(windows: windows),
         visibleScreenFramesTopLeft: visibleScreenFramesTopLeft)
 }
 
@@ -1439,10 +1439,10 @@ private func violations(current: SystemSample, context: InvariantEvaluationConte
             actual: String(current.clipboardChangeCount)))
     }
 
-    let addedWindows = Set(current.peekabooWindowIDs).subtracting(context.baseline.peekabooWindowIDs)
+    let addedWindows = Set(current.winkWindowIDs).subtracting(context.baseline.winkWindowIDs)
     if !addedWindows.isEmpty {
         result.insert(Violation(
-            kind: context.projection[.peekabooOverlayWindow],
+            kind: context.projection[.winkOverlayWindow],
             expected: "none added",
             actual: addedWindows.sorted().map(String.init).joined(separator: ",")))
     }
@@ -2671,7 +2671,7 @@ private struct RawCanonicalJSONParser {
 
 private func monitorAggregateSHA256(domain: String, jsonData: Data) throws -> String {
     var parser = RawCanonicalJSONParser(jsonData)
-    var bytes = Data("peekaboo.multi-target-certification.\(domain).v2\0".utf8)
+    var bytes = Data("wink.multi-target-certification.\(domain).v2\0".utf8)
     try bytes.append(parser.parse())
     return SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
 }
@@ -2867,7 +2867,7 @@ private final class MonitorAttestationServer: @unchecked Sendable {
     }
 
     func start() {
-        DispatchQueue(label: "boo.peekaboo.certification.monitor-attestation").async { self.serve() }
+        DispatchQueue(label: "boo.wink.certification.monitor-attestation").async { self.serve() }
     }
 
     func stop() {
@@ -3662,7 +3662,7 @@ private func selfTestDesktop() -> (sample: SystemSample, baseline: InteractiveBa
         cursor: Point(x: 50, y: 60),
         clipboardChangeCount: 3,
         clipboardDigest: "digest",
-        peekabooWindowIDs: [301],
+        winkWindowIDs: [301],
         visibleScreenFramesTopLeft: [Rectangle(x: 0, y: 0, width: 800, height: 600)])
     return (
         sample,
@@ -5226,7 +5226,7 @@ private func wrongWindowThenTargetStillViolates(
         cursor: desktop.sample.cursor,
         clipboardChangeCount: desktop.sample.clipboardChangeCount,
         clipboardDigest: "",
-        peekabooWindowIDs: desktop.sample.peekabooWindowIDs,
+        winkWindowIDs: desktop.sample.winkWindowIDs,
         visibleScreenFramesTopLeft: desktop.sample.visibleScreenFramesTopLeft)
     guard let closure = machine.closeForHeartbeat() else { return false }
     let heartbeat = try watch.observe(
@@ -5274,7 +5274,7 @@ private func authorizedForegroundEvidenceIsClean(
         cursor: desktop.sample.cursor,
         clipboardChangeCount: desktop.sample.clipboardChangeCount,
         clipboardDigest: "",
-        peekabooWindowIDs: desktop.sample.peekabooWindowIDs,
+        winkWindowIDs: desktop.sample.winkWindowIDs,
         visibleScreenFramesTopLeft: desktop.sample.visibleScreenFramesTopLeft)
     guard let closure = machine.closeForHeartbeat() else { return false }
     let heartbeat = try watch.observe(
@@ -5481,7 +5481,7 @@ private func physicalCursorIsObservationalButOtherInputContaminates(
         cursor: Point(x: 80, y: 90),
         clipboardChangeCount: desktop.sample.clipboardChangeCount,
         clipboardDigest: "",
-        peekabooWindowIDs: desktop.sample.peekabooWindowIDs,
+        winkWindowIDs: desktop.sample.winkWindowIDs,
         visibleScreenFramesTopLeft: desktop.sample.visibleScreenFramesTopLeft)
     guard let physicalClosure = physicalMachine.closeForHeartbeat() else { return false }
     let physicalHeartbeat = try physicalWatch.observe(
@@ -5577,7 +5577,7 @@ private func cursorPositionAndProducerPointerRemainDistinct(
         cursor: Point(x: desktop.sample.cursor.x + 10, y: desktop.sample.cursor.y),
         clipboardChangeCount: desktop.sample.clipboardChangeCount,
         clipboardDigest: desktop.sample.clipboardDigest,
-        peekabooWindowIDs: desktop.sample.peekabooWindowIDs,
+        winkWindowIDs: desktop.sample.winkWindowIDs,
         visibleScreenFramesTopLeft: desktop.sample.visibleScreenFramesTopLeft)
     let kinds = Set(violations(
         current: moved,
@@ -6282,7 +6282,7 @@ private func attestationServerSurvivesEarlyClientClose() throws -> Bool {
 private func runSelfTest() throws {
     let projection = InvariantProjection(names: InvariantSlot.allCases.map { "slot-\($0.rawValue)" })
     let desktop = selfTestDesktop()
-    let testDirectory = "\(NSTemporaryDirectory())peekaboo-monitor-epoch-\(UUID().uuidString)"
+    let testDirectory = "\(NSTemporaryDirectory())wink-monitor-epoch-\(UUID().uuidString)"
     try FileManager.default.createDirectory(
         atPath: testDirectory,
         withIntermediateDirectories: false,

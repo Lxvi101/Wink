@@ -1,14 +1,14 @@
 ---
-summary: 'How Peekaboo generates shell completions from Commander metadata'
+summary: 'How Wink generates shell completions from Commander metadata'
 read_when:
-  - 'touching peekaboo completions or shell setup docs'
+  - 'touching wink completions or shell setup docs'
   - 'adding new commands/flags and expecting completions to update automatically'
 ---
 
 # Completion architecture
 
-Peekaboo intentionally generates shell completions from the same Commander
-descriptor tree that powers CLI help, `peekaboo learn`, and runtime parsing.
+Wink intentionally generates shell completions from the same Commander
+descriptor tree that powers CLI help, `wink learn`, and runtime parsing.
 That keeps completions on the same single source of truth as the rest of the
 CLI surface.
 
@@ -16,7 +16,7 @@ CLI surface.
 
 For new Swift CLIs, Apple’s Swift Argument Parser is still the best
 off-the-shelf option because it can generate bash/zsh/fish scripts directly.
-Peekaboo does **not** use Argument Parser anymore, though—we migrated to the
+Wink does **not** use Argument Parser anymore, though—we migrated to the
 custom `Commander` framework so runtime binding, help rendering, and descriptor
 generation stay under our control.
 

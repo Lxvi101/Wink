@@ -11,43 +11,43 @@ let approachableConcurrencySettings: [SwiftSetting] = [
 ]
 
 let package = Package(
-    name: "Peekaboo",
+    name: "Wink",
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .library(
-            name: "Peekaboo",
-            targets: ["Peekaboo"]),
+            name: "Wink",
+            targets: ["Wink"]),
     ],
     dependencies: [
-        .package(path: "../../Core/PeekabooCore"),
-        .package(path: "../../Core/PeekabooUICore"),
+        .package(path: "../../Core/WinkCore"),
+        .package(path: "../../Core/WinkUICore"),
         .package(path: "../../Tachikoma"),
         .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "3.0.1"),
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.8.1"),
     ],
     targets: [
         .target(
-            name: "Peekaboo",
+            name: "Wink",
             dependencies: [
-                .product(name: "PeekabooCore", package: "PeekabooCore"),
-                .product(name: "PeekabooUICore", package: "PeekabooUICore"),
+                .product(name: "WinkCore", package: "WinkCore"),
+                .product(name: "WinkUICore", package: "WinkUICore"),
                 .product(name: "Tachikoma", package: "Tachikoma"),
                 .product(name: "TachikomaAudio", package: "Tachikoma"),
                 .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
                 .product(name: "Sparkle", package: "Sparkle"),
             ],
-            path: "Peekaboo",
-            exclude: ["PeekabooApp.swift", "Info.plist", "Peekaboo.entitlements", "Features/StatusBar/README.md"],
+            path: "Wink",
+            exclude: ["WinkApp.swift", "Info.plist", "Wink.entitlements", "Features/StatusBar/README.md"],
             resources: [
                 .process("Assets.xcassets"),
             ],
             swiftSettings: approachableConcurrencySettings),
         .testTarget(
-            name: "PeekabooTests",
-            dependencies: ["Peekaboo"],
-            path: "PeekabooTests",
+            name: "WinkTests",
+            dependencies: ["Wink"],
+            path: "WinkTests",
             exclude: ["README.md"],
             swiftSettings: approachableConcurrencySettings),
     ],

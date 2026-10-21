@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 private enum SeeCommandPlaygroundTestConfig {
     @preconcurrency
     nonisolated static func enabled() -> Bool {
@@ -13,12 +13,12 @@ private enum SeeCommandPlaygroundTestConfig {
 
     @MainActor
     static func playgroundURL() -> URL? {
-        if let path = ProcessInfo.processInfo.environment["PEEKABOO_PLAYGROUND_APP"],
+        if let path = ProcessInfo.processInfo.environment["WINK_PLAYGROUND_APP"],
            path.hasPrefix("/") {
             return URL(fileURLWithPath: path)
         }
-        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "boo.peekaboo.playground.debug") ??
-            NSWorkspace.shared.urlForApplication(withBundleIdentifier: "boo.peekaboo.playground")
+        return NSWorkspace.shared.urlForApplication(withBundleIdentifier: "boo.wink.playground.debug") ??
+            NSWorkspace.shared.urlForApplication(withBundleIdentifier: "boo.wink.playground")
     }
 }
 
@@ -116,7 +116,7 @@ private enum SeeCommandPlaygroundHarness {
         allowedExitStatuses: Set<Int32> = [0],
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) throws -> String {
-        let result = try ExternalCommandRunner.runPeekabooCLI(
+        let result = try ExternalCommandRunner.runWinkCLI(
             arguments,
             allowedExitCodes: allowedExitStatuses,
             environment: environment
@@ -131,7 +131,7 @@ struct SeeCommandPlaygroundHarnessContractTests {
         #expect(throws: CommandExecutionError.self) {
             _ = try SeeCommandPlaygroundHarness.run(
                 ["app", "launch", "Playground"],
-                environment: ["PEEKABOO_CLI_PATH": "/usr/bin/false"]
+                environment: ["WINK_CLI_PATH": "/usr/bin/false"]
             )
         }
     }

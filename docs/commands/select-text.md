@@ -4,15 +4,15 @@ read_when:
   - 'selecting text or placing a caret in an observed element'
 ---
 
-# `peekaboo select-text`
+# `wink select-text`
 
 `select-text` changes only an element's native `AXSelectedTextRange`. It does not activate or focus the app,
 synthesize keys, change text, or touch the clipboard. The equivalent MCP tool is `select_text`.
 
 ```bash
-peekaboo select-text "hello" --on "$ELEMENT_ID" --snapshot "$EXACT_WINDOW_SNAPSHOT"
-peekaboo select-text "hello" --on "$ELEMENT_ID" --prefix "Say " --selection-type cursor_after
-peekaboo select-text "hello" --on "$ELEMENT_ID" --suffix " world" --selection-type cursor_before
+wink select-text "hello" --on "$ELEMENT_ID" --snapshot "$EXACT_WINDOW_SNAPSHOT"
+wink select-text "hello" --on "$ELEMENT_ID" --prefix "Say " --selection-type cursor_after
+wink select-text "hello" --on "$ELEMENT_ID" --suffix " world" --selection-type cursor_before
 ```
 
 `<text>` is a nonempty literal. `--prefix` and `--suffix` constrain the immediately adjacent literal context;
@@ -31,7 +31,7 @@ preferences continue to govern the existing key, mouse, value, and named-action 
 
 The element must expose readable nonsecure string content, a readable selection, and a settable
 `AXSelectedTextRange`. Its `AXValue` need not be writable, and it need not already have keyboard focus. Apps,
-including web views, that do not expose those native attributes are unsupported; Peekaboo does not obtain focus
+including web views, that do not expose those native attributes are unsupported; Wink does not obtain focus
 or use browser/keyboard tricks to emulate support. Secure or unreadable security metadata refuses.
 
 The retained element, process generation, window receipt, exact UTF-16 source text, and source selection are

@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 
 @MainActor
 final class OutcomeStubApplicationService: StubApplicationService, ApplicationServiceActionResultProviding {

@@ -21,7 +21,7 @@ env -u MAC_RELEASE_CODESIGN_IDENTITY -u MAC_RELEASE_CODESIGN_KEYCHAIN \
   scripts/build-swift-universal.sh
 
 mkdir -p "$OUTPUT"
-cp "$ROOT/peekaboo" "$OUTPUT/"
+cp "$ROOT/wink" "$OUTPUT/"
 for library in "$ROOT"/libswiftCompatibility*.dylib; do
   [[ -e "$library" ]] || continue
   # Toolchain compatibility dylibs also carry arm64e; the archetype requires exactly arm64+x86_64 payloads.
@@ -38,4 +38,4 @@ for payload in "$OUTPUT"/*; do
     exit 1
   }
 done
-printf 'Ad-hoc universal CLI: %s/peekaboo\n' "$OUTPUT"
+printf 'Ad-hoc universal CLI: %s/wink\n' "$OUTPUT"

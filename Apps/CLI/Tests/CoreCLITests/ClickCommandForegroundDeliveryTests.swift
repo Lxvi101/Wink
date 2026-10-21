@@ -1,7 +1,7 @@
 import CoreGraphics
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 /// `--foreground` is documented as "focus target and send a foreground mouse click". Element and
 /// query targets must therefore be dispatched as real coordinate clicks once their screen point

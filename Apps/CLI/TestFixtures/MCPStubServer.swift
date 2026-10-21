@@ -173,7 +173,7 @@ final class MCPStubServer {
             "protocolVersion": "2025-03-26",
             "capabilities": [:],
             "serverInfo": [
-                "name": "peekaboo-mcp-stub",
+                "name": "wink-mcp-stub",
                 "version": "1.0.0",
             ],
         ]

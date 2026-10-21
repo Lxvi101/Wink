@@ -1,23 +1,23 @@
 import Commander
 import Foundation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
 struct RuntimeHostDiagnosticTests {
     private static let socket = "/synthetic/diagnostic-host.sock"
-    private static let operations: [PeekabooBridgeOperation] = [
+    private static let operations: [WinkBridgeOperation] = [
         .captureScreen,
         .desktopObservation,
         .createSnapshot,
         .invalidateImplicitLatestSnapshot,
     ]
     private static let capabilities = [
-        PeekabooBridgeHostCapability.desktopObservationFreshAccessibilityTree,
-        PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
+        WinkBridgeHostCapability.desktopObservationFreshAccessibilityTree,
+        WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
     ]
 
     @Test
@@ -28,8 +28,8 @@ struct RuntimeHostDiagnosticTests {
         #expect(options.requiresDesktopObservationFreshAccessibilityTree)
         #expect(options.requiresProducerBoundSnapshotReferences)
         #expect(!options.requiresExplicitSnapshotPublication)
-        #expect(PeekabooBridgeConstants.defaultTrustedHostTeamIDs(socketPath: Self.socket) == nil)
-        #expect(handshake.negotiatedVersion == PeekabooBridgeProtocolVersion(major: 1, minor: 28))
+        #expect(WinkBridgeConstants.defaultTrustedHostTeamIDs(socketPath: Self.socket) == nil)
+        #expect(handshake.negotiatedVersion == WinkBridgeProtocolVersion(major: 1, minor: 28))
         #expect(handshake.supportsDesktopObservationFreshAccessibilityTree)
         #expect(!BridgeCapabilityPolicy.supportsProducerBoundSnapshotReferences(for: handshake))
         #expect(!CommandRuntime.supportsRemoteRequirements(for: handshake, options: options))
@@ -77,7 +77,7 @@ struct RuntimeHostDiagnosticTests {
             services: resolution.services,
             requiredHostFailure: message
         )
-        let error = #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = #expect(throws: WinkBridgeErrorEnvelope.self) {
             try runtime.requireCompatibleHost()
         }
         #expect(error?.code == .operationNotSupported)
@@ -90,7 +90,7 @@ struct RuntimeHostDiagnosticTests {
     @Test
     func `genuinely missing fresh support remains the first reported requirement`() async throws {
         let options = try Self.freshSeeOptions()
-        let handshake = Self.handshake(capabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership])
+        let handshake = Self.handshake(capabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership])
         let evaluation = await Self.evaluate(handshake, options: options)
 
         #expect(!handshake.supportsDesktopObservationFreshAccessibilityTree)
@@ -154,7 +154,7 @@ struct RuntimeHostDiagnosticTests {
     @Test
     func `missing OCR precedes missing fresh and producer requirements`() async throws {
         let options = try Self.freshSeeOptions(ocr: true)
-        let handshake = Self.handshake(capabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership])
+        let handshake = Self.handshake(capabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership])
         let evaluation = await Self.evaluate(handshake, options: options)
 
         #expect(options.requiresDesktopObservationOCR)
@@ -185,7 +185,7 @@ struct RuntimeHostDiagnosticTests {
             candidate,
             handshake: handshake,
             options: options,
-            requiredProtocolVersion: PeekabooBridgeConstants.protocolVersion,
+            requiredProtocolVersion: WinkBridgeConstants.protocolVersion,
             fetchReusableDaemonStatus: { _ in fatalError("No daemon status probes") }
         )
         let kindEvaluation = await RuntimeHostResolver.evaluateRemoteCandidate(
@@ -205,7 +205,7 @@ struct RuntimeHostDiagnosticTests {
     func `mixed candidate rejections summarize distinct reasons without blaming all hosts for fresh`() async throws {
         let options = try Self.freshSeeOptions()
         let missingFresh = await Self.evaluate(
-            Self.handshake(capabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership]),
+            Self.handshake(capabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership]),
             options: options
         )
         let missingProducer = await Self.evaluate(Self.handshake(), options: options)
@@ -229,12 +229,12 @@ struct RuntimeHostDiagnosticTests {
     func `producer operation policy failure does not prescribe socket trust changes`(supported: Bool) async throws {
         let options = try Self.freshSeeOptions()
         let handshake = Self.handshake(
-            version: PeekabooBridgeConstants.protocolVersion,
+            version: WinkBridgeConstants.protocolVersion,
             operations: Self.operations + (supported ? [.ownsSnapshot] : []),
             enabledOperations: Self.operations,
             capabilities: Self.capabilities + [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.producerBoundSnapshotReferences,
             ]
         )
         let evaluation = await Self.evaluate(handshake, options: options)
@@ -256,7 +256,7 @@ struct RuntimeHostDiagnosticTests {
     @Test
     func `current producer capable host stays eligible and resolves remotely`() async throws {
         let options = try Self.freshSeeOptions()
-        let handshake = Self.handshake(version: PeekabooBridgeConstants.protocolVersion)
+        let handshake = Self.handshake(version: WinkBridgeConstants.protocolVersion)
             .withProducerBoundSnapshotFixture()
         let evaluation = await Self.evaluate(handshake, options: options)
 
@@ -330,17 +330,17 @@ struct RuntimeHostDiagnosticTests {
         var options = CommandRuntimeOptions()
         options.requiresProducerBoundSnapshotReferences = true
         let version = scenario == "protocol"
-            ? PeekabooBridgeProtocolVersion(major: 1, minor: 33)
-            : PeekabooBridgeConstants.producerBoundSnapshotReferencesVersion
+            ? WinkBridgeProtocolVersion(major: 1, minor: 33)
+            : WinkBridgeConstants.producerBoundSnapshotReferencesVersion
         let capabilities = [
-            PeekabooBridgeHostCapability.attestedOperationReceipts,
-            PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
+            WinkBridgeHostCapability.attestedOperationReceipts,
+            WinkBridgeHostCapability.producerBoundSnapshotReferences,
         ].filter {
-            !(scenario == "receipts" && $0 == PeekabooBridgeHostCapability.attestedOperationReceipts) &&
-                !(scenario == "producer" && $0 == PeekabooBridgeHostCapability.producerBoundSnapshotReferences)
+            !(scenario == "receipts" && $0 == WinkBridgeHostCapability.attestedOperationReceipts) &&
+                !(scenario == "producer" && $0 == WinkBridgeHostCapability.producerBoundSnapshotReferences)
         }
-        let operations: [PeekabooBridgeOperation] = scenario == "owns-supported" ? [] : [.ownsSnapshot]
-        let enabledOperations: [PeekabooBridgeOperation]? = scenario == "implicit-enabled"
+        let operations: [WinkBridgeOperation] = scenario == "owns-supported" ? [] : [.ownsSnapshot]
+        let enabledOperations: [WinkBridgeOperation]? = scenario == "implicit-enabled"
             ? nil
             : scenario == "owns-enabled" ? [] : operations
         let handshake = Self.handshake(
@@ -382,12 +382,12 @@ struct RuntimeHostDiagnosticTests {
     }
 
     private static func handshake(
-        version: PeekabooBridgeProtocolVersion = .init(major: 1, minor: 28),
-        operations: [PeekabooBridgeOperation] = Self.operations,
-        enabledOperations: [PeekabooBridgeOperation]? = nil,
+        version: WinkBridgeProtocolVersion = .init(major: 1, minor: 28),
+        operations: [WinkBridgeOperation] = Self.operations,
+        enabledOperations: [WinkBridgeOperation]? = nil,
         capabilities: [String] = Self.capabilities,
         screenRecording: Bool = true
-    ) -> PeekabooBridgeHandshakeResponse {
+    ) -> WinkBridgeHandshakeResponse {
         BridgeTestFixtures.handshake(
             negotiatedVersion: version,
             hostKind: .onDemand,
@@ -404,7 +404,7 @@ struct RuntimeHostDiagnosticTests {
     }
 
     private static func evaluate(
-        _ handshake: PeekabooBridgeHandshakeResponse,
+        _ handshake: WinkBridgeHandshakeResponse,
         options: CommandRuntimeOptions
     ) async -> RuntimeHostResolver.RemoteCandidateEvaluation {
         await RuntimeHostResolver.evaluateRemoteCandidate(
@@ -432,11 +432,11 @@ struct RuntimeHostDiagnosticTests {
 
     @MainActor
     private final class RoutingFixture {
-        let handshake: PeekabooBridgeHandshakeResponse
+        let handshake: WinkBridgeHandshakeResponse
         var localFactoryCalls = 0
         var handshakePaths: [String] = []
 
-        init(handshake: PeekabooBridgeHandshakeResponse) {
+        init(handshake: WinkBridgeHandshakeResponse) {
             self.handshake = handshake
         }
 
@@ -453,7 +453,7 @@ struct RuntimeHostDiagnosticTests {
                 makeRemoteHandshakeCache: {
                     RuntimeHostResolver.RemoteHandshakeCache(
                         identity: .init(
-                            bundleIdentifier: "boo.peekaboo.test.diagnostics",
+                            bundleIdentifier: "boo.wink.test.diagnostics",
                             teamIdentifier: nil,
                             processIdentifier: 123
                         ),

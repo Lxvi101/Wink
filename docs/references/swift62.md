@@ -1,21 +1,21 @@
 ---
-summary: 'Swift 6.2 upgrade notes for Peekaboo'
+summary: 'Swift 6.2 upgrade notes for Wink'
 read_when:
   - 'upgrading toolchains or code to Swift 6.2'
-  - 'debugging Swift 6.2 concurrency/warning changes in Peekaboo'
+  - 'debugging Swift 6.2 concurrency/warning changes in Wink'
 ---
 
 #
 # Swift 6.2 Upgrade Notes
 
-Swift 6.2 shipped on September 15, 2025 alongside Xcode 16.1, bringing focused ergonomics for concurrency, structured data, and typed notifications that map cleanly onto Peekaboo’s automation stack.[^1] This guide highlights the additions we should care about and how we have already started adopting them.
+Swift 6.2 shipped on September 15, 2025 alongside Xcode 16.1, bringing focused ergonomics for concurrency, structured data, and typed notifications that map cleanly onto Wink’s automation stack.[^1] This guide highlights the additions we should care about and how we have already started adopting them.
 
 ## Language & Standard Library Highlights
 
 - **Easier structured data with `InlineArray`** – The standard library now exposes a fixed-size array value (`InlineArray`) and shorthand syntax like `[4 of Int]`, which keeps frequently accessed small buffers on the stack.[^1] Consider this for tight loops in Tachikoma streaming parsers where `Array` heap traffic shows up in Instruments.
 - **Cleaner test names** – Swift Testing lets you use raw identifiers as display names (`@Test func `OpenAI model parsing`()`) instead of string arguments.[^2] Our CLI parsing suite uses this style so XCTest output stays readable without sacrificing type safety.
 - **Ergonomic concurrency annotations** – New `@concurrent` function-type modifiers and closures make it explicit when work may run concurrently, complementing our existing `StrictConcurrency` settings.[^2]
-- **Duration-based sleeps** – `Task.sleep(for:)` now consumes `Duration`, so we no longer hand-roll nanosecond math. Peekaboo’s spinner and long-running CLI tests already use the new API.
+- **Duration-based sleeps** – `Task.sleep(for:)` now consumes `Duration`, so we no longer hand-roll nanosecond math. Wink’s spinner and long-running CLI tests already use the new API.
 
 ## Foundation & Platform Features
 

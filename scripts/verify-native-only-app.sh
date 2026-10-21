@@ -2,13 +2,13 @@
 
 set -euo pipefail
 
-CODESIGN_BIN="${PEEKABOO_CODESIGN_BIN:-/usr/bin/codesign}"
-FILE_BIN="${PEEKABOO_FILE_BIN:-/usr/bin/file}"
-GIT_BIN="${PEEKABOO_GIT_BIN:-/usr/bin/git}"
-NM_BIN="${PEEKABOO_NM_BIN:-/usr/bin/nm}"
-PLISTBUDDY_BIN="${PEEKABOO_PLISTBUDDY_BIN:-/usr/libexec/PlistBuddy}"
-REALPATH_BIN="${PEEKABOO_REALPATH_BIN:-$(command -v realpath || true)}"
-STRINGS_BIN="${PEEKABOO_STRINGS_BIN:-/usr/bin/strings}"
+CODESIGN_BIN="${WINK_CODESIGN_BIN:-/usr/bin/codesign}"
+FILE_BIN="${WINK_FILE_BIN:-/usr/bin/file}"
+GIT_BIN="${WINK_GIT_BIN:-/usr/bin/git}"
+NM_BIN="${WINK_NM_BIN:-/usr/bin/nm}"
+PLISTBUDDY_BIN="${WINK_PLISTBUDDY_BIN:-/usr/libexec/PlistBuddy}"
+REALPATH_BIN="${WINK_REALPATH_BIN:-$(command -v realpath || true)}"
+STRINGS_BIN="${WINK_STRINGS_BIN:-/usr/bin/strings}"
 
 # shellcheck source=scripts/native-only-policy.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/native-only-policy.sh"

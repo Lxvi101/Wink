@@ -367,7 +367,7 @@ test('source-owned assembler rejects nonfinite and nonpositive target geometry',
 });
 
 test('live crash scans require the current user canonical DiagnosticReports directory', () => {
-  const temporary = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-crash-binding-')));
+  const temporary = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'wink-crash-binding-')));
   try {
     const home = path.join(temporary, 'home');
     const expected = path.join(home, 'Library', 'Logs', 'DiagnosticReports');
@@ -410,9 +410,9 @@ test('live PID attestation plan carries the exact peer receipt and no legacy PID
     responseKind: 'monitor',
     socketPath: fixture.contract.monitor_binding.monitor_attestation_socket_path,
     expectedProcess: expectedPeer,
-    temporaryDirectory: '/private/tmp/peekaboo-live-pid-plan',
-    outputPath: '/private/tmp/peekaboo-live-pid-plan/response.json',
-    releasePath: '/private/tmp/peekaboo-live-pid-plan/release.json',
+    temporaryDirectory: '/private/tmp/wink-live-pid-plan',
+    outputPath: '/private/tmp/wink-live-pid-plan/response.json',
+    releasePath: '/private/tmp/wink-live-pid-plan/release.json',
   });
   assert.deepEqual(Object.keys(plan).sort(), [
     'artifacts_directory', 'execution_nonce', 'expected_peer', 'maximum_response_bytes',
@@ -937,7 +937,7 @@ test('live crash oracle covers the signed Playground fixture executable', () => 
 });
 
 test('source binding verifies exact files and rejects dirty or expanded source trees', () => {
-  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-current-build-source-'));
+  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-current-build-source-'));
   try {
     const bindings = [
       ...catalog.current_build_source.controller_source_manifest,
@@ -952,8 +952,8 @@ test('source binding verifies exact files and rejects dirty or expanded source t
     }
     for (const args of [
       ['init', '-q'],
-      ['config', 'user.name', 'Peekaboo Test'],
-      ['config', 'user.email', 'peekaboo-test@example.invalid'],
+      ['config', 'user.name', 'Wink Test'],
+      ['config', 'user.email', 'wink-test@example.invalid'],
       ['config', 'commit.gpgsign', 'false'],
       ['add', '.'],
       ['commit', '-qm', 'source fixture'],
@@ -972,7 +972,7 @@ test('source binding verifies exact files and rejects dirty or expanded source t
 
     const extra = path.join(
       temporary,
-      'Apps/CLI/Sources/PeekabooCertificationController/UnboundSource.swift',
+      'Apps/CLI/Sources/WinkCertificationController/UnboundSource.swift',
     );
     fs.writeFileSync(extra, '// unbound source\n');
     assert.throws(
@@ -1046,7 +1046,7 @@ test('live monitor run binding and stable fences fail closed under coherent evid
     }, 'monitor_cleanliness'],
     ['crash delta', (fixture) => {
       fixture.evidence.monitor_evidence.crash_evidence.new_reports.push(
-        'Peekaboo-2026-08-16.crash',
+        'Wink-2026-08-16.crash',
       );
     }, 'monitor_cleanliness'],
     ['restoration failure', (fixture) => {
@@ -1382,7 +1382,7 @@ test('an unmanifested final-bounds checkpoint is rejected even when its bundle i
 });
 
 test('artifact loader accepts only owner-private closed artifacts', () => {
-  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-multi-target-test-'));
+  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-multi-target-test-'));
   fs.chmodSync(temporaryRoot, 0o700);
   const artifactRoot = path.join(temporaryRoot, 'artifacts');
   const fixture = makeFixture();
@@ -1413,11 +1413,11 @@ test('packaged CLI has discoverable help and rejects a caller-selected catalog',
   const script = path.join(root, 'scripts/finalize-multi-target-certification.mjs');
   const help = spawnSync(process.execPath, [script, '--help'], { encoding: 'utf8' });
   assert.equal(help.status, 0, help.stderr);
-  assert.match(help.stdout, /peekaboo-certify finalize --artifacts DIR --peekaboo PATH/);
-  assert.match(help.stdout, /peekaboo-certify prepare --controller-receipts DIR --bundles DIR/);
+  assert.match(help.stdout, /wink-certify finalize --artifacts DIR --wink PATH/);
+  assert.match(help.stdout, /wink-certify prepare --controller-receipts DIR --bundles DIR/);
   assert.match(help.stdout, /--monitor-evidence FILE/);
   assert.match(help.stdout, /--foreground-postcondition FILE/);
-  assert.match(help.stdout, /peekaboo-certify verify-digests --artifacts DIR --summary FILE/);
+  assert.match(help.stdout, /wink-certify verify-digests --artifacts DIR --summary FILE/);
 
   const arbitraryCatalog = spawnSync(process.execPath, [script, '--catalog', catalogPath], {
     encoding: 'utf8',
@@ -1427,7 +1427,7 @@ test('packaged CLI has discoverable help and rejects a caller-selected catalog',
 });
 
 test('operator digest surfaces verify supplied artifacts without source access', async () => {
-  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'peekaboo-digest-cli-'));
+  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wink-digest-cli-'));
   fs.chmodSync(temporaryRoot, 0o700);
   const artifactRoot = path.join(temporaryRoot, 'artifacts');
   const summaryPath = path.join(temporaryRoot, 'summary.json');

@@ -1,13 +1,13 @@
 ---
-summary: 'Capture annotated UI maps with peekaboo see'
+summary: 'Capture annotated UI maps with wink see'
 read_when:
   - 'Collecting UI element IDs for automation'
   - 'Troubleshooting click/type targeting'
 ---
 
-# `peekaboo see`
+# `wink see`
 
-`peekaboo see` captures the current macOS UI, extracts accessibility metadata, and (optionally) saves annotated screenshots. CLI and agent flows rely on these UI maps to find fresh element IDs, bounds, labels, and snapshot IDs.
+`wink see` captures the current macOS UI, extracts accessibility metadata, and (optionally) saves annotated screenshots. CLI and agent flows rely on these UI maps to find fresh element IDs, bounds, labels, and snapshot IDs.
 
 Observation is read-only with respect to focus: targeting a background app does not activate it or move its windows.
 
@@ -53,7 +53,7 @@ fresh implicit snapshot. Other desktop mutations can still invalidate it. Explic
 observations retain their mutation barriers, including until timed-out or cancelled native work finishes.
 
 With implicit host discovery and the standard daemon path, `see` prefers the current CLI build's deterministic
-build-scoped daemon and may auto-start it before considering a healthy Peekaboo.app host. This applies to pixel and
+build-scoped daemon and may auto-start it before considering a healthy Wink.app host. This applies to pixel and
 AX-tree-only forms because their snapshots and capability decisions are host-memory state. An explicit
 `--bridge-socket`, a custom daemon socket, or `--no-remote` remains authoritative.
 
@@ -81,19 +81,19 @@ strict on-disk shape for cache removal.
 
 ```bash
 # Capture frontmost window, print JSON, and save an annotated PNG
-peekaboo see --json --annotate --path /tmp/see.png
+wink see --json --annotate --path /tmp/see.png
 
 # Target a specific app or window title
-peekaboo see --app "Google Chrome" --window-title "Login" --json --path /tmp/chrome-login.png
+wink see --app "Google Chrome" --window-title "Login" --json --path /tmp/chrome-login.png
 
 # Crop one exact window without activating it
-peekaboo see --window-id 12345 --roi 100,80,500,300 --json --path /tmp/window-roi.png
+wink see --window-id 12345 --roi 100,80,500,300 --json --path /tmp/window-roi.png
 
 # Add host-local Vision text when an app exposes a sparse or incomplete AX tree
-peekaboo see --app Calendar --window-id 12345 --ocr --json --path /tmp/calendar.png
+wink see --app Calendar --window-id 12345 --ocr --json --path /tmp/calendar.png
 
 # Require a new AX traversal without capturing pixels
-peekaboo see --app TextEdit --tree --no-screenshot --fresh --json
+wink see --app TextEdit --tree --no-screenshot --fresh --json
 ```
 
 ## When to use
@@ -113,7 +113,7 @@ peekaboo see --app TextEdit --tree --no-screenshot --fresh --json
 | `--mode screen|window|frontmost|multi|area` | Override the target picker. `multi` captures every screen; `area` uses `--region`. |
 | `--region x,y,width,height` | Capture a rectangular region (`area` mode is inferred). |
 | `--format png|jpg` / `--retina` | Select the image encoding and native display scale. |
-| `--capture-engine auto|modern|sckit|classic|cg` | Select the engine for this request on the chosen Bridge host. Explicit remote modern/classic selection requires `desktopObservationCaptureEngine`; every transported engine also requires the current `screenCaptureKitProcessOwnership` policy. Live pre-lease hosts/processes are refused during upgrades instead of creating an unrecorded second owner. `--no-remote --capture-engine modern` requests caller-local process-lifetime SCK ownership and refuses immediately if another Peekaboo process owns it; retry remotely, stop that exact owner generation, or explicitly choose classic. An explicit `--bridge-socket` never reroutes and must identify that exact owner for modern capture. |
+| `--capture-engine auto|modern|sckit|classic|cg` | Select the engine for this request on the chosen Bridge host. Explicit remote modern/classic selection requires `desktopObservationCaptureEngine`; every transported engine also requires the current `screenCaptureKitProcessOwnership` policy. Live pre-lease hosts/processes are refused during upgrades instead of creating an unrecorded second owner. `--no-remote --capture-engine modern` requests caller-local process-lifetime SCK ownership and refuses immediately if another Wink process owns it; retry remotely, stop that exact owner generation, or explicitly choose classic. An explicit `--bridge-socket` never reroutes and must identify that exact owner for modern capture. |
 | `--no-elements` | Skip element detection for the cheapest pixel path. An exact `--window-id` capture still returns an explicit-reference-only `snapshot_id` with a coordinate receipt for background clicks; it never replaces an earlier element map in implicit latest lookup. Remote receipt publication requires Bridge protocol 1.26 and fails with host-upgrade guidance before capture on older hosts. Ordinary screen, area, frontmost, multi, and app/PID-only pixel captures stay backward-compatible and do not return a receipt. |
 | `--ocr` | Add Apple Vision text recognized on the selected runtime host to the AX element map. Requires screenshot-backed element detection and cannot be combined with `--no-elements`, `--no-screenshot`, `--path -`, `area`, or `multi`. |
 | `--fresh` | Require uncached Accessibility evidence for screenshot-backed or AX-only observations. Defaults to false; rejects pixel-only and menu-bar capture. |
@@ -126,9 +126,9 @@ peekaboo see --app TextEdit --tree --no-screenshot --fresh --json
 | `--timeout <duration>` | Increase overall timeout for large/complex windows (defaults to `20s`, or `60s` with `--analyze`; bare values are milliseconds). |
 | `--web-focus` | Opt into an `AXPress` retry on the target `AXWebArea` when a sparse Chromium/Tauri tree hides its content. This can change keyboard focus. |
 | `--no-web-focus` | Deprecated compatibility flag. Web focus is already disabled by default. |
-| `--depth <n>` | Override AX traversal depth (`PEEKABOO_AX_MAX_DEPTH` fallback, default 12). |
-| `--max-elements <n>` | Override maximum collected AX elements (`PEEKABOO_AX_MAX_ELEMENTS` fallback, default 1000). |
-| `--max-children <n>` | Override maximum AX children visited per node (`PEEKABOO_AX_MAX_CHILDREN` fallback, default 250). |
+| `--depth <n>` | Override AX traversal depth (`WINK_AX_MAX_DEPTH` fallback, default 12). |
+| `--max-elements <n>` | Override maximum collected AX elements (`WINK_AX_MAX_ELEMENTS` fallback, default 1000). |
+| `--max-children <n>` | Override maximum AX children visited per node (`WINK_AX_MAX_CHILDREN` fallback, default 250). |
 
 With an explicit `--bridge-socket`, omitted or `auto` capture can use classic on that same host when another process
 holds the ScreenCaptureKit lease. The selected host must pass readiness and authenticate its process generation,
@@ -148,22 +148,22 @@ relaunch that host, or pass `--no-remote` to explicitly run Vision OCR in the ca
 preferred-OCR path retains its legacy Bridge contract. Incomplete AX warnings remain in the successful result so OCR
 text never turns missing Accessibility evidence into a false completeness claim.
 
-For agent and automation runs, pass `--path` to a known temporary file when using `see` so capture artifacts land at one exact caller-owned path. Use `peekaboo see --tree --no-screenshot --json` when you need AX metadata without a screenshot artifact.
+For agent and automation runs, pass `--path` to a known temporary file when using `see` so capture artifacts land at one exact caller-owned path. Use `wink see --tree --no-screenshot --json` when you need AX metadata without a screenshot artifact.
 
 Passive background observations retry one resolve-and-capture transaction when the target's exact receipt changes during capture, then fail closed if it changes again. Foreground capture, explicit web-focus fallback, and menu-opening observations never retry because they can mutate visible desktop state.
 
 Classic (`cg`) window capture excludes attached windows and checks the returned raster against the selected
 WindowServer bounds at the capture scale, both before and after conversion to logical 1×. If macOS returns a parent
 or composited surface with different dimensions, the command fails before publishing an image or snapshot. A PNG
-does not provide a trustworthy global origin, so Peekaboo does not guess a crop or stretch that surface into the
+does not provide a trustworthy global origin, so Wink does not guess a crop or stretch that surface into the
 requested window. Missing, invalid, or non-pixel-representable bounds also fail closed. Native synthetic popup/sheet
-proof instructions are in [Exact-window capture testing](https://github.com/openclaw/Peekaboo/blob/main/docs/testing/exact-window-capture.md).
+proof instructions are in [Exact-window capture testing](https://github.com/Lxvi101/Wink/blob/main/docs/testing/exact-window-capture.md).
 
-Pixel-only `see --no-elements` captures without `--path` write a generated file beneath `PEEKABOO_DEFAULT_SAVE_PATH`, `defaults.savePath`, or the built-in `~/Desktop` default, in that order. Generated names retain a readable timestamp and include a unique token so concurrent callers do not share a path. This also applies with `--json`; `data.files[].path` reports the saved file. Ordinary element-producing `--json` observations without `--path` instead retain the raw image only in managed snapshot storage and return empty `screenshot_raw` and `screenshot_annotated` fields.
+Pixel-only `see --no-elements` captures without `--path` write a generated file beneath `WINK_DEFAULT_SAVE_PATH`, `defaults.savePath`, or the built-in `~/Desktop` default, in that order. Generated names retain a readable timestamp and include a unique token so concurrent callers do not share a path. This also applies with `--json`; `data.files[].path` reports the saved file. Ordinary element-producing `--json` observations without `--path` instead retain the raw image only in managed snapshot storage and return empty `screenshot_raw` and `screenshot_annotated` fields.
 
 ## Exact-window ROI capture
 
-`--roi` is a stateless output crop, not persistent window zoom. Peekaboo first resolves and generation-pins one exact WindowServer window, captures and inspects that full window, then emits only the requested rectangle. The request fails if the window moves, resizes, changes owner, is recycled, or the rectangle extends outside the captured window. Pixel output is limited to 8192 pixels per edge and 64 megapixels.
+`--roi` is a stateless output crop, not persistent window zoom. Wink first resolves and generation-pins one exact WindowServer window, captures and inspects that full window, then emits only the requested rectangle. The request fails if the window moves, resizes, changes owner, is recycled, or the rectangle extends outside the captured window. Pixel output is limited to 8192 pixels per edge and 64 megapixels.
 
 Remote ROI requires Bridge protocol 1.21 with enabled observation and atomic snapshot publication and is rejected before dispatch against an older or restricted host. Returned files and snapshots remain quarantined or unpublished until the client verifies both the exact-window/viewport receipt and every raster's real cropped pixel dimensions. The host commits the snapshot raster, element map, and optional annotation as one transaction. If a validated snapshot is saved but a caller-visible file cannot be installed afterward, the observation remains successful with a warning and omits the unavailable file paths; the independently managed snapshot stays usable. Ordinary full-window `see` remains compatible with older desktop-observation hosts.
 
@@ -186,9 +186,9 @@ Returned `ui_elements[].bounds` are clipped and translated into ROI-local logica
 
 ## Optional web focus fallback
 
-Modern browsers sometimes keep keyboard focus in the omnibox, which means embedded forms never expose their `AXTextField` nodes to accessibility clients. Peekaboo does not alter focus during ordinary observation. If a browser-native AX inspection is required and DOM-based browser automation is unavailable, pass `--web-focus` (or MCP `web_focus: true`) to enable this retry:
+Modern browsers sometimes keep keyboard focus in the omnibox, which means embedded forms never expose their `AXTextField` nodes to accessibility clients. Wink does not alter focus during ordinary observation. If a browser-native AX inspection is required and DOM-based browser automation is unavailable, pass `--web-focus` (or MCP `web_focus: true`) to enable this retry:
 
-1. `peekaboo see` performs a normal accessibility traversal.
+1. `wink see` performs a normal accessibility traversal.
 2. If **zero** text fields are detected and web focus was explicitly enabled, the command locates the dominant `AXWebArea` (or equivalent) inside the target window and performs `AXPress`.
 3. The traversal runs **one more time**. If the web view exposes its inputs after gaining focus, they now appear in the JSON output.
 
@@ -216,19 +216,19 @@ When `--json` is supplied, the CLI prints:
 Use `jq` or any JSON parser to find elements:
 
 ```bash
-peekaboo see --app "Safari" --json --path /tmp/safari-see.png \
+wink see --app "Safari" --json --path /tmp/safari-see.png \
   | jq '.data.ui_elements[] | select(.label | test("Sign in"; "i"))'
 
 # Toolbar buttons that only expose AXDescription:
-peekaboo see --app "Google Chrome" --json --path /tmp/chrome-see.png \
+wink see --app "Google Chrome" --json --path /tmp/chrome-see.png \
   | jq '.data.ui_elements[] | select((.description // "") | test("Wingman"; "i"))'
 
 # Inspect already-proven focus without opening the snapshot file:
-peekaboo see --window-id 12345 --tree --no-screenshot --json \
+wink see --window-id 12345 --tree --no-screenshot --json \
   | jq '.data.focused_element // null'
 
 # Inspect a freshly observed text selection (UTF-16 offsets, not character counts):
-peekaboo see --window-id 12345 --tree --no-screenshot --json \
+wink see --window-id 12345 --tree --no-screenshot --json \
   | jq '.data.ui_elements[] | select(.selected_text_range != null) | {id, selected_text_range}'
 ```
 
@@ -266,7 +266,7 @@ caller-visible image. Valid-raster `ACCESSIBILITY_INCOMPLETE` failures retain th
 - Applications can decline an inapplicable child attribute, such as Calculator's Help search-field children after opening a menu. That attribute is treated as absent while readable child lists are retained. A failed batch, unanswered request, or invalid element still marks the Accessibility read incomplete.
 - `ACCESSIBILITY_INCOMPLETE` means the exact target exists but an AX-only or combined screenshot+AX observation returned no usable Accessibility elements. This includes legacy Bridge responses that omit the incomplete-read marker: an empty exact-window map is not clean success. Combined failure preserves a valid raster at an explicitly requested `--path` but does not publish the unusable element snapshot. A read-only `--tree --no-screenshot` request can instead return nonempty `application_partial` semantics when the exact WindowServer window still belongs to the requested process but has no AX-window counterpart. That result is explicitly incomplete, has no reusable snapshot or mutation authority, and never claims its elements came from the requested window. Retry the same exact observation once for fresh evidence; if it persists, use `--no-elements` for explicit screenshot-only evidence or add OCR. This code never means the element is absent and never substitutes for `TIMEOUT`; useful nonempty partial evidence remains successful with its warning.
 - Missing text fields after an explicit `--web-focus` retry usually means the page is shielding its inputs from AX entirely. For Chrome targets, use the `browser` tool (`status` → `connect` → `snapshot`/`fill`/`click`) after enabling Chrome remote debugging; otherwise rely on image-based hit tests.
-- For repeatable local tests, run `pnpm run test:automation:local`; the runner builds the real external CLI, exports its exact `PEEKABOO_CLI_PATH`, launches one owned Playground instance with current v4 syntax, and cleans it up by process-generation receipt. Set `PEEKABOO_PLAYGROUND_APP=/absolute/path/Playground.app` when LaunchServices cannot resolve the signed fixture by name.
+- For repeatable local tests, run `pnpm run test:automation:local`; the runner builds the real external CLI, exports its exact `WINK_CLI_PATH`, launches one owned Playground instance with current v4 syntax, and cleans it up by process-generation receipt. Set `WINK_PLAYGROUND_APP=/absolute/path/Playground.app` when LaunchServices cannot resolve the signed fixture by name.
 - Rapid repeated `see` calls for the same window reuse a short-lived AX cache (~1.5s); wait a beat if you need a fully fresh traversal.
 
 ## Smart label placement (`--annotate`)
@@ -278,4 +278,4 @@ their verified content. Changed or oversized artifacts fail closed. Independentl
 - Edge-aware scoring samples a padded rectangle (6 px halo, clamped to the image) so the chosen region stays clean once text is drawn; above/below placements get slight bonuses to reduce sideways clutter.
 - Preferred orientations nudge horizontally tight elements toward vertical labels when scores tie.
 - Tests: `Apps/CLI/Tests/CoreCLITests/SmartLabelPlacerTests.swift` (run with `swift test --package-path Apps/CLI --filter SmartLabelPlacerTests`).
-- Manual validation: `peekaboo see --app Playground --annotate --path /tmp/see.png --json` then inspect the annotated PNG; if labels cover dense UI, capture the repro and adjust padding/scoring before committing.
+- Manual validation: `wink see --app Playground --annotate --path /tmp/see.png --json` then inspect the annotated PNG; if labels cover dense UI, capture the repro and adjust padding/scoring before committing.

@@ -1,12 +1,12 @@
 import Commander
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -40,10 +40,10 @@ struct CaptureReadinessRuntimeTests {
     ) async throws {
         let socket = "/synthetic/selected-gui.sock"
         let response = Self.handshake(readiness: scenario == "missingEnvironment" ? nil : Self.blockedReadiness)
-        var environment = scenario == "blockedFlag" ? [:] : ["PEEKABOO_BRIDGE_SOCKET": socket]
+        var environment = scenario == "blockedFlag" ? [:] : ["WINK_BRIDGE_SOCKET": socket]
         var arguments: [String: [String]] = scenario == "blockedFlag" ? ["bridge-socket": [socket]] : [:]
         if engineFromEnvironment {
-            environment["PEEKABOO_CAPTURE_ENGINE"] = engine
+            environment["WINK_CAPTURE_ENGINE"] = engine
         } else if engine != "omitted" {
             arguments["captureEngine"] = [engine]
         }
@@ -154,10 +154,10 @@ struct CaptureReadinessRuntimeTests {
             for: Self.handshake(readiness: nil),
             options: options
         ))
-        let engineOnly = Self.handshake(capabilities: [PeekabooBridgeHostCapability.desktopObservationCaptureEngine])
+        let engineOnly = Self.handshake(capabilities: [WinkBridgeHostCapability.desktopObservationCaptureEngine])
         #expect(!BridgeCapabilityPolicy.supportsRemoteRequirements(for: engineOnly, options: options))
         let ownershipOnly = Self
-            .handshake(capabilities: [PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement])
+            .handshake(capabilities: [WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement])
         #expect(!BridgeCapabilityPolicy.supportsRemoteRequirements(for: ownershipOnly, options: options))
         let disabled = Self.handshake(enabledOperations: [.captureScreen])
         #expect(!BridgeCapabilityPolicy.supportsRemoteRequirements(for: disabled, options: options))
@@ -188,8 +188,8 @@ struct CaptureReadinessRuntimeTests {
             ))
         }
         let oldOwner = Self.handshake(readiness: nil, capabilities: [
-            PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership,
-            PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
+            WinkBridgeHostCapability.screenCaptureKitProcessOwnership,
+            WinkBridgeHostCapability.desktopObservationCaptureEngine,
         ])
         #expect(BridgeCapabilityPolicy.supportsRemoteRequirements(for: oldOwner, options: options))
     }
@@ -199,8 +199,8 @@ struct CaptureReadinessRuntimeTests {
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: .init(positional: [], options: [:], flags: ["tree", "noScreenshot"]),
             commandType: SeeCommand.self,
-            environment: ["PEEKABOO_CAPTURE_ENGINE": "modern"]
-        ).applyingEnvironmentOverrides(environment: ["PEEKABOO_CAPTURE_ENGINE": "modern"])
+            environment: ["WINK_CAPTURE_ENGINE": "modern"]
+        ).applyingEnvironmentOverrides(environment: ["WINK_CAPTURE_ENGINE": "modern"])
         #expect(options.captureEnginePreference == nil)
         #expect(!options.requiresScreenCaptureKitOwnerCapability)
         #expect(BridgeCapabilityPolicy.supportsRemoteRequirements(for: Self.handshake(), options: options))
@@ -224,14 +224,14 @@ struct CaptureReadinessRuntimeTests {
     private static func handshake(
         readiness: ScreenCaptureKitReadiness? = Self.blockedReadiness,
         capabilities: [String] = [
-            PeekabooBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
-            PeekabooBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
-            PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
+            WinkBridgeHostCapability.screenCaptureKitOwnershipEnforcement,
+            WinkBridgeHostCapability.classicCaptureWithoutScreenCaptureKit,
+            WinkBridgeHostCapability.desktopObservationCaptureEngine,
         ],
-        enabledOperations: [PeekabooBridgeOperation]? = nil
-    ) -> PeekabooBridgeHandshakeResponse {
+        enabledOperations: [WinkBridgeOperation]? = nil
+    ) -> WinkBridgeHandshakeResponse {
         .init(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .gui,
             build: "current-fixture",
             supportedOperations: [.captureScreen, .desktopObservation, .inspectAccessibilityTree, .ownsSnapshot],
@@ -246,8 +246,8 @@ struct CaptureReadinessRuntimeTests {
                 codeSignatureHash: "fixture-hash"
             ),
             hostCapabilities: capabilities + [
-                PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
-                PeekabooBridgeHostCapability.attestedOperationReceipts
+                WinkBridgeHostCapability.producerBoundSnapshotReferences,
+                WinkBridgeHostCapability.attestedOperationReceipts
             ],
             screenCaptureKitReadiness: readiness
         )

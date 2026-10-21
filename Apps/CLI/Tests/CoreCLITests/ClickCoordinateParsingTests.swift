@@ -1,6 +1,6 @@
 import CoreGraphics
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct ClickCoordinateParsingTests {
     @Test

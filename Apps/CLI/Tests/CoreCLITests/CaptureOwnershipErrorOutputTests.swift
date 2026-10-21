@@ -1,9 +1,9 @@
 import Commander
 import Foundation
-import PeekabooBridge
-import PeekabooFoundation
+import WinkBridge
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized, .tags(.safe))
 @MainActor
@@ -99,10 +99,10 @@ struct CaptureOwnershipErrorOutputTests {
 
     @Test
     func `Bridge error envelope retains independent diagnostic`() async throws {
-        let error = PeekabooBridgeErrorEnvelope(
+        let error = WinkBridgeErrorEnvelope(
             code: .internalError,
             message: Self.diagnostic.userMessage,
-            context: PeekabooBridgeErrorEnvelope.standardizedErrorContextPrefix +
+            context: WinkBridgeErrorEnvelope.standardizedErrorContextPrefix +
                 StandardErrorCode.captureFailed.rawValue,
             screenCaptureKitOwnershipDiagnostic: Self.diagnostic
         )

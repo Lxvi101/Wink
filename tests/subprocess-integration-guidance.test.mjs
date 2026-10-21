@@ -9,13 +9,13 @@ const guide = readFileSync(new URL('../docs/integrations/subprocess.md', import.
 const snippets = [...guide.matchAll(/```javascript\n([\s\S]*?)\n```/g)].map((match) => match[1]);
 assert.equal(snippets.length, 2, 'exercise every JavaScript example in the guide');
 const loadSnippet = (source) => import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
-const { createPeekabooRunner } = await loadSnippet(snippets[0]);
+const { createWinkRunner } = await loadSnippet(snippets[0]);
 const { replaceField } = await loadSnippet(snippets[1]);
 
 function fixture(t, scenario = 'normal') {
-  const directory = mkdtempSync(join(tmpdir(), 'peekaboo-subprocess-guide-'));
+  const directory = mkdtempSync(join(tmpdir(), 'wink-subprocess-guide-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const executable = join(directory, 'inert peekaboo.mjs');
+  const executable = join(directory, 'inert wink.mjs');
   const log = join(directory, 'calls.jsonl');
   writeFileSync(executable, `#!${process.execPath}
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
@@ -71,7 +71,7 @@ test('subprocess runner preserves literal argv, Unicode, host paths, and command
   const marker = join(stub.directory, 'must-not-exist');
   const text = `--foreground 雪 🦞 "quoted" 'single' $HOME $(touch ${marker}); | &`;
   const socket = join(stub.directory, 'host with spaces.sock');
-  const run = createPeekabooRunner(stub.executable, { bridgeSocket: socket });
+  const run = createWinkRunner(stub.executable, { bridgeSocket: socket });
   const response = await run(['type'], ['--snapshot', 'ps1_' + 'a'.repeat(32), '--', text]);
   assert.deepEqual(response.data.args, [
     'type', '--json', '--bridge-socket', socket, '--snapshot', 'ps1_' + 'a'.repeat(32), '--', text,
@@ -81,13 +81,13 @@ test('subprocess runner preserves literal argv, Unicode, host paths, and command
 
   const inventory = await run(['window', 'list'], ['--app', 'My App']);
   assert.deepEqual(inventory.data.args, ['window', 'list', '--json', '--bridge-socket', socket, '--app', 'My App']);
-  assert.throws(() => createPeekabooRunner('peekaboo'), /absolute/);
+  assert.throws(() => createWinkRunner('wink'), /absolute/);
 });
 
 for (const command of ['failure', 'exit-zero-failure']) {
   test(`subprocess runner retains structured stdout failure for ${command} without replay`, async (t) => {
     const stub = fixture(t);
-    await assert.rejects(createPeekabooRunner(stub.executable)([command]), (error) => {
+    await assert.rejects(createWinkRunner(stub.executable)([command]), (error) => {
       assert.equal(error.response.success, false);
       assert.equal(error.response.error.code, 'AGENT_ERROR');
       assert.equal(error.response.error.mutation_dispatched, true);
@@ -103,7 +103,7 @@ for (const command of ['failure', 'exit-zero-failure']) {
 
 test('subprocess runner rejects nonzero success envelopes and malformed output', async (t) => {
   const stub = fixture(t);
-  const run = createPeekabooRunner(stub.executable);
+  const run = createWinkRunner(stub.executable);
   await assert.rejects(run(['nonzero-success']), (error) => {
     assert.equal(error.response.success, true);
     assert.equal(error.process.exitCode, 7);
@@ -126,17 +126,17 @@ test('subprocess runner refuses bounded-output, timeout, and launch failures wit
   diagnosticsChannel.subscribe('child_process', onProcess);
   t.after(() => diagnosticsChannel.unsubscribe('child_process', onProcess));
 
-  await assert.rejects(createPeekabooRunner(stub.executable, { maxBuffer: 512 })(['overflow']), (error) => {
+  await assert.rejects(createWinkRunner(stub.executable, { maxBuffer: 512 })(['overflow']), (error) => {
     assert.equal(error.process.code, 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER');
     assert.equal(error.response, undefined);
     return true;
   });
-  await assert.rejects(createPeekabooRunner(stub.executable, { timeoutMs: 1000 })(['wait']), (error) => {
+  await assert.rejects(createWinkRunner(stub.executable, { timeoutMs: 1000 })(['wait']), (error) => {
     assert.equal(error.process.killed, true);
     assert.equal(error.process.signal, 'SIGTERM');
     return true;
   });
-  await assert.rejects(createPeekabooRunner(missing)(['see']), (error) => {
+  await assert.rejects(createWinkRunner(missing)(['see']), (error) => {
     assert.equal(error.process.code, 'ENOENT');
     assert.equal(error.response, undefined);
     return true;
@@ -156,7 +156,7 @@ const fieldTask = { app: 'Synthetic App', windowId: 42, fieldIdentifier: 'report
 
 test('field example validates required text and identifier before invoking a command', async (t) => {
   const stub = fixture(t);
-  const run = createPeekabooRunner(stub.executable);
+  const run = createWinkRunner(stub.executable);
   for (const invalid of [{ fieldIdentifier: '' }, { fieldIdentifier: undefined }, { text: undefined }]) {
     await assert.rejects(replaceField(run, { ...fieldTask, ...invalid }), /identifier and replacement text/);
   }
@@ -165,7 +165,7 @@ test('field example validates required text and identifier before invoking a com
 
 test('field example uses fresh producer references and literal positional typing', async (t) => {
   const stub = fixture(t);
-  const final = await replaceField(createPeekabooRunner(stub.executable), fieldTask);
+  const final = await replaceField(createWinkRunner(stub.executable), fieldTask);
   const calls = stub.calls();
   assert.deepEqual(calls.map((call) => call[0]), ['see', 'click', 'see', 'type', 'see']);
   const snapshot = (call) => call[call.indexOf('--snapshot') + 1];
@@ -186,7 +186,7 @@ for (const [scenario, expected] of [
 ]) {
   test(`field example stops at ${scenario} without another mutation`, async (t) => {
     const stub = fixture(t, scenario);
-    await assert.rejects(replaceField(createPeekabooRunner(stub.executable), fieldTask));
+    await assert.rejects(replaceField(createWinkRunner(stub.executable), fieldTask));
     assert.deepEqual(stub.calls().map((call) => call[0]), expected);
   });
 }

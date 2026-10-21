@@ -1,19 +1,19 @@
 ---
-summary: 'Use PeekabooError and StandardErrorCode consistently'
+summary: 'Use WinkError and StandardErrorCode consistently'
 read_when:
-  - 'adding or mapping errors in Peekaboo services'
+  - 'adding or mapping errors in Wink services'
   - 'debugging CLI text or JSON error output'
 ---
 
-# Peekaboo Error Handling Guide
+# Wink Error Handling Guide
 
-This guide describes the shared error primitives in `PeekabooFoundation` and how the CLI maps them to user-facing output.
+This guide describes the shared error primitives in `WinkFoundation` and how the CLI maps them to user-facing output.
 
 ## Overview
 
 The error handling system has three main pieces:
 
-1. **`PeekabooError`** — the shared `LocalizedError` used by services.
+1. **`WinkError`** — the shared `LocalizedError` used by services.
 2. **`StandardErrorCode`** — stable codes exposed by `StandardizedError`.
 3. **CLI mapping** — `ErrorHandlingCommand` maps service errors to the CLI's JSON `ErrorCode` values.
 
@@ -41,36 +41,36 @@ case timeout = "TIMEOUT"
 case invalidInput = "INVALID_INPUT"
 ```
 
-`PeekabooError.code` returns one of these values. It also supplies `userMessage`, string-valued `context`, and a recovery suggestion for the cases where the repository defines one.
+`WinkError.code` returns one of these values. It also supplies `userMessage`, string-valued `context`, and a recovery suggestion for the cases where the repository defines one.
 
 ### Error Categories
 
-`PeekabooError.category` groups errors into `permissions`, `automation`, `session`, `io`, `validation`, `ai`, `configuration`, `network`, or `unknown`.
+`WinkError.category` groups errors into `permissions`, `automation`, `session`, `io`, `validation`, `ai`, `configuration`, `network`, or `unknown`.
 
 ## Using the Error System
 
 ### Creating Errors
 
-Use a concrete `PeekabooError` case or one of its convenience factories:
+Use a concrete `WinkError` case or one of its convenience factories:
 
 ```swift
-throw PeekabooError.permissionDeniedScreenRecording
-throw PeekabooError.appNotFound("Safari")
-throw PeekabooError.windowNotFound(criteria: "Finder window 2")
-throw PeekabooError.elementNotFound("Submit button")
-throw PeekabooError.captureFailed("Display disconnected")
-throw PeekabooError.timeout(operation: "screenshot", duration: 30)
-throw PeekabooError.invalidInput(field: "coordinates", reason: "Outside screen bounds")
-throw PeekabooError.ambiguousAppIdentifier(
+throw WinkError.permissionDeniedScreenRecording
+throw WinkError.appNotFound("Safari")
+throw WinkError.windowNotFound(criteria: "Finder window 2")
+throw WinkError.elementNotFound("Submit button")
+throw WinkError.captureFailed("Display disconnected")
+throw WinkError.timeout(operation: "screenshot", duration: 30)
+throw WinkError.invalidInput(field: "coordinates", reason: "Outside screen bounds")
+throw WinkError.ambiguousAppIdentifier(
     "Safari",
     matches: ["Safari", "Safari Technology Preview"])
 ```
 
-`OperationError` is a typealias for `PeekabooError`; there are no separate `PermissionError`, `NotFoundError`, or `ValidationError` families in `PeekabooFoundation`.
+`OperationError` is a typealias for `WinkError`; there are no separate `PermissionError`, `NotFoundError`, or `ValidationError` families in `WinkFoundation`.
 
 ### Standardizing Other Errors
 
-`ErrorStandardizer.standardize(_:)` preserves errors that already conform to `StandardizedError`, maps cooperative `CancellationError` and `NSURLErrorDomain` errors with code `NSURLErrorCancelled` to `.cancelled` (`CANCELLED`), converts missing-file Cocoa errors to `PeekabooError.fileIOError`, and wraps other errors as `PeekabooError.operationError`.
+`ErrorStandardizer.standardize(_:)` preserves errors that already conform to `StandardizedError`, maps cooperative `CancellationError` and `NSURLErrorDomain` errors with code `NSURLErrorCancelled` to `.cancelled` (`CANCELLED`), converts missing-file Cocoa errors to `WinkError.fileIOError`, and wraps other errors as `WinkError.operationError`.
 
 ```swift
 let standardized = ErrorStandardizer.standardize(error)
@@ -80,10 +80,10 @@ print(standardized.userMessage)
 
 ## Recovery Suggestions
 
-`StandardizedError.recoverySuggestion` is currently defined for Screen Recording, Accessibility, event-synthesizing permission, missing apps/windows, timeouts, and ambiguous app identifiers. `PeekabooError.suggestedAction` additionally covers a small set of session, AI, and service cases.
+`StandardizedError.recoverySuggestion` is currently defined for Screen Recording, Accessibility, event-synthesizing permission, missing apps/windows, timeouts, and ambiguous app identifiers. `WinkError.suggestedAction` additionally covers a small set of session, AI, and service cases.
 
 ```swift
-let error = PeekabooError.permissionDeniedScreenRecording
+let error = WinkError.permissionDeniedScreenRecording
 if let suggestion = error.recoverySuggestion {
     print("Suggestion: \(suggestion)")
 }
@@ -141,14 +141,14 @@ screenshot-only success, or successful nonempty truncated evidence.
 
 ### 1. Use the Shared Cases
 
-Prefer a specific `PeekabooError` over a generic `NSError` when a shared case fits.
+Prefer a specific `WinkError` over a generic `NSError` when a shared case fits.
 
 ### 2. Preserve Context
 
 Use associated values for the resource, identifier, or reason that helps the caller recover:
 
 ```swift
-throw PeekabooError.captureFailed("No shareable window matched \(appName)")
+throw WinkError.captureFailed("No shareable window matched \(appName)")
 ```
 
 ### 3. Map at the Output Boundary
@@ -160,7 +160,7 @@ Services should throw domain errors. CLI commands map those errors to text or JS
 Test the case, standardized code, localized message, context, and CLI mapping that matter for the behavior:
 
 ```swift
-let error = PeekabooError.appNotFound("TextEdit")
+let error = WinkError.appNotFound("TextEdit")
 #expect(error.code == .applicationNotFound)
 #expect(error.userMessage == "Application 'TextEdit' not found")
 #expect(error.context["app"] == "TextEdit")

@@ -1,0 +1,621 @@
+//
+//  CommandRuntime.swift
+//  WinkCLI
+//
+
+import Darwin
+import Foundation
+import WinkAutomation
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
+import WinkFoundation
+import WinkProtocols
+
+/// Shared options that control logging and output behavior.
+struct CommandRuntimeOptions {
+    var verbose = false
+    var jsonOutput = false
+    var logLevel: LogLevel?
+    var captureEnginePreference: String?
+    /// The selected remote route may safely support classic observations but not ScreenCaptureKit.
+    var remoteCapturePolicy: RemoteCapturePolicy = .unrestricted
+    /// This command carries the capture-engine choice in its remote request instead of
+    /// requiring the caller process to own capture/TCC.
+    var transportsCaptureEnginePreference = false
+    /// Fixed capture requests support inline engine selection on an explicitly selected remote host.
+    var usesInlineCaptureEngineTransport = false
+    var requiresDesktopObservationInlinePixels: Bool {
+        self.usesInlineCaptureEngineTransport && self.requiresCaptureEnginePreferenceHost
+    }
+
+    /// AX-only command forms do not run a capture backend; ambient engine configuration must
+    /// not alter their runtime host.
+    var ignoresCaptureEnginePreference = false
+    /// A transported engine must run on a compatible host or fail; local fallback would silently
+    /// change capture/TCC ownership. Explicit `--no-remote` remains the local opt-in.
+    var requiresCaptureEnginePreferenceHost = false
+    /// Non-auto engine values need an additive host capability so an older host cannot silently
+    /// ignore the transported preference and run its default backend.
+    var requiresCaptureEnginePreferenceCapability = false
+    /// Every transported capture engine requires the current ownership-policy capability.
+    /// Auto/modern use the owner lease; classic attests that permission probing stays out of SCK.
+    var requiresScreenCaptureKitOwnerCapability = false
+    var requiresDesktopObservation = false
+    /// `accessibilityAndOCR` is additive inside protocol 1.22. Require a raw host capability so
+    /// an older 1.22 host cannot try to decode the enum case before the client can fail safely.
+    var requiresDesktopObservationOCR = false
+    var requiresDesktopObservationFreshAccessibilityTree = false
+    var inputStrategy: UIInputStrategy?
+    var preferRemote = true
+    var remoteIsolationRequested = false
+    var autoStartDaemon = true
+    /// Bridge status must run locally after probing an unavailable explicit socket so it can report the exact
+    /// handshake failure. No operation-bearing command may use this diagnostic-only escape hatch.
+    var permitsExplicitSocketDiagnosticFallback = false
+    var bridgeSocketPath: String?
+    var requiredElementActionOperations: Set<WinkBridgeOperation> = []
+    var requiresInspectAccessibilityTree = false
+    var requiresBrowserMCP = false
+    var requiresApplicationLaunchOptions = false
+    var requiresSafeBackgroundApplicationLaunchNoOp = false
+    var requiresNewApplicationInstanceLaunch = false
+    var requiresApplicationWindowReadiness = false
+    var requiresApplicationRelaunch = false
+    var requiresSurvivingApplicationHost = false
+    /// Protocol 1.16 carries a process-generation receipt with application quit requests.
+    var requiresProcessGenerationPinnedApplicationQuit = false
+    var requiresProcessGenerationPinnedApplicationActivation = false
+    var requiresProcessGenerationPinnedApplicationHide = false
+    /// Protocol 1.19 carries a process-generation receipt with targeted hotkey requests.
+    var requiresProcessGenerationPinnedHotkeys = false
+    /// Protocol 1.22 carries a process-generation receipt with targeted typing requests.
+    var requiresProcessGenerationPinnedTypeActions = false
+    /// Protocol 1.22 carries a process-generation receipt with targeted click requests.
+    var requiresProcessGenerationPinnedClicks = false
+    /// Current background clicks must carry an explicit AX-value allow/deny policy to the selected host.
+    var requiresTargetedClickAccessibilityValueDelivery = false
+    var requiresHostApplicationInventory = false
+    /// A concrete snapshot reference is host-local state. Runtime selection must authenticate
+    /// the live host that owns it instead of replaying the ID against the ordinary preferred host.
+    var explicitSnapshotID: String?
+    /// Snapshot-producing commands require canonical producer ownership before selecting a host.
+    var requiresProducerBoundSnapshotReferences = false
+    var requiresImplicitSnapshotInvalidation = false
+    /// Protocol 1.26 publishes a receipt that is addressable by ID without replacing implicit latest elements.
+    var requiresExplicitSnapshotPublication = false
+    var requiresCallerDesktopMutationBarrier = false
+    var usesPerToolSnapshotInvalidation = false
+    /// Defaults conservative. A fixed command request or explicit immutable MCP env allow-list
+    /// can prove that the coordinated tool path cannot reach ScreenCaptureKit.
+    var dynamicToolScreenCaptureReachable = true
+    /// MCP and Agent keep one dynamic tool runtime alive across multiple calls. An explicit
+    /// Bridge route therefore owns capture preflight for that runtime's authenticated generation.
+    var usesPersistentDynamicToolRuntime: Bool {
+        self.requiresAgentService && self.usesPerToolSnapshotInvalidation
+    }
+
+    var usesPersistentDynamicCaptureRuntime: Bool {
+        self.usesPersistentDynamicToolRuntime && self.dynamicToolScreenCaptureReachable
+    }
+
+    var requiresExactWindowTargetedClicks = false
+    /// Protocol 1.30 is required before encoding middle/triple click cases.
+    var requiresStatelessClickVariants = false
+    /// Background middle/triple clicks additionally require exact-window targeted-click support.
+    var requiresBackgroundStatelessClickVariants = false
+    /// Modifier-click must execute in the host that owns and leases its exact snapshot.
+    var requiresForegroundModifierClickSnapshotLease = false
+    /// Pixel-focus typing is host-atomic and must not fall back to ordinary targeted typing.
+    var requiresExactWindowPixelFocusTyping = false
+    var requiresTargetedScroll = false
+    var requiresBackgroundCoordinateScroll = false
+    var requiresPostEventPermission = false
+    var requiresAccessibilityPermission = false
+    /// Route-derived requirements reject only permissions the host explicitly reports missing.
+    var routeRequiresPostEventPermission = false
+    var routeRequiresAccessibilityPermission = false
+    var requiresLongPressClick = false
+    var requiresBackgroundWindowClose = false
+    var requiresBackgroundDialogClick = false
+    var requiresTargetedDialogList = false
+    var requiresPreparedDialogClick = false
+    var requiresPreparedDialogDismiss = false
+    /// Protocol 1.12 added the silent capture visualizer mode used by background observation.
+    /// Older hosts cannot decode that enum value, so commands that can send it must fail preflight.
+    var requiresSilentCapture = false
+    /// Protocol 1.21 carries exact-window ROI receipts and atomic snapshot publication.
+    /// Older hosts could ignore the crop or acknowledge only part of the snapshot.
+    var requiresExactWindowROIObservation = false
+    var requiresTargetedFocusedElement = false
+    var requiresExactWindowTargetedKeyboard = false
+    /// Protocol 1.18 pins window mutations to the PID, process generation, CGWindowID, and
+    /// capture-time bounds. Commands that mutate a window must reject older hosts before dispatch.
+    var requiresPinnedWindowMutations = false
+    /// Restore was added as a receipt-pinned Bridge operation in protocol 1.18.
+    var requiresWindowRestore = false
+    /// Set for commands that acquire screen pixels (capture/detection/desktop observation) so a
+    /// remote host that explicitly lacks Screen Recording is rejected during selection. Not set for
+    /// interaction commands (click/scroll/type) that operate on cached snapshots.
+    var requiresScreenCapturePermission = false
+    /// Set for interactive permission-request commands, which must be able to reach a host that
+    /// still lacks the permission being requested.
+    var requestsHostPermissionGrant = false
+    /// Only Agent execution and the long-lived MCP server need provider discovery during
+    /// process bootstrap. Other commands construct the native service graph without eagerly
+    /// reloading provider credentials or creating an Agent that they cannot call.
+    var requiresAgentService = false
+    /// Canonical signed receipt bytes loaded before runtime construction for one explicit browser handoff.
+    var browserHandoffReceiptBundleData: Data?
+    /// Both handoff production and consumption require one exact remote Bridge with no local fallback.
+    var requiresBrowserHandoffBridge = false
+
+    func makeConfiguration() -> CommandRuntime.Configuration {
+        CommandRuntime.Configuration(
+            verbose: self.verbose,
+            jsonOutput: self.jsonOutput,
+            logLevel: self.logLevel,
+            captureEnginePreference: self.captureEnginePreference,
+            inputStrategy: self.inputStrategy
+        )
+    }
+
+    func applyingEnvironmentOverrides(environment: [String: String]) -> CommandRuntimeOptions {
+        var options = self
+        if !options.ignoresCaptureEnginePreference,
+           let captureEngine = options.captureEnginePreference ?? Self
+               .captureEnginePreference(environment: environment) {
+            options.selectCaptureEnginePreference(captureEngine, environment: environment)
+        }
+        if options.requiresBrowserHandoffBridge {
+            options.preferRemote = true
+            options.remoteIsolationRequested = false
+            options.autoStartDaemon = false
+        }
+        return options
+    }
+
+    mutating func selectCaptureEnginePreference(_ value: String, environment: [String: String]) {
+        self.captureEnginePreference = value
+        let transportsPreference = self.shouldTransportCaptureEnginePreference(environment: environment)
+        if self.usesInlineCaptureEngineTransport {
+            self.transportsCaptureEnginePreference = transportsPreference
+            self.requiresDesktopObservation = transportsPreference
+            self.preferRemote = transportsPreference
+        }
+        self.requiresCaptureEnginePreferenceHost = transportsPreference
+        let preference = ObservationCommandSupport.captureEnginePreference(cliValue: value, configuredValue: nil)
+        self.requiresCaptureEnginePreferenceCapability = transportsPreference && preference != .auto
+        self.requiresScreenCaptureKitOwnerCapability = transportsPreference
+        if !transportsPreference, !self.requiresApplicationLaunchOptions, !self.requiresHostApplicationInventory {
+            self.preferRemote = false
+        }
+    }
+
+    private func shouldTransportCaptureEnginePreference(environment: [String: String]) -> Bool {
+        guard self.usesInlineCaptureEngineTransport else { return self.transportsCaptureEnginePreference }
+        return !self.remoteIsolationRequested && environment["WINK_NO_REMOTE"] == nil &&
+            BridgeSocketResolver.hasNonblankExplicitBridgeSocket(options: self, environment: environment)
+    }
+
+    static func captureEnginePreference(environment: [String: String]) -> String? {
+        guard let value = environment["WINK_CAPTURE_ENGINE"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            !value.isEmpty
+        else {
+            return nil
+        }
+        return value
+    }
+}
+
+/// Runtime context passed to runtime-aware commands.
+struct CommandRuntime {
+    static let defaultDaemonIdleTimeoutSeconds: TimeInterval = 300
+
+    @TaskLocal
+    private static var serviceOverride: (any WinkServiceProviding)?
+
+    struct Configuration {
+        var verbose: Bool
+        var jsonOutput: Bool
+        var logLevel: LogLevel?
+        var captureEnginePreference: String?
+        var inputStrategy: UIInputStrategy?
+    }
+
+    let configuration: Configuration
+    let hostDescription: String
+    let selectedRemoteSocketPath: String?
+    let selectedRemoteHostProcessIdentifier: pid_t?
+    let selectedRemoteHostIdentity: WinkBridgeHostIdentity?
+    let selectedRemoteAuthenticatedHostIdentity: WinkBridgeAuthenticatedHostIdentity?
+    let selectedRemoteAuthenticatedHostIdentityProvider:
+        (@Sendable () async -> WinkBridgeAuthenticatedHostIdentity?)?
+    let captureEngineSafetyOverride: CaptureEnginePreference?
+    let toolCapturePreflightRefusal: MCPToolCapturePreflightRefusal?
+    let snapshotInvalidationRemoteSocketPaths: [String]
+    let applicationRelaunchAllowed: Bool
+    let requiredHostFailure: String?
+    let browserHandoffReceiptBundleData: Data?
+    let interactionMutationTracker: InteractionMutationTracker
+    @MainActor let services: any WinkServiceProviding
+    @MainActor let logger: Logger
+
+    func requireCompatibleHost() throws {
+        if let requiredHostFailure {
+            throw WinkBridgeErrorEnvelope(
+                code: .operationNotSupported,
+                message: requiredHostFailure
+            )
+        }
+    }
+
+    @MainActor
+    func observationTimeoutMutationTracker(mayMutateDesktop: Bool) -> InteractionMutationTracker? {
+        // Read-only work neither owns nor extends a caller's desktop mutation lease.
+        guard mayMutateDesktop else { return nil }
+        if self.selectedRemoteSocketPath == nil || self.interactionMutationTracker.hasPendingDurableMutation {
+            return self.interactionMutationTracker
+        }
+        return nil
+    }
+
+    @MainActor
+    init(
+        configuration: Configuration,
+        services: any WinkServiceProviding,
+        hostDescription: String = "local (in-process)",
+        selectedRemoteSocketPath: String? = nil,
+        selectedRemoteHostProcessIdentifier: pid_t? = nil,
+        selectedRemoteHostIdentity: WinkBridgeHostIdentity? = nil,
+        selectedRemoteAuthenticatedHostIdentity: WinkBridgeAuthenticatedHostIdentity? = nil,
+        selectedRemoteAuthenticatedHostIdentityProvider:
+        (@Sendable () async -> WinkBridgeAuthenticatedHostIdentity?)? = nil,
+        captureEngineSafetyOverride: CaptureEnginePreference? = nil,
+        toolCapturePreflightRefusal: MCPToolCapturePreflightRefusal? = nil,
+        snapshotInvalidationRemoteSocketPaths: [String] = [],
+        applicationRelaunchAllowed: Bool = true,
+        requiredHostFailure: String? = nil,
+        browserHandoffReceiptBundleData: Data? = nil,
+        interactionMutationTracker: InteractionMutationTracker = InteractionMutationTracker()
+    ) {
+        // Keep Tachikoma credential/profile resolution aligned with Wink CLI storage.
+        WinkCore.ConfigurationManager.configureTachikomaProfileDirectory()
+
+        self.configuration = configuration
+        self.services = services
+        self.hostDescription = hostDescription
+        self.selectedRemoteSocketPath = selectedRemoteSocketPath
+        self.selectedRemoteHostProcessIdentifier = selectedRemoteHostProcessIdentifier
+        self.selectedRemoteHostIdentity = selectedRemoteHostIdentity
+        self.selectedRemoteAuthenticatedHostIdentity = selectedRemoteAuthenticatedHostIdentity
+        self.selectedRemoteAuthenticatedHostIdentityProvider = selectedRemoteAuthenticatedHostIdentityProvider
+        self.captureEngineSafetyOverride = captureEngineSafetyOverride
+        self.toolCapturePreflightRefusal = toolCapturePreflightRefusal
+        self.snapshotInvalidationRemoteSocketPaths = snapshotInvalidationRemoteSocketPaths
+        self.applicationRelaunchAllowed = applicationRelaunchAllowed
+        self.requiredHostFailure = requiredHostFailure
+        self.browserHandoffReceiptBundleData = browserHandoffReceiptBundleData
+        self.interactionMutationTracker = interactionMutationTracker
+        self.logger = Logger.shared
+
+        if let agent = services.agent as? WinkAgentService {
+            agent.configureCapturePreflightRefusal(toolCapturePreflightRefusal)
+        }
+        services.installAgentRuntimeDefaults()
+
+        self.logger.setJsonOutputMode(configuration.jsonOutput)
+        let explicitLevel = configuration.logLevel
+        var shouldEnableVerbose = configuration.verbose
+        if configuration.jsonOutput, explicitLevel == nil {
+            shouldEnableVerbose = true
+        }
+        if let explicitLevel, explicitLevel <= .verbose {
+            shouldEnableVerbose = true
+        }
+
+        self.logger.setVerboseMode(shouldEnableVerbose)
+
+        if let explicitLevel {
+            self.logger.setMinimumLogLevel(explicitLevel)
+        } else if shouldEnableVerbose {
+            self.logger.setMinimumLogLevel(.verbose)
+        } else {
+            self.logger.resetMinimumLogLevel()
+        }
+
+        let visualizerConsoleLevel: WinkProtocols.LogLevel? = if let explicitLevel {
+            explicitLevel.coreLogLevel
+        } else if shouldEnableVerbose {
+            .debug
+        } else {
+            nil
+        }
+
+        VisualizationClient.shared.setConsoleLogLevelOverride(visualizerConsoleLevel)
+        VisualizationClient.shared.setConsoleMirroringEnabled(configuration.verbose)
+
+        self.services.ensureVisualizerConnection()
+
+        self.logger.debug("Runtime host: \(hostDescription)")
+    }
+
+    @MainActor
+    init(options: CommandRuntimeOptions, services: any WinkServiceProviding) {
+        self.init(
+            configuration: options.makeConfiguration(),
+            services: services,
+            browserHandoffReceiptBundleData: options.browserHandoffReceiptBundleData
+        )
+    }
+}
+
+extension CommandRuntime {
+    @MainActor
+    static func makeDefault(options: CommandRuntimeOptions) -> CommandRuntime {
+        let effectiveOptions = options.applyingEnvironmentOverrides(environment: ProcessInfo.processInfo.environment)
+        let services = self.serviceOverride ?? self.makeLocalServices(options: effectiveOptions)
+        return CommandRuntime(
+            configuration: effectiveOptions.makeConfiguration(),
+            services: services,
+            browserHandoffReceiptBundleData: effectiveOptions.browserHandoffReceiptBundleData
+        )
+    }
+
+    @MainActor
+    static func makeDefault() -> CommandRuntime {
+        self.makeDefault(options: CommandRuntimeOptions())
+    }
+
+    @MainActor
+    static func makeDefaultAsync(options: CommandRuntimeOptions) async throws -> CommandRuntime {
+        let effectiveOptions = options.applyingEnvironmentOverrides(environment: ProcessInfo.processInfo.environment)
+        try ObservationCommandSupport.validateCaptureEngineValue(effectiveOptions.captureEnginePreference)
+        if let override = serviceOverride {
+            guard !effectiveOptions.requiresBrowserHandoffBridge else {
+                throw BrowserHandoffRuntimeRoutingError.exactBridgeRequired
+            }
+            return CommandRuntime(options: effectiveOptions, services: override)
+        }
+
+        let resolution = try await resolveServices(options: effectiveOptions)
+        if effectiveOptions.requiresBrowserHandoffBridge {
+            let requestedSocket = effectiveOptions.bridgeSocketPath.map { NSString(string: $0).standardizingPath }
+            let selectedSocket = resolution.selectedRemoteSocketPath.map { NSString(string: $0).standardizingPath }
+            guard requestedSocket != nil, selectedSocket == requestedSocket else {
+                throw BrowserHandoffRuntimeRoutingError.exactBridgeRequired
+            }
+        }
+        return CommandRuntime(
+            configuration: effectiveOptions.makeConfiguration(),
+            services: resolution.services,
+            hostDescription: resolution.hostDescription,
+            selectedRemoteSocketPath: resolution.selectedRemoteSocketPath,
+            selectedRemoteHostProcessIdentifier: resolution.selectedRemoteHostProcessIdentifier,
+            selectedRemoteHostIdentity: resolution.selectedRemoteHostIdentity,
+            selectedRemoteAuthenticatedHostIdentity: resolution.selectedRemoteAuthenticatedHostIdentity,
+            selectedRemoteAuthenticatedHostIdentityProvider:
+            resolution.selectedRemoteAuthenticatedHostIdentityProvider,
+            captureEngineSafetyOverride: resolution.captureEngineSafetyOverride,
+            toolCapturePreflightRefusal: resolution.toolCapturePreflightRefusal,
+            snapshotInvalidationRemoteSocketPaths: resolution.snapshotInvalidationRemoteSocketPaths,
+            applicationRelaunchAllowed: resolution.applicationRelaunchAllowed,
+            requiredHostFailure: resolution.requiredHostFailure,
+            browserHandoffReceiptBundleData: effectiveOptions.browserHandoffReceiptBundleData
+        )
+    }
+
+    @MainActor
+    static func makeDefaultAsync() async throws -> CommandRuntime {
+        try await self.makeDefaultAsync(options: CommandRuntimeOptions())
+    }
+
+    @MainActor
+    static func withInjectedServices<T>(
+        _ services: any WinkServiceProviding,
+        perform operation: () async throws -> T
+    ) async rethrows -> T {
+        try await self.$serviceOverride.withValue(services) {
+            try await operation()
+        }
+    }
+
+    @MainActor
+    private static func resolveServices(options: CommandRuntimeOptions) async throws -> RuntimeHostResolver.Resolution {
+        try await RuntimeHostResolver.resolveServices(options: options)
+    }
+
+    static func explicitBridgeSocket(
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) -> String? {
+        BridgeSocketResolver.explicitBridgeSocket(options: options, environment: environment)
+    }
+
+    static func shouldAutoStartDaemon(
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) -> Bool {
+        DaemonLaunchPolicy.shouldAutoStartDaemon(options: options, environment: environment)
+    }
+
+    static func daemonSocketPath(environment: [String: String]) -> String {
+        DaemonLaunchPolicy.daemonSocketPath(environment: environment)
+    }
+
+    static func daemonIdleTimeoutSeconds(environment: [String: String]) -> TimeInterval {
+        DaemonLaunchPolicy.daemonIdleTimeoutSeconds(environment: environment)
+    }
+
+    static func onDemandDaemonArguments(socketPath: String, idleTimeoutSeconds: TimeInterval) -> [String] {
+        DaemonLaunchPolicy.onDemandDaemonArguments(socketPath: socketPath, idleTimeoutSeconds: idleTimeoutSeconds)
+    }
+
+    @MainActor
+    private static func makeLocalServices(options: CommandRuntimeOptions) -> WinkServices {
+        RuntimeServiceFactory.makeLocalServices(options: options)
+    }
+
+    static func hasInputStrategyEnvironmentOverride(environment: [String: String]) -> Bool {
+        RuntimeInputPolicyResolver.hasEnvironmentOverride(environment: environment)
+    }
+
+    static func hasInputStrategyConfigOverride(input: WinkAutomation.Configuration.InputConfig?) -> Bool {
+        RuntimeInputPolicyResolver.hasConfigOverride(input: input)
+    }
+
+    static func supportsRemoteRequirements(
+        for handshake: WinkBridgeHandshakeResponse,
+        options: CommandRuntimeOptions
+    ) -> Bool {
+        BridgeCapabilityPolicy.supportsRemoteRequirements(for: handshake, options: options)
+    }
+
+    static func supportsTargetedHotkeys(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsTargetedHotkeys(for: handshake)
+    }
+
+    static func supportsTargetedTypeActions(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsTargetedTypeActions(for: handshake)
+    }
+
+    static func supportsTargetedClicks(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsTargetedClicks(for: handshake)
+    }
+
+    static func supportsStatelessClickVariants(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsStatelessClickVariants(for: handshake)
+    }
+
+    static func supportsApplicationLaunchOptions(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsApplicationLaunchOptions(for: handshake)
+    }
+
+    static func supportsApplicationRelaunch(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsApplicationRelaunch(for: handshake)
+    }
+
+    static func supportsImplicitSnapshotInvalidation(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsImplicitSnapshotInvalidation(for: handshake)
+    }
+
+    static func supportsSnapshotMutationLeases(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsSnapshotMutationLeases(for: handshake)
+    }
+
+    static func supportsElementActions(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsElementActions(for: handshake)
+    }
+
+    static func supportsElementAction(
+        _ operation: WinkBridgeOperation,
+        for handshake: WinkBridgeHandshakeResponse
+    ) -> Bool {
+        BridgeCapabilityPolicy.supportsElementAction(operation, for: handshake)
+    }
+
+    static func supportsDesktopObservation(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsDesktopObservation(for: handshake)
+    }
+
+    static func supportsDesktopObservationOCR(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsDesktopObservationOCR(for: handshake)
+    }
+
+    static func supportsDesktopObservationCaptureEngine(
+        for handshake: WinkBridgeHandshakeResponse
+    ) -> Bool {
+        BridgeCapabilityPolicy.supportsDesktopObservationCaptureEngine(for: handshake)
+    }
+
+    static func supportsExactWindowROIObservation(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsExactWindowROIObservation(for: handshake)
+    }
+
+    static func supportsInspectAccessibilityTree(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsInspectAccessibilityTree(for: handshake)
+    }
+
+    static func supportsBrowserMCP(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsBrowserMCP(for: handshake)
+    }
+
+    static func supportsPostEventPermissionRequest(for handshake: WinkBridgeHandshakeResponse) -> Bool {
+        BridgeCapabilityPolicy.supportsPostEventPermissionRequest(for: handshake)
+    }
+
+    static func targetedHotkeyAvailability(for handshake: WinkBridgeHandshakeResponse)
+    -> (isEnabled: Bool, unavailableReason: String?, missingPermissions: Set<WinkBridgePermissionKind>) {
+        BridgeCapabilityPolicy.targetedHotkeyAvailability(for: handshake)
+    }
+
+    static func targetedTypeAvailability(for handshake: WinkBridgeHandshakeResponse)
+    -> (isEnabled: Bool, unavailableReason: String?, missingPermissions: Set<WinkBridgePermissionKind>) {
+        BridgeCapabilityPolicy.targetedTypeAvailability(for: handshake)
+    }
+
+    static func targetedClickAvailability(for handshake: WinkBridgeHandshakeResponse)
+    -> (isEnabled: Bool, unavailableReason: String?, missingPermissions: Set<WinkBridgePermissionKind>) {
+        BridgeCapabilityPolicy.targetedClickAvailability(for: handshake)
+    }
+}
+
+private enum BrowserHandoffRuntimeRoutingError: LocalizedError {
+    case exactBridgeRequired
+
+    var errorDescription: String? {
+        "Browser handoff requires the exact explicit Bridge socket; local and alternate-host fallback are refused."
+    }
+}
+
+/// Commands that need access to verbose/json flags even before a runtime is injected
+/// (e.g., during unit tests) can conform to this protocol and store the parsed options.
+protocol RuntimeOptionsConfigurable {
+    var runtimeOptions: CommandRuntimeOptions { get set }
+    mutating func setRuntimeOptions(_ options: CommandRuntimeOptions)
+}
+
+extension RuntimeOptionsConfigurable {
+    mutating func setRuntimeOptions(_ options: CommandRuntimeOptions) {
+        runtimeOptions = options
+    }
+}
+
+@propertyWrapper
+struct RuntimeStorage<Value: ExpressibleByNilLiteral> {
+    private var storage: Value
+
+    init() {
+        self.storage = nil
+    }
+
+    var wrappedValue: Value {
+        get { self.storage }
+        set { self.storage = newValue }
+    }
+}
+
+extension RuntimeStorage: Codable where Value: ExpressibleByNilLiteral {
+    init(from _: any Decoder) throws {
+        self.storage = nil
+    }
+
+    func encode(to _: any Encoder) throws {}
+}
+
+extension RuntimeStorage: Sendable where Value: Sendable {}
+
+extension LogLevel {
+    fileprivate var coreLogLevel: WinkProtocols.LogLevel {
+        switch self {
+        case .trace: .trace
+        case .verbose: .debug
+        case .debug: .debug
+        case .info: .info
+        case .warning: .warning
+        case .error: .error
+        case .critical: .critical
+        }
+    }
+}

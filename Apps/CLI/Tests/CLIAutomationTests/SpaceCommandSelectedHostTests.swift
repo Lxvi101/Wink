@@ -1,12 +1,12 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooAutomation
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkAutomation
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -16,7 +16,7 @@ struct SpaceCommandSelectedHostTests {
         let window = Self.exactWindow()
         let windows = StubWindowService(windowsByApp: ["Fixture": [window]])
         let applications = StubApplicationService(applications: [Self.exactApplication()])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         )
@@ -65,7 +65,7 @@ struct SpaceCommandSelectedHostTests {
         )
         let windows = StubWindowService(windowsByApp: ["Fixture": [selectedWindow]])
         let applications = StubApplicationService(applications: [Self.exactApplication()])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         )
@@ -107,7 +107,7 @@ struct SpaceCommandSelectedHostTests {
         let applications = StubApplicationService(applications: [
             Self.exactApplication(processIdentifier: 778, processGeneration: 80),
         ])
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         )
@@ -141,7 +141,7 @@ struct SpaceCommandSelectedHostTests {
 
     @Test
     func `remote ownership errors distinguish reads from canonical mutation refusals`() throws {
-        let services = RemoteSelectedHostServices(base: TestServicesFactory.makePeekabooServices())
+        let services = RemoteSelectedHostServices(base: TestServicesFactory.makeWinkServices())
 
         let readError = #expect(throws: RemoteSpaceReadUnsupportedError.self) {
             try SpaceCommandHostOwnership.requireLocalRead(
@@ -192,7 +192,7 @@ struct SpaceCommandSelectedHostTests {
         let windowService = RecordingSpaceWindowService(windowsByApp: [
             "RemoteApp": [Self.remoteWindow],
         ])
-        let base = TestServicesFactory.makePeekabooServices(windows: windowService)
+        let base = TestServicesFactory.makeWinkServices(windows: windowService)
         let tracker = InteractionMutationTracker()
         let runtime = self.makeRuntime(
             services: RemoteSelectedHostServices(base: base),
@@ -232,7 +232,7 @@ struct SpaceCommandSelectedHostTests {
     @Test
     func `local selected host preserves Space mutation behavior`() async throws {
         let spaceService = RecordingSpaceCommandService(spaces: [Self.spaceInfo])
-        let services = TestServicesFactory.makePeekabooServices()
+        let services = TestServicesFactory.makeWinkServices()
         let tracker = InteractionMutationTracker()
         let runtime = self.makeRuntime(services: services, tracker: tracker)
         var command = try SwitchSubcommand.parse(["--to", "1", "--foreground"])
@@ -249,7 +249,7 @@ struct SpaceCommandSelectedHostTests {
     @Test
     func `Space switch refuses without foreground consent before inventory or dispatch`() async throws {
         let spaceService = RecordingSpaceCommandService(spaces: [Self.spaceInfo])
-        let services = TestServicesFactory.makePeekabooServices()
+        let services = TestServicesFactory.makeWinkServices()
 
         let result = try await InProcessCommandRunner.run(
             ["space", "switch", "--to", "1", "--json"],
@@ -273,7 +273,7 @@ struct SpaceCommandSelectedHostTests {
         let windowService = RecordingSpaceWindowService(windowsByApp: [
             "Fixture": [Self.exactWindow()],
         ])
-        let services = TestServicesFactory.makePeekabooServices(windows: windowService)
+        let services = TestServicesFactory.makeWinkServices(windows: windowService)
 
         let result = try await InProcessCommandRunner.run(
             ["space", "move-window", "--window-id", "99", "--to", "1", "--follow", "--json"],
@@ -294,7 +294,7 @@ struct SpaceCommandSelectedHostTests {
     }
 
     private func makeRuntime(
-        services: any PeekabooServiceProviding,
+        services: any WinkServiceProviding,
         tracker: InteractionMutationTracker
     ) -> CommandRuntime {
         CommandRuntime(
@@ -544,11 +544,11 @@ private final class RecordingSpaceWindowService: StubWindowService {
 }
 
 @MainActor
-private final class RemoteSelectedHostServices: PeekabooServiceProviding {
-    let executionHost: PeekabooServiceExecutionHost = .remote
-    private let base: PeekabooServices
+private final class RemoteSelectedHostServices: WinkServiceProviding {
+    let executionHost: WinkServiceExecutionHost = .remote
+    private let base: WinkServices
 
-    init(base: PeekabooServices) {
+    init(base: WinkServices) {
         self.base = base
     }
 
@@ -600,7 +600,7 @@ private final class RemoteSelectedHostServices: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooAutomation.ConfigurationManager {
+    var configuration: WinkAutomation.ConfigurationManager {
         self.base.configuration
     }
 

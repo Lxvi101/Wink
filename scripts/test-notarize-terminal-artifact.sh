@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/terminal-artifact-env.sh
 source "$ROOT_DIR/scripts/terminal-artifact-env.sh"
 for secret_name in "${TERMINAL_ARTIFACT_SECRET_NAMES[@]}"; do unset "$secret_name"; done
-TEST_DIR="$(mktemp -d /tmp/peekaboo-terminal-notary-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-terminal-notary-test.XXXXXX)"
 server_pid=""
 cleanup() {
   if [[ -n "$server_pid" ]]; then
@@ -52,17 +52,17 @@ mkdir -p "$CLI_TREE"
 printf 'int main(void) { return 0; }\n' > "$TEST_DIR/main.c"
 /usr/bin/clang -arch arm64 "$TEST_DIR/main.c" -o "$TEST_DIR/cli-arm64"
 /usr/bin/clang -arch x86_64 "$TEST_DIR/main.c" -o "$TEST_DIR/cli-x86_64"
-/usr/bin/lipo -create "$TEST_DIR/cli-arm64" "$TEST_DIR/cli-x86_64" -output "$CLI_TREE/peekaboo"
+/usr/bin/lipo -create "$TEST_DIR/cli-arm64" "$TEST_DIR/cli-x86_64" -output "$CLI_TREE/wink"
 mkdir -p "$APP_ARTIFACT/Contents/MacOS"
-cp "$CLI_TREE/peekaboo" "$APP_ARTIFACT/Contents/MacOS/Playground"
+cp "$CLI_TREE/wink" "$APP_ARTIFACT/Contents/MacOS/Playground"
 cat > "$APP_ARTIFACT/Contents/Info.plist" <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict><key>CFBundleExecutable</key><string>Playground</string></dict></plist>
 EOF
 mkdir -p "$CONTROLLER_TREE"
-cp "$CLI_TREE/peekaboo" "$CONTROLLER_TREE/peekaboo-certification-controller"
-cp "$CLI_TREE/peekaboo" "$CONTROLLER_TREE/background-computer-use-probe"
+cp "$CLI_TREE/wink" "$CONTROLLER_TREE/wink-certification-controller"
+cp "$CLI_TREE/wink" "$CONTROLLER_TREE/background-computer-use-probe"
 cp /usr/bin/true "$CONTROLLER_TREE/libswiftCompatibilityFixture.dylib"
 
 cat > "$TEST_DIR/ditto" <<'EOF'
@@ -117,9 +117,9 @@ set -euo pipefail
 printf 'codesign %s\n' "$*" >> "${LOG_FILE:?}"
 if [[ "${1:-}" == -dvvv ]]; then
   target="${!#}"
-  identifier="${TERMINAL_CODE_IDENTIFIER:-boo.peekaboo.peekaboo}"
+  identifier="${TERMINAL_CODE_IDENTIFIER:-boo.wink.wink}"
   case "$(basename "$target")" in
-    background-computer-use-probe) identifier=boo.peekaboo.background-computer-use-probe ;;
+    background-computer-use-probe) identifier=boo.wink.background-computer-use-probe ;;
     libswiftCompatibility*.dylib) identifier=com.apple.dt.runtime.swiftCompatibilityFixture ;;
   esac
   cat <<DETAILS
@@ -186,7 +186,7 @@ done
 rm "$TEST_DIR/xattr-outside"
 
 run_notary() {
-  PEEKABOO_TERMINAL_TEST_MODE=1 \
+  WINK_TERMINAL_TEST_MODE=1 \
     TERMINAL_NOTARY_XCRUN_BIN="$TEST_DIR/xcrun" \
     TERMINAL_NOTARY_DITTO_BIN="$TEST_DIR/ditto" \
     TERMINAL_NOTARY_CODESIGN_BIN="$TEST_DIR/codesign" \
@@ -197,13 +197,13 @@ run_notary() {
 
 profile_transaction="$TEST_DIR/profile-transaction"
 run_notary --kind cli-tree --artifact "$CLI_TREE" --transaction "$profile_transaction" \
-  --notary-profile __peekaboo_fixture__ >/dev/null
+  --notary-profile __wink_fixture__ >/dev/null
 jq -e '
   .version == 2 and .kind == "cli_tree" and .status == "Accepted" and
   .submission.path == ("notary/submissions/" + .submission.sha256) and
   .submission.size > 0 and (.submission.sha256 | test("^[0-9a-f]{64}$")) and
   .code_identity.authority == "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)" and
-  .code_identity.identifier == "boo.peekaboo.peekaboo" and .code_identity.team_id == "FWJYW4S8P8" and
+  .code_identity.identifier == "boo.wink.wink" and .code_identity.team_id == "FWJYW4S8P8" and
   .code_identity.cdhash == "0123456789abcdef0123456789abcdef01234567" and
   (.code_identity.architectures | sort) == ["arm64", "x86_64"] and
   (.code_identity.cdhashes | keys | sort) == ["arm64", "x86_64"] and
@@ -211,8 +211,8 @@ jq -e '
   (.final_artifact.tree_manifest_sha256 | test("^[0-9a-f]{64}$"))
 ' "$profile_transaction/receipt.json" >/dev/null || fail 'profile receipt schema is incomplete'
 [[ -f "$profile_transaction/submission.bin" ]]
-history_line="$(grep -n 'xcrun notarytool history --keychain-profile __peekaboo_fixture__' "$LOG_FILE" | cut -d: -f1)"
-submit_line="$(grep -n 'xcrun notarytool submit .*--keychain-profile __peekaboo_fixture__ --no-s3-acceleration --wait --output-format json' \
+history_line="$(grep -n 'xcrun notarytool history --keychain-profile __wink_fixture__' "$LOG_FILE" | cut -d: -f1)"
+submit_line="$(grep -n 'xcrun notarytool submit .*--keychain-profile __wink_fixture__ --no-s3-acceleration --wait --output-format json' \
   "$LOG_FILE" | cut -d: -f1)"
 [[ -n "$history_line" && -n "$submit_line" && "$history_line" -lt "$submit_line" ]] || \
   fail 'profile history did not precede the exact submit command'
@@ -226,7 +226,7 @@ if (
   export OP_SERVICE_ACCOUNT_TOKEN=unrelated-credential
   run_notary --kind cli-tree --artifact "$CLI_TREE" \
     --transaction "$profile_reexec_transaction" \
-    --notary-profile __peekaboo_fixture__ >/dev/null 2>&1
+    --notary-profile __wink_fixture__ >/dev/null 2>&1
 ); then
   fail 'credential-bearing notary accepted an exported-function environment'
 fi
@@ -241,7 +241,7 @@ assert_cli_failure() {
   local transaction="$TEST_DIR/$label-transaction"
   if TERMINAL_NOTARY_MODE="$mode" TERMINAL_CODESIGN_FAIL_VERIFY="$verify_fail" \
     run_notary --kind cli-tree --artifact "$CLI_TREE" --transaction "$transaction" \
-      --notary-profile __peekaboo_fixture__ >"$TEST_DIR/$label.log" 2>&1; then
+      --notary-profile __wink_fixture__ >"$TEST_DIR/$label.log" 2>&1; then
     fail "$label unexpectedly succeeded"
   fi
   grep -Fq "$expected_error" "$TEST_DIR/$label.log" || fail "$label failed for an unexpected reason"
@@ -253,7 +253,7 @@ assert_cli_failure malformed malformed 0 'notary response is malformed'
 assert_cli_failure signature-verify accepted 1 'CLI tree pre-submit identity mismatch'
 appledouble_transaction="$TEST_DIR/appledouble-transaction"
 if TERMINAL_DITTO_APPLEDOUBLE=1 run_notary --kind cli-tree --artifact "$CLI_TREE" \
-  --transaction "$appledouble_transaction" --notary-profile __peekaboo_fixture__ \
+  --transaction "$appledouble_transaction" --notary-profile __wink_fixture__ \
   >"$TEST_DIR/appledouble.log" 2>&1; then
   fail 'AppleDouble submission unexpectedly succeeded'
 fi
@@ -261,29 +261,29 @@ grep -Fq 'notary submission contains AppleDouble payload' "$TEST_DIR/appledouble
   fail 'AppleDouble submission failed for an unexpected reason'
 [[ ! -e "$appledouble_transaction" ]] || fail 'AppleDouble submission published a transaction'
 staple_transaction="$TEST_DIR/staple-transaction"
-if TERMINAL_CODE_IDENTIFIER=boo.peekaboo.playground.debug TERMINAL_STAPLER_FAIL=1 \
+if TERMINAL_CODE_IDENTIFIER=boo.wink.playground.debug TERMINAL_STAPLER_FAIL=1 \
   run_notary --kind app --artifact "$APP_ARTIFACT" --transaction "$staple_transaction" \
-    --notary-profile __peekaboo_fixture__ >/dev/null 2>&1; then
+    --notary-profile __wink_fixture__ >/dev/null 2>&1; then
   fail 'staple failure unexpectedly succeeded'
 fi
 [[ ! -e "$staple_transaction" ]] || fail 'staple failure published a partial transaction'
 
 live_fixture_transaction="$TEST_DIR/live-fixture-transaction"
 if APP_STORE_CONNECT_API_KEY_P8=secret run_notary --kind cli-tree --artifact "$CLI_TREE" \
-  --transaction "$live_fixture_transaction" --notary-profile __peekaboo_fixture__ >/dev/null 2>&1; then
+  --transaction "$live_fixture_transaction" --notary-profile __wink_fixture__ >/dev/null 2>&1; then
   fail 'fixture tools accepted a live credential variable'
 fi
 [[ ! -e "$live_fixture_transaction" ]]
 
 xattr_cli="$TEST_DIR/xattr-cli"
 /usr/bin/ditto "$CLI_TREE" "$xattr_cli"
-/usr/bin/xattr -w com.openclaw.peekaboo.fixture fixturedata "$xattr_cli/peekaboo"
+/usr/bin/xattr -w com.openclaw.wink.fixture fixturedata "$xattr_cli/wink"
 "$TEST_DIR/xattr" -r "$xattr_cli" > "$TEST_DIR/xattr-names"
-grep -Fq ': com.openclaw.peekaboo.fixture' "$TEST_DIR/xattr-names" || \
+grep -Fq ': com.openclaw.wink.fixture' "$TEST_DIR/xattr-names" || \
   fail 'fixture xattr masked an arbitrary attribute'
 xattr_transaction="$TEST_DIR/xattr-transaction"
 if run_notary --kind cli-tree --artifact "$xattr_cli" --transaction "$xattr_transaction" \
-  --notary-profile __peekaboo_fixture__ >"$TEST_DIR/xattr-notary.log" 2>&1; then
+  --notary-profile __wink_fixture__ >"$TEST_DIR/xattr-notary.log" 2>&1; then
   fail 'xattr-bearing artifact unexpectedly succeeded'
 fi
 grep -Fq 'artifact contains unbound extended attributes' "$TEST_DIR/xattr-notary.log" || \
@@ -291,9 +291,9 @@ grep -Fq 'artifact contains unbound extended attributes' "$TEST_DIR/xattr-notary
 [[ ! -e "$xattr_transaction" ]]
 
 app_transaction="$TEST_DIR/app-transaction"
-TERMINAL_CODE_IDENTIFIER=boo.peekaboo.playground.debug \
+TERMINAL_CODE_IDENTIFIER=boo.wink.playground.debug \
   run_notary --kind app --artifact "$APP_ARTIFACT" --transaction "$app_transaction" \
-    --notary-profile __peekaboo_fixture__ >/dev/null
+    --notary-profile __wink_fixture__ >/dev/null
 tree_sha="$(/usr/bin/shasum -a 256 "$app_transaction/tree.json" | /usr/bin/awk '{print $1}')"
 jq -e --arg treeSHA "$tree_sha" --argjson treeSize "$(/usr/bin/stat -f%z "$app_transaction/tree.json")" '
   .final_artifact == {tree_manifest_sha256: $treeSHA, tree_manifest_size: $treeSize}
@@ -304,17 +304,17 @@ controller_transaction="$TEST_DIR/controller-transaction"
 symlink_tree="$TEST_DIR/symlink-qualification"
 /usr/bin/ditto "$CONTROLLER_TREE" "$symlink_tree"
 ln -s /usr/bin/true "$symlink_tree/foreign-helper"
-if TERMINAL_CODE_IDENTIFIER=boo.peekaboo.peekaboo-certification-controller \
+if TERMINAL_CODE_IDENTIFIER=boo.wink.wink-certification-controller \
   run_notary --kind controller-tree --artifact "$symlink_tree" \
     --transaction "$TEST_DIR/symlink-controller-transaction" \
-    --notary-profile __peekaboo_fixture__ >/dev/null 2>&1; then
+    --notary-profile __wink_fixture__ >/dev/null 2>&1; then
   fail 'controller tree accepted a symlink helper'
 fi
 [[ ! -e "$TEST_DIR/symlink-controller-transaction" ]]
 
-TERMINAL_CODE_IDENTIFIER=boo.peekaboo.peekaboo-certification-controller \
+TERMINAL_CODE_IDENTIFIER=boo.wink.wink-certification-controller \
   run_notary --kind controller-tree --artifact "$CONTROLLER_TREE" --transaction "$controller_transaction" \
-    --notary-profile __peekaboo_fixture__ >/dev/null
+    --notary-profile __wink_fixture__ >/dev/null
 controller_tree_sha="$(/usr/bin/shasum -a 256 "$controller_transaction/tree.json" | /usr/bin/awk '{print $1}')"
 jq -e --arg sha "$controller_tree_sha" '
   .kind == "controller_tree" and .final_artifact.tree_manifest_sha256 == $sha
@@ -322,7 +322,7 @@ jq -e --arg sha "$controller_tree_sha" '
 
 if TERMINAL_NOTARY_XCRUN_BIN="$TEST_DIR/xcrun" \
   "$ROOT_DIR/scripts/notarize-terminal-artifact.sh" --kind cli-tree --artifact "$CLI_TREE" \
-  --transaction "$TEST_DIR/override-transaction" --notary-profile __peekaboo_fixture__ >/dev/null 2>&1; then
+  --transaction "$TEST_DIR/override-transaction" --notary-profile __wink_fixture__ >/dev/null 2>&1; then
   fail 'production accepted a test tool override'
 fi
 
@@ -352,7 +352,7 @@ run_api_fixture() {
   TERMINAL_NOTARY_API_KEY_FILE="$TEST_DIR/throwaway.p8" \
     TERMINAL_NOTARY_API_BASE_URL="$server_base/$fixture_case/notary/v2" \
     TERMINAL_NOTARY_S3_ENDPOINT="$server_base/$fixture_case/s3" \
-    run_notary "$@" --notary-profile __peekaboo_fixture__
+    run_notary "$@" --notary-profile __wink_fixture__
 }
 
 TERMINAL_NOTARY_MODE=transport-failure run_api_fixture auto-fallback \
@@ -382,7 +382,7 @@ fi
 # Explicit API must skip both history and submit, and tolerate ticket propagation lag.
 cp "$LOG_FILE" "$TEST_DIR/before-api.log"
 TERMINAL_NOTARY_MODE=transport-failure TERMINAL_STAPLER_FAIL=once \
-  TERMINAL_CODE_IDENTIFIER=boo.peekaboo.playground.debug run_api_fixture direct \
+  TERMINAL_CODE_IDENTIFIER=boo.wink.playground.debug run_api_fixture direct \
   --kind app --artifact "$APP_ARTIFACT" --transaction "$TEST_DIR/direct" --notary-transport api \
   >"$TEST_DIR/direct.log" 2>&1 || { cat "$TEST_DIR/direct.log"; fail 'direct API failed'; }
 [[ -f "$LOG_FILE.stapled" ]] || fail 'stapler retry was not exercised'

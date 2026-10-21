@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const builder = process.env.DOCS_SITE_BUILDER || fileURLToPath(new URL('../scripts/build-docs-site.mjs', import.meta.url));
 
 export function buildDocsFixture(t, files) {
-  const root = mkdtempSync(path.join(tmpdir(), 'peekaboo-docs-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'wink-docs-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   for (const [relativePath, content] of Object.entries(files)) {
     const file = path.join(root, 'docs', relativePath);

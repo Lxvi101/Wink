@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
+import WinkAutomationKitTestSupport
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 @MainActor
@@ -13,7 +13,7 @@ struct SnapshotReceiptPreDispatchCommandTests {
         let snapshots = StubSnapshotManager()
         let snapshotID = try await Self.storeProcessWithoutGenerationElementSnapshot(in: snapshots)
         let automation = UIAutomationService(snapshotManager: snapshots)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -53,7 +53,7 @@ struct SnapshotReceiptPreDispatchCommandTests {
             processStartIdentity: liveGeneration + 1
         )
         let automation = UIAutomationService(snapshotManager: snapshots)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -89,7 +89,7 @@ struct SnapshotReceiptPreDispatchCommandTests {
         let snapshots = StubSnapshotManager()
         let snapshotID = try await Self.storeIncompleteExactWindowElementSnapshot(in: snapshots)
         let automation = UIAutomationService(snapshotManager: snapshots)
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )

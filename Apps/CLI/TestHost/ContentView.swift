@@ -8,14 +8,14 @@ struct ContentView: View {
     @State private var accessibilityPermission = false
     @State private var logMessages: [String] = []
     @State private var testStatus = "Ready"
-    @State private var peekabooCliAvailable = false
+    @State private var winkCliAvailable = false
 
-    private let testIdentifier = "PeekabooTestHost"
+    private let testIdentifier = "WinkTestHost"
 
     var body: some View {
         VStack(spacing: 20) {
             // Header
-            Text("Peekaboo Test Host")
+            Text("Wink Test Host")
                 .font(.largeTitle)
                 .padding(.top)
 
@@ -50,12 +50,12 @@ struct ContentView: View {
                     }
 
                     HStack {
-                        Image(systemName: self.peekabooCliAvailable ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundColor(self.peekabooCliAvailable ? .green : .red)
-                        Text("Peekaboo CLI")
+                        Image(systemName: self.winkCliAvailable ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundColor(self.winkCliAvailable ? .green : .red)
+                        Text("Wink CLI")
                         Spacer()
                         Button("Check") {
-                            self.checkPeekabooCli()
+                            self.checkWinkCli()
                         }
                     }
                 }
@@ -105,7 +105,7 @@ struct ContentView: View {
         .padding()
         .onAppear {
             self.checkPermissions()
-            self.checkPeekabooCli()
+            self.checkWinkCli()
             self.addLog("Test host started")
         }
     }
@@ -140,14 +140,14 @@ struct ContentView: View {
         }
     }
 
-    private func checkPeekabooCli() {
-        let cliPath = "../.build/debug/peekaboo"
+    private func checkWinkCli() {
+        let cliPath = "../.build/debug/wink"
         if FileManager.default.fileExists(atPath: cliPath) {
-            self.peekabooCliAvailable = true
-            self.addLog("Peekaboo CLI found at: \(cliPath)")
+            self.winkCliAvailable = true
+            self.addLog("Wink CLI found at: \(cliPath)")
         } else {
-            self.peekabooCliAvailable = false
-            self.addLog("Peekaboo CLI not found. Run 'swift build' first.")
+            self.winkCliAvailable = false
+            self.addLog("Wink CLI not found. Run 'swift build' first.")
         }
     }
 

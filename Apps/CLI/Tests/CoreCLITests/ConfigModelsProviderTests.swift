@@ -1,9 +1,9 @@
 import Commander
 import Foundation
 import Network
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct ConfigModelsProviderTests {
@@ -28,7 +28,7 @@ struct ConfigModelsProviderTests {
                 ),
                 models: ["configured-model": model]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(provider, id: "anthropic-proxy")
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(provider, id: "anthropic-proxy")
 
             var command = ConfigCommand.ModelsProviderCommand()
             command.providerId = "anthropic-proxy"
@@ -36,7 +36,7 @@ struct ConfigModelsProviderTests {
             try await command.run(using: self.makeRuntime())
 
             let saved = try #require(
-                PeekabooCore.ConfigurationManager.shared
+                WinkCore.ConfigurationManager.shared
                     .getCustomProvider(id: "anthropic-proxy")?
                     .models?["configured-model"]
             )
@@ -63,7 +63,7 @@ struct ConfigModelsProviderTests {
                 options: .init(baseURL: server.baseURL, apiKey: "test-key"),
                 models: ["configured-model": .init(name: "Configured Model", supportsTools: false)]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
 
             var command = ConfigCommand.ModelsProviderCommand()
             command.providerId = "openai-proxy"
@@ -81,7 +81,7 @@ struct ConfigModelsProviderTests {
             #expect(response.data.models == ["configured-model"])
 
             let saved = try #require(
-                PeekabooCore.ConfigurationManager.shared
+                WinkCore.ConfigurationManager.shared
                     .getCustomProvider(id: "openai-proxy")?
                     .models?["configured-model"]
             )
@@ -113,7 +113,7 @@ struct ConfigModelsProviderTests {
                 options: .init(baseURL: server.baseURL, apiKey: "test-key"),
                 models: ["configured-model": model]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
 
             var command = ConfigCommand.ModelsProviderCommand()
             command.providerId = "openai-proxy"
@@ -133,7 +133,7 @@ struct ConfigModelsProviderTests {
             #expect(!output.contains("[ok]"))
 
             let savedProvider = try #require(
-                PeekabooCore.ConfigurationManager.shared.getCustomProvider(id: "openai-proxy")
+                WinkCore.ConfigurationManager.shared.getCustomProvider(id: "openai-proxy")
             )
             let savedExisting = try #require(savedProvider.models?["configured-model"])
             #expect(savedExisting.name == "Configured Model")
@@ -172,7 +172,7 @@ struct ConfigModelsProviderTests {
                 options: .init(baseURL: server.baseURL, apiKey: "test-key"),
                 models: ["configured-model": model]
             )
-            try PeekabooCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
+            try WinkCore.ConfigurationManager.shared.addCustomProvider(provider, id: "openai-proxy")
 
             var command = ConfigCommand.ModelsProviderCommand()
             command.providerId = "openai-proxy"
@@ -193,7 +193,7 @@ struct ConfigModelsProviderTests {
             #expect(!response.data.saved)
 
             let savedProvider = try #require(
-                PeekabooCore.ConfigurationManager.shared.getCustomProvider(id: "openai-proxy")
+                WinkCore.ConfigurationManager.shared.getCustomProvider(id: "openai-proxy")
             )
             #expect(savedProvider.models?.count == 1)
             let unchanged = try #require(savedProvider.models?["configured-model"])
@@ -281,7 +281,7 @@ struct ConfigModelsProviderTests {
             type: type,
             options: .init(baseURL: Self.invalidProviderBaseURL, apiKey: "test-key")
         )
-        try PeekabooCore.ConfigurationManager.shared.updateConfiguration { configuration in
+        try WinkCore.ConfigurationManager.shared.updateConfiguration { configuration in
             if configuration.customProviders == nil {
                 configuration.customProviders = [:]
             }
@@ -292,28 +292,28 @@ struct ConfigModelsProviderTests {
     private func makeRuntime(jsonOutput: Bool = false) -> CommandRuntime {
         CommandRuntime(
             configuration: .init(verbose: false, jsonOutput: jsonOutput, logLevel: nil),
-            services: PeekabooServices()
+            services: WinkServices()
         )
     }
 
     private func withTempConfigDir(_ body: () async throws -> Void) async throws {
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-cli-config-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-cli-config-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
         let environmentKeys = [
             "PEEKABOO_CONFIG_DIR",
-            "PEEKABOO_CONFIG_NONINTERACTIVE",
-            "PEEKABOO_CONFIG_DISABLE_MIGRATION",
+            "WINK_CONFIG_NONINTERACTIVE",
+            "WINK_CONFIG_DISABLE_MIGRATION",
         ]
         let previous = Dictionary(uniqueKeysWithValues: environmentKeys.map { key in
             (key, getenv(key).map { String(cString: $0) })
         })
 
         setenv("PEEKABOO_CONFIG_DIR", tempDir.path, 1)
-        setenv("PEEKABOO_CONFIG_NONINTERACTIVE", "1", 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
-        PeekabooCore.ConfigurationManager.shared.resetForTesting()
+        setenv("WINK_CONFIG_NONINTERACTIVE", "1", 1)
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
+        WinkCore.ConfigurationManager.shared.resetForTesting()
 
         defer {
             for key in environmentKeys {
@@ -323,7 +323,7 @@ struct ConfigModelsProviderTests {
                     unsetenv(key)
                 }
             }
-            PeekabooCore.ConfigurationManager.shared.resetForTesting()
+            WinkCore.ConfigurationManager.shared.resetForTesting()
             try? FileManager.default.removeItem(at: tempDir)
         }
 
@@ -388,7 +388,7 @@ private final class ModelsProviderHTTPServer {
 
     static func start(statusCode: Int, body: String) async throws -> ModelsProviderHTTPServer {
         let listener = try NWListener(using: .tcp, on: .any)
-        let queue = DispatchQueue(label: "peekaboo.tests.models-provider-http")
+        let queue = DispatchQueue(label: "wink.tests.models-provider-http")
         let requestCounter = AcceptedRequestCounter()
         let response = response(statusCode: statusCode, body: body)
 

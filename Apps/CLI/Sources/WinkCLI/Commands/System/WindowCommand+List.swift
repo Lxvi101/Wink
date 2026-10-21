@@ -1,0 +1,192 @@
+import Commander
+import Foundation
+import WinkCore
+import WinkFoundation
+
+extension WindowCommand {
+    // MARK: - List Command
+
+    @MainActor
+    struct WindowListSubcommand: ErrorHandlingCommand, OutputFormattable, ApplicationResolvable,
+    InjectedRuntimeBackedCommand {
+        @Option(name: .long, help: "Target application name, bundle ID, or 'PID:12345'")
+        var app: String?
+
+        @Option(name: .long, help: "Target application by process ID")
+        var pid: Int32?
+        @RuntimeStorage var runtime: CommandRuntime?
+
+        @Flag(name: .long, help: "Group windows by Space (virtual desktop)")
+        var groupBySpace = false
+
+        /// List windows for the target application and optionally organize them by Space.
+        @MainActor
+        mutating func run(using runtime: CommandRuntime) async throws {
+            self.runtime = runtime
+            self.logger.setJsonOutputMode(self.jsonOutput)
+
+            do {
+                let appIdentifier = try self.resolveApplicationIdentifier()
+                // First find the application to get its info
+                let appInfo = try await self.services.applications.findApplication(identifier: appIdentifier)
+
+                let target = WindowTarget.application(appIdentifier)
+                let inventory = try await WindowServiceBridge.mutationInventory(
+                    windows: self.services.windows,
+                    target: target
+                )
+                let rawWindows = inventory.items
+                let windows = ObservationTargetResolver.filteredWindows(from: rawWindows, mode: .list)
+                var outputCompleteness = inventory.completeness
+                var outputWarnings = inventory.warnings
+                if inventory.completeness == .partial, outputWarnings.isEmpty {
+                    outputWarnings.append("Window inventory provider reported partial results without a reason.")
+                }
+                let omittedRowCount = rawWindows.count - windows.count
+                if omittedRowCount > 0 {
+                    outputCompleteness = .partial
+                    outputWarnings.append(
+                        "Window list omitted \(omittedRowCount) non-renderable or duplicate inventory " +
+                            "row\(omittedRowCount == 1 ? "" : "s")."
+                    )
+                }
+
+                // Convert ServiceWindowInfo to WindowInfo for consistency
+                let windowInfos = windows.map(WindowInfo.init(serviceWindow:))
+
+                // Use WinkCore's WindowListData
+                let data = WindowListData(
+                    windows: windowInfos,
+                    target_application_info: TargetApplicationInfo(
+                        app_name: appInfo.name,
+                        bundle_id: appInfo.bundleIdentifier,
+                        pid: appInfo.processIdentifier
+                    ),
+                    inventory_completeness: outputCompleteness.rawValue,
+                    inventory_warnings: outputWarnings
+                )
+
+                output(data) {
+                    print("\(data.target_application_info.app_name) has \(data.windows.count) window(s):")
+
+                    for warning in outputWarnings {
+                        print("Warning: \(warning)")
+                    }
+
+                    if self.groupBySpace {
+                        // Group windows by space
+                        var windowsBySpace: [UInt64?: [ServiceWindowInfo]] = [:]
+
+                        for window in windows {
+                            let spaceID = window.spaceID
+                            windowsBySpace[spaceID, default: []].append(window)
+                        }
+
+                        // Sort spaces by ID (nil first for windows not on any space)
+                        let sortedSpaces = windowsBySpace.keys.sorted { a, b in
+                            switch (a, b) {
+                            case (nil, nil): false
+                            case (nil, _): true
+                            case (_, nil): false
+                            case let (a?, b?): a < b
+                            }
+                        }
+
+                        // Print grouped windows
+                        for spaceID in sortedSpaces {
+                            if let spaceID {
+                                let spaceName = windowsBySpace[spaceID]?.first?.spaceName ?? "Space \(spaceID)"
+                                print("\n  Space: \(spaceName) [ID: \(spaceID)]")
+                            } else {
+                                print("\n  No Space:")
+                            }
+
+                            for window in windowsBySpace[spaceID] ?? [] {
+                                Self.printWindow(window, indentation: "    ")
+                            }
+                        }
+                    } else {
+                        for window in windows {
+                            Self.printWindow(window, indentation: "  ")
+                        }
+                    }
+                }
+
+            } catch {
+                handleError(error)
+                throw ExitCode(1)
+            }
+        }
+
+        private static func printWindow(_ window: ServiceWindowInfo, indentation: String) {
+            let status = window.isMinimized ? " [minimized]" : ""
+            print("\(indentation)[\(window.index)] \"\(window.title)\"\(status)")
+            let bounds = window.bounds
+            print("\(indentation)     Position: (\(Int(bounds.origin.x)), \(Int(bounds.origin.y)))")
+            print("\(indentation)     Size: \(Int(bounds.width))x\(Int(bounds.height))")
+            let observation = Self.observationDescription(window.observationCapability, windowID: window.windowID)
+            print("\(indentation)     Observation: \(observation)")
+        }
+
+        static func observationDescription(
+            _ capability: WindowObservationCapability?,
+            windowID: Int?
+        ) -> String {
+            self.observationDescription(
+                capability?.mode,
+                reason: capability?.reason,
+                windowID: windowID
+            )
+        }
+
+        static func observationDescription(
+            _ mode: WindowObservationCapability.Mode?,
+            reason: WindowObservationCapability.Reason?,
+            windowID: Int?
+        ) -> String {
+            switch mode {
+            case .combinedEligible:
+                "combined_eligible"
+            case .pixelsOnly:
+                if let windowID, let reason {
+                    "pixels_only (\(reason.rawValue); use `wink see --window-id \(windowID) --no-elements`)"
+                } else if let reason {
+                    "pixels_only (\(reason.rawValue); use `wink see --no-elements`)"
+                } else {
+                    "pixels_only"
+                }
+            case .unknown:
+                if let reason {
+                    "unknown (\(reason.rawValue); refresh the window inventory before choosing an observation mode)"
+                } else {
+                    "unknown"
+                }
+            case nil:
+                "unknown (host did not report combined-observation eligibility)"
+            }
+        }
+    }
+}
+
+extension WindowInfo {
+    init(serviceWindow window: ServiceWindowInfo) {
+        self.init(
+            window_title: window.title,
+            window_id: UInt32(window.windowID),
+            window_index: window.index,
+            bounds: WindowBounds(
+                x: Int(window.bounds.origin.x),
+                y: Int(window.bounds.origin.y),
+                width: Int(window.bounds.size.width),
+                height: Int(window.bounds.size.height)
+            ),
+            is_on_screen: window.isOnScreen,
+            is_frontmost: window.isFrontmost,
+            is_key: window.isKeyWindow,
+            layer: window.layer,
+            subrole: window.subrole,
+            observation_capability: window.observationCapability?.mode,
+            observation_capability_reason: window.observationCapability?.reason
+        )
+    }
+}

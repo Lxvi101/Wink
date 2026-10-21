@@ -3,7 +3,7 @@ name: Publish npm release tarball
 # Publishes the exact npm tarball that the hosted release workflow built, verified, and uploaded
 # to the GitHub release, through npm trusted publishing. The workflow never packs or
 # builds: it only re-verifies and publishes the frozen asset. npm accepts this
-# workflow's OIDC identity for @steipete/peekaboo, so no token or one-time password is
+# workflow's OIDC identity for wink, so no token or one-time password is
 # involved and the large upload runs from GitHub's network.
 on:
   workflow_dispatch:
@@ -31,7 +31,7 @@ jobs:
       id-token: write
     env:
       VERSION: ${{ inputs.version }}
-      PACKAGE_NAME: '@steipete/peekaboo'
+      PACKAGE_NAME: 'wink'
       NPM_REGISTRY: https://registry.npmjs.org/
     steps:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -62,13 +62,13 @@ jobs:
           set -euo pipefail
           mkdir dist
           gh release download "v${VERSION}" --repo "$GITHUB_REPOSITORY" --dir dist \
-            --pattern "steipete-peekaboo-${VERSION}.tgz" --pattern checksums.txt
+            --pattern "wink-${VERSION}.tgz" --pattern checksums.txt
           ls -l dist
 
       - name: Verify tarball against release checksums and metadata
         run: |
           set -euo pipefail
-          tarball="steipete-peekaboo-${VERSION}.tgz"
+          tarball="wink-${VERSION}.tgz"
           cd dist
           expected=$(awk -v name="$tarball" '$2 == name || $2 == "*" name { print $1 }' checksums.txt)
           if [[ ! "$expected" =~ ^[0-9a-f]{64}$ ]]; then
@@ -110,7 +110,7 @@ jobs:
           if [[ "$VERSION" == *-* ]]; then
             tag=beta
           fi
-          npm publish "./dist/steipete-peekaboo-${VERSION}.tgz" \
+          npm publish "./dist/wink-${VERSION}.tgz" \
             --access public --tag "$tag" --registry "$NPM_REGISTRY"
 
       - name: Verify registry integrity

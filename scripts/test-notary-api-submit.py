@@ -284,7 +284,7 @@ class NotaryTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             api.parse_args(args + ["--api-base", api.API_BASE])
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
-            api.parse_args(args + ["--fixture-profile", "__peekaboo_fixture__",
+            api.parse_args(args + ["--fixture-profile", "__wink_fixture__",
                                   "--api-base", "https://external.example", "--s3-endpoint", "http://127.0.0.1:1"])
 
 

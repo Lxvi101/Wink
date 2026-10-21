@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Peekaboo CLI will be documented in this file.
+All notable changes to Wink CLI will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.9.5 - 2026-10-16
 
-- Fall back to in-process execution immediately when an unsigned source build (such as Homebrew core's `peekaboo` formula) meets a daemon it cannot trust, instead of waiting out daemon startup or aborting, and add an explicit `PEEKABOO_ALLOW_UNSIGNED_DAEMON=1` opt-in that lets such a build trust only its own exact-binary daemon; release-signed builds ignore it. Thanks @fry69! #1089, #1064.
-- Skip auto-starting an on-demand daemon when a granted Peekaboo.app bridge host would be selected anyway, avoiding the daemon's startup wait and an idle permission-less daemon; lifecycle commands, snapshot-owned actions and explicit sockets still start it. #1082, follow-up to #1073.
+- Fall back to in-process execution immediately when an unsigned source build (such as Homebrew core's `wink` formula) meets a daemon it cannot trust, instead of waiting out daemon startup or aborting, and add an explicit `WINK_ALLOW_UNSIGNED_DAEMON=1` opt-in that lets such a build trust only its own exact-binary daemon; release-signed builds ignore it. Thanks @fry69! #1089, #1064.
+- Skip auto-starting an on-demand daemon when a granted Wink.app bridge host would be selected anyway, avoiding the daemon's startup wait and an idle permission-less daemon; lifecycle commands, snapshot-owned actions and explicit sockets still start it. #1082, follow-up to #1073.
 - Declare route-specific Accessibility and Event Synthesizing needs for `type`, `paste`, `press`/`hotkey`, `window`, `menu` and `menubar`, so hosts that explicitly lack them are skipped while grant-free routes and unknown host reports keep working. #1088.
 - Stop reporting complete Accessibility observations as incomplete when an app declines an inapplicable child attribute, such as Calculator's Help search field after a menu opens; preserve readable children and genuine read-failure warnings. Thanks @jandubois! #1094.
 - Keep a multi-application `app quit` cancelled after a suspected no-op reported as a no-op instead of a partial change that asks callers to recover a side effect. Thanks @SebTardif! #1098.
@@ -27,15 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.9.4 - 2026-10-15
 
-- Keep a granted Peekaboo.app bridge host selected when an on-demand daemon started from an ungranted terminal reports missing Accessibility, Event Synthesizing or Screen Recording, instead of downgrading every caller's permissions until the daemon idles out. Thanks @joshua-koehler! #1073.
-- Show macOS 27's renamed "Device Control and Data Access" Settings row for Accessibility and Event Synthesizing, and consistently name "Screen & System Audio Recording", in `peekaboo permissions`, MCP permission tools, and permission errors. Thanks @fry69! #1071.
-- Explain in Bridge and daemon trust failures when the running `peekaboo` is an unsigned source build (such as Homebrew core's `peekaboo` formula) and point to the notarized `openclaw/tap` or npm install. Thanks @fry69! #1064.
+- Keep a granted Wink.app bridge host selected when an on-demand daemon started from an ungranted terminal reports missing Accessibility, Event Synthesizing or Screen Recording, instead of downgrading every caller's permissions until the daemon idles out. Thanks @joshua-koehler! #1073.
+- Show macOS 27's renamed "Device Control and Data Access" Settings row for Accessibility and Event Synthesizing, and consistently name "Screen & System Audio Recording", in `wink permissions`, MCP permission tools, and permission errors. Thanks @fry69! #1071.
+- Explain in Bridge and daemon trust failures when the running `wink` is an unsigned source build (such as Homebrew core's `wink` formula) and point to the notarized `openclaw/tap` or npm install. Thanks @fry69! #1064.
 - Reject `nan` and infinite coordinates and regions in `click`, `move`, `capture live`, `capture action`, `see --region` and the MCP `click` tool instead of dispatching a non-finite point or capture rect, and ignore non-finite agent verification target points. Thanks @rudycelekli! #1074, #1075, #1076.
 - Update SwiftNIO to 2.104.0 and Service Lifecycle to 2.12.1, including its Unix signal dispatch-source leak fix, while preserving the Swift 6.2 and macOS baselines.
 
 ## 4.9.3 - 2026-10-14
 
-- Use the shared 10-second readiness budget for manual daemon startup, preserve authentication and probe failure diagnostics, and honor `PEEKABOO_DAEMON_SOCKET` consistently across daemon commands without relaxing host trust. Thanks @fry69! #1064.
+- Use the shared 10-second readiness budget for manual daemon startup, preserve authentication and probe failure diagnostics, and honor `WINK_DAEMON_SOCKET` consistently across daemon commands without relaxing host trust. Thanks @fry69! #1064.
 - Prevent agent tool results from showing "Invalid JSON result" for fallback messages containing backslashes or newlines. #1068.
 - Shut down the owned MCP server and exit with status 1 after fatal wrapper errors or unhandled rejections, while retaining successful signal-driven shutdown. Thanks @rudycelekli! #1039.
 - Keep repeated MCP wrapper starts from spawning duplicate servers and validate timing options before scheduling, preserving explicit zero delays. Thanks @rudycelekli! #1020, #1021.
@@ -47,12 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.9.1 - 2026-10-10
 
-- Stop an idle `peekaboo mcp` (and other window-tracking hosts) from burning CPU whenever unrelated applications launch or quit: AXorcist now indexes workspace applications by identity and stops re-reading resolved PIDs, cutting the cost from ~0.68 s to ~0.02 s of CPU per launch and quit on a Mac with ~600 running applications. Thanks @coygeek for the detailed report! #1005.
+- Stop an idle `wink mcp` (and other window-tracking hosts) from burning CPU whenever unrelated applications launch or quit: AXorcist now indexes workspace applications by identity and stops re-reading resolved PIDs, cutting the cost from ~0.68 s to ~0.02 s of CPU per launch and quit on a Mac with ~600 running applications. Thanks @coygeek for the detailed report! #1005.
 - Accept renamed or symlinked CLI executables when routing commands, normalizing agent tasks, and classifying JSON result envelopes.
 - Refuse configuration mutations (custom provider add/remove, configuration updates) when an existing config file cannot be read, instead of overwriting it with defaults or cached data. Thanks @rudycelekli! #1007.
 - Retain capture-action child stdout/stderr when the 64 KiB retention limit splits a trailing UTF-8 scalar, instead of discarding the whole valid prefix and recording an empty stream receipt. Thanks @rudycelekli! #1006.
 - Accept signed global coordinates for foreground MCP move and drag within existing magnitude bounds, preserving target guards and before-delivery validation. Thanks @rudycelekli! #963.
-- Update AXorcist to 0.2.2 so SwiftPM consumers of Peekaboo's library products get the idle-observer CPU fix, plus `collectAll` request-timeout handling, complete observation subscriptions, and fast observer-removal failure reporting.
+- Update AXorcist to 0.2.2 so SwiftPM consumers of Wink's library products get the idle-observer CPU fix, plus `collectAll` request-timeout handling, complete observation subscriptions, and fast observer-removal failure reporting.
 - Update the shared Swift Log lock to 1.16.1 and Swift Configuration to 1.2.2 for corrected multiplexed log metadata and empty configuration values, preserving the supported Swift and macOS baselines.
 
 ## 4.9.0 - 2026-10-06
@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Compatibility
 
-- App/PID-scoped `menubar click` and exact-owner file-dialog execution require a 4.9.0 GUI Bridge host that advertises those capabilities at protocol 1.43. With an older Peekaboo app as the Bridge host, these requests refuse before any input instead of falling back to a global search or unscoped dialog handling; update the app together with the CLI.
+- App/PID-scoped `menubar click` and exact-owner file-dialog execution require a 4.9.0 GUI Bridge host that advertises those capabilities at protocol 1.43. With an older Wink app as the Bridge host, these requests refuse before any input instead of falling back to a global search or unscoped dialog handling; update the app together with the CLI.
 
 ## 4.8.0 - 2026-10-03
 
@@ -147,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Compatibility
 
-- Exact-window background drag requires a GUI Bridge host at protocol 1.39, exact-window background rich/binary paste requires the clipboard-fenced protocol 1.40 path (cold-window preparation uses 1.41), background text selection requires protocol 1.42, and exact-window background coordinate scrolling requires protocol 1.43. Screenshot-backed `see --fresh` through a Bridge host requires its fresh Accessibility tree capability. With an older Peekaboo app as the Bridge host, these fail closed before any clipboard write or input; update the app together with the CLI.
+- Exact-window background drag requires a GUI Bridge host at protocol 1.39, exact-window background rich/binary paste requires the clipboard-fenced protocol 1.40 path (cold-window preparation uses 1.41), background text selection requires protocol 1.42, and exact-window background coordinate scrolling requires protocol 1.43. Screenshot-backed `see --fresh` through a Bridge host requires its fresh Accessibility tree capability. With an older Wink app as the Bridge host, these fail closed before any clipboard write or input; update the app together with the CLI.
 
 ## 4.7.0 - 2026-09-29
 
@@ -162,7 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expose bounded, privacy-checked focused text selection as UTF-16 ranges in CLI JSON and MCP/Agent observations; consolidate native range decoding and preserve the existing signed receipt shape.
 - Include full visible work-area bounds in `screen list` JSON and its origin in human output, reusing global logical coordinates while preserving the existing display and visible-size fields.
 - Update Chrome DevTools MCP to 1.10.1 with its per-server browser owner, preserving one-socket verification, telemetry isolation, redirect/reconnect refusal, and exact-page element routing; keep unprojected CSS response references unavailable.
-- Update Tachikoma to 0.5.1 for cancellable provider streams, correct LM Studio tool-call history, and preserved numeric tool values, retaining Peekaboo's existing tool schemas and compatible dependency pins.
+- Update Tachikoma to 0.5.1 for cancellable provider streams, correct LM Studio tool-call history, and preserved numeric tool values, retaining Wink's existing tool schemas and compatible dependency pins.
 - Update Tachikoma to remove compatible streaming request dumps that could expose prompts/tool schemas and contaminate Agent JSON or quiet output, without changing provider requests or stream delivery.
 - Preserve fragmented tool arguments in compatible-provider Agent streams, validate complete call batches before execution, and retain explicit empty no-argument calls along with existing terminal, schema, and background-authority safeguards.
 - Preserve native scalar tool arguments in Agent provider schemas and preflight validation so `set_value` accepts Boolean and numeric values without string coercion; retain existing structured-schema compatibility and native safety checks.
@@ -179,7 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Compatibility
 
-- CLI `clipboard get` and `clipboard save`, plus `clipboard set --verify` readback, now refuse instead of showing the macOS clipboard privacy alert unless the reader already has silent access. Check `peekaboo clipboard status`, and use `--allow-prompt` only for an attended permission bootstrap; MCP and automatic Agent or paste reads cannot opt in.
+- CLI `clipboard get` and `clipboard save`, plus `clipboard set --verify` readback, now refuse instead of showing the macOS clipboard privacy alert unless the reader already has silent access. Check `wink clipboard status`, and use `--allow-prompt` only for an attended permission bootstrap; MCP and automatic Agent or paste reads cannot opt in.
 
 ## 4.6.0 - 2026-09-25
 
@@ -237,15 +237,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 4.4.0 - 2026-09-13
 
-**Highlights:** Capture works again next to Claude/OpenClaw, hosts embedding PeekabooMCPServer can supply their own MCP transport, and Chrome DevTools MCP 1.9.0 no longer activates DevTools during background reads.
+**Highlights:** Capture works again next to Claude/OpenClaw, hosts embedding WinkMCPServer can supply their own MCP transport, and Chrome DevTools MCP 1.9.0 no longer activates DevTools during background reads.
 
-- Capture no longer refuses when other apps such as Claude or OpenClaw are running; scope ScreenCaptureKit coordination to Peekaboo hosts and preserve real capture errors.
-- Let hosts embedding `PeekabooMCPServer` supply their own MCP transport with the same completion and cleanup lifecycle as stdio. Thanks @semyoren! #716.
+- Capture no longer refuses when other apps such as Claude or OpenClaw are running; scope ScreenCaptureKit coordination to Wink hosts and preserve real capture errors.
+- Let hosts embedding `WinkMCPServer` supply their own MCP transport with the same completion and cleanup lifecycle as stdio. Thanks @semyoren! #716.
 - Update Chrome DevTools MCP to 1.9.0 with a verified telemetry opt-out patch that prevents background reads from probing or activating DevTools; preserve single-file uploads across the provider's new array schema and re-audit browser routing.
 - Fix host-routed screen observations with Accessibility elements by validating their semantic owner separately from the screen raster target. #715, #710.
 - Keep caller screenshot destinations intact when remote evidence is rejected or raw output was not requested, staging ordinary captures before file publication as well as ROI captures. #710.
 - Fix application name and bundle resolution being blocked by reaped processes lingering in LaunchServices; require repeated native absence while retaining refusal for uncertain or changing process identities. #709.
-- Keep background window close, restore, and maximize callbacks on the main thread when the target belongs to the Peekaboo host, preventing embedded macOS apps from crashing while preserving exact-window validation and remote AX deadlines.
+- Keep background window close, restore, and maximize callbacks on the main thread when the target belongs to the Wink host, preventing embedded macOS apps from crashing while preserving exact-window validation and remote AX deadlines.
 - Keep action capture running until it samples after the child finishes and retain exact sample-boundary proof in new manifests; capture caps still fail incomplete coverage, while older version-1 manifests remain readable as legacy elapsed-time evidence.
 - Clarify observation evidence failures and runtime refusal guidance so same-build verification errors do not imply that an update will fix them. #710.
 - Strengthen selected-CLI guidance checks, repair published guide links, restore the read-only clipboard example, run guidance checks in regular macOS CI, and make noncooperative detection timeout proof independent of scheduler timing.
@@ -263,7 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Highlights:** Prevent accidental GUI host launches and read Firestaff manifests more safely.
 
-- Refuse CLI-style invocations of Peekaboo.app before capture or Bridge startup, with guidance to use the separate `peekaboo` CLI binary. #706.
+- Refuse CLI-style invocations of Wink.app before capture or Bridge startup, with guidance to use the separate `wink` CLI binary. #706.
 - Read immutable Firestaff frames across atomic updates, reject detectable in-place rewrites, and add opt-in byte limits while preserving the unlimited default; thanks @SebTardif for #703.
 - Honor `config edit --print-path` without creating a configuration file or launching an editor. #707.
 - Fix generated Homebrew formula smoke tests to recognize the v4 `Usage` header. #702.
@@ -338,7 +338,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recognize the canonical signed OpenClaw Bridge socket for modern receipt-backed protocol negotiation while preserving signer validation and custom-socket protocol 1.28 compatibility.
 - Reload credential files from fresh snapshots, retain empty-value batch clears, and publish provider edits atomically without losing unrelated keys or OAuth entries. Thanks @vincentkoc for #651.
 - Hide and pre-dispatch refuse every pinned browser-provider route that can grant browser user activation under default background authority, while explicit foreground calls report truthful foreground browser-protocol outcomes.
-- Keep `peekaboo learn` on its injected main-actor service provider instead of crashing when no process-wide tool registry default exists.
+- Keep `wink learn` on its injected main-actor service provider instead of crashing when no process-wide tool registry default exists.
 - Keep default browser calls existing-receipt-only while restoring explicit-foreground standalone CLI root auto-connect; resolve filtered MCP and Agent catalogs before browser bootstrap while still consuming explicit signed handoffs; and give MCP, Bridge, and Agent sessions generation-safe scoped children whose confirmed cleanup or retained debt prevents shared-root fallback and unsafe reuse.
 - Let explicitly browser-only MCP servers start without unrelated ScreenCaptureKit ownership preflight, while keeping unknown and capture-capable catalogs fail closed; reject receiptless isolated Chrome children before authenticated capability-session dispatch and direct headless callers to an exact loopback endpoint.
 - Keep `capture action` sampling active across pre-roll, child execution, and post-roll, release only generation-attributed children after terminal-event admission, refuse pre-existing video outputs before child release, reserve startup and descendant-drain time inside the capture deadline, derive post-roll from the recorded child-completion boundary, clear inherited termination-signal masks, keep timeout escalation and cancellable validation off the cooperative/main executors, terminate surviving process-group descendants before validation, reject replaced artifacts, compose focus and child receipts without inventing partial effects, and require Apple-anchored source-stamped host provenance.
@@ -351,7 +351,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Require explicit standalone CLI foreground consent for application focus/switch and Dock visibility changes, and reject contradictory app-switch selectors before runtime discovery.
 - Scope persistent MCP and Agent browser refs to one caller, provider child epoch, page, snapshot, and document generation; require the pinned provider's structured capability data, reserve exact targets before permission-bearing setup, preserve post-dispatch failure evidence while withholding invalid refs, and let independent background session lanes overlap under origin-recoverable durable cross-process invalidation while same-target access and Bridge providers without authenticated scoped-session support remain fail closed; explicit signed handoffs transfer one exact connection into a current Bridge host's isolated opaque-reference session.
 - Bind Bridge 1.34 Chrome channel connections to an exact live Chrome bundle, native process-owned DevTools listener, and approval-gated WebSocket under one 90-second deadline, verifying `Browser.getVersion` once without legacy HTTP discovery or repeated permission probes and failing closed on helper-service names, file, socket, generation, or endpoint drift.
-- Authenticate native Chrome channels against Google Team ID `EQHXZ8M8AV`, pin the exact signed identifier and CDHash for the process generation, and enumerate the target process's complete listener inventory independently of Peekaboo's file-descriptor limit.
+- Authenticate native Chrome channels against Google Team ID `EQHXZ8M8AV`, pin the exact signed identifier and CDHash for the process generation, and enumerate the target process's complete listener inventory independently of Wink's file-descriptor limit.
 - Honor the configured default save directory for pathless pixel-only `see` captures and add collision-resistant generated filenames for concurrent callers, while preserving explicit paths and stdout streaming. Thanks @PollyBot13 for #607.
 - Preserve the exact browser target-lock refusal so reconnecting to a different live Chrome channel or endpoint tells callers to disconnect first instead of reporting a generic unavailable target.
 - Advertise only actions and input shapes reachable under immutable background-only authority, require background paste window selectors to include one app or PID owner, and keep foreground-capable app, Dock, Space, dialog, menu, browser, clipboard, and paste workflows explicit.
@@ -394,7 +394,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add exact-window background middle and triple clicks without activating the target or moving the cursor.
 - Show requested and effective foreground authority in `agent --dry-run` text and JSON without invoking models, tools, or sessions.
-- Add authenticated `peekaboo bridge receipt validate` with the live host's source commit and negotiated protocol metadata.
+- Add authenticated `wink bridge receipt validate` with the live host's source commit and negotiated protocol metadata.
 - Add Bridge protocol 1.30 application and window inventories that distinguish complete from partial evidence while retaining conservative compatibility with older hosts.
 
 ### Fixed
@@ -501,7 +501,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve successful native outcomes for click, type, type sequences, scroll, press, action, and set-value across projected Bridge requests, and expose the validated canonical projection in CLI JSON and human output without changing legacy response payloads.
 - Embed one canonical 40-hex source commit in clean stamped CLI and macOS app builds, expose it through `--version --json` and Bridge identity receipts, and leave raw unstamped builds explicitly `unknown`.
 - Project canonical desktop-action outcomes into MCP metadata for click, type, scroll, press, action, and set-value successes and failures, preserving exact partial recovery and observation-before-retry semantics without inventing receipts for legacy hosts or collapsing composite setup focus into a no-change leaf.
-- Correct `peekaboo bridge --help` and Bridge docs to describe capability-aware reusable-daemon, Peekaboo.app, on-demand-daemon, and local-fallback routing.
+- Correct `wink bridge --help` and Bridge docs to describe capability-aware reusable-daemon, Wink.app, on-demand-daemon, and local-fallback routing.
 - Refuse public raw `press` chords before dispatch unless `--foreground` is explicit, with canonical retry-safe refusal metadata and honest unverifiable foreground results.
 - Reject excess positional arguments unless a command declares a variadic tail, while preserving explicit multi-chord `press` sequences.
 - Isolate accessibility traversal state per search so repeated long-lived CLI/host lookups cannot skip elements seen earlier.
@@ -514,7 +514,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve terminal input and rendering across fragmented UTF-8 and bracketed paste, exact literal paste state, display-width-safe Unicode, complete 7-bit/8-bit ANSI string controls and OSC-8 links, styled table truncation, and viewport-bounded Markdown and images; clear removed trailing rows during partial updates, keep stop/restart idempotent, and prevent queued renders from escaping a stopped session.
 - Cancel stale MCP SSE readers and fail pending requests when a stream ends or reconnects, and reject unrepresentable audio abort timeouts instead of trapping.
 - Make `agent --dry-run` emit a deterministic text/JSON preview with the normalized instruction and explicit zero model/tool/session effects, and reject taskless previews as typed invalid usage before chat/help routing.
-- Serialize ScreenCaptureKit ownership across Peekaboo processes for the lifetime of the first explicit local-modern claimant or real SCK caller, with build-bound process-awareness receipts, owner-affine auto/modern routing, current-policy capability checks for every transported engine, and fail-closed rolling-upgrade detection for old Bridge and long-running local processes; explicit classic remains a process-isolated, in-process-SCK-free escape hatch and refuses false-preflight captures unless protected WindowServer metadata independently proves access.
+- Serialize ScreenCaptureKit ownership across Wink processes for the lifetime of the first explicit local-modern claimant or real SCK caller, with build-bound process-awareness receipts, owner-affine auto/modern routing, current-policy capability checks for every transported engine, and fail-closed rolling-upgrade detection for old Bridge and long-running local processes; explicit classic remains a process-isolated, in-process-SCK-free escape hatch and refuses false-preflight captures unless protected WindowServer metadata independently proves access.
 - Keep modern capture inside bounded, coordinator-owned `SCScreenshotManager` calls instead of service-lifetime `SCStream` sessions, eliminating persistent stream overlap and rechecking ownership before every new framework dispatch.
 - Preserve negative numeric options, attached long-option values, and option-looking capture-action tails through Commander parsing, while enforcing genuinely required positionals instead of silently accepting incomplete commands.
 - Reject invalid `capture live|action` cadence instead of silently clamping or trapping, use post-motion monotonic scheduling, and distinguish sampling attempts/failures, sampled FPS, diff-filtered frames, kept FPS, and postprocessing time in JSON/MCP stats.
@@ -538,7 +538,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Return generation-pinned CG window inventory promptly when AX enrichment stalls; detached per-process enrichment no longer holds Bridge requests after caller timeout or disconnect.
 - Let generation-pinned background PID/window observations use fair process/window read lanes so unrelated app mutations overlap and queued same-process writes run between live frames; unresolved or focus-capable capture remains globally exclusive.
 - Report empty live/video capture as `CAPTURE_NO_VALID_FRAMES` with actual-dispatch retry metadata, retain bounded capture/decode causes without laundering cancellation or I/O errors, bound video sampling, and remove incomplete MP4 output on failure.
-- Stop the curated `learn` copy from presenting `shell` as a CLI command: it remains a built-in Agent capability but is not in the MCP catalog and has no `peekaboo shell` CLI root.
+- Stop the curated `learn` copy from presenting `shell` as a CLI command: it remains a built-in Agent capability but is not in the MCP catalog and has no `wink shell` CLI root.
 - Ensure action-command JSON validation failures before dispatch report `effect: refused`, including parser and binding errors.
 - Verify app focus against the exact active Workspace PID and visible frontmost-window PID, retry through native AX activation, and report the verified effect as confirmed instead of claiming success for an unfulfilled request.
 - Honor explicit `see` timeouts beyond 20 seconds, rerun deadline/incomplete AX retries instead of replaying cache, distinguish incomplete reads from expired deadlines, reject unusable empty truncated AX-only results, and keep CLI/MCP guidance accurate.
@@ -561,7 +561,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Remove CLI roots `sleep`, `open`, `run`, `commander`, root `list`, `image`, `hotkey`, `swipe`, `inspect-ui`, and `perform-action`, plus retired nested aliases.
-- Remove legacy coordinate/unit-suffixed flags, clipboard action dispatch, agent mode flags, compound permission requests, and the `.peekaboo.json` runner format.
+- Remove legacy coordinate/unit-suffixed flags, clipboard action dispatch, agent mode flags, compound permission requests, and the `.wink.json` runner format.
 - Remove the MCP `list`, `hotkey`, and `swipe` tools plus legacy agent shims; rename MCP `perform_action` to `action`.
 
 ### Fixed
@@ -627,7 +627,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Browser coordinate automation now fails closed instead of claiming success when Chrome exposes only non-actionable accessibility containers, and exact-window focus/selection keeps multi-window clicks on the intended window.
 
 ### Added
-- Add `peekaboo screen list` display enumeration and expose key/frontmost, layer, and accessibility subrole metadata in `window list --json`.
+- Add `wink screen list` display enumeration and expose key/frontmost, layer, and accessibility subrole metadata in `window list --json`.
 
 ### Changed
 - Refresh `chrome-devtools-mcp` to 1.6.0.
@@ -653,13 +653,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.9.1] - 2026-07-14
 
 ### Changed
-- `peekaboo inspect-ui` now accepts the standard `--app` target option used by other desktop commands; `--app-target` remains available as a legacy alias.
-- `peekaboo move --smooth` now uses natural eased pointer arcs by default, while `--profile linear` preserves deterministic straight-line travel; explicit `--steps` values are honored and human paths are capped at 96 samples to avoid redundant input events.
+- `wink inspect-ui` now accepts the standard `--app` target option used by other desktop commands; `--app-target` remains available as a legacy alias.
+- `wink move --smooth` now uses natural eased pointer arcs by default, while `--profile linear` preserves deterministic straight-line travel; explicit `--steps` values are honored and human paths are capped at 96 samples to avoid redundant input events.
 - Pointer-movement feedback now follows the real move with a short fading tail and one coalesced overlay instead of replaying a slow, thick line across the screen after the pointer arrives.
 
 ### Fixed
-- Canceling `peekaboo window close` now propagates through disappearance checks and stops before focus, hotkey, or pointer fallbacks. Thanks @SebTardif for #270.
-- Canceling `peekaboo window maximize` now stops frame-settling polls before any additional accessibility reads. Thanks @SebTardif for #271.
+- Canceling `wink window close` now propagates through disappearance checks and stops before focus, hotkey, or pointer fallbacks. Thanks @SebTardif for #270.
+- Canceling `wink window maximize` now stops frame-settling polls before any additional accessibility reads. Thanks @SebTardif for #271.
 - Default action-first clicks now synthesize a real pointer click for SwiftUI segmented tabs, whose accessibility `AXPress` action can report success without changing the selected tab.
 - Local `see` now confirms snapshot publication before reporting success, preserving its timeout and failure guarantees when a command-level mutation barrier is active.
 - Human pointer paths now use bounded minimum-jerk Bézier motion, land exactly on the requested coordinate, and drive the real drag/swipe event path instead of calculating an organic path and then discarding it for a linear drag.
@@ -667,19 +667,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.9.0] - 2026-07-11
 
 ### Added
-- `peekaboo agent --model` now accepts GPT-5.6 Sol, Terra, and Luna (`gpt-5.6` selects Sol) plus Claude Sonnet 5.
+- `wink agent --model` now accepts GPT-5.6 Sol, Terra, and Luna (`gpt-5.6` selects Sol) plus Claude Sonnet 5.
 
 ### Fixed
 - Resuming an agent session without `--model` now preserves its credential-free provider-qualified model selection instead of silently switching to the current default; ambiguous legacy sessions fail closed and require an explicit override, automatic taskless piped resumes report failed turns with a nonzero exit, and chat headers show a credential-free saved-model label instead of claiming the current default.
-- `peekaboo agent` now treats provider terminal events and cancellation as hard execution boundaries: late or truncated tool calls cannot run, canceled or skipped calls report failed completions, and final `done` / `need_info` reasons remain visible.
-- `peekaboo agent --list-sessions` now uses persisted creation and update times for display, ordering, and expiry instead of filesystem timestamps, so atomic saves no longer make old sessions appear new.
+- `wink agent` now treats provider terminal events and cancellation as hard execution boundaries: late or truncated tool calls cannot run, canceled or skipped calls report failed completions, and final `done` / `need_info` reasons remain visible.
+- `wink agent --list-sessions` now uses persisted creation and update times for display, ordering, and expiry instead of filesystem timestamps, so atomic saves no longer make old sessions appear new.
 - Multi-step Ollama agent runs now preserve native tool-call history and recursive schemas, surface streamed server errors, and fail with a resumable saved session when pending tool work exhausts the validated `1...100` step budget.
 - Custom-provider models marked `supportsTools: false` now get actionable agent guidance; `config models-provider` lists configured models offline unless `--discover` is passed, and `--save` preserves existing capabilities, limits, and parameters while keeping newly discovered models tool-disabled until explicitly enabled, including in JSON mode.
 - OpenRouter, Together, and OpenAI-compatible GPT-5.6 routes now preserve the 372K context/128K output capability profile, omit unsupported temperature, and recognize routing suffixes such as `:online`.
 - Adding a macOS application bundle to the Dock now places it with applications instead of mistaking its on-disk directory for a folder.
-- Bare `peekaboo paste` now pastes the current clipboard, while payload-only flags without a payload fail validation even when `--restore-delay-ms` explicitly uses its 150ms default; `list apps` also accepts the `app list` visibility flags and emits preferred snake_case keys alongside legacy keys.
-- `peekaboo clean --snapshot` now rejects empty, traversal, nested-path, absolute-path, and symlink snapshot IDs, keeping cleanup confined to one real snapshot folder directly beneath the cache root.
-- Invoking `peekaboo daemon start` through `PATH` now relaunches the canonical executable instead of looking for a `peekaboo` file in the current directory, startup errors now distinguish launch failures, early exits, and readiness timeouts, and daemon logs honor `PEEKABOO_CONFIG_DIR`. Thanks @mattash for #231.
+- Bare `wink paste` now pastes the current clipboard, while payload-only flags without a payload fail validation even when `--restore-delay-ms` explicitly uses its 150ms default; `list apps` also accepts the `app list` visibility flags and emits preferred snake_case keys alongside legacy keys.
+- `wink clean --snapshot` now rejects empty, traversal, nested-path, absolute-path, and symlink snapshot IDs, keeping cleanup confined to one real snapshot folder directly beneath the cache root.
+- Invoking `wink daemon start` through `PATH` now relaunches the canonical executable instead of looking for a `wink` file in the current directory, startup errors now distinguish launch failures, early exits, and readiness timeouts, and daemon logs honor `PEEKABOO_CONFIG_DIR`. Thanks @mattash for #231.
 - Canceling an app relaunch wait now stops its running-state poll immediately instead of spinning through the remaining timeout budget. Thanks @SebTardif for #230.
 - Snapshot-backed MCP actions now synchronize cached application, window, and process metadata across concurrent observation updates and action reads, preventing data races. Thanks @SebTardif for #228.
 - Adding a path to the Dock now passes the item directly to `defaults` instead of interpolating it through a shell, preventing shell metacharacters in filenames from being executed. Thanks @SebTardif for #224.
@@ -698,19 +698,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The MCP image tool now supports native `max_dimension` downscaling, with inline `format: "data"` captures capped at 1500 pixels by default to reduce payload and model-context overhead. Thanks @jacobjove for #219.
 
 ### Fixed
-- `peekaboo capture action` now returns within a bounded interval when a child survives termination attempts, preserves graceful TERM handling for timeouts and cancellation, and eventually reaps an abandoned child. Thanks @SebTardif for #215.
+- `wink capture action` now returns within a bounded interval when a child survives termination attempts, preserves graceful TERM handling for timeouts and cancellation, and eventually reaps an abandoned child. Thanks @SebTardif for #215.
 
 ## [3.6.0] - 2026-07-04
 
 ### Changed
-- Agent-skill documentation now defines Peekaboo as the authority for product and workflow guidance while allowing distributors such as OpenClaw to ship release-pinned snapshots with host-specific overlays.
+- Agent-skill documentation now defines Wink as the authority for product and workflow guidance while allowing distributors such as OpenClaw to ship release-pinned snapshots with host-specific overlays.
 
 ### Fixed
 - Bridge hosts now always return a non-empty decodable error when error encoding fails, instead of surfacing EOF or a secondary decode failure. Thanks @SebTardif for #211.
 - Snapshot listing and cleanup now propagate lock-open failures instead of treating unavailable storage as an empty snapshot list. Thanks @SebTardif for #212.
 - Visual feedback now uses one explicit Core Graphics/Accessibility-to-AppKit coordinate boundary, fixing mirrored or offset click, scroll, trail, swipe, window, dialog, capture, annotated-screenshot, and element-detection overlays across primary and vertically arranged displays without applying Retina scale twice; refreshed element detections also retire stale sheets on screens with no new elements.
-- Automation services now route visual feedback to Peekaboo's visualizer instead of silently dropping click, type, scroll, hotkey, swipe, mouse-move, window, menu, dialog, dock, Space-switch, and screenshot-flash animations.
-- The typing caption shows typed text verbatim, while secure fields are masked before persistence or display by sampling the delivery focus immediately before every text segment (including Tab-to-password sequences and background typing); `PEEKABOO_VISUALIZER_MASK_TYPED_TEXT=true` masks everything.
+- Automation services now route visual feedback to Wink's visualizer instead of silently dropping click, type, scroll, hotkey, swipe, mouse-move, window, menu, dialog, dock, Space-switch, and screenshot-flash animations.
+- The typing caption shows typed text verbatim, while secure fields are masked before persistence or display by sampling the delivery focus immediately before every text segment (including Tab-to-password sequences and background typing); `WINK_VISUALIZER_MASK_TYPED_TEXT=true` masks everything.
 - Visualizer overlays now center on their targets, and mouse-trail and swipe coordinates are converted into the correct window-local coordinate space.
 
 ### Removed
@@ -719,15 +719,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.5.4] - 2026-07-03
 
 ### Added
-- `peekaboo see --analyze` and `peekaboo agent` now accept MiniMax-M3 through the global and China MiniMax routes. Thanks @Tugser for #191.
-- `peekaboo see --analyze` and `peekaboo agent` now accept Kimi K2.6 and K2.7 Code models through Moonshot's API. Thanks @Tugser for #192.
+- `wink see --analyze` and `wink agent` now accept MiniMax-M3 through the global and China MiniMax routes. Thanks @Tugser for #191.
+- `wink see --analyze` and `wink agent` now accept Kimi K2.6 and K2.7 Code models through Moonshot's API. Thanks @Tugser for #192.
 
 ### Fixed
 - CLI paste now completes and reports clipboard restoration before returning, warning without inviting a retry when delivery succeeded but restoration failed.
 - MCP paste now warns without suggesting a retry when clipboard restoration fails after delivery. Thanks @SebTardif for #210.
 - MCP inline image capture now returns an explicit error when neither capture nor saved-file fallback contains image data, instead of reporting a successful zero-byte PNG. Thanks @SebTardif for #209.
 - Public CLI, agent, MCP, and API guidance now treats runtime element IDs as opaque strings to copy exactly instead of implying role-specific ID shapes. Thanks @coygeek for #194.
-- JSON-only `peekaboo see` runs without `--path` now keep required screenshots in snapshot storage instead of leaving files on Desktop or exposing their temporary paths. Thanks @coygeek for #196.
+- JSON-only `wink see` runs without `--path` now keep required screenshots in snapshot storage instead of leaving files on Desktop or exposing their temporary paths. Thanks @coygeek for #196.
 
 ## [3.5.3] - 2026-06-13
 
@@ -739,7 +739,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.5.2] - 2026-06-13
 
 ### Changed
-- `peekaboo type` and the MCP `type` tool now default to zero-delay linear typing; supplying `--wpm`/`wpm` still opts into human cadence.
+- `wink type` and the MCP `type` tool now default to zero-delay linear typing; supplying `--wpm`/`wpm` still opts into human cadence.
 
 ### Fixed
 - Synchronized Tachikoma's OpenAI `gpt-5-chat-latest` catalog metadata so configured models apply the correct GPT-5 parameter filtering.
@@ -747,25 +747,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.5.1] - 2026-06-12
 
 ### Fixed
-- `peekaboo see` now returns at its configured wall-clock deadline when suspended capture or detection work ignores task cancellation, while preserving explicit command cancellation.
+- `wink see` now returns at its configured wall-clock deadline when suspended capture or detection work ignores task cancellation, while preserving explicit command cancellation.
 
 ## [3.5.0] - 2026-06-12
 
 ### Added
-- `peekaboo agent` now supports explicit Claude Fable 5 (`claude-fable-5`) selection with 1M context and 128K max output while keeping Anthropic defaults on Opus 4.8 for zero-retention compatibility.
+- `wink agent` now supports explicit Claude Fable 5 (`claude-fable-5`) selection with 1M context and 128K max output while keeping Anthropic defaults on Opus 4.8 for zero-retention compatibility.
 
 ### Changed
 - Agent runs now honor the saved `agent.temperature` and `agent.maxTokens` values shared by the CLI and macOS Settings UI, clamp them to each provider's capabilities, infer Fable limits through compatible providers, and omit unsupported sampling parameters for GPT-5 and current Anthropic reasoning models.
-- Project, issue, build, release, and app About links now use the canonical `openclaw/Peekaboo` repository.
+- Project, issue, build, release, and app About links now use the canonical `Lxvi101/Wink` repository.
 
 ### Fixed
-- Bridge hosts now use atomic lease-backed socket ownership and bounded nonblocking transport, keep Peekaboo.app and the reusable daemon on distinct paths while preserving the healthy app's TCC-backed fallback, preserve lifecycle settings while migrating legacy daemons, prevent MCP from hosting a bridge listener, safely recover stale sockets, and release abandoned client connections instead of wedging. Thanks @Artifact-LV for #184.
+- Bridge hosts now use atomic lease-backed socket ownership and bounded nonblocking transport, keep Wink.app and the reusable daemon on distinct paths while preserving the healthy app's TCC-backed fallback, preserve lifecycle settings while migrating legacy daemons, prevent MCP from hosting a bridge listener, safely recover stale sockets, and release abandoned client connections instead of wedging. Thanks @Artifact-LV for #184.
 - Legacy screen and area capture now fails with a permission or native capture error instead of returning wallpaper-only/redacted pixels from background sessions. Thanks @VishalJ99 for #185.
 
 ## [3.4.1] - 2026-06-10
 
 ### Fixed
-- `peekaboo agent` now resolves saved custom providers, xAI/Grok, Gemini 3.5 Flash, Claude Opus 4.8, and GPT-5.5 model selections before falling back to unavailable built-in defaults. Thanks @udiedrichsen for #182.
+- `wink agent` now resolves saved custom providers, xAI/Grok, Gemini 3.5 Flash, Claude Opus 4.8, and GPT-5.5 model selections before falling back to unavailable built-in defaults. Thanks @udiedrichsen for #182.
 
 ## [3.4.0] - 2026-06-07
 
@@ -776,33 +776,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.2.2] - 2026-05-22
 
 ### Fixed
-- `peekaboo agent` now accepts OpenRouter model IDs and can use `OPENROUTER_API_KEY` from env or credentials. Thanks @delort for #155.
+- `wink agent` now accepts OpenRouter model IDs and can use `OPENROUTER_API_KEY` from env or credentials. Thanks @delort for #155.
 
 ## [3.2.1] - 2026-05-18
 
 ### Fixed
-- `peekaboo click --coords` now treats coordinates as target-window-relative when app/window target flags are supplied, reports resolved target metadata, and requires `--global-coords` for targeted global clicks.
-- `peekaboo-mcp` now shuts down cleanly during restart backoff and repairs executable permissions without shelling out through an install path.
-- `pnpm run peekaboo:dev` no longer depends on a hardcoded local checkout path.
-- `peekaboo agent` now tells models to use the current tool schema instead of stale tool names and arguments. Thanks @vyctorbrzezowski for #139.
+- `wink click --coords` now treats coordinates as target-window-relative when app/window target flags are supplied, reports resolved target metadata, and requires `--global-coords` for targeted global clicks.
+- `wink-mcp` now shuts down cleanly during restart backoff and repairs executable permissions without shelling out through an install path.
+- `pnpm run wink:dev` no longer depends on a hardcoded local checkout path.
+- `wink agent` now tells models to use the current tool schema instead of stale tool names and arguments. Thanks @vyctorbrzezowski for #139.
 - AX element detection now honors traversal budgets and reports truncation when depth, count, or per-node child limits are reached. Thanks @vyctorbrzezowski for #140.
-- `peekaboo agent` and MCP clients now have an `inspect_ui` tool for AX-only UI text/control inspection without capturing screenshots. Thanks @vyctorbrzezowski for #141.
+- `wink agent` and MCP clients now have an `inspect_ui` tool for AX-only UI text/control inspection without capturing screenshots. Thanks @vyctorbrzezowski for #141.
 - Window-mode capture now falls back to desktop-independent ScreenCaptureKit filters when multi-display setups cannot map a window to an enumerated display. Thanks @lonexreb for #147.
-- `peekaboo agent` guidance now routes AX-only observation through `inspect_ui` consistently while keeping screenshot-backed checks on `see`. Thanks @vyctorbrzezowski for #144.
+- `wink agent` guidance now routes AX-only observation through `inspect_ui` consistently while keeping screenshot-backed checks on `see`. Thanks @vyctorbrzezowski for #144.
 - Custom provider docs, CLI help, and macOS settings now prefer `${VAR}` API key references and shell examples that preserve them literally. Thanks @scotthuang for #142.
-- `peekaboo agent` now refreshes desktop context before each model turn and wires opt-in action verification through the configured capture strategy. Thanks @lonexreb for #148.
+- `wink agent` now refreshes desktop context before each model turn and wires opt-in action verification through the configured capture strategy. Thanks @lonexreb for #148.
 - AX traversal budgets now have wider defaults plus CLI, MCP, and environment overrides for complex app trees. Thanks @widdowson for #150 and #151.
-- `peekaboo agent` now keeps OAuth access tokens on Bearer auth paths instead of misclassifying them as API keys, including config-dir overrides and audio transcription. Thanks @Crux0453 for #154.
+- `wink agent` now keeps OAuth access tokens on Bearer auth paths instead of misclassifying them as API keys, including config-dir overrides and audio transcription. Thanks @Crux0453 for #154.
 
 ## [3.2.0] - 2026-05-15
 
 ### Fixed
 - Release automation now verifies CLI, npm, macOS app, checksum, appcast, and uploaded GitHub assets before publish.
-- `peekaboo type --json` now separates requested text from executed key actions, making escaped special keys such as `\n` visible to agents without losing backwards-compatible `typedText`.
-- `peekaboo permissions status --all-sources` now compares Bridge and local TCC permission state side by side, so daemon grants are no longer confused with CLI grants.
-- `peekaboo mcp serve --transport ...` now rejects invalid transport names instead of silently starting stdio mode.
-- `peekaboo paste --app ...` now fails before mutating the clipboard when the requested app cannot be found.
-- `peekaboo agent` no longer sends stale Anthropic extended-thinking options to Claude Opus 4.7 and now exits with failure when agent execution fails.
+- `wink type --json` now separates requested text from executed key actions, making escaped special keys such as `\n` visible to agents without losing backwards-compatible `typedText`.
+- `wink permissions status --all-sources` now compares Bridge and local TCC permission state side by side, so daemon grants are no longer confused with CLI grants.
+- `wink mcp serve --transport ...` now rejects invalid transport names instead of silently starting stdio mode.
+- `wink paste --app ...` now fails before mutating the clipboard when the requested app cannot be found.
+- `wink agent` no longer sends stale Anthropic extended-thinking options to Claude Opus 4.7 and now exits with failure when agent execution fails.
 - Command timeout JSON now reports the intended timeout error instead of occasionally surfacing cancellation as an unknown error.
 - Refreshed CLI docs and quickstart examples to use current flags such as `image --path`, `click --coords`, `type --return`, `press --count`, and `scroll --amount`.
 
@@ -817,49 +817,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.1.1] - 2026-05-11
 
 ### Added
-- `peekaboo image --path -` now writes a single captured image to stdout for shell pipelines.
+- `wink image --path -` now writes a single captured image to stdout for shell pipelines.
 - The npm package now allows Intel Macs when shipping the universal CLI binary.
 
 ### Fixed
-- Agent tool schemas now preserve MCP `anyOf`/`oneOf` parameters so Gemini no longer rejects `peekaboo agent` requests with orphan `required` entries.
-- `peekaboo see --capture-engine cg` now keeps frontmost/window captures on the CoreGraphics path instead of falling through to `SCScreenshotManager`.
+- Agent tool schemas now preserve MCP `anyOf`/`oneOf` parameters so Gemini no longer rejects `wink agent` requests with orphan `required` entries.
+- `wink see --capture-engine cg` now keeps frontmost/window captures on the CoreGraphics path instead of falling through to `SCScreenshotManager`.
 
 ## [3.1.0] - 2026-05-10
 
 ### Added
-- `peekaboo agent --model` now understands GPT-5.5 and Claude Opus 4.7 identifiers, defaults to `gpt-5.5`, and rejects old GPT/Claude model families.
-- Automation-oriented CLI commands now auto-start a warm Peekaboo daemon, reuse it across bursty invocations, and let it exit after an idle timeout.
+- `wink agent --model` now understands GPT-5.5 and Claude Opus 4.7 identifiers, defaults to `gpt-5.5`, and rejects old GPT/Claude model families.
+- Automation-oriented CLI commands now auto-start a warm Wink daemon, reuse it across bursty invocations, and let it exit after an idle timeout.
 - Bridge protocol 1.5 adds a daemon-side desktop observation operation so screenshot and `see` flows can execute fully in the warm daemon while returning compact metadata.
 
 ### Fixed
 - MCP stdio servers now default to the local runtime instead of probing an existing Bridge host, avoiding recursive capture timeouts for `see` and `image` tool calls.
 - MCP `image` now returns an `isError: true` tool result when Screen Recording permission is missing instead of surfacing an internal server error.
 - MCP `analyze` now honors configured AI providers and per-call `provider_config` models instead of hardcoding an OpenAI model.
-- Peekaboo.app now signs with the AppleEvents automation entitlement so macOS can prompt for Automation permission.
+- Wink.app now signs with the AppleEvents automation entitlement so macOS can prompt for Automation permission.
 - The CLI bundle metadata and bundled Homebrew formula now advertise the macOS 15 minimum that the SwiftPM package already requires.
-- `peekaboo see --annotate` now aligns labels using captured window bounds instead of guessing from the first detected element.
+- `wink see --annotate` now aligns labels using captured window bounds instead of guessing from the first detected element.
 - Window capture on macOS 26 now resolves native Retina scale from `NSScreen.backingScaleFactor` before falling back to ScreenCaptureKit display ratios.
-- `peekaboo image --app ... --window-title/--window-index` now captures the resolved window by stable window ID, avoiding mismatches between listed window indexes and ScreenCaptureKit window ordering.
-- `peekaboo image --app ...` now prefers titled app windows over untitled helper windows, avoiding blank Chrome captures.
-- `peekaboo image --capture-engine` is now accepted by Commander-based live parsing.
+- `wink image --app ... --window-title/--window-index` now captures the resolved window by stable window ID, avoiding mismatches between listed window indexes and ScreenCaptureKit window ordering.
+- `wink image --app ...` now prefers titled app windows over untitled helper windows, avoiding blank Chrome captures.
+- `wink image --capture-engine` is now accepted by Commander-based live parsing.
 - Concurrent ScreenCaptureKit screenshot requests now queue through an in-process and cross-process capture gate instead of racing into continuation leaks or transient TCC-denied failures.
-- Concurrent `peekaboo see` calls now queue the local screenshot/detection pipeline across processes, avoiding ReplayKit/ScreenCaptureKit continuation hangs under parallel usage.
-- Natural-language automation examples now use `peekaboo agent "..."`.
+- Concurrent `wink see` calls now queue the local screenshot/detection pipeline across processes, avoiding ReplayKit/ScreenCaptureKit continuation hangs under parallel usage.
+- Natural-language automation examples now use `wink agent "..."`.
 
 ### Performance
-- `peekaboo see`, `image`, UI interaction, window, menu, dock, dialog, and app commands now prefer the warm on-demand daemon by default, avoiding repeated service startup cost across command bursts.
-- `peekaboo tools`, `peekaboo list apps`, `peekaboo app list`, and purely local metadata commands still avoid daemon startup. Pass `--bridge-socket` to target a Bridge host explicitly where supported.
+- `wink see`, `image`, UI interaction, window, menu, dock, dialog, and app commands now prefer the warm on-demand daemon by default, avoiding repeated service startup cost across command bursts.
+- `wink tools`, `wink list apps`, `wink app list`, and purely local metadata commands still avoid daemon startup. Pass `--bridge-socket` to target a Bridge host explicitly where supported.
 - Daemon-backed screenshot and `see` calls now write screenshot artifacts in the daemon and avoid sending image bytes through Bridge JSON, preventing large-payload timeouts and making warm calls substantially faster.
 - Capture engine `auto` now tries the CoreGraphics path before ScreenCaptureKit, which makes repeated screenshot calls faster locally and avoids observed ScreenCaptureKit continuation hangs; explicit `--capture-engine modern` still forces ScreenCaptureKit.
-- `peekaboo image --app` avoids redundant application/window-count lookups during screenshot setup and skips auto-focus work when the target app is already frontmost.
-- `peekaboo image --app` now uses a CoreGraphics-only window selection fast path before falling back to full AX-enriched window enumeration, reducing warm Playground screenshot capture from about 350ms to 290ms.
-- `peekaboo image` skips a redundant CLI-side screen-recording preflight and relies on the capture service's permission check, shaving about 8ms from warm one-shot app screenshots.
-- `peekaboo see --app` avoids re-focusing the target window when Accessibility already reports the captured window as focused.
-- `peekaboo see` avoids recursive AX child-text lookups for elements whose labels cannot use them, reducing Playground element detection from about 201ms to 134ms in local testing.
-- `peekaboo see` batches per-element Accessibility descriptor reads and skips avoidable action/editability probes, reducing local Playground element detection from about 205ms to 176ms.
-- `peekaboo see` limits expensive AX action and keyboard-shortcut probes to roles that can use them, reducing Playground element detection from about 286ms to roughly 180-190ms in local testing.
-- `peekaboo see` skips a redundant CLI-side screen-recording preflight and relies on the capture service's permission check, shaving a fixed TCC probe from screenshot-plus-AX runs.
-- `peekaboo see` now keeps AX traversal scoped to the captured window and skips web-content focus probing once a rich native AX tree is already visible, avoiding sibling-window elements and cutting native Playground detection from about 220ms to 130ms.
+- `wink image --app` avoids redundant application/window-count lookups during screenshot setup and skips auto-focus work when the target app is already frontmost.
+- `wink image --app` now uses a CoreGraphics-only window selection fast path before falling back to full AX-enriched window enumeration, reducing warm Playground screenshot capture from about 350ms to 290ms.
+- `wink image` skips a redundant CLI-side screen-recording preflight and relies on the capture service's permission check, shaving about 8ms from warm one-shot app screenshots.
+- `wink see --app` avoids re-focusing the target window when Accessibility already reports the captured window as focused.
+- `wink see` avoids recursive AX child-text lookups for elements whose labels cannot use them, reducing Playground element detection from about 201ms to 134ms in local testing.
+- `wink see` batches per-element Accessibility descriptor reads and skips avoidable action/editability probes, reducing local Playground element detection from about 205ms to 176ms.
+- `wink see` limits expensive AX action and keyboard-shortcut probes to roles that can use them, reducing Playground element detection from about 286ms to roughly 180-190ms in local testing.
+- `wink see` skips a redundant CLI-side screen-recording preflight and relies on the capture service's permission check, shaving a fixed TCC probe from screenshot-plus-AX runs.
+- `wink see` now keeps AX traversal scoped to the captured window and skips web-content focus probing once a rich native AX tree is already visible, avoiding sibling-window elements and cutting native Playground detection from about 220ms to 130ms.
 
 ## [2.0.2] - 2025-07-03
 
@@ -890,16 +890,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Frontmost window capture
   - Multi-window capture from multiple apps
 - **AI Vision Analysis** - Analyze screenshots with OpenAI or Ollama directly from Swift CLI
-- **Configuration File Support** - JSONC format configuration at `~/.config/peekaboo/config.json` with:
+- **Configuration File Support** - JSONC format configuration at `~/.config/wink/config.json` with:
   - Environment variable expansion (`${HOME}`, `${OPENAI_API_KEY}`)
   - Comments support for better documentation
   - Hierarchical settings for AI providers, defaults, and logging
-- **Config Command** - New `peekaboo config` subcommand to manage configuration:
+- **Config Command** - New `wink config` subcommand to manage configuration:
   - `config init` - Create default configuration file
   - `config show` - Display current configuration
   - `config edit` - Open configuration in default editor
   - `config validate` - Validate configuration syntax
-- **Permissions Command** - New `peekaboo list permissions` to check system permissions
+- **Permissions Command** - New `wink list permissions` to check system permissions
 - **PID Targeting** - Target applications by process ID with `PID:12345` syntax
 - **Homebrew Distribution** - Install via `brew install steipete/tap/peekaboo` for easy installation and updates
 - **Comprehensive Test Suite** - 331 tests with 100% pass rate covering all major components

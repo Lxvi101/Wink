@@ -55,7 +55,7 @@ else:
 
 class WorkspaceFixture(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="peekaboo workspace contracts ")
+        self.temporary = tempfile.TemporaryDirectory(prefix="wink workspace contracts ")
         self.addCleanup(self.temporary.cleanup)
         self.base = Path(self.temporary.name).resolve()
         self.root = self.base / "checkout with spaces"
@@ -93,7 +93,7 @@ class WorkspaceContract(WorkspaceFixture):
                            str(int(child_signal)) + ")"]
                 result = self.run_setup("run", "--", *command, ok=False)
                 self.assertEqual(result.returncode, 128 + child_signal)
-                self.assertFalse((self.root / ".swiftpm/peekaboo-workspace.lock").exists())
+                self.assertFalse((self.root / ".swiftpm/wink-workspace.lock").exists())
 
     def test_clean_setup_idempotence_and_remove_preserve_unrelated_settings(self):
         other = self.root / "Apps/CLI/.swiftpm/configuration/registries.json"
@@ -217,7 +217,7 @@ if os.environ.get('MUTATE_MAPPING'): p.write_text('tampered')
             self.assertNotRegex(content, r'isa = PBXFileReference;[^\n]*path = ../../Commander;')
 
 
-@unittest.skipUnless(os.environ.get("PEEKABOO_TEST_REAL_SWIFT_WORKSPACE") == "1",
+@unittest.skipUnless(os.environ.get("WINK_TEST_REAL_SWIFT_WORKSPACE") == "1",
                      "opt in to compile-only SwiftPM/Xcode inert fixtures")
 class RealSubmoduleContract(WorkspaceFixture):
     def setUp(self):

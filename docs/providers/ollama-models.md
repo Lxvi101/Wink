@@ -1,5 +1,5 @@
 ---
-summary: 'Choose an Ollama model for Peekaboo by verified tools, vision, context, and hardware capabilities.'
+summary: 'Choose an Ollama model for Wink by verified tools, vision, context, and hardware capabilities.'
 read_when:
   - 'choosing an Ollama model for agent automation or image analysis'
   - 'debugging an Ollama model capability mismatch'
@@ -7,14 +7,14 @@ read_when:
 
 # Choosing an Ollama model
 
-Ollama's catalog and model capabilities change independently of Peekaboo. Treat model names, parameter counts, and
+Ollama's catalog and model capabilities change independently of Wink. Treat model names, parameter counts, and
 memory estimates as discovery hints—not proof that a model can drive the agent. Verify the exact tag you install.
 
 ## Match the capability to the command
 
-| Peekaboo use | Required Ollama capability | Notes |
+| Wink use | Required Ollama capability | Notes |
 | --- | --- | --- |
-| `peekaboo agent` | Tools/function calling | Required even when the task sounds text-only, because the agent acts through tools. |
+| `wink agent` | Tools/function calling | Required even when the task sounds text-only, because the agent acts through tools. |
 | Image analysis | Vision | A vision-only model can analyze an image but cannot necessarily run the agent. |
 | Visual agent task | Tools; vision if the selected workflow sends images to the model | Tool support and vision support are independent. |
 
@@ -36,7 +36,7 @@ MODEL=llama3.1:8b
 ollama pull "$MODEL"
 
 # A small budget proves the native route and one tool round trip.
-peekaboo agent --model "ollama/$MODEL" --max-steps 2 \
+wink agent --model "ollama/$MODEL" --max-steps 2 \
   "Read the title of the frontmost window and report it"
 ```
 
@@ -50,7 +50,7 @@ choose a stronger tool-capable tag.
   model or respond too slowly for an interactive automation loop.
 - Longer agent sessions replay conversation and tool history. Prefer a context window large enough for the task and
   start a fresh session when old context is no longer useful.
-- Small models can be fast but less reliable with nested schemas and multi-step planning. Test the actual Peekaboo
+- Small models can be fast but less reliable with nested schemas and multi-step planning. Test the actual Wink
   tool set rather than inferring reliability from a generic benchmark.
 - Pulling a model requires network access and disk space even when subsequent inference runs locally.
 

@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkFoundation
 import Tachikoma
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct AgentCommandStepLimitTests {
@@ -20,7 +20,7 @@ struct AgentCommandStepLimitTests {
         var command = try AgentCommand.parse([])
         command.maxSteps = maxSteps
 
-        let error = #expect(throws: PeekabooError.self) {
+        let error = #expect(throws: WinkError.self) {
             try command.validatedMaxStepCount()
         }
 
@@ -48,7 +48,7 @@ struct AgentCommandStepLimitTests {
         }
         let command = try AgentCommand.parse(arguments)
 
-        #expect(throws: PeekabooError.self) {
+        #expect(throws: WinkError.self) {
             try command.validateSessionOptions()
         }
     }
@@ -57,8 +57,8 @@ struct AgentCommandStepLimitTests {
     func `Chat recovers the saved session from step exhaustion`() throws {
         let command = try AgentCommand.parse([])
         let sessionId = UUID().uuidString
-        let error = PeekabooAgentService.AgentStepLimitExceededError(maxSteps: 1, sessionId: sessionId)
-        let ephemeralError = PeekabooAgentService.AgentStepLimitExceededError(
+        let error = WinkAgentService.AgentStepLimitExceededError(maxSteps: 1, sessionId: sessionId)
+        let ephemeralError = WinkAgentService.AgentStepLimitExceededError(
             maxSteps: 1,
             sessionId: "ephemeral",
             sessionWasPersisted: false
@@ -66,7 +66,7 @@ struct AgentCommandStepLimitTests {
 
         #expect(command.stepLimitSessionId(from: error) == sessionId)
         #expect(command.stepLimitSessionId(from: ephemeralError) == nil)
-        #expect(command.stepLimitSessionId(from: PeekabooError.commandFailed("other")) == nil)
+        #expect(command.stepLimitSessionId(from: WinkError.commandFailed("other")) == nil)
     }
 
     @Test(arguments: [false, true])
@@ -101,7 +101,7 @@ struct AgentCommandStepLimitTests {
                 endTime: Date()
             )
         )
-        let error = PeekabooAgentService.AgentStepLimitExceededError(
+        let error = WinkAgentService.AgentStepLimitExceededError(
             maxSteps: 1,
             sessionId: "synthetic-session",
             sessionWasPersisted: persisted,
@@ -137,7 +137,7 @@ struct AgentCommandStepLimitTests {
         _ maxSteps: Int,
         _ persisted: Bool
     ) throws {
-        let error = PeekabooAgentService.AgentStepLimitExceededError(
+        let error = WinkAgentService.AgentStepLimitExceededError(
             maxSteps: maxSteps,
             sessionId: "synthetic-session",
             sessionWasPersisted: persisted

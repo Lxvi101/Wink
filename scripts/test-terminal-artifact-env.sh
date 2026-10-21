@@ -4,13 +4,13 @@ set -euo pipefail
 
 # Fixtures supply their own custody values; never inherit the operator's credentials.
 unset OP_SERVICE_ACCOUNT_TOKEN MOLTY_OP_SERVICE_ACCOUNT_TOKEN \
-  PEEKABOO_OP_SERVICE_TOKEN_FILE PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE
+  WINK_OP_SERVICE_TOKEN_FILE WINK_MOLTY_OP_SERVICE_TOKEN_FILE
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=scripts/terminal-artifact-env.sh
 source "$ROOT_DIR/scripts/terminal-artifact-env.sh"
 
-TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-terminal-env-test.XXXXXX")"
+TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wink-terminal-env-test.XXXXXX")"
 trap 'rm -rf -- "$TEST_DIR"' EXIT
 
 fail() {
@@ -38,16 +38,16 @@ assertion=allowed-values
 [[ "$MAC_RELEASE_CODESIGN_KEYCHAIN" == "$2/keychain" && "$CODESIGN_KEYCHAIN" == "$2/keychain" ]]
 [[ "$CODESIGN_IDENTITY" == fixture-identity ]]
 [[ "$SWIFTPM_MIRROR_CONFIG" == "$2/verified-source-mapping.json" ]]
-[[ "$PEEKABOO_USE_RESOLVED_VERSIONS" == 1 && "$TERMINAL_FIXTURE_ALLOWED" == $'allowed value\nsecond line' ]]
+[[ "$WINK_USE_RESOLVED_VERSIONS" == 1 && "$TERMINAL_FIXTURE_ALLOWED" == $'allowed value\nsecond line' ]]
 assertion=tool-resolution
-for tool in node pnpm npm python3 git codesign bash "peekaboo-rejected-${2##*.}" "peekaboo-absent-${2##*.}"; do
+for tool in node pnpm npm python3 git codesign bash "wink-rejected-${2##*.}" "wink-absent-${2##*.}"; do
   # This checks the environment boundary, not the host's build-tool readiness.
   if resolved="$(command -v "$tool")"; then
     case "$resolved" in
       /opt/homebrew/bin/*|/usr/local/bin/*|/usr/bin/*|/bin/*) ;;
       *) printf 'terminal-env-probe: tool=%s unsafe-resolution\n' "$tool" >&2; exit 94 ;;
     esac
-    [[ "$tool" != peekaboo-rejected-* && "$tool" != peekaboo-absent-* ]]
+    [[ "$tool" != wink-rejected-* && "$tool" != wink-absent-* ]]
     printf 'tool=%s resolution=trusted\n' "$tool"
   else
     lookup_exit=$?
@@ -57,10 +57,10 @@ for tool in node pnpm npm python3 git codesign bash "peekaboo-rejected-${2##*.}"
 done
 assertion=custody
 if [[ "$3" == build ]]; then
-  [[ -z "${PEEKABOO_OP_SERVICE_TOKEN_FILE+x}" && -z "${PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE+x}" ]]
+  [[ -z "${WINK_OP_SERVICE_TOKEN_FILE+x}" && -z "${WINK_MOLTY_OP_SERVICE_TOKEN_FILE+x}" ]]
 else
-  [[ "$PEEKABOO_OP_SERVICE_TOKEN_FILE" == "$2/primary-custody" ]]
-  [[ "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE" == "$2/legacy-custody" ]]
+  [[ "$WINK_OP_SERVICE_TOKEN_FILE" == "$2/primary-custody" ]]
+  [[ "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE" == "$2/legacy-custody" ]]
 fi
 assertion=arguments
 [[ "$5" == 'argument one' && "$6" == 'argument=two' ]]
@@ -75,7 +75,7 @@ printf 'invoked\n' > "${HOSTILE_ENV_MARKER:?}"
 exit 97
 EOF
 chmod 755 "$TEST_DIR/hostile-bin/env"
-for tool in codesign node pnpm npm python3 git bash "peekaboo-rejected-${TEST_DIR##*.}"; do
+for tool in codesign node pnpm npm python3 git bash "wink-rejected-${TEST_DIR##*.}"; do
   cp "$TEST_DIR/hostile-bin/env" "$TEST_DIR/hostile-bin/$tool"
 done
 
@@ -94,18 +94,18 @@ run_dirty_fixture() (
   done
   export BASH_ENV="$TEST_DIR/hostile-bash-env" ENV="$TEST_DIR/hostile-bash-env"
   export CDPATH=sentinel GLOBIGNORE=sentinel BASH_FUNC_terminal_fixture=sentinel
-  export PEEKABOO_OP_SERVICE_TOKEN_FILE="$TEST_DIR/primary-custody"
-  export PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE="$TEST_DIR/legacy-custody"
+  export WINK_OP_SERVICE_TOKEN_FILE="$TEST_DIR/primary-custody"
+  export WINK_MOLTY_OP_SERVICE_TOKEN_FILE="$TEST_DIR/legacy-custody"
   export HOME="$TEST_DIR/home" TMPDIR="$TEST_DIR/tmp" DEVELOPER_DIR="$TEST_DIR/developer"
   export MAC_RELEASE_CODESIGN_KEYCHAIN="$TEST_DIR/keychain" CODESIGN_KEYCHAIN="$TEST_DIR/keychain"
   export CODESIGN_IDENTITY=fixture-identity SWIFTPM_MIRROR_CONFIG="$TEST_DIR/verified-source-mapping.json"
-  export PEEKABOO_USE_RESOLVED_VERSIONS=1 TERMINAL_FIXTURE_ALLOWED=$'allowed value\nsecond line'
+  export WINK_USE_RESOLVED_VERSIONS=1 TERMINAL_FIXTURE_ALLOWED=$'allowed value\nsecond line'
   export HOSTILE_ENV_MARKER="$TEST_DIR/hostile-env-marker"
   PATH="$TEST_DIR/hostile-bin:$PATH"
   local parent_path="$PATH"
   [[ "$(command -v codesign)" == "$TEST_DIR/hostile-bin/codesign" ]] || return 94
-  [[ "$(command -v "peekaboo-rejected-${TEST_DIR##*.}")" == "$TEST_DIR/hostile-bin/peekaboo-rejected-${TEST_DIR##*.}" ]] || return 94
-  if command -v "peekaboo-absent-${TEST_DIR##*.}" >/dev/null; then return 94; fi
+  [[ "$(command -v "wink-rejected-${TEST_DIR##*.}")" == "$TEST_DIR/hostile-bin/wink-rejected-${TEST_DIR##*.}" ]] || return 94
+  if command -v "wink-absent-${TEST_DIR##*.}" >/dev/null; then return 94; fi
 
   # Observe shell state before the native loader can strip DYLD variables for us.
   # Forward to the real executable so the child environment is also verified.
@@ -117,10 +117,10 @@ run_dirty_fixture() (
       [[ -z "${!name+x}" ]] || { printf 'pre-exec variable remains: %s\n' "$name" >&2; return 91; }
     done
     if [[ "$lane" == build ]]; then
-      [[ -z "${PEEKABOO_OP_SERVICE_TOKEN_FILE+x}" && -z "${PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE+x}" ]] || return 92
+      [[ -z "${WINK_OP_SERVICE_TOKEN_FILE+x}" && -z "${WINK_MOLTY_OP_SERVICE_TOKEN_FILE+x}" ]] || return 92
     else
-      [[ "$PEEKABOO_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/primary-custody" &&
-         "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/legacy-custody" ]] || return 92
+      [[ "$WINK_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/primary-custody" &&
+         "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/legacy-custody" ]] || return 92
     fi
     command /usr/bin/env "$@"
   }
@@ -135,8 +135,8 @@ run_dirty_fixture() (
       *) [[ "${!secret_name}" == sentinel ]] || return 93 ;;
     esac
   done
-  [[ "$PEEKABOO_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/primary-custody" &&
-     "$PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/legacy-custody" ]] || return 93
+  [[ "$WINK_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/primary-custody" &&
+     "$WINK_MOLTY_OP_SERVICE_TOKEN_FILE" == "$TEST_DIR/legacy-custody" ]] || return 93
   [[ "$PATH" == "$parent_path" && "$(command -v codesign)" == "$TEST_DIR/hostile-bin/codesign" &&
      "$MAC_RELEASE_CODESIGN_KEYCHAIN" == "$TEST_DIR/keychain" && "$CODESIGN_KEYCHAIN" == "$TEST_DIR/keychain" &&
      "$CODESIGN_IDENTITY" == fixture-identity &&
@@ -169,7 +169,7 @@ done
 # Safe lookup refusal must still fail when a caller actually needs the command.
 for lane in build orchestrator; do
   for availability in rejected absent; do
-    missing_tool="peekaboo-$availability-${TEST_DIR##*.}"
+    missing_tool="wink-$availability-${TEST_DIR##*.}"
     command_exit=0
     PATH="$TEST_DIR/hostile-bin:$PATH" "terminal_artifact_run_$lane" "$missing_tool" \
       > "$TEST_DIR/missing-output" 2>&1 || command_exit=$?
@@ -200,7 +200,7 @@ done
 # helper lookup must fail closed without consulting an operator's helper checkout.
 entry_root="$TEST_DIR/entrypoint"
 mkdir -p "$entry_root/scripts" "$TEST_DIR/entry-home" "$TEST_DIR/entry-tmp"
-sed "s|/tmp/peekaboo-|$TEST_DIR/entry-tmp/peekaboo-|g" \
+sed "s|/tmp/wink-|$TEST_DIR/entry-tmp/wink-|g" \
   "$ROOT_DIR/scripts/build-terminal-artifacts.sh" > "$entry_root/scripts/build-terminal-artifacts.sh"
 for library in source-provenance terminal-artifact-env terminal-artifact-policy native-only-policy release-version; do
   cp "$ROOT_DIR/scripts/$library.sh" "$entry_root/scripts/"
@@ -222,7 +222,7 @@ FUNCTION_MARKER="$function_marker" HOME="$TEST_DIR/entry-home" /bin/bash --nopro
 caller_owned_token_file="$TEST_DIR/caller-owned-token"
 printf 'caller-owned\n' > "$caller_owned_token_file"
 helper_exit=0
-HOME="$TEST_DIR/entry-home" PEEKABOO_OP_SERVICE_TOKEN_FILE="$caller_owned_token_file" \
+HOME="$TEST_DIR/entry-home" WINK_OP_SERVICE_TOKEN_FILE="$caller_owned_token_file" \
   "$entry_wrapper" check-helper > "$TEST_DIR/helper-output" 2>&1 || helper_exit=$?
 [[ "$helper_exit" == 1 && "$(<"$TEST_DIR/helper-output")" == \
   'build-terminal-artifacts: trusted mac-release helper is missing' ]] || \
@@ -232,16 +232,16 @@ HOME="$TEST_DIR/entry-home" PEEKABOO_OP_SERVICE_TOKEN_FILE="$caller_owned_token_
 
 before_token_files="$TEST_DIR/token-files-before"
 after_token_files="$TEST_DIR/token-files-after"
-find "$TEST_DIR/entry-tmp" -maxdepth 1 -type f -name 'peekaboo-op-token.*' -print | sort > "$before_token_files"
+find "$TEST_DIR/entry-tmp" -maxdepth 1 -type f -name 'wink-op-token.*' -print | sort > "$before_token_files"
 caller_owned_molty_file="$TEST_DIR/caller-owned-molty-token"
 printf 'caller-owned-molty\n' > "$caller_owned_molty_file"
 custody_exit=0
 HOME="$TEST_DIR/entry-home" OP_SERVICE_ACCOUNT_TOKEN=first-token MOLTY_OP_SERVICE_ACCOUNT_TOKEN=second-token \
-  PEEKABOO_MOLTY_OP_SERVICE_TOKEN_FILE="$caller_owned_molty_file" \
+  WINK_MOLTY_OP_SERVICE_TOKEN_FILE="$caller_owned_molty_file" \
   "$entry_wrapper" check-helper > "$TEST_DIR/custody-output" 2>&1 || custody_exit=$?
 [[ "$custody_exit" == 1 && "$(<"$TEST_DIR/custody-output")" == 'Conflicting legacy service-token custody.' ]] || \
   fail 'conflicting second-token custody did not reach its intended assertion'
-find "$TEST_DIR/entry-tmp" -maxdepth 1 -type f -name 'peekaboo-op-token.*' -print | sort > "$after_token_files"
+find "$TEST_DIR/entry-tmp" -maxdepth 1 -type f -name 'wink-op-token.*' -print | sort > "$after_token_files"
 [[ -z "$(comm -13 "$before_token_files" "$after_token_files")" ]] || \
   fail 'first token file leaked after second-token custody failure'
 [[ "$(cat "$caller_owned_molty_file")" == caller-owned-molty ]] || \
@@ -253,7 +253,7 @@ for secret_name in OP_SERVICE_ACCOUNT_TOKEN MOLTY_OP_SERVICE_ACCOUNT_TOKEN; do
   grep -Fwq "$secret_name" <<< "$release_entry_prefix" || \
     fail "release wrapper does not de-export $secret_name before its environment scan"
 done
-sed "s|/tmp/peekaboo-|$TEST_DIR/entry-tmp/peekaboo-|g" \
+sed "s|/tmp/wink-|$TEST_DIR/entry-tmp/wink-|g" \
   "$release_wrapper" > "$entry_root/scripts/mac-release"
 release_wrapper="$entry_root/scripts/mac-release"
 chmod 755 "$release_wrapper"
@@ -315,7 +315,7 @@ fi
 ) || fail 'terminal credential manifest still imports npm environment references'
 
 for build_script in scripts/build-swift-arm.sh scripts/build-swift-universal.sh; do
-  rg -Fq 'PEEKABOO_USE_RESOLVED_VERSIONS' "$ROOT_DIR/$build_script" || \
+  rg -Fq 'WINK_USE_RESOLVED_VERSIONS' "$ROOT_DIR/$build_script" || \
     fail "$build_script cannot enforce the canonical CLI dependency graph"
   rg -Fq 'SWIFT_RESOLUTION_ARGS=(--only-use-versions-from-resolved-file)' "$ROOT_DIR/$build_script" || \
     fail "$build_script omits fail-closed Swift dependency resolution"
@@ -327,7 +327,7 @@ rg -Fq 'cp "$CANONICAL_LOCK" "$cli_lock"' "$wrapper" || \
   fail 'terminal CLI build is not seeded from the canonical tracked dependency graph'
 rg -Fq -- '--transaction "$APP_NOTARY_TRANSACTION"' "$wrapper" || fail 'app notary transaction is not atomic'
 rg -Fq -- '--transaction "$DMG_NOTARY_TRANSACTION"' "$wrapper" || fail 'DMG notary transaction is not atomic'
-for inventory_name in cli peekaboo-app playground-app qualification-node-app; do
+for inventory_name in cli wink-app playground-app qualification-node-app; do
   rg -Fq "inventories/$inventory_name.json" "$wrapper" || \
     fail "complete $inventory_name payload inventory is not sealed"
 done
@@ -344,8 +344,8 @@ rg -Fq '20ab9a5e6bb1107788366726868f1a9b4c16d953' "$wrapper" || \
   fail 'terminal pipeline does not pin the package-run helper contract'
 [[ "$(grep -Fc "/bin/bash --noprofile --norc -p -c 'exec \"\$@\"'" "$wrapper")" == 2 ]] || \
   fail 'credentialed phase children do not use the required non-login bash -c wrapper'
-rg -Fq 'peekaboo-codesign-phase' "$wrapper" || fail 'codesign phase wrapper label is missing'
-rg -Fq 'peekaboo-notary-phase' "$wrapper" || fail 'notary phase wrapper label is missing'
+rg -Fq 'wink-codesign-phase' "$wrapper" || fail 'codesign phase wrapper label is missing'
+rg -Fq 'wink-notary-phase' "$wrapper" || fail 'notary phase wrapper label is missing'
 cat > "$TEST_DIR/phase-child-probe" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -354,7 +354,7 @@ printf '<%s>\n' "$@"
 EOF
 chmod 755 "$TEST_DIR/phase-child-probe"
 phase_child_output="$(/usr/bin/env -u BASH_ENV -u ENV PATH=/usr/bin:/bin \
-  /bin/bash --noprofile --norc -p -c 'exec "$@"' peekaboo-test-phase \
+  /bin/bash --noprofile --norc -p -c 'exec "$@"' wink-test-phase \
   "$TEST_DIR/phase-child-probe" 'argument one' 'argument=two')"
 [[ "$phase_child_output" == $'<argument one>\n<argument=two>' ]] || \
   fail 'credentialed bash -c wrapper changed phase arguments'

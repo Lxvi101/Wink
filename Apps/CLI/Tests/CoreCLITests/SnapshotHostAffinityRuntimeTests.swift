@@ -1,13 +1,13 @@
 import Darwin
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -35,7 +35,7 @@ struct SnapshotHostAffinityRuntimeTests {
                 screenshot: SnapshotScreenshotRequest(
                     snapshotId: snapshotID,
                     screenshotPath: "/tmp/no-elements.png",
-                    applicationBundleId: "boo.peekaboo.fixture",
+                    applicationBundleId: "boo.wink.fixture",
                     applicationProcessId: identity.ownerProcessIdentifier,
                     applicationName: "Fixture",
                     windowTitle: window.title,
@@ -86,7 +86,7 @@ struct SnapshotHostAffinityRuntimeTests {
                 #expect(BridgeCapabilityPolicy.supportsProducerBoundSnapshotReferences(for: handshake))
                 #expect(Set(handshake.supportedOperations).isSubset(of: CLISnapshotBridgeServices.snapshotOperations))
                 #expect(handshake.hostCapabilities?.contains(
-                    PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership
+                    WinkBridgeHostCapability.screenCaptureKitProcessOwnership
                 ) != true)
             }
 
@@ -127,8 +127,8 @@ struct SnapshotHostAffinityRuntimeTests {
     @Test
     func `candidate aliases count as one snapshot owner`() async throws {
         let aliases = [
-            self.candidate("/tmp/peekaboo-affinity-alias.sock"),
-            self.candidate("/tmp/../tmp/peekaboo-affinity-alias.sock"),
+            self.candidate("/tmp/wink-affinity-alias.sock"),
+            self.candidate("/tmp/../tmp/wink-affinity-alias.sock"),
         ]
 
         let selected = try await RuntimeHostResolver.resolveSnapshotAffinity(
@@ -203,7 +203,7 @@ struct SnapshotHostAffinityRuntimeTests {
             options.requiresProducerBoundSnapshotReferences = true
             options.requiresProcessGenerationPinnedClicks = true
             let dependencies = RuntimeHostResolver.Dependencies(
-                makeLocalServices: { _ in PeekabooServices(snapshotManager: InMemorySnapshotManager()) },
+                makeLocalServices: { _ in WinkServices(snapshotManager: InMemorySnapshotManager()) },
                 claimScreenCaptureKitOwner: { throw POSIXError(.EPERM) },
                 inspectScreenCaptureKitOwner: { nil },
                 remoteCandidatePlan: { _, _ in
@@ -332,7 +332,7 @@ struct SnapshotHostAffinityRuntimeTests {
             let dependencies = RuntimeHostResolver.Dependencies(
                 makeLocalServices: { _ in
                     localServiceConstructions += 1
-                    return PeekabooServices(snapshotManager: InMemorySnapshotManager())
+                    return WinkServices(snapshotManager: InMemorySnapshotManager())
                 },
                 claimScreenCaptureKitOwner: { throw POSIXError(.EPERM) },
                 inspectScreenCaptureKitOwner: { nil },
@@ -342,7 +342,7 @@ struct SnapshotHostAffinityRuntimeTests {
 
             let resolution = try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: socketFromEnvironment ? ["PEEKABOO_BRIDGE_SOCKET": socketPath] : [:],
+                environment: socketFromEnvironment ? ["WINK_BRIDGE_SOCKET": socketPath] : [:],
                 configurationInput: nil,
                 dependencies: dependencies
             )
@@ -370,7 +370,7 @@ struct SnapshotHostAffinityRuntimeTests {
             let dependencies = RuntimeHostResolver.Dependencies(
                 makeLocalServices: { _ in
                     localServiceConstructions += 1
-                    return PeekabooServices(snapshotManager: InMemorySnapshotManager())
+                    return WinkServices(snapshotManager: InMemorySnapshotManager())
                 },
                 claimScreenCaptureKitOwner: { throw POSIXError(.EPERM) },
                 inspectScreenCaptureKitOwner: { nil },
@@ -429,7 +429,7 @@ struct SnapshotHostAffinityRuntimeTests {
     func `dishonest ownership capability is classified as incompatible`() async throws {
         try await CLIBridgeHostFixture.withHosts { hosts in
             let snapshots = SnapshotMutationRecordingManager(wrapping: InMemorySnapshotManager())
-            snapshots.ownsSnapshotError = PeekabooBridgeErrorEnvelope(
+            snapshots.ownsSnapshotError = WinkBridgeErrorEnvelope(
                 code: .operationNotSupported,
                 message: "Injected dishonest capability"
             )
@@ -459,7 +459,7 @@ struct SnapshotHostAffinityRuntimeTests {
     func `automatic runtime selects a caller-local snapshot owner before remote policy`() async throws {
         let snapshots = InMemorySnapshotManager()
         let snapshotID = try await snapshots.createSnapshot()
-        let services = PeekabooServices(snapshotManager: snapshots)
+        let services = WinkServices(snapshotManager: snapshots)
         var probes: [String] = []
         var localServiceConstructions = 0
         var options = CommandRuntimeOptions()
@@ -491,9 +491,9 @@ struct SnapshotHostAffinityRuntimeTests {
         #expect(Set(probes) == Set([
             remote.socketPath,
             "/tmp/daemon.sock",
-            PeekabooBridgeConstants.peekabooSocketPath,
-            PeekabooBridgeConstants.claudeSocketPath,
-            PeekabooBridgeConstants.clawdbotSocketPath,
+            WinkBridgeConstants.winkSocketPath,
+            WinkBridgeConstants.claudeSocketPath,
+            WinkBridgeConstants.clawdbotSocketPath,
         ]))
     }
 
@@ -501,7 +501,7 @@ struct SnapshotHostAffinityRuntimeTests {
     func `force-local snapshot routing verifies only local ownership`() async throws {
         let snapshots = InMemorySnapshotManager()
         let owned = try await snapshots.createSnapshot()
-        let services = PeekabooServices(snapshotManager: snapshots)
+        let services = WinkServices(snapshotManager: snapshots)
         var probeCount = 0
         var planCount = 0
         var localServiceConstructions = 0
@@ -526,7 +526,7 @@ struct SnapshotHostAffinityRuntimeTests {
         )
         let resolution = try await RuntimeHostResolver.resolveServices(
             options: options,
-            environment: ["PEEKABOO_NO_REMOTE": "1"],
+            environment: ["WINK_NO_REMOTE": "1"],
             configurationInput: nil,
             dependencies: dependencies
         )
@@ -541,7 +541,7 @@ struct SnapshotHostAffinityRuntimeTests {
         await #expect(throws: PreDispatchActionError.self) {
             _ = try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: ["PEEKABOO_NO_REMOTE": "1"],
+                environment: ["WINK_NO_REMOTE": "1"],
                 configurationInput: nil,
                 dependencies: dependencies
             )
@@ -553,14 +553,14 @@ struct SnapshotHostAffinityRuntimeTests {
 
     @Test
     func `malformed concrete runtime reference is validation error before policy or probes`() async {
-        let services = PeekabooServices(snapshotManager: InMemorySnapshotManager())
+        let services = WinkServices(snapshotManager: InMemorySnapshotManager())
         var probeCount = 0
         var options = CommandRuntimeOptions()
         options.explicitSnapshotID = "1787675983803-1514"
         do {
             _ = try await RuntimeHostResolver.resolveServices(
                 options: options,
-                environment: ["PEEKABOO_NO_REMOTE": "1"],
+                environment: ["WINK_NO_REMOTE": "1"],
                 configurationInput: nil,
                 dependencies: self.dependencies(
                     localServices: services,
@@ -580,9 +580,9 @@ struct SnapshotHostAffinityRuntimeTests {
         #expect(probeCount == 0)
     }
 
-    private var identity: PeekabooBridgeClientIdentity {
-        PeekabooBridgeClientIdentity(
-            bundleIdentifier: "boo.peekaboo.test.client",
+    private var identity: WinkBridgeClientIdentity {
+        WinkBridgeClientIdentity(
+            bundleIdentifier: "boo.wink.test.client",
             teamIdentifier: nil,
             processIdentifier: getpid()
         )
@@ -630,7 +630,7 @@ struct SnapshotHostAffinityRuntimeTests {
     }
 
     private func dependencies(
-        localServices: PeekabooServices,
+        localServices: WinkServices,
         candidates: [RuntimeHostResolver.ImplicitRemoteCandidate],
         probe: @escaping RuntimeHostResolver.SnapshotAffinityProbe
     ) -> RuntimeHostResolver.Dependencies {
@@ -646,12 +646,12 @@ struct SnapshotHostAffinityRuntimeTests {
     private func startHost(
         hosts: CLIBridgeHostFixture,
         socketPath: String,
-        hostKind: PeekabooBridgeHostKind,
+        hostKind: WinkBridgeHostKind,
         snapshots: any SnapshotManagerProtocol,
-        allowedOperations: Set<PeekabooBridgeOperation>? = nil
+        allowedOperations: Set<WinkBridgeOperation>? = nil
     ) async throws {
         let services = CLISnapshotBridgeServices(snapshots: snapshots, directory: hosts.desktop.root)
-        let server = PeekabooBridgeServer(
+        let server = WinkBridgeServer(
             services: services,
             hostKind: hostKind,
             allowlistedTeams: [],
@@ -663,7 +663,7 @@ struct SnapshotHostAffinityRuntimeTests {
             screenCaptureKitOwnerClaimProvider: CLISnapshotBridgeServices.unexpectedScreenCaptureKitClaim,
             permissionStatusEvaluator: { _ in CLISnapshotBridgeServices.grantedPermissions() }
         )
-        let host = PeekabooBridgeHost(
+        let host = WinkBridgeHost(
             socketPath: socketPath,
             server: server,
             allowedTeamIDs: [],

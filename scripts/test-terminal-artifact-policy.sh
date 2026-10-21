@@ -7,7 +7,7 @@ TERMINAL_ARTIFACT_ROOT="$ROOT_DIR"
 export TERMINAL_ARTIFACT_ROOT
 # shellcheck source=scripts/terminal-artifact-policy.sh
 source "$ROOT_DIR/scripts/terminal-artifact-policy.sh"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-terminal-policy-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-terminal-policy-test.XXXXXX)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 fail() {
@@ -34,10 +34,10 @@ com.apple.provenance||rejected
 com.apple.provenance|0|rejected
 com.apple.provenance|10|rejected
 com.apple.provenance|12|rejected
-com.openclaw.peekaboo.fixture|11|rejected
+com.openclaw.wink.fixture|11|rejected
 |11|rejected
 EOF
-if classify_fixture_metadata $'com.apple.provenance\ncom.openclaw.peekaboo.fixture' 11 \
+if classify_fixture_metadata $'com.apple.provenance\ncom.openclaw.wink.fixture' 11 \
   2>"$TEST_DIR/classification.log"; then
   fail 'provenance plus an added attribute was accepted as a platform limitation'
 fi
@@ -50,14 +50,14 @@ if /usr/bin/ruby "$ROOT_DIR/scripts/support/test-fixture-metadata.rb" inspect \
   fail 'metadata inspection escaped its owned root'
 fi
 printf 'fixture\n' > "$TEST_DIR/bounds/value"
-/usr/bin/xattr -w com.openclaw.peekaboo.fixture value "$TEST_DIR/bounds/value"
+/usr/bin/xattr -w com.openclaw.wink.fixture value "$TEST_DIR/bounds/value"
 if inspect_fixture_metadata "$TEST_DIR/bounds" >"$TEST_DIR/unknown.log" 2>&1; then
   fail 'nested arbitrary metadata was accepted as a platform limitation'
 fi
 # A dangling target proves the reader inspects only the link, never its destination.
 ln -s "$TEST_DIR/nonexistent-target" "$TEST_DIR/metadata-link"
 inspect_fixture_metadata "$TEST_DIR/metadata-link" >/dev/null || fail 'no-follow symlink inspection failed'
-/usr/bin/xattr -s -w com.openclaw.peekaboo.fixture value "$TEST_DIR/metadata-link"
+/usr/bin/xattr -s -w com.openclaw.wink.fixture value "$TEST_DIR/metadata-link"
 if inspect_fixture_metadata "$TEST_DIR/metadata-link" >"$TEST_DIR/link.log" 2>&1; then
   fail 'symlink metadata was ignored'
 fi
@@ -99,12 +99,12 @@ fixture_metadata="$(inspect_fixture_metadata "$TEST_DIR/Fixture.app")" || fail '
 if [[ "$fixture_metadata" == clean ]]; then
   terminal_artifact_zip_app_exact "$TEST_DIR/Fixture.app" "$TEST_DIR/fixture.zip" "$TEST_DIR/tree.json"
 
-  /usr/bin/xattr -w com.openclaw.peekaboo.fixture value "$TEST_DIR/Fixture.app/Contents/Resources/value"
+  /usr/bin/xattr -w com.openclaw.wink.fixture value "$TEST_DIR/Fixture.app/Contents/Resources/value"
   if terminal_artifact_assert_no_xattrs "$TEST_DIR/Fixture.app"; then
     printf 'test-terminal-artifact-policy: xattr was accepted\n' >&2
     exit 1
   fi
-  /usr/bin/xattr -d com.openclaw.peekaboo.fixture "$TEST_DIR/Fixture.app/Contents/Resources/value"
+  /usr/bin/xattr -d com.openclaw.wink.fixture "$TEST_DIR/Fixture.app/Contents/Resources/value"
   printf 'test-terminal-artifact-policy: PASS native positive ZIP and isolated injected-xattr control\n'
 else
   # Inspection errors are failures, not evidence that the strict guard rejected metadata.

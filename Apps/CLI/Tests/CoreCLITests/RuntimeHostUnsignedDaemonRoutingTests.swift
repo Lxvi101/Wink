@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooBridgeTestSupport
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooBridge
-@testable import PeekabooCLI
+@testable import WinkBridge
+@testable import WinkCLI
 
 @MainActor
 @Suite(.tags(.safe))
@@ -45,16 +45,16 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
     @Test(arguments: [false, true])
     func `release signed client still surfaces untrusted occupancy`(exactBuild: Bool) async {
         let fixture = Fixture(exactBuild: exactBuild, releaseSigned: true, failure: Self.authenticationFailure())
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) { try await fixture.resolve() }
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) { try await fixture.resolve() }
         #expect(error?.isLocalHostAuthenticationFailure == true)
         #expect(fixture.launches.isEmpty)
     }
 
-    @Test(arguments: [false, true], [PeekabooBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
-    func `non authentication probe errors still surface`(exactBuild: Bool, code: PeekabooBridgeErrorCode) async {
-        let failure = PeekabooBridgeErrorEnvelope(code: code, message: "unmarked probe error")
+    @Test(arguments: [false, true], [WinkBridgeErrorCode.timeout, .unauthorizedClient, .internalError])
+    func `non authentication probe errors still surface`(exactBuild: Bool, code: WinkBridgeErrorCode) async {
+        let failure = WinkBridgeErrorEnvelope(code: code, message: "unmarked probe error")
         let fixture = Fixture(exactBuild: exactBuild, optIn: true, failure: failure)
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) { try await fixture.resolve() }
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) { try await fixture.resolve() }
         #expect(error?.code == code)
         #expect(fixture.launches.isEmpty)
     }
@@ -64,7 +64,7 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
         let fixture = Fixture(releaseSigned: releaseSigned, optIn: true)
         fixture.launchFailure = Self.authenticationFailure()
         if releaseSigned {
-            let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) { try await fixture.resolve() }
+            let error = await #expect(throws: WinkBridgeErrorEnvelope.self) { try await fixture.resolve() }
             #expect(error?.isLocalHostAuthenticationFailure == true)
         } else {
             let resolution = try await fixture.resolve()
@@ -77,11 +77,11 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
     @Test(arguments: [false, true])
     func `explicit socket retains host authentication error and installation hint`(environmentSelected: Bool) async {
         let fixture = Fixture(failure: Self.authenticationFailure(), explicit: true)
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             try await fixture.resolve(environmentSelected: environmentSelected)
         }
         #expect(error?.isLocalHostAuthenticationFailure == true)
-        #expect(error?.message.contains(PeekabooBridgeSigningDiagnostics.unsignedBuildHint) == true)
+        #expect(error?.message.contains(WinkBridgeSigningDiagnostics.unsignedBuildHint) == true)
         #expect(fixture.launches.isEmpty)
     }
 
@@ -90,7 +90,7 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
         let peer = try ScriptedBridgePeer(responses: [.handshake(BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 28), hostKind: .onDemand, supportedOperations: [.daemonStatus]
         ))])
-        let client = PeekabooBridgeClient(
+        let client = WinkBridgeClient(
             socketPath: peer.socketPath,
             trustedHostTeamIDs: ["FWJYW4S8P8"],
             hostAuthentication: .init(
@@ -99,24 +99,24 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
                 unsignedDaemonPolicy: .init(environment: [:], currentProcessIsReleaseSigned: { false })
             )
         )
-        let error = await #expect(throws: PeekabooBridgeErrorEnvelope.self) {
+        let error = await #expect(throws: WinkBridgeErrorEnvelope.self) {
             try await DaemonControlClient(socketPath: peer.socketPath).fetchStatus(using: client)
         }
         await peer.stop()
         #expect(error?.isLocalHostAuthenticationFailure == true)
-        #expect(error?.message.contains(PeekabooBridgeSigningDiagnostics.unsignedBuildHint) == true)
+        #expect(error?.message.contains(WinkBridgeSigningDiagnostics.unsignedBuildHint) == true)
     }
 
-    private static func authenticationFailure() -> PeekabooBridgeErrorEnvelope {
+    private static func authenticationFailure() -> WinkBridgeErrorEnvelope {
         do {
-            try PeekabooBridgeConnectedHostTrust.validate(
+            try WinkBridgeConnectedHostTrust.validate(
                 nil,
                 socketPath: "/fixture/daemon.sock",
                 trustedTeamIDs: ["FWJYW4S8P8"],
                 unsignedDaemonPolicy: .init(environment: [:], currentProcessIsReleaseSigned: { false }),
                 currentProcessIsReleaseSigned: { false }
             )
-        } catch let error as PeekabooBridgeErrorEnvelope {
+        } catch let error as WinkBridgeErrorEnvelope {
             return error
         } catch {
             preconditionFailure("Unexpected authentication error: \(error)")
@@ -129,17 +129,17 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
         let exactBuild: Bool
         let releaseSigned: Bool
         let optIn: Bool
-        let failure: PeekabooBridgeErrorEnvelope?
+        let failure: WinkBridgeErrorEnvelope?
         let explicit: Bool
         var launches: [String] = []
-        var launchFailure: PeekabooBridgeErrorEnvelope?
+        var launchFailure: WinkBridgeErrorEnvelope?
         var availableFallback = false
 
         init(
             exactBuild: Bool = false,
             releaseSigned: Bool = false,
             optIn: Bool = false,
-            failure: PeekabooBridgeErrorEnvelope? = nil,
+            failure: WinkBridgeErrorEnvelope? = nil,
             explicit: Bool = false
         ) {
             self.exactBuild = exactBuild
@@ -157,9 +157,9 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
             if self.explicit, !environmentSelected {
                 options.bridgeSocketPath = self.socketPath
             }
-            var environment = self.optIn ? ["PEEKABOO_ALLOW_UNSIGNED_DAEMON": "1"] : [:]
+            var environment = self.optIn ? ["WINK_ALLOW_UNSIGNED_DAEMON": "1"] : [:]
             if self.explicit, environmentSelected {
-                environment["PEEKABOO_BRIDGE_SOCKET"] = self.socketPath
+                environment["WINK_BRIDGE_SOCKET"] = self.socketPath
             }
             let dependencies = RuntimeHostResolver.Dependencies(
                 makeLocalServices: { _ in OwnerPolicyFixtureServices(ownerAware: true) },
@@ -191,7 +191,7 @@ struct RuntimeHostUnsignedDaemonRoutingTests {
                         handshakeProvider: { candidate, _ in
                             if candidate.socketPath == "/fixture/bridge.sock" {
                                 return BridgeTestFixtures.handshake(
-                                    negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                                    negotiatedVersion: WinkBridgeConstants.protocolVersion,
                                     hostKind: .gui,
                                     supportedOperations: []
                                 )

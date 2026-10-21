@@ -1,9 +1,9 @@
 import Commander
 import CoreGraphics
-import PeekabooAutomationKit
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.fast))
 @MainActor
@@ -33,7 +33,7 @@ struct Phase3CommandParsingTests {
     }
 
     @Test
-    func `Press parses Peekaboo chords and sequences`() throws {
+    func `Press parses Wink chords and sequences`() throws {
         var command = try PressCommand.parse(["--foreground", "cmd+shift+t", "Return"])
         let chords = try command.parsedChords()
 
@@ -317,7 +317,7 @@ struct Phase3CommandParsingTests {
         let program = Program(descriptors: descriptors.map(\.metadata))
         for command in ["hotkey", "swipe", "image", "inspect-ui", "perform-action"] {
             #expect(throws: (any Error).self) {
-                _ = try program.resolve(argv: ["peekaboo", command])
+                _ = try program.resolve(argv: ["wink", command])
             }
         }
     }

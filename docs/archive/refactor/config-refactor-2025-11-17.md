@@ -8,7 +8,7 @@ read_when:
 ## Config refactor — 2025-11-17 (updated)
 _Status: Archived · Focus: config CLI/runtime refactor checklist._
 
-Scope: consolidate config/auth logic inside Tachikoma so hosts stay thin. Tachikoma owns credential resolution, storage, validation, OAuth (OpenAI/Codex + Anthropic Max), token refresh, and CLI UX. Hosts (Peekaboo, others) only set the profile directory (e.g., `.peekaboo`) or inject a custom credential provider.
+Scope: consolidate config/auth logic inside Tachikoma so hosts stay thin. Tachikoma owns credential resolution, storage, validation, OAuth (OpenAI/Codex + Anthropic Max), token refresh, and CLI UX. Hosts (Wink, others) only set the profile directory (e.g., `.peekaboo`) or inject a custom credential provider.
 
 Docs touched (update targets already completed)
 - `docs/commands/config.md`: new surface for `config add` (validate + store), `config login` (OAuth), live validation/timeout flags, updated examples including grok/gemini.
@@ -18,7 +18,7 @@ Docs touched (update targets already completed)
 - `docs/oauth.md`: new file explaining OAuth flows, storage, refresh, beta headers, headless, revoke.
 
 Reasoning highlights
-- Single implementation in Tachikoma re-used by any host; Peekaboo becomes a thin shell.
+- Single implementation in Tachikoma re-used by any host; Wink becomes a thin shell.
 - Env values are never copied; only explicit user actions write secrets/tokens. Missing providers are not persisted as “none.”
 - OAuth preferred when available; API keys remain as fallback. Grok canonical ID `grok` with `xai` alias.
 - Live validation/status avoid trial-and-error; no naggy init prompts.
@@ -42,10 +42,10 @@ Implementation plan (handoff-ready)
    - `config login <provider>` (openai, anthropic) PKCE, optional no-browser; stores tokens, not API keys.
    - `config show/init` print status table with live validation; no per-provider prompts.
 
-5) Host wiring (Peekaboo)
+5) Host wiring (Wink)
    - Set `TachikomaConfiguration.profileDirectoryName = ".peekaboo"`.
    - Re-export or shell to Tachikoma config commands for consistent UX.
-   - Remove Peekaboo-local auth/validation logic; rely on Tachikoma resolver/refresh.
+   - Remove Wink-local auth/validation logic; rely on Tachikoma resolver/refresh.
 
 6) Tests to add
    - Unit: validator success/fail/timeout; alias normalization; credential precedence; OAuth refresh updates.
@@ -57,18 +57,18 @@ Implementation plan (handoff-ready)
    - No env copying; no config.json writes for secrets.
 
 Open items
-- Finalize the Peekaboo-facing UX for `config init/show/add/login` using the Tachikoma AuthManager surface (today Peekaboo still owns legacy config verbs).
+- Finalize the Wink-facing UX for `config init/show/add/login` using the Tachikoma AuthManager surface (today Wink still owns legacy config verbs).
 - Decide on canonical naming for xAI/Grok in user-facing docs (`provider id` stays `grok`, canonical env key is `X_AI_API_KEY`, aliases: `XAI_API_KEY`, `GROK_API_KEY`, string id `xai` now maps to Grok).
-- Wire Peekaboo CLI to rely on the new Tachikoma `tachikoma config` binary (keep `tk-config` alias for back-compat) instead of owning prompts/status tables.
-- Update migration tracker once the Peekaboo CLI wiring and docs are finished.
+- Wire Wink CLI to rely on the new Tachikoma `tachikoma config` binary (keep `tk-config` alias for back-compat) instead of owning prompts/status tables.
+- Update migration tracker once the Wink CLI wiring and docs are finished.
 
 ## Progress log
 - 2025-11-18 (evening): All Tachikoma tests green after introducing the namespaced CLI entry point `tachikoma config …` (binary alias `tk-config`). Status/add/login/init now route through the shared AuthManager; test helpers isolate env per test and scrub per-profile credentials for missing-key assertions. OpenAI transcription tests explicitly pass their configs so keys are honored in mock mode.
 - 2025-11-18 (afternoon): All Tachikoma tests now green. Fixed Azure OpenAI helper to use per-test URLSession and preserve api-version/api-key/bearer semantics; OpenAI Responses/chat mocks no longer conflict. Mock transcription now returns `"mock transcription"` with word timestamps. Environment isolation now scoped per test (no global unsets), ignore-env flag restored after each helper. Added GROK_API_KEY alias and `xai` string mapping; AuthManager setIgnoreEnvironment now returns previous state for scoped usage.
-- 2025-11-17: AuthManager centralization (CredentialStore/Resolver, validators, OAuth PKCE) and provider wiring; docs refreshed for config/oauth/provider surfaces; profile dir override for Peekaboo set to `.peekaboo`; open issues listed above (now resolved).
+- 2025-11-17: AuthManager centralization (CredentialStore/Resolver, validators, OAuth PKCE) and provider wiring; docs refreshed for config/oauth/provider surfaces; profile dir override for Wink set to `.peekaboo`; open issues listed above (now resolved).
 
 Next steps (for the refactor proper)
-1) Finish Peekaboo wiring: make `peekaboo config` call into Tachikoma AuthManager (or shell `tachikoma config`) and drop the legacy prompt logic; keep profile dir override `.peekaboo`.
+1) Finish Wink wiring: make `wink config` call into Tachikoma AuthManager (or shell `tachikoma config`) and drop the legacy prompt logic; keep profile dir override `.peekaboo`.
 2) Keep the xAI/Grok naming consistent in user-facing docs while accepting `grok`/`xai` plus `X_AI_API_KEY`/`XAI_API_KEY`/`GROK_API_KEY`.
 3) Add CLI snapshot tests for `tachikoma config init/show/add/login` plus validator timeout cases; add OAuth refresh unit tests.
-4) Update migration tracker once Peekaboo wiring lands and refresh docs for the new flow.
+4) Update migration tracker once Wink wiring lands and refresh docs for the new flow.

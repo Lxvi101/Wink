@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-macho-info-test.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-macho-info-test.XXXXXX)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 fail() {
@@ -38,7 +38,7 @@ cat > "$TEST_DIR/info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
 <key>CFBundleShortVersionString</key><string>9.8.7-beta.2</string>
-<key>PeekabooSourceCommit</key><string>0123456789abcdef0123456789abcdef01234567</string>
+<key>WinkSourceCommit</key><string>0123456789abcdef0123456789abcdef01234567</string>
 <key>EmptyValue</key><string></string>
 </dict></plist>
 PLIST
@@ -53,7 +53,7 @@ printf 'int main(void) { return 0; }\n' > "$TEST_DIR/main.c"
 /usr/bin/lipo -create "$TEST_DIR/fixture-arm64" -output "$TEST_DIR/fixture-fat-arm64"
 
 for fixture in fixture-arm64 fixture-x86_64 fixture fixture-fat-arm64; do
-  assert_key "$TEST_DIR/$fixture" PeekabooSourceCommit 0123456789abcdef0123456789abcdef01234567
+  assert_key "$TEST_DIR/$fixture" WinkSourceCommit 0123456789abcdef0123456789abcdef01234567
   assert_key "$TEST_DIR/$fixture" CFBundleShortVersionString 9.8.7-beta.2
   assert_key "$TEST_DIR/$fixture" EmptyValue ''
   assert_plist "$TEST_DIR/$fixture" "$TEST_DIR/info.plist"
@@ -70,7 +70,7 @@ assert_rejected 'embedded Info.plist differs for architecture' \
   --binary "$TEST_DIR/mismatch" --key CFBundleShortVersionString
 assert_rejected 'embedded Info.plist differs for architecture' --binary "$TEST_DIR/mismatch"
 # A selected key may agree even when another key differs between slices.
-assert_key "$TEST_DIR/mismatch" PeekabooSourceCommit 0123456789abcdef0123456789abcdef01234567
+assert_key "$TEST_DIR/mismatch" WinkSourceCommit 0123456789abcdef0123456789abcdef01234567
 
 /usr/bin/sed 's/<string><\/string>/<string>nonempty<\/string>/' \
   "$TEST_DIR/info.plist" > "$TEST_DIR/info-nonempty.plist"

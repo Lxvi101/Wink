@@ -70,7 +70,7 @@ test('normal macOS CI runs the complete serial Tachikoma suite in an independent
   assert.doesNotMatch(tachikomaJob, /^\s*(?:ref|if|continue-on-error|timeout-minutes):|self-hosted/m);
   assert.doesNotMatch(tachikomaJob, /^\s*(?:export\s+)?(?:CI|HOME|RUNNER_\w+|GITHUB_\w+)\s*[:=]/m);
   assert.match(tachikomaJob, /name: Build Tachikoma\n        working-directory: Tachikoma\n        run: \|\n          swift build --configuration debug\n/);
-  assert.match(macosWorkflow, /\n  mac-apps:\n    name: Build macOS apps \(Peekaboo \+ Inspector\)\n    runs-on: xcode-27\n    steps:\n/);
+  assert.match(macosWorkflow, /\n  mac-apps:\n    name: Build macOS apps \(Wink \+ Inspector\)\n    runs-on: xcode-27\n    steps:\n/);
   assert.match(macosWorkflow, /name: Run Mac package tests \(secretless hosted runner only\)\n        working-directory: Apps\/Mac\n[\s\S]*?        run: swift test --no-parallel\n/);
   assert.match(entry, /working-directory: Tachikoma\n        env:\n          TACHIKOMA_TEST_MODE: "mock"\n          TACHIKOMA_DISABLE_API_TESTS: "true"\n        run:/);
   assert.equal(macosWorkflow.match(/TACHIKOMA_TEST_MODE:/g)?.length, 1);
@@ -266,10 +266,10 @@ test('manual expected SHA cannot select code and PR source ignores manual inputs
 test('the complete supplemental inventory is bounded and uses independent hosted jobs', () => {
   assert.deepEqual(allGroups.map(({ name }) => name), ['core', 'libraries-apps', 'dependencies', 'full-safe']);
   assert.deepEqual(groups.map(({ name, packages }) => ({ name, packages })), [
-    { name: 'core', packages: ['Core/PeekabooCore'] },
+    { name: 'core', packages: ['Core/WinkCore'] },
     { name: 'libraries-apps', packages: [
-      'Core/PeekabooAutomationKit', 'Core/PeekabooProtocols', 'Core/PeekabooVisualizer',
-      'Core/PeekabooUICore', 'Apps/PeekabooInspector', 'Apps/Playground',
+      'Core/WinkAutomationKit', 'Core/WinkProtocols', 'Core/WinkVisualizer',
+      'Core/WinkUICore', 'Apps/WinkInspector', 'Apps/Playground',
     ] },
     { name: 'dependencies', packages: ['Tachikoma', 'AXorcist', 'Commander', 'Swiftdansi', 'TauTUI'] },
   ]);
@@ -287,7 +287,7 @@ test('the complete supplemental inventory is bounded and uses independent hosted
   }
   assert.doesNotMatch(workflow, /actions\/cache|download-artifact|--parallel\b|--filter\b|--skip\b|--skip-build\b|--disable-swift-testing|--disable-xctest|continue-on-error|--remote\b/);
   assert.match(workflow, /swift test --package-path "\$package" --jobs 4 --no-parallel/);
-  assert.match(workflow, /cmp "\$VALIDATION_RESULTS\/workspace-Package\.resolved" \\\n            Apps\/Peekaboo\.xcworkspace\/xcshareddata\/swiftpm\/Package\.resolved/);
+  assert.match(workflow, /cmp "\$VALIDATION_RESULTS\/workspace-Package\.resolved" \\\n            Apps\/Wink\.xcworkspace\/xcshareddata\/swiftpm\/Package\.resolved/);
   assert.doesNotMatch(workflow, /xcodebuild.*(?:-workspace|-scheme)|build-playground|release-macos-app/);
 });
 
@@ -316,9 +316,9 @@ test('full safe lane shares source gates and runs only the complete pinned comma
   assert.equal(script('Run full repository safe suite').match(/^pnpm /gm)?.length, 1);
   assert.doesNotMatch(safe, /env:|swift|--filter|--skip|retry|set \+e|timeout /);
   const sharedEnv = workflow.split('\n    env:\n')[1].split('\n    steps:')[0];
-  assert.doesNotMatch(sharedEnv + install + safe, /RUN_LOCAL_TESTS|RUN_AUTOMATION_TESTS|PEEKABOO_INCLUDE_AUTOMATION_TESTS|PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS/);
+  assert.doesNotMatch(sharedEnv + install + safe, /RUN_LOCAL_TESTS|RUN_AUTOMATION_TESTS|WINK_INCLUDE_AUTOMATION_TESTS|WINK_INCLUDE_AMBIENT_STATE_TESTS/);
   for (const name of ['Run complete package suites serially', 'Diagnose Core SIGPIPE without changing the failed result']) {
-    assert.match(step(name), /PEEKABOO_INCLUDE_AUTOMATION_TESTS: 'false'\n          RUN_AUTOMATION_TESTS: 'false'\n          RUN_LOCAL_TESTS: 'false'/);
+    assert.match(step(name), /WINK_INCLUDE_AUTOMATION_TESTS: 'false'\n          RUN_AUTOMATION_TESTS: 'false'\n          RUN_LOCAL_TESTS: 'false'/);
   }
   assert.match(step('Run complete package suites serially'), /if: matrix.group != 'full-safe'/);
   const ordered = ['Validate exact source and hosted environment', 'Verify checkout and pinned submodules',
@@ -469,7 +469,7 @@ exit "$FIXTURE_TEE_EXIT"
   }
   assert.equal(existsSync(calls), false, 'Neither mismatched source nor absent hosted identity may execute pnpm');
 
-  const lock = join(root, 'Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved');
+  const lock = join(root, 'Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved');
   mkdirSync(join(lock, '..'), { recursive: true });
   writeFileSync(lock, 'fixture lock');
   for (const state of ['not-run', 'running', 'failed']) {
@@ -538,10 +538,10 @@ test('permissions, configuration and toolchain preserve the secretless hosted bo
   assert.equal(workflow.match(/^\s*permissions:/gm)?.length, 1);
   assert.match(workflow, /\npermissions:\n  contents: read\n\njobs:/);
   assert.doesNotMatch(workflow, /secrets\s*[.\[]|id-token:|write-all|: write\b|self-hosted|INTEGRATION_TESTS|LIVE_PROVIDER_TESTS|ALLOW_UNSAFE|ALLOW_UNSIGNED|API_KEY|ACCESS_TOKEN|SIGN_IDENTITY|codesign|security import/);
-  assert.match(workflow, /printf 'PEEKABOO_CONFIG_DIR=%s\/peekaboo-release-validation\\n' "\$RUNNER_TEMP" >> "\$GITHUB_ENV"/);
-  assert.match(workflow, /PEEKABOO_CONFIG_DISABLE_MIGRATION: '1'/);
-  assert.match(workflow, /PEEKABOO_RUN_LIVE_AGENT_TESTS: '0'/);
-  assert.match(workflow, /PEEKABOO_INCLUDE_AUTOMATION_TESTS: 'false'/);
+  assert.match(workflow, /printf 'PEEKABOO_CONFIG_DIR=%s\/wink-release-validation\\n' "\$RUNNER_TEMP" >> "\$GITHUB_ENV"/);
+  assert.match(workflow, /WINK_CONFIG_DISABLE_MIGRATION: '1'/);
+  assert.match(workflow, /WINK_RUN_LIVE_AGENT_TESTS: '0'/);
+  assert.match(workflow, /WINK_INCLUDE_AUTOMATION_TESTS: 'false'/);
   assert.doesNotMatch(workflow, /^\s*(?:export\s+)?(?:CI|HOME|RUNNER_\w+|GITHUB_\w+)\s*[:=]/m);
   assert.match(workflow, /"\$RUNNER_ENVIRONMENT" == github-hosted/);
   const toolchain = script('Select Xcode 27 and record actual toolchain');
@@ -686,7 +686,7 @@ d = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(d)
 root = Path.cwd()
 results = root / 'results'
-suite = results / 'Core-PeekabooCore'
+suite = results / 'Core-WinkCore'
 suite.mkdir(parents=True)
 status = suite / 'status.txt'
 log = suite / 'test.log'
@@ -769,7 +769,7 @@ class Target:
     def IsValid(self): return True
     def GetLaunchInfo(self): return self
     def SetArguments(self, args, append):
-        assert args == ['--test-bundle-path', 'fixture-bundle', '--package-path', 'Core/PeekabooCore',
+        assert args == ['--test-bundle-path', 'fixture-bundle', '--package-path', 'Core/WinkCore',
                         '--jobs', '4', '--no-parallel', 'fixture-bundle', '--testing-library', 'swift-testing']
         assert append is False
     def SetWorkingDirectory(self, path): assert path == str(root)
@@ -831,8 +831,8 @@ test('diagnostic derives existing helper/bundle paths and discards debugger outp
   const bin = join(root, 'bin');
   const compiler = join(root, 'toolchain/usr/bin/swiftc');
   const helper = join(root, 'toolchain/usr/libexec/swift/pm/swiftpm-testing-helper');
-  const build = join(root, 'Core/PeekabooCore/.build/fixture/debug');
-  const bundle = join(build, 'PeekabooCorePackageTests.xctest/Contents/MacOS/PeekabooCorePackageTests');
+  const build = join(root, 'Core/WinkCore/.build/fixture/debug');
+  const bundle = join(build, 'WinkCorePackageTests.xctest/Contents/MacOS/WinkCorePackageTests');
   for (const path of [compiler, helper, bundle]) {
     mkdirSync(join(path, '..'), { recursive: true });
     writeFileSync(path, '#!/bin/bash\nexit 99\n', { mode: 0o755 });
@@ -842,7 +842,7 @@ test('diagnostic derives existing helper/bundle paths and discards debugger outp
 const args = process.argv.slice(2);
 if (args.join(' ') === '--find swiftc') console.log(${JSON.stringify(compiler)});
 else if (args.join(' ') === '--find lldb') console.log(${JSON.stringify(join(bin, 'lldb'))});
-else if (args.join(' ') === 'swift build --package-path Core/PeekabooCore --configuration debug --show-bin-path') console.log(${JSON.stringify(build)});
+else if (args.join(' ') === 'swift build --package-path Core/WinkCore --configuration debug --show-bin-path') console.log(${JSON.stringify(build)});
 else process.exit(99);
 `, { mode: 0o755 });
   writeFileSync(join(bin, 'lldb'), `#!${process.execPath}

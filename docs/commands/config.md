@@ -1,13 +1,13 @@
 ---
-summary: 'Manage Peekaboo configuration and AI providers via peekaboo config'
+summary: 'Manage Wink configuration and AI providers via wink config'
 read_when:
   - 'editing ~/.peekaboo/config.json or credentials safely'
   - 'adding/testing custom AI providers and API keys'
 ---
 
-# `peekaboo config`
+# `wink config`
 
-`peekaboo config` owns everything under `~/.peekaboo/`: the JSONC config file, the credential store, and the list of custom AI providers. Each subcommand runs on the main actor so it can call the same `ConfigurationManager` used by the CLI at startup, which means the output always reflects what the runtime will actually load.
+`wink config` owns everything under `~/.peekaboo/`: the JSONC config file, the credential store, and the list of custom AI providers. Each subcommand runs on the main actor so it can call the same `ConfigurationManager` used by the CLI at startup, which means the output always reflects what the runtime will actually load.
 
 ## Subcommands
 | Subcommand | Purpose | Key flags |
@@ -26,7 +26,7 @@ read_when:
 | `provider models` | List configured models offline, or query an OpenAI-compatible provider with `--discover`. | Positional `<provider-id>` plus optional `--discover` and `--save`. |
 
 ## Implementation notes
-- The underlying auth/config plumbing lives in the shared Tachikoma library and the `tachikoma config` CLI; Peekaboo sets `TachikomaConfiguration.profileDirectoryName = ".peekaboo"` so both tools read/write the same `~/.peekaboo/credentials` without copying environment variables.
+- The underlying auth/config plumbing lives in the shared Tachikoma library and the `tachikoma config` CLI; Wink sets `TachikomaConfiguration.profileDirectoryName = ".peekaboo"` so both tools read/write the same `~/.peekaboo/credentials` without copying environment variables.
 - Configuration files are JSON-with-comments: the loader strips `//` / `/* */` comments and interpolates `${VAR}` placeholders before merging with credentials and environment variables (same logic the CLI uses on startup).
 - `credential set` and `login` write through the shared configuration/auth managers, using macOS file permissions and atomic temp-file renames. Credential input defaults to a no-echo TTY prompt; redirected stdin is read as one line. The prompt restores terminal echo before catchable job-control stops or termination signals, then reapplies no-echo only after a stopped prompt continues. `--credential-file` opens nonblocking without following symlinks, then validates and reads that same descriptor; it accepts only a regular file owned by the current user with mode `0400` or `0600` and no extended ACL.
 - Provider readiness in human `init`/`show --effective` output is live-validated with per-provider pings (OpenAI/Codex, Anthropic, Grok/xai, Gemini, OpenRouter). Timeouts default to 30s and are caller overridable. JSON mode skips appended readiness text so stdout remains parseable.
@@ -38,35 +38,35 @@ read_when:
 ## Examples
 ```bash
 # Create a clean config + show the merged view
-peekaboo config init --force
-peekaboo config show --effective
+wink config init --force
+wink config show --effective
 
 # Locate the config without opening an editor or creating a file
-peekaboo config edit --print-path
+wink config edit --print-path
 
 # Add and validate an OpenRouter key with the no-echo prompt
-peekaboo config credential set openrouter
-peekaboo agent --model openrouter/xiaomi/mimo-v2.5-pro "summarize this window"
+wink config credential set openrouter
+wink agent --model openrouter/xiaomi/mimo-v2.5-pro "summarize this window"
 
 # Noninteractive input never puts the value in argv
-printenv OPENAI_API_KEY | peekaboo config credential set openai --credential-stdin --no-input
-peekaboo config credential set anthropic --credential-file /secure/path/anthropic.key --no-input
+printenv OPENAI_API_KEY | wink config credential set openai --credential-stdin --no-input
+wink config credential set anthropic --credential-file /secure/path/anthropic.key --no-input
 
 # OAuth logins (no API key stored)
-peekaboo config login openai
-peekaboo config login anthropic
+wink config login openai
+wink config login anthropic
 
 # Manage a custom OpenAI-compatible endpoint by non-secret credential reference
 printenv LOCAL_OLLAMA_API_KEY | \
-  peekaboo config credential set LOCAL_OLLAMA_API_KEY --credential-stdin --no-input
-peekaboo config provider add local-ollama \
+  wink config credential set LOCAL_OLLAMA_API_KEY --credential-stdin --no-input
+wink config provider add local-ollama \
   --type openai \
   --name "Local Ollama" \
   --base-url "http://localhost:11434/v1" \
   --credential-ref '${LOCAL_OLLAMA_API_KEY}'
-peekaboo config provider test local-ollama
-peekaboo config provider models local-ollama --discover --save
-peekaboo config provider remove local-ollama --force
+wink config provider test local-ollama
+wink config provider models local-ollama --discover --save
+wink config provider remove local-ollama --force
 ```
 
 The old positional credential and `provider add --api-key` remain available for script compatibility, but are
@@ -74,6 +74,6 @@ deprecated because command arguments are visible to process-listing tools. They 
 the credential value.
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

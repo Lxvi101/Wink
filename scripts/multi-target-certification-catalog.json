@@ -44,32 +44,32 @@
     "probe_sha256": "2a8052cc9d6e442552e7c0b1092b0bfd482b5595ac95b76c92be80e4f57926ae"
   },
   "current_build_source": {
-    "kind": "peekaboo-current-build-source",
+    "kind": "wink-current-build-source",
     "version": 1,
     "commit_derivation": "clean-git-head",
     "controller_source_manifest": [
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/CodeIdentityRunner.swift", "sha256": "dc5dfb5e024198f97afccc30b7d664173bf4e51dad293aee0d1fde504f4f86e2"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ControllerBuildIdentity.swift", "sha256": "c0bb05b3875a634ba686a474958a7ff5443ffadf1ddce1c911298f922a1c305c"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ControllerEvidence.swift", "sha256": "c86d350a8c84736653537d907cd23caff1ae796f59f280f13da7b961b3e61777"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ControllerMain.swift", "sha256": "e6a217e668f0e49be5ca6ba168652d5b35b76db4f95e34087da441fe0dc74aa8"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ControllerPlan.swift", "sha256": "a6f8a7c9ad710d03d13368c37fa5dbded3e5f8d009982b703df22f8217dea54b"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ControllerRunner.swift", "sha256": "77fd032755017e652cc1c5c66e31334a74bab28c58295762a6f02eea67b36dd3"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ForegroundSemanticObserver.swift", "sha256": "0605e651f44d05bb79e4f3ae08fad02ea54ded2f640e3beac6a329cbe793cd37"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/HeldPointerPlan.swift", "sha256": "4b3d47a79e160edc9e190cb9c95e38b3f9ffe972b2dfb027cb2f15ec5d624310"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/HeldPointerRunner.swift", "sha256": "bda6031fbecb99d05e62e513e6c9cad8588aa7252f26ce6f7355084602062fe1"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/LiveCertificationBridge.swift", "sha256": "e917930691b696a2228e263971fef31a189d39eae920315e6f34423748c3807b"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/LocalPIDAttestation.swift", "sha256": "cfd0c9c9da937b3abc05a79a6c84c58954c88c88eb0b4fbd270ea6b474b5db31"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/MonitorAttestationRunner.swift", "sha256": "1c5e6d6a0968e2acca14398d0b838a32522dcde43c8a6eaee256b0a164595068"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ObserveOnlyRunner.swift", "sha256": "0dc67e661f1dd5cb783db5084f77684c2dfb7ade65862228f330262596abcac0"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/ObserverPlan.swift", "sha256": "47ef7214b0b6e9892ad4cd3aa1bad9f76f922799395cc9cc569b169e4103b224"},
-      {"path": "Apps/CLI/Sources/PeekabooCertificationController/PrivateArtifacts.swift", "sha256": "5b5896f3109af955eb7ab2b6aad2af3939a7c41483f15891801cb23171b9f0e5"}
+      {"path": "Apps/CLI/Sources/WinkCertificationController/CodeIdentityRunner.swift", "sha256": "dc5dfb5e024198f97afccc30b7d664173bf4e51dad293aee0d1fde504f4f86e2"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ControllerBuildIdentity.swift", "sha256": "c0bb05b3875a634ba686a474958a7ff5443ffadf1ddce1c911298f922a1c305c"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ControllerEvidence.swift", "sha256": "c86d350a8c84736653537d907cd23caff1ae796f59f280f13da7b961b3e61777"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ControllerMain.swift", "sha256": "e6a217e668f0e49be5ca6ba168652d5b35b76db4f95e34087da441fe0dc74aa8"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ControllerPlan.swift", "sha256": "a6f8a7c9ad710d03d13368c37fa5dbded3e5f8d009982b703df22f8217dea54b"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ControllerRunner.swift", "sha256": "77fd032755017e652cc1c5c66e31334a74bab28c58295762a6f02eea67b36dd3"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ForegroundSemanticObserver.swift", "sha256": "0605e651f44d05bb79e4f3ae08fad02ea54ded2f640e3beac6a329cbe793cd37"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/HeldPointerPlan.swift", "sha256": "4b3d47a79e160edc9e190cb9c95e38b3f9ffe972b2dfb027cb2f15ec5d624310"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/HeldPointerRunner.swift", "sha256": "bda6031fbecb99d05e62e513e6c9cad8588aa7252f26ce6f7355084602062fe1"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/LiveCertificationBridge.swift", "sha256": "e917930691b696a2228e263971fef31a189d39eae920315e6f34423748c3807b"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/LocalPIDAttestation.swift", "sha256": "cfd0c9c9da937b3abc05a79a6c84c58954c88c88eb0b4fbd270ea6b474b5db31"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/MonitorAttestationRunner.swift", "sha256": "1c5e6d6a0968e2acca14398d0b838a32522dcde43c8a6eaee256b0a164595068"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ObserveOnlyRunner.swift", "sha256": "0dc67e661f1dd5cb783db5084f77684c2dfb7ade65862228f330262596abcac0"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/ObserverPlan.swift", "sha256": "47ef7214b0b6e9892ad4cd3aa1bad9f76f922799395cc9cc569b169e4103b224"},
+      {"path": "Apps/CLI/Sources/WinkCertificationController/PrivateArtifacts.swift", "sha256": "5b5896f3109af955eb7ab2b6aad2af3939a7c41483f15891801cb23171b9f0e5"}
     ],
     "coordinator": {
       "path": "scripts/run-live-multi-target-certification.mjs",
       "sha256": "761fb9092934585bbccde5fa2ec44b878c6e71b3f509864a2e4677e9c45da911"
     },
     "receipt_validator": {
-      "path": "Apps/CLI/Sources/PeekabooCLI/Commands/Core/BridgeCommand+Receipt.swift",
+      "path": "Apps/CLI/Sources/WinkCLI/Commands/Core/BridgeCommand+Receipt.swift",
       "sha256": "618b6f18c7d770773e62a879c34e402fbd576ddd1a3ca2ddea01e374fbcb82f8"
     },
     "finalizer": {
@@ -93,11 +93,11 @@
       "controller-b-mutation-001"
     ],
     "crash_report_prefixes": [
-      "Peekaboo",
-      "PeekabooPlayground",
+      "Wink",
+      "WinkPlayground",
       "Playground",
       "OpenClaw",
-      "peekaboo-certification-controller"
+      "wink-certification-controller"
     ],
     "physical_input_policy": "mouse-move-observational",
     "require_foreground_activity": true,

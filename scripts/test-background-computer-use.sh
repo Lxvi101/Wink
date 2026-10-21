@@ -7,11 +7,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CERTIFICATION_CATALOG="$ROOT_DIR/scripts/background-computer-use-catalog.json"
 CERTIFICATION_REPORTER="$ROOT_DIR/scripts/validate-background-computer-use-report.mjs"
 CERTIFICATION_TEST="$ROOT_DIR/tests/background-computer-use-report.test.mjs"
-PLAYGROUND_BUNDLE_ID="boo.peekaboo.playground.debug"
+PLAYGROUND_BUNDLE_ID="boo.wink.playground.debug"
 TEXTEDIT_BUNDLE_ID="com.apple.TextEdit"
 TEXTEDIT_APP="/System/Applications/TextEdit.app"
 SENTINEL_BUNDLE_ID=""
-PEEKABOO_BIN="${PEEKABOO_BIN:-}"
+WINK_BIN="${WINK_BIN:-}"
 ARTIFACT_ROOT=""
 PLAYGROUND_APP=""
 SKIP_PLAYGROUND_BUILD=false
@@ -23,19 +23,19 @@ RUN_FOREGROUND_PHASE=false
 SELF_TEST_ONLY=false
 NO_REMOTE=false
 QUALIFICATION_CYCLE=""
-BRIDGE_SOCKET="${PEEKABOO_CERTIFICATION_BRIDGE_SOCKET:-${PEEKABOO_BRIDGE_SOCKET:-}}"
+BRIDGE_SOCKET="${WINK_CERTIFICATION_BRIDGE_SOCKET:-${WINK_BRIDGE_SOCKET:-}}"
 
 usage() {
     cat <<'EOF'
 Usage: scripts/test-background-computer-use.sh [options]
 
-Deterministically validates that targeted Peekaboo computer-use operations stay
+Deterministically validates that targeted Wink computer-use operations stay
 in the background. Human mouse movement is observational; the optional foreground
-phase is the only phase allowed to move the cursor on Peekaboo's behalf or
+phase is the only phase allowed to move the cursor on Wink's behalf or
 synthesize pointer/wheel events.
 
 Options:
-  --bin PATH                 Peekaboo CLI (default: repo debug binary, then PATH)
+  --bin PATH                 Wink CLI (default: repo debug binary, then PATH)
   --artifacts PATH           Artifact directory (default: .artifacts/background-computer-use/<UTC>)
   --playground-app PATH      Use an existing signed Playground.app
   --skip-playground-build    Require --playground-app and skip xcodebuild
@@ -43,7 +43,7 @@ Options:
   --foreground-phase        Also run explicit physical-pointer tests
   --no-remote               Force the exact CLI process to use its local TCC grants
   --bridge-socket PATH      Pin every remote command to one exact Bridge host
-                            (default: Peekaboo.app's bridge.sock)
+                            (default: Wink.app's bridge.sock)
   --sentinel-bundle-id ID   Require this app to already be frontmost (default: current app)
   --qualification-cycle N   Add the signed Playground alert lifecycle for final cycle 1...5
   --self-test               Compile and self-test the invariant probe only
@@ -54,7 +54,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --bin)
-            PEEKABOO_BIN="$2"
+            WINK_BIN="$2"
             shift 2
             ;;
         --artifacts)
@@ -116,7 +116,7 @@ if [[ -n "$QUALIFICATION_CYCLE" ]] &&
 fi
 
 if ! $NO_REMOTE && [[ -z "$BRIDGE_SOCKET" ]]; then
-    BRIDGE_SOCKET="$HOME/Library/Application Support/Peekaboo/bridge.sock"
+    BRIDGE_SOCKET="$HOME/Library/Application Support/Wink/bridge.sock"
 fi
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
@@ -135,24 +135,24 @@ PLAYGROUND_CODESIGN_BIN=/usr/bin/codesign
 PLAYGROUND_XCODEBUILD_BIN=/usr/bin/xcodebuild
 PLAYGROUND_XCRUN_BIN=/usr/bin/xcrun
 PLAYGROUND_XCODE_SELECT_BIN=/usr/bin/xcode-select
-case "${PEEKABOO_PLAYGROUND_TEST_MODE:-0}" in
+case "${WINK_PLAYGROUND_TEST_MODE:-0}" in
     1)
         $VALIDATE_PLAYGROUND_ONLY || {
             echo "Playground test mode is restricted to --validate-playground-only." >&2
             exit 2
         }
-        PLAYGROUND_CODESIGN_BIN="${PEEKABOO_PLAYGROUND_CODESIGN_BIN:?test codesign required}"
-        PLAYGROUND_XCODEBUILD_BIN="${PEEKABOO_PLAYGROUND_XCODEBUILD_BIN:?test xcodebuild required}"
-        PLAYGROUND_XCRUN_BIN="${PEEKABOO_PLAYGROUND_XCRUN_BIN:?test xcrun required}"
-        PLAYGROUND_XCODE_SELECT_BIN="${PEEKABOO_PLAYGROUND_XCODE_SELECT_BIN:?test xcode-select required}"
+        PLAYGROUND_CODESIGN_BIN="${WINK_PLAYGROUND_CODESIGN_BIN:?test codesign required}"
+        PLAYGROUND_XCODEBUILD_BIN="${WINK_PLAYGROUND_XCODEBUILD_BIN:?test xcodebuild required}"
+        PLAYGROUND_XCRUN_BIN="${WINK_PLAYGROUND_XCRUN_BIN:?test xcrun required}"
+        PLAYGROUND_XCODE_SELECT_BIN="${WINK_PLAYGROUND_XCODE_SELECT_BIN:?test xcode-select required}"
         ;;
     0|'')
-        for override in PEEKABOO_PLAYGROUND_CODESIGN_BIN PEEKABOO_PLAYGROUND_XCODEBUILD_BIN \
-            PEEKABOO_PLAYGROUND_XCRUN_BIN PEEKABOO_PLAYGROUND_XCODE_SELECT_BIN; do
+        for override in WINK_PLAYGROUND_CODESIGN_BIN WINK_PLAYGROUND_XCODEBUILD_BIN \
+            WINK_PLAYGROUND_XCRUN_BIN WINK_PLAYGROUND_XCODE_SELECT_BIN; do
             [[ -z "${!override+x}" ]] || { echo "$override is test-only." >&2; exit 2; }
         done
         ;;
-    *) echo "PEEKABOO_PLAYGROUND_TEST_MODE must be 0 or 1." >&2; exit 2 ;;
+    *) echo "WINK_PLAYGROUND_TEST_MODE must be 0 or 1." >&2; exit 2 ;;
 esac
 
 required_commands=(git jq realpath shasum)
@@ -237,7 +237,7 @@ build_playground() {
         build CODE_SIGNING_ALLOWED=NO > "$build_log" 2>&1
 
     PLAYGROUND_APP="$derived_data/Build/Products/Debug/Playground.app"
-    local identity="${PEEKABOO_PLAYGROUND_SIGN_IDENTITY:-}"
+    local identity="${WINK_PLAYGROUND_SIGN_IDENTITY:-}"
     if [[ -z "$identity" ]]; then
         identity="$(openclaw_codesign_identity)"
     fi
@@ -251,8 +251,8 @@ build_playground() {
         --arg sourceCommit "$PLAYGROUND_SOURCE_COMMIT" \
         --arg sourceTree "$PLAYGROUND_SOURCE_TREE" '
         {version: 1, source_commit: $sourceCommit, source_tree: $sourceTree}
-    ' > "$PLAYGROUND_APP/Contents/Resources/PeekabooPlaygroundSource.json"
-    chmod 444 "$PLAYGROUND_APP/Contents/Resources/PeekabooPlaygroundSource.json"
+    ' > "$PLAYGROUND_APP/Contents/Resources/WinkPlaygroundSource.json"
+    chmod 444 "$PLAYGROUND_APP/Contents/Resources/WinkPlaygroundSource.json"
 
     sign_playground_app "$PLAYGROUND_APP" "$identity" || return 1
     PLAYGROUND_BUILT_APP="$PLAYGROUND_APP"
@@ -265,8 +265,8 @@ validate_playground_fixture() {
     [[ -d "$PLAYGROUND_APP" && ! -L "$PLAYGROUND_APP" ]] || {
         echo "Playground app missing or symlinked: $PLAYGROUND_APP" >&2; return 1;
     }
-    PLAYGROUND_SOURCE_MANIFEST="$PLAYGROUND_APP/Contents/Resources/PeekabooPlaygroundSource.json"
-    peekaboo_is_immutable_receipt "$PLAYGROUND_SOURCE_MANIFEST" || {
+    PLAYGROUND_SOURCE_MANIFEST="$PLAYGROUND_APP/Contents/Resources/WinkPlaygroundSource.json"
+    wink_is_immutable_receipt "$PLAYGROUND_SOURCE_MANIFEST" || {
         echo 'Playground requires an immutable regular source receipt.' >&2; return 1;
     }
     PLAYGROUND_SOURCE_COMMIT="$(git -C "$ROOT_DIR" rev-parse HEAD)" || return 1
@@ -285,16 +285,16 @@ validate_playground_fixture() {
             echo 'Locally built Playground lacks its exact current-source v1 receipt.' >&2; return 1;
         }
     else
-        lock_sha="$(peekaboo_playground_lock_sha256 "$ROOT_DIR")" || return 1
-        peekaboo_verify_source_commit "$ROOT_DIR" "$PLAYGROUND_SOURCE_COMMIT" || return 1
+        lock_sha="$(wink_playground_lock_sha256 "$ROOT_DIR")" || return 1
+        wink_verify_source_commit "$ROOT_DIR" "$PLAYGROUND_SOURCE_COMMIT" || return 1
         developer_dir="${DEVELOPER_DIR:-$("$PLAYGROUND_XCODE_SELECT_BIN" -p)}"
         developer_dir="$(realpath "$developer_dir")" || return 1
         xcode_version="$(DEVELOPER_DIR="$developer_dir" "$PLAYGROUND_XCODEBUILD_BIN" -version)" || return 1
         sdk_version="$(DEVELOPER_DIR="$developer_dir" "$PLAYGROUND_XCRUN_BIN" --sdk macosx --show-sdk-version)" || return 1
         swift_version="$(DEVELOPER_DIR="$developer_dir" "$PLAYGROUND_XCRUN_BIN" swiftc --version 2>&1)" || return 1
-        peekaboo_verify_playground_v2_receipt "$PLAYGROUND_SOURCE_MANIFEST" \
+        wink_verify_playground_v2_receipt "$PLAYGROUND_SOURCE_MANIFEST" \
             "$PLAYGROUND_SOURCE_COMMIT" "$PLAYGROUND_SOURCE_TREE" \
-            Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved "$lock_sha" "$marketing_version" \
+            Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved "$lock_sha" "$marketing_version" \
             "$developer_dir" "$xcode_version" "$sdk_version" "$swift_version" || {
             echo 'Supplied Playground requires an exact current-source/toolchain v2 receipt; supplied v1 is refused.' >&2
             return 1
@@ -312,7 +312,7 @@ validate_playground_fixture() {
     [[ -f "$PLAYGROUND_EXECUTABLE" && -x "$PLAYGROUND_EXECUTABLE" && ! -L "$PLAYGROUND_EXECUTABLE" ]] || {
         echo 'Playground executable missing, symlinked, or not executable.' >&2; return 1;
     }
-    requirement='anchor apple generic and certificate leaf[subject.OU] = "FWJYW4S8P8" and certificate leaf[subject.CN] = "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)" and identifier "boo.peekaboo.playground.debug"'
+    requirement='anchor apple generic and certificate leaf[subject.OU] = "FWJYW4S8P8" and certificate leaf[subject.CN] = "Developer ID Application: OpenClaw Foundation (FWJYW4S8P8)" and identifier "boo.wink.playground.debug"'
     "$PLAYGROUND_CODESIGN_BIN" --verify --deep --strict "-R=$requirement" "$PLAYGROUND_APP" || return 1
     PLAYGROUND_SIGNATURE_DETAILS="$("$PLAYGROUND_CODESIGN_BIN" -dv --verbose=2 "$PLAYGROUND_APP" 2>&1)" || return 1
     [[ "$(sed -n 's/^TeamIdentifier=//p' <<<"$PLAYGROUND_SIGNATURE_DETAILS")" == FWJYW4S8P8 &&
@@ -490,7 +490,7 @@ const evidence = {
   monitor_process: {
     pid: 4242,
     start_identity: '1786870761472',
-    executable_path: '/tmp/Peekaboo Monitor',
+    executable_path: '/tmp/Wink Monitor',
     executable_sha256: '3'.repeat(64),
     code_signature_hash: '4'.repeat(40),
     team_id: 'UNICODEÉ',
@@ -525,7 +525,7 @@ function canonical(value) {
   return value;
 }
 const bytes = Buffer.concat([
-  Buffer.from('peekaboo.multi-target-certification.monitor-evidence.v2\0', 'utf8'),
+  Buffer.from('wink.multi-target-certification.monitor-evidence.v2\0', 'utf8'),
   Buffer.from(JSON.stringify(canonical(evidence)), 'utf8'),
 ]);
 fs.writeFileSync(fixturePath, `${JSON.stringify(evidence, null, 2)}\n`, { mode: 0o600 });
@@ -1452,52 +1452,52 @@ if $SELF_TEST_ONLY; then
     exit 0
 fi
 
-if [[ -z "$PEEKABOO_BIN" ]]; then
-    if [[ -x "$ROOT_DIR/Apps/CLI/.build/debug/peekaboo" ]]; then
-        PEEKABOO_BIN="$ROOT_DIR/Apps/CLI/.build/debug/peekaboo"
+if [[ -z "$WINK_BIN" ]]; then
+    if [[ -x "$ROOT_DIR/Apps/CLI/.build/debug/wink" ]]; then
+        WINK_BIN="$ROOT_DIR/Apps/CLI/.build/debug/wink"
     else
-        PEEKABOO_BIN="$(command -v peekaboo || true)"
+        WINK_BIN="$(command -v wink || true)"
     fi
 fi
-if [[ -z "$PEEKABOO_BIN" || ! -x "$PEEKABOO_BIN" ]]; then
-    echo "Peekaboo CLI not found; build it or pass --bin." >&2
+if [[ -z "$WINK_BIN" || ! -x "$WINK_BIN" ]]; then
+    echo "Wink CLI not found; build it or pass --bin." >&2
     exit 2
 fi
-PEEKABOO_BIN="$(realpath "$PEEKABOO_BIN")"
-PEEKABOO_EXECUTABLE_SHA256="$(shasum -a 256 "$PEEKABOO_BIN" | awk '{print $1}')"
-PEEKABOO_EXECUTABLE_DEVICE="$(stat -f '%d' "$PEEKABOO_BIN")"
-PEEKABOO_EXECUTABLE_INODE="$(stat -f '%i' "$PEEKABOO_BIN")"
-PEEKABOO_CODE_SIGNATURE_HASH="$(read_code_signature_hash "$PEEKABOO_BIN")"
-if [[ ! "$PEEKABOO_EXECUTABLE_SHA256" =~ ^[0-9a-f]{64}$ || \
-      ! "$PEEKABOO_CODE_SIGNATURE_HASH" =~ ^[0-9a-f]{40}$ ]]; then
-    echo "Peekaboo CLI lacks an exact executable SHA-256 or code-signature hash." >&2
+WINK_BIN="$(realpath "$WINK_BIN")"
+WINK_EXECUTABLE_SHA256="$(shasum -a 256 "$WINK_BIN" | awk '{print $1}')"
+WINK_EXECUTABLE_DEVICE="$(stat -f '%d' "$WINK_BIN")"
+WINK_EXECUTABLE_INODE="$(stat -f '%i' "$WINK_BIN")"
+WINK_CODE_SIGNATURE_HASH="$(read_code_signature_hash "$WINK_BIN")"
+if [[ ! "$WINK_EXECUTABLE_SHA256" =~ ^[0-9a-f]{64}$ || \
+      ! "$WINK_CODE_SIGNATURE_HASH" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Wink CLI lacks an exact executable SHA-256 or code-signature hash." >&2
     exit 2
 fi
 
 pb() {
     if $NO_REMOTE; then
-        "$PEEKABOO_BIN" "$@" --no-remote
+        "$WINK_BIN" "$@" --no-remote
     else
-        "$PEEKABOO_BIN" "$@" --bridge-socket "$BRIDGE_SOCKET"
+        "$WINK_BIN" "$@" --bridge-socket "$BRIDGE_SOCKET"
     fi
 }
 
 if $NO_REMOTE; then
-    codesign -dv --verbose=2 "$PEEKABOO_BIN" > "$ARTIFACT_ROOT/peekaboo-signature.txt" 2>&1 || true
-    if ! rg -q '^TeamIdentifier=' "$ARTIFACT_ROOT/peekaboo-signature.txt" || \
-       rg -q '^TeamIdentifier=not set$' "$ARTIFACT_ROOT/peekaboo-signature.txt"; then
+    codesign -dv --verbose=2 "$WINK_BIN" > "$ARTIFACT_ROOT/wink-signature.txt" 2>&1 || true
+    if ! rg -q '^TeamIdentifier=' "$ARTIFACT_ROOT/wink-signature.txt" || \
+       rg -q '^TeamIdentifier=not set$' "$ARTIFACT_ROOT/wink-signature.txt"; then
         echo "--no-remote requires a team-signed CLI with stable local TCC grants." >&2
         exit 2
     fi
 fi
 
-pb --version > "$ARTIFACT_ROOT/peekaboo-version.txt"
-pb --version --json > "$ARTIFACT_ROOT/peekaboo-provenance.json"
-PEEKABOO_SOURCE_COMMIT="$(jq -er '
+pb --version > "$ARTIFACT_ROOT/wink-version.txt"
+pb --version --json > "$ARTIFACT_ROOT/wink-provenance.json"
+WINK_SOURCE_COMMIT="$(jq -er '
     select(.success == true) |
     .data.sourceCommit |
     select(type == "string" and test("^[0-9a-f]{40}$"))
-' "$ARTIFACT_ROOT/peekaboo-provenance.json")" || {
+' "$ARTIFACT_ROOT/wink-provenance.json")" || {
     echo "Background certification requires a stamped CLI with one exact 40-hex source commit." >&2
     exit 2
 }
@@ -1506,12 +1506,12 @@ if ! jq -e '
     .success == true and
     ([.data.permissions[] | select(.isRequired == true and .isGranted != true)] | length == 0)
 ' "$ARTIFACT_ROOT/permissions.json" >/dev/null; then
-    echo "Peekaboo is missing a required macOS permission; see $ARTIFACT_ROOT/permissions.json" >&2
+    echo "Wink is missing a required macOS permission; see $ARTIFACT_ROOT/permissions.json" >&2
     exit 2
 fi
 
 EVENT_PRODUCER_SOURCE=local
-EVENT_PRODUCER_SOURCE_COMMIT="$PEEKABOO_SOURCE_COMMIT"
+EVENT_PRODUCER_SOURCE_COMMIT="$WINK_SOURCE_COMMIT"
 REMOTE_EVENT_PRODUCER_JSON=null
 BRIDGE_EXECUTABLE_SHA256_JSON=null
 BRIDGE_CODE_SIGNATURE_HASH_JSON=null
@@ -1525,7 +1525,7 @@ if ! $NO_REMOTE; then
         exit 2
     }
     BRIDGE_SOURCE_COMMIT="$(jq -er '.sourceCommit' <<<"$REMOTE_EVENT_PRODUCER_JSON")"
-    if [[ "$BRIDGE_SOURCE_COMMIT" != "$PEEKABOO_SOURCE_COMMIT" ]]; then
+    if [[ "$BRIDGE_SOURCE_COMMIT" != "$WINK_SOURCE_COMMIT" ]]; then
         echo "CLI and pinned Bridge host were built from different source commits." >&2
         exit 2
     fi
@@ -2038,7 +2038,7 @@ run_case() {
         }
     ' > "$allowed_producers"
     jq -cS \
-        --arg domain 'peekaboo.background-computer-use.monitor-baseline.v2' \
+        --arg domain 'wink.background-computer-use.monitor-baseline.v2' \
         --arg executionNonce "$RUN_EXECUTION_NONCE" \
         --arg monitorInstanceID "$monitor_instance_id" \
         --arg caseID "$name" \
@@ -2252,9 +2252,9 @@ run_case() {
             sleep 0.001
         done
         if $NO_REMOTE; then
-            exec "$PEEKABOO_BIN" "$@" --json --no-remote
+            exec "$WINK_BIN" "$@" --json --no-remote
         else
-            exec "$PEEKABOO_BIN" "$@" --json --bridge-socket "$BRIDGE_SOCKET"
+            exec "$WINK_BIN" "$@" --json --bridge-socket "$BRIDGE_SOCKET"
         fi
     ) > "$result" 2> "$stderr_file" &
     local command_pid=$!
@@ -2497,8 +2497,8 @@ run_case() {
     local desktop_restored=true
     if ! jq -e --slurpfile after "$after" '
         .clipboardDigest == $after[0].clipboardDigest and
-        ((.peekabooWindowIDs - $after[0].peekabooWindowIDs) | length) == 0 and
-        (($after[0].peekabooWindowIDs - .peekabooWindowIDs) | length) == 0
+        ((.winkWindowIDs - $after[0].winkWindowIDs) | length) == 0 and
+        (($after[0].winkWindowIDs - .winkWindowIDs) | length) == 0
     ' "$before" >/dev/null; then
         record_failure "$name did not restore the stable desktop state"
         desktop_restored=false
@@ -3126,7 +3126,7 @@ run_alert_lifecycle_case() {
     local receipt_directory="$PLAYGROUND_ALERT_ROOT/receipts/$phase"
     local validator_directory="$PLAYGROUND_ALERT_ROOT/validators/$phase"
     mkdir -m 700 "$receipt_directory"
-    if ! PEEKABOO_OPERATION_RECEIPT_DIRECTORY="$receipt_directory" \
+    if ! WINK_OPERATION_RECEIPT_DIRECTORY="$receipt_directory" \
         run_checked_case "$case_name" unchanged success "$@"; then
         record_failure "$phase did not complete its monitored CLI command"
         return 1
@@ -3488,7 +3488,7 @@ if [[ -n "$QUALIFICATION_CYCLE" ]]; then
             --physical-targets "$ARTIFACT_ROOT/physical-targets.json" \
             --cycle "$QUALIFICATION_CYCLE" \
             --execution-nonce "$RUN_EXECUTION_NONCE" \
-            --peekaboo-source "$PEEKABOO_SOURCE_COMMIT" \
+            --wink-source "$WINK_SOURCE_COMMIT" \
             --bridge-source "$BRIDGE_SOURCE_COMMIT" \
             --button "$PLAYGROUND_ALERT_BUTTON" \
             --output "$PLAYGROUND_ALERT_ROOT/report.json"; then
@@ -3529,7 +3529,7 @@ if $RUN_FOREGROUND_PHASE; then
             > "$FOREGROUND_DIR/restore-cursor.json"
     else
         printf '%s\n' \
-            '{"restored":false,"reason":"cursor changed after Peekaboo move; refusing to overwrite newer user state"}' \
+            '{"restored":false,"reason":"cursor changed after Wink move; refusing to overwrite newer user state"}' \
             > "$FOREGROUND_DIR/restore-cursor-skipped.json"
     fi
 
@@ -3540,7 +3540,7 @@ if $RUN_FOREGROUND_PHASE; then
             > "$FOREGROUND_DIR/restore-sentinel.json"
     else
         printf '%s\n' \
-            '{"restored":false,"reason":"frontmost app changed after Peekaboo switch; refusing to overwrite newer user state"}' \
+            '{"restored":false,"reason":"frontmost app changed after Wink switch; refusing to overwrite newer user state"}' \
             > "$FOREGROUND_DIR/restore-sentinel-skipped.json"
     fi
 fi
@@ -3571,12 +3571,12 @@ if [[ "$(shasum -a 256 "$PROBE_BIN" | awk '{print $1}')" != \
     record_failure "Native certification probe executable changed during the matrix"
     PROVENANCE_STABLE=false
 fi
-if [[ "$(shasum -a 256 "$PEEKABOO_BIN" | awk '{print $1}')" != "$PEEKABOO_EXECUTABLE_SHA256" || \
-      "$(read_code_signature_hash "$PEEKABOO_BIN")" != \
-        "$PEEKABOO_CODE_SIGNATURE_HASH" || \
-      "$(stat -f '%d' "$PEEKABOO_BIN")" != "$PEEKABOO_EXECUTABLE_DEVICE" || \
-      "$(stat -f '%i' "$PEEKABOO_BIN")" != "$PEEKABOO_EXECUTABLE_INODE" ]]; then
-    record_failure "Peekaboo CLI executable or code signature changed during the matrix"
+if [[ "$(shasum -a 256 "$WINK_BIN" | awk '{print $1}')" != "$WINK_EXECUTABLE_SHA256" || \
+      "$(read_code_signature_hash "$WINK_BIN")" != \
+        "$WINK_CODE_SIGNATURE_HASH" || \
+      "$(stat -f '%d' "$WINK_BIN")" != "$WINK_EXECUTABLE_DEVICE" || \
+      "$(stat -f '%i' "$WINK_BIN")" != "$WINK_EXECUTABLE_INODE" ]]; then
+    record_failure "Wink CLI executable or code signature changed during the matrix"
     PROVENANCE_STABLE=false
 fi
 if ! $NO_REMOTE; then
@@ -3607,10 +3607,10 @@ SOURCE_ARTIFACTS_JSON="$(jq -cn \
     --arg probeExecutableSHA256 "$PROBE_EXECUTABLE_SHA256_INITIAL" \
     --arg harnessSHA256 "$HARNESS_SHA256_INITIAL" \
     --arg sourceProvenanceSHA256 "$SOURCE_PROVENANCE_SHA256_INITIAL" \
-    --arg cliExecutableSHA256 "$PEEKABOO_EXECUTABLE_SHA256" \
-    --arg cliCodeSignatureHash "$PEEKABOO_CODE_SIGNATURE_HASH" \
-    --arg cliExecutableDevice "$PEEKABOO_EXECUTABLE_DEVICE" \
-    --arg cliExecutableInode "$PEEKABOO_EXECUTABLE_INODE" \
+    --arg cliExecutableSHA256 "$WINK_EXECUTABLE_SHA256" \
+    --arg cliCodeSignatureHash "$WINK_CODE_SIGNATURE_HASH" \
+    --arg cliExecutableDevice "$WINK_EXECUTABLE_DEVICE" \
+    --arg cliExecutableInode "$WINK_EXECUTABLE_INODE" \
     --argjson bridgeExecutableSHA256 "$BRIDGE_EXECUTABLE_SHA256_JSON" \
     --argjson bridgeCodeSignatureHash "$BRIDGE_CODE_SIGNATURE_HASH_JSON" \
     --argjson bridgeExecutableDevice "$BRIDGE_EXECUTABLE_DEVICE_JSON" \
@@ -3640,7 +3640,7 @@ SOURCE_ARTIFACTS_JSON="$(jq -cn \
 ')"
 jq -s \
     --slurpfile probe "$ARTIFACT_ROOT/probe-self-test.json" \
-    --arg cliSourceCommit "$PEEKABOO_SOURCE_COMMIT" \
+    --arg cliSourceCommit "$WINK_SOURCE_COMMIT" \
     --arg eventProducerSource "$EVENT_PRODUCER_SOURCE" \
     --arg eventProducerSourceCommit "$EVENT_PRODUCER_SOURCE_COMMIT" \
     --arg requestedBridgeSocket "$BRIDGE_SOCKET" \
@@ -3679,8 +3679,8 @@ CURSOR_MOVEMENT_OBSERVED="$(jq -s \
     'any(.[]; .evidence.cursor_movement_observed == true)' \
     "${case_summaries[@]}")"
 jq -n \
-    --arg peekaboo "$(head -n 1 "$ARTIFACT_ROOT/peekaboo-version.txt")" \
-    --arg sourceCommit "$PEEKABOO_SOURCE_COMMIT" \
+    --arg wink "$(head -n 1 "$ARTIFACT_ROOT/wink-version.txt")" \
+    --arg sourceCommit "$WINK_SOURCE_COMMIT" \
     --arg playgroundBundle "$PLAYGROUND_BUNDLE_ID" \
     --argjson playgroundPID "$PLAYGROUND_PID" \
     --argjson sentinelPID "$SENTINEL_PID" \
@@ -3693,7 +3693,7 @@ jq -n \
     --slurpfile physicalTargets "$ARTIFACT_ROOT/physical-targets.json" \
     '{
         success: ($failures == 0),
-        peekaboo: $peekaboo,
+        wink: $wink,
         source_commit: $sourceCommit,
         playground: {bundle_id: $playgroundBundle, pid: $playgroundPID},
         sentinel: {pid: $sentinelPID, window_id: $sentinelWindowID},

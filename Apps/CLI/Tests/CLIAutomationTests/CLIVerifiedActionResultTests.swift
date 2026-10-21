@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -33,12 +33,12 @@ struct CLIVerifiedActionResultTests {
             ownerName: menuOwner.name,
             rawOwnerPID: menuOwner.processIdentifier
         )]
-        menu.menuBarClickResult = PeekabooCore.ClickResult(
+        menu.menuBarClickResult = WinkCore.ClickResult(
             elementDescription: "Wi-Fi",
             location: CGPoint(x: 100, y: 10)
         )
         menu.actionCompleted = { applications.applications = [menuOwner] }
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             menu: menu
         )
@@ -79,12 +79,12 @@ struct CLIVerifiedActionResultTests {
             ownerName: "Control Center",
             rawOwnerPID: 42
         )]
-        menu.menuBarClickResult = PeekabooCore.ClickResult(
+        menu.menuBarClickResult = WinkCore.ClickResult(
             elementDescription: "Wi-Fi",
             location: CGPoint(x: 100, y: 10)
         )
         menu.actionCompleted = { applications.failFrontmostLookup = true }
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             menu: menu
         )
@@ -122,7 +122,7 @@ struct CLIVerifiedActionResultTests {
         ])
         dock.actionOutcome = Self.dispatchedOutcome
         dock.actionTargetIdentity = try Self.processTarget()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [app]),
             dock: dock
         )

@@ -1,11 +1,11 @@
 ---
-summary: 'Read/write the macOS clipboard via peekaboo clipboard'
+summary: 'Read/write the macOS clipboard via wink clipboard'
 read_when:
   - 'you need to seed or inspect clipboard content in automation flows'
   - 'saving/restoring the user clipboard around scripted actions'
 ---
 
-# `peekaboo clipboard`
+# `wink clipboard`
 
 Work with the macOS pasteboard. Supports text, files/images, raw base64 payloads, and save/restore slots to avoid clobbering the user's clipboard.
 
@@ -35,27 +35,27 @@ Work with the macOS pasteboard. Supports text, files/images, raw base64 payloads
 ## Examples
 ```bash
 # Inspect this reader's policy without exposing clipboard contents
-peekaboo clipboard status --json
+wink clipboard status --json
 
 # Copy text
-peekaboo clipboard set --text "hello world"
+wink clipboard set --text "hello world"
 
 # Copy text and verify readback
-peekaboo clipboard set --text "hello world" --verify
+wink clipboard set --text "hello world" --verify
 
 # Read clipboard and save binary to a file
-peekaboo clipboard get --output /tmp/clip.bin
+wink clipboard get --output /tmp/clip.bin
 
 # Save, clear, then restore the user's clipboard
-peekaboo clipboard save --slot original
-peekaboo clipboard clear
-peekaboo clipboard restore --slot original
+wink clipboard save --slot original
+wink clipboard clear
+wink clipboard restore --slot original
 ```
 
 ## Notes
 - Binary reads without `--output` return a summary; use `--output -` to pipe data.
 - File paths for `--file-path` and `--output` accept `~/...`.
-- Slot saves are stored in a dedicated named pasteboard so they work across separate `peekaboo clipboard` invocations. Restore reads that board’s current saved contents, preserving separate items and each item’s representations; an older service instance does not reuse a stale local copy.
+- Slot saves are stored in a dedicated named pasteboard so they work across separate `wink clipboard` invocations. Restore reads that board’s current saved contents, preserving separate items and each item’s representations; an older service instance does not reuse a stale local copy.
 - `restore` removes the saved slot after applying it to avoid leaving clipboard snapshots around indefinitely.
 - Size guard: writes larger than 10 MB require `--allow-large`; the guard counts all representations plus any `--also-text` companion text.
 - `--text` writes both `public.plain-text` and `.string` (`public.utf8-plain-text`) for compatibility.
@@ -66,6 +66,6 @@ peekaboo clipboard restore --slot original
 - Writes do not require read permission. If optional set/clear/restore verification is not silently admitted, the accepted write reports `dispatched_unverified` and remains retry-unsafe. Explicit `set --verify` instead fails retry-unsafe after a refused readback; add `--allow-prompt` only when a manual alert is intended. Temporary paste cleanup still restores only its owned generation and does not require another content read.
 
 ## Troubleshooting
-- Use `peekaboo clipboard status`; Screen Recording, Accessibility, and a GUI Bridge's grants do not determine the caller's clipboard-read policy.
+- Use `wink clipboard status`; Screen Recording, Accessibility, and a GUI Bridge's grants do not determine the caller's clipboard-read policy.
 - A refused unattended read does not grant permission. Arrange the native permission outside automation, then inspect status again.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

@@ -1,12 +1,12 @@
 ---
-summary: 'Swift and SwiftUI conventions for Peekaboo source changes.'
+summary: 'Swift and SwiftUI conventions for Wink source changes.'
 read_when:
   - 'adding or refactoring Swift and SwiftUI code'
 ---
 
 # Swift conventions
 
-Peekaboo uses Swift 6.2 conventions and explicit `self` for member references. Run the repository's SwiftFormat and
+Wink uses Swift 6.2 conventions and explicit `self` for member references. Run the repository's SwiftFormat and
 SwiftLint commands, and preserve the declared package and app floors in [platform support](platform-support.md).
 Do not raise a deployment target to make a refactor compile.
 

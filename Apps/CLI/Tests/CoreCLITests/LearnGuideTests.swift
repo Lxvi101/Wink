@@ -1,7 +1,7 @@
 import Foundation
-import PeekabooAgentRuntime
+import WinkAgentRuntime
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct LearnGuideTests {
@@ -65,11 +65,11 @@ struct LearnGuideTests {
         #expect(emptyCLI.contains("Agent tool filters do not hide CLI commands"))
         #expect(emptyCLI.contains("## Commander Command Signatures"))
         let actualHeadings = emptyCLI.split(separator: "\n")
-            .filter { $0.hasPrefix("### `peekaboo ") }
+            .filter { $0.hasPrefix("### `wink ") }
             .map(String.init)
-        #expect(actualHeadings == summaries.map(\.name).sorted().map { "### `peekaboo \($0)`" })
+        #expect(actualHeadings == summaries.map(\.name).sorted().map { "### `wink \($0)`" })
         for name in ["agent", "config", "drag", "move", "see"] {
-            #expect(actualHeadings.contains("### `peekaboo \(name)`"))
+            #expect(actualHeadings.contains("### `wink \(name)`"))
         }
         for summary in summaries {
             for option in summary.options {
@@ -109,15 +109,15 @@ struct LearnGuideTests {
         #expect(!first.contains("- **Completion**: done, need_info"))
     }
 
-    private static let tools: [PeekabooToolDefinition] = [
-        PeekabooToolDefinition(
+    private static let tools: [WinkToolDefinition] = [
+        WinkToolDefinition(
             name: "permissions", abstract: "Synthetic permission inventory", discussion: "", category: .system
         ),
-        PeekabooToolDefinition(
+        WinkToolDefinition(
             name: "finish_fixture", commandName: "done", abstract: "Synthetic completion", discussion: "",
             category: .completion
         ),
-        PeekabooToolDefinition(
+        WinkToolDefinition(
             name: "ask_fixture", commandName: "need_info", abstract: "Synthetic question", discussion: "",
             category: .completion
         ),

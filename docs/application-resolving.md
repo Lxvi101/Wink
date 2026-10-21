@@ -1,17 +1,17 @@
 ---
-summary: 'Review Application Resolution in Peekaboo guidance'
+summary: 'Review Application Resolution in Wink guidance'
 read_when:
-  - 'planning work related to application resolution in peekaboo'
+  - 'planning work related to application resolution in wink'
   - 'debugging or extending features described here'
 ---
 
-# Application Resolution in Peekaboo
+# Application Resolution in Wink
 
-This document explains how Peekaboo resolves applications across commands that accept an application parameter.
+This document explains how Wink resolves applications across commands that accept an application parameter.
 
 ## Overview
 
-Peekaboo supports multiple ways to identify and target applications:
+Wink supports multiple ways to identify and target applications:
 - **Application Name** - Human-readable name (e.g., "Safari", "Google Chrome")
 - **Bundle ID** - Unique application identifier (e.g., "com.apple.Safari")
 - **Process ID (PID)** - Numeric process identifier
@@ -27,19 +27,19 @@ Most commands that work with applications support two parameters:
 
 ```bash
 # By application name
-peekaboo see --no-elements --app Safari
+wink see --no-elements --app Safari
 
 # By bundle ID
-peekaboo window close --app com.apple.Safari
+wink window close --app com.apple.Safari
 
 # By PID using --app parameter
-peekaboo menu list --app "PID:12345"
+wink menu list --app "PID:12345"
 
 # By PID using --pid parameter
-peekaboo app quit --pid 12345
+wink app quit --pid 12345
 
 # Both parameters on a legacy window command (when they refer to the same app)
-peekaboo window focus --app Safari --pid 12345
+wink window focus --app Safari --pid 12345
 ```
 
 ## Resolution Methods
@@ -49,8 +49,8 @@ peekaboo window focus --app Safari --pid 12345
 The most common method - uses the localized application name:
 
 ```bash
-peekaboo see --no-elements --app "Google Chrome"
-peekaboo window list --app TextEdit
+wink see --no-elements --app "Google Chrome"
+wink window list --app TextEdit
 ```
 
 **Features:**
@@ -63,8 +63,8 @@ peekaboo window list --app TextEdit
 More precise than names, bundle IDs are unique:
 
 ```bash
-peekaboo app launch --app com.microsoft.VSCode
-peekaboo window close --app com.google.Chrome
+wink app launch --app com.microsoft.VSCode
+wink window close --app com.google.Chrome
 ```
 
 **Features:**
@@ -78,13 +78,13 @@ Direct process targeting using numeric IDs:
 
 ```bash
 # Using --pid parameter
-peekaboo app quit --pid 67890
+wink app quit --pid 67890
 
 # Using --app parameter with PID: prefix
-peekaboo window focus --app "PID:67890"
+wink window focus --app "PID:67890"
 
 # Finding PIDs
-peekaboo app list --include-hidden --include-background  # Shows all PIDs
+wink app list --include-hidden --include-background  # Shows all PIDs
 ```
 
 **Features:**
@@ -94,16 +94,16 @@ peekaboo app list --include-hidden --include-background  # Shows all PIDs
 
 ### 4. Fuzzy Name Matching
 
-Peekaboo supports partial name matching for convenience:
+Wink supports partial name matching for convenience:
 
 ```bash
 # Matches "Visual Studio Code"
-peekaboo see --no-elements --app "visual"
-peekaboo see --no-elements --app "code"
-peekaboo see --no-elements --app "studio"
+wink see --no-elements --app "visual"
+wink see --no-elements --app "code"
+wink see --no-elements --app "studio"
 
 # Matches "Google Chrome"
-peekaboo window list --app chrome
+wink window list --app chrome
 ```
 
 **Algorithm:**
@@ -140,10 +140,10 @@ inventory. Generation-pinned explicit-PID targeting is unchanged.
 These legacy management forms are valid and equivalent:
 ```bash
 # Redundant PID specifications
-peekaboo window close --app "PID:12345" --pid 12345
+wink window close --app "PID:12345" --pid 12345
 
 # Legacy compatibility: the textual app selector is authoritative
-peekaboo window focus --app Safari --pid 67890
+wink window focus --app Safari --pid 67890
 ```
 
 ### Conflict Detection
@@ -151,7 +151,7 @@ peekaboo window focus --app Safari --pid 67890
 This produces an error:
 ```bash
 # Different PIDs
-peekaboo window close --app "PID:12345" --pid 67890
+wink window close --app "PID:12345" --pid 67890
 
 ```
 
@@ -217,11 +217,11 @@ Clear error messages help users understand issues:
 
 ```bash
 # Get PID for scripting
-PID=$(peekaboo app list --json --include-hidden --include-background | jq '.data.apps[] | select(.name=="Safari") | .pid')
-peekaboo window close --pid $PID
+PID=$(wink app list --json --include-hidden --include-background | jq '.data.apps[] | select(.name=="Safari") | .pid')
+wink window close --pid $PID
 
 # Or use bundle ID
-peekaboo app launch --app com.apple.Safari
+wink app launch --app com.apple.Safari
 ```
 
 ### For AI Agents
@@ -234,28 +234,28 @@ AI agents should provide exactly one of `--app` or `--pid`. Use `PID:<pid>` in `
 
 ```bash
 # List all running apps with PIDs
-peekaboo app list --include-hidden --include-background
+wink app list --include-hidden --include-background
 
 # Find specific app
-peekaboo app list --include-hidden --include-background | grep -i safari
+wink app list --include-hidden --include-background | grep -i safari
 ```
 
 ### Window Management
 
 ```bash
 # List windows for an app
-peekaboo window list --app Safari
+wink window list --app Safari
 
 # Focus specific window
-peekaboo window focus --app Safari --window-title "GitHub"
+wink window focus --app Safari --window-title "GitHub"
 ```
 
 ### Cross-Space Operations
 
 ```bash
 # Move window to current space (finds app by any method)
-peekaboo space move-window --app Terminal --to-current
-peekaboo space move-window --pid 12345 --to 2
+wink space move-window --app Terminal --to-current
+wink space move-window --pid 12345 --to 2
 ```
 
 ## Troubleshooting
@@ -267,10 +267,10 @@ peekaboo space move-window --pid 12345 --to 2
 - `"No running application matches 'X'"`
 
 **Solutions:**
-1. Check spelling: `peekaboo app list --include-hidden --include-background`
+1. Check spelling: `wink app list --include-hidden --include-background`
 2. Try partial name: `--app chrome` instead of `--app "Google Chrome"`
 3. Use bundle ID: `--app com.google.Chrome`
-4. Use PID directly: Find it with `peekaboo app list --include-hidden --include-background`, then use `--pid`
+4. Use PID directly: Find it with `wink app list --include-hidden --include-background`, then use `--pid`
 
 ### PID Issues
 
@@ -279,7 +279,7 @@ peekaboo space move-window --pid 12345 --to 2
 - `"Invalid PID format"`
 
 **Solutions:**
-1. Verify PID is current: `peekaboo app list --include-hidden --include-background`
+1. Verify PID is current: `wink app list --include-hidden --include-background`
 2. Check format: `--app "PID:12345"` needs quotes and prefix
 3. Use `--pid 12345` for direct numeric PIDs
 
@@ -301,5 +301,5 @@ listed PID with `--pid <pid>` or `--app "PID:<pid>"` to select the intended inst
 ## See Also
 
 - [Command index](commands/README.md) - Full command documentation
-- [Agent chat](agent-chat.md) - Using Peekaboo with AI agents
+- [Agent chat](agent-chat.md) - Using Wink with AI agents
 - [Automation guide](automation.md) - Scripting and automation patterns

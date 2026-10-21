@@ -22,7 +22,7 @@ def digest(path):
 
 failures = []
 
-with tempfile.TemporaryDirectory(prefix="peekaboo-archive-publication.") as directory:
+with tempfile.TemporaryDirectory(prefix="wink-archive-publication.") as directory:
     temporary = Path(directory)
     release = temporary / "release"
     release.mkdir()

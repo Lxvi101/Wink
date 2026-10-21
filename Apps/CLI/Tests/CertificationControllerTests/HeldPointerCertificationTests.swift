@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
-@testable import PeekabooCertificationController
+@testable import WinkCertificationController
 
 @Suite("Held-pointer certification")
 struct HeldPointerCertificationTests {
@@ -76,7 +76,7 @@ struct HeldPointerCertificationTests {
     @Test
     func `held pointer artifacts require a fresh closed root`() throws {
         let parent = FileManager.default.temporaryDirectory.appendingPathComponent(
-            "peekaboo-held-pointer-plan-\(UUID().uuidString.lowercased())",
+            "wink-held-pointer-plan-\(UUID().uuidString.lowercased())",
             isDirectory: true
         )
         defer { try? FileManager.default.removeItem(at: parent) }
@@ -265,11 +265,11 @@ struct HeldPointerCertificationTests {
     {
       "version": 1,
       "execution_nonce": "\(String(repeating: "9", count: 64))",
-      "socket_path": "/private/tmp/peekaboo-certification.sock",
+      "socket_path": "/private/tmp/wink-certification.sock",
       "trusted_bridge_host_team_ids": ["FWJYW4S8P8"],
       "expected_controller_build": {
         "source_commit": "\(String(repeating: "c", count: 40))",
-        "executable_path": "/private/tmp/peekaboo-certification-controller",
+        "executable_path": "/private/tmp/wink-certification-controller",
         "executable_sha256": "\(String(repeating: "d", count: 64))",
         "team_id": "FWJYW4S8P8"
       },
@@ -289,7 +289,7 @@ struct HeldPointerCertificationTests {
         "click_point": {"x": 30, "y": 40}
       },
       "hold_milliseconds": 500,
-      "artifacts_directory": "/private/tmp/peekaboo-held-pointer-artifacts"
+      "artifacts_directory": "/private/tmp/wink-held-pointer-artifacts"
     }
     """.utf8)
 }

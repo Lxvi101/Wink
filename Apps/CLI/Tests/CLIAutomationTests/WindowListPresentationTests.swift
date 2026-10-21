@@ -2,8 +2,8 @@ import Commander
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @MainActor
 @Suite(.serialized, .tags(.safe))
@@ -77,11 +77,11 @@ struct WindowListPresentationTests {
         #expect(windows.moveCalls.isEmpty)
     }
 
-    private static func services() -> PeekabooServices {
+    private static func services() -> WinkServices {
         let application = ServiceApplicationInfo(
             processIdentifier: 42,
             processStartIdentity: 7,
-            bundleIdentifier: "dev.peekaboo.fixture",
+            bundleIdentifier: "dev.wink.fixture",
             name: "Window fixture"
         )
         let states = [
@@ -99,7 +99,7 @@ struct WindowListPresentationTests {
                 isOnScreen: state.onScreen
             )
         }
-        return TestServicesFactory.makePeekabooServices(
+        return TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             windows: StubWindowService(windowsByApp: ["PID:42": windows])
         )

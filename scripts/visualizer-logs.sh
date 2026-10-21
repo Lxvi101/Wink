@@ -12,14 +12,14 @@ Options:
   -h, --help             Display this help message.
 
 The default predicate captures VisualizationClient and receiver/render diagnostics
-on the `boo.peekaboo.core` and `boo.peekaboo.visualizer` subsystems.
+on the `boo.wink.core` and `boo.wink.visualizer` subsystems.
 Both modes include available info/debug messages without changing logging configuration.
 USAGE
 }
 
 MODE="show"
 LAST="10m"
-PREDICATE='(subsystem == "boo.peekaboo.core" && category CONTAINS "Visualization") || subsystem == "boo.peekaboo.visualizer"'
+PREDICATE='(subsystem == "boo.wink.core" && category CONTAINS "Visualization") || subsystem == "boo.wink.visualizer"'
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

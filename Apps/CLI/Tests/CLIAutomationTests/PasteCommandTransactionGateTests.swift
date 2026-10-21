@@ -1,11 +1,11 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooAutomationKit
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 extension PasteCommandTests {
@@ -30,7 +30,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             clipboard: clipboard,
             automation: automation
@@ -131,7 +131,7 @@ extension PasteCommandTests {
         let fileManager = FileManager.default
         let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
-        let directory = applicationSupport.appendingPathComponent("Peekaboo", isDirectory: true)
+        let directory = applicationSupport.appendingPathComponent("Wink", isDirectory: true)
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         let path = directory.appendingPathComponent("clipboard-paste-transaction.lock").path
         let fd = open(path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
@@ -142,7 +142,7 @@ extension PasteCommandTests {
     }
 
     func makeTransactionGateContext(processIdentifier: pid_t = 2468) -> (
-        services: PeekabooServices,
+        services: WinkServices,
         automation: OutcomeStubAutomationService,
         clipboard: StubClipboardService,
         applications: StubApplicationService
@@ -165,7 +165,7 @@ extension PasteCommandTests {
             data: Data("prior".utf8),
             textPreview: "prior"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             clipboard: clipboard,
             automation: automation

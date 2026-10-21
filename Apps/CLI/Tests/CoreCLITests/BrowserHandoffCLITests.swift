@@ -2,13 +2,13 @@ import Commander
 import Darwin
 import Foundation
 import MCP
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import TachikomaMCP
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooBridge
-@testable import PeekabooCLI
+@testable import WinkAgentRuntime
+@testable import WinkBridge
+@testable import WinkCLI
 
 struct BrowserHandoffCLITests {
     private struct InvalidBrowserInput {
@@ -41,7 +41,7 @@ struct BrowserHandoffCLITests {
 
         let descriptors = CommanderRegistryBuilder.buildDescriptors()
         let invocation = try Program(descriptors: descriptors.map(\.metadata)).resolve(argv: [
-            "peekaboo", "mcp", "serve",
+            "wink", "mcp", "serve",
             "--browser-handoff", "/private/tmp/handoff.json",
             "--bridge-socket", "/private/tmp/bridge.sock",
         ])
@@ -52,8 +52,8 @@ struct BrowserHandoffCLITests {
     @Test
     @MainActor
     func `browser handoff requires connect foreground one exact socket and one absolute destination`() throws {
-        let handoff = "/private/tmp/peekaboo-handoff.json"
-        let socket = "/private/tmp/peekaboo-handoff.sock"
+        let handoff = "/private/tmp/wink-handoff.json"
+        let socket = "/private/tmp/wink-handoff.sock"
 
         let valid = try Self.browserCommand(
             action: "connect",
@@ -63,10 +63,10 @@ struct BrowserHandoffCLITests {
         )
         #expect(valid.runtimeOptions.requiresBrowserHandoffBridge)
         #expect(throws: ValidationError.self) {
-            try valid.validateHandoffEnvironment(["PEEKABOO_NO_REMOTE": "1"])
+            try valid.validateHandoffEnvironment(["WINK_NO_REMOTE": "1"])
         }
         #expect(throws: ValidationError.self) {
-            try valid.validateHandoffEnvironment(["PEEKABOO_BRIDGE_SOCKET": "/private/tmp/other.sock"])
+            try valid.validateHandoffEnvironment(["WINK_BRIDGE_SOCKET": "/private/tmp/other.sock"])
         }
 
         let cases = [
@@ -147,7 +147,7 @@ struct BrowserHandoffCLITests {
         let command = try Self.browserCommand(
             action: "connect",
             handoffValues: [directory.appendingPathComponent("handoff.json").path],
-            socketValues: ["/private/tmp/peekaboo-handoff.sock"],
+            socketValues: ["/private/tmp/wink-handoff.sock"],
             flags: ["foreground"]
         )
         #expect(throws: Never.self) { try command.validateBeforeRuntime() }
@@ -194,7 +194,7 @@ struct BrowserHandoffCLITests {
         var command = try Self.browserCommand(
             action: "connect",
             handoffValues: [destination.path],
-            socketValues: ["/private/tmp/peekaboo-handoff.sock"],
+            socketValues: ["/private/tmp/wink-handoff.sock"],
             flags: ["foreground"]
         )
         try command.validateBeforeRuntime()
@@ -313,7 +313,7 @@ struct BrowserHandoffCLITests {
         let command = try Self.browserCommand(
             action: "connect",
             handoffValues: [destination.path],
-            socketValues: ["/private/tmp/peekaboo-handoff.sock"],
+            socketValues: ["/private/tmp/wink-handoff.sock"],
             flags: ["foreground"]
         )
         try command.validateBeforeRuntime()
@@ -486,9 +486,9 @@ struct BrowserHandoffCLITests {
         await #expect(throws: inputError) {
             try await CommanderRuntimeExecutor.resolveAndRun(
                 arguments: [
-                    "peekaboo", "mcp", "serve",
+                    "wink", "mcp", "serve",
                     "--browser-handoff", store.fileURL.path,
-                    "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                    "--bridge-socket", "/private/tmp/wink-handoff.sock",
                 ],
                 runtimeFactory: factory
             )
@@ -498,9 +498,9 @@ struct BrowserHandoffCLITests {
             await #expect(throws: expected) {
                 try await CommanderRuntimeExecutor.resolveAndRun(
                     arguments: [
-                        "peekaboo", "browser", "connect", "--foreground",
+                        "wink", "browser", "connect", "--foreground",
                         "--handoff-file", directory.appendingPathComponent("unused.json").path,
-                        "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                        "--bridge-socket", "/private/tmp/wink-handoff.sock",
                     ],
                     runtimeFactory: factory
                 )
@@ -528,8 +528,8 @@ struct BrowserHandoffCLITests {
             ("com.apple.provenance", 0, nil),
             ("com.apple.provenance", 10, nil),
             ("com.apple.provenance", 12, nil),
-            ("dev.peekaboo.browser-handoff-test", 11, nil),
-            ("com.apple.provenance\0dev.peekaboo.browser-handoff-test", 11, nil),
+            ("dev.wink.browser-handoff-test", 11, nil),
+            ("com.apple.provenance\0dev.wink.browser-handoff-test", 11, nil),
             (nil, 11, nil),
         ]
         for (name, size, expected) in cases {
@@ -599,9 +599,9 @@ struct BrowserHandoffCLITests {
             await #expect(throws: expected) {
                 try await CommanderRuntimeExecutor.resolveAndRun(
                     arguments: [
-                        "peekaboo", "browser", "connect", "--foreground",
+                        "wink", "browser", "connect", "--foreground",
                         "--handoff-file", directory.appendingPathComponent("unused.json").path,
-                        "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                        "--bridge-socket", "/private/tmp/wink-handoff.sock",
                     ],
                     runtimeFactory: factory
                 )
@@ -609,8 +609,8 @@ struct BrowserHandoffCLITests {
             await #expect(throws: BrowserHandoffCLIInputError.invalidReceipt(expected.localizedDescription)) {
                 try await CommanderRuntimeExecutor.resolveAndRun(
                     arguments: [
-                        "peekaboo", "mcp", "serve", "--browser-handoff", receipt.path,
-                        "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                        "wink", "mcp", "serve", "--browser-handoff", receipt.path,
+                        "--bridge-socket", "/private/tmp/wink-handoff.sock",
                     ],
                     runtimeFactory: factory
                 )
@@ -718,7 +718,7 @@ extension BrowserHandoffCLITests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = try BrowserHandoffReceiptStore(fileURL: directory.appendingPathComponent("handoff.json"))
         try store.save(fixture)
-        let socket = "/private/tmp/peekaboo-handoff.sock"
+        let socket = "/private/tmp/wink-handoff.sock"
         let valid = ParsedValues(
             positional: [],
             options: [
@@ -740,19 +740,19 @@ extension BrowserHandoffCLITests {
         #expect(!options.autoStartDaemon)
         #expect(options.requiresBrowserHandoffBridge)
         let captureEnvironmentOptions = options.applyingEnvironmentOverrides(
-            environment: ["PEEKABOO_CAPTURE_ENGINE": "classic"]
+            environment: ["WINK_CAPTURE_ENGINE": "classic"]
         )
         #expect(captureEnvironmentOptions.preferRemote)
         #expect(!captureEnvironmentOptions.remoteIsolationRequested)
-        let runtime = CommandRuntime(options: options, services: PeekabooServices())
+        let runtime = CommandRuntime(options: options, services: WinkServices())
         #expect(runtime.browserHandoffReceiptBundleData == fixture)
     }
 
     @Test
     @MainActor
     func `MCP input rejects duplicate conflicting or local routing`() throws {
-        let handoff = "/private/tmp/peekaboo-handoff.json"
-        let socket = "/private/tmp/peekaboo-handoff.sock"
+        let handoff = "/private/tmp/wink-handoff.json"
+        let socket = "/private/tmp/wink-handoff.sock"
         let valid = ParsedValues(
             positional: [],
             options: ["browserHandoff": [handoff], "bridge-socket": [socket]],
@@ -789,10 +789,10 @@ extension BrowserHandoffCLITests {
                 [:],
                 .localExecutionRefused
             ),
-            (valid, ["PEEKABOO_NO_REMOTE": "1"], .localExecutionRefused),
+            (valid, ["WINK_NO_REMOTE": "1"], .localExecutionRefused),
             (
                 valid,
-                ["PEEKABOO_BRIDGE_SOCKET": "/private/tmp/other.sock"],
+                ["WINK_BRIDGE_SOCKET": "/private/tmp/other.sock"],
                 .conflictingBridgeSocket
             ),
         ]
@@ -821,9 +821,9 @@ extension BrowserHandoffCLITests {
         await #expect(throws: BrowserHandoffCLIInputError.invalidReceipt(expected.localizedDescription)) {
             try await CommanderRuntimeExecutor.resolveAndRun(
                 arguments: [
-                    "peekaboo", "mcp", "serve",
+                    "wink", "mcp", "serve",
                     "--browser-handoff", receipt.path,
-                    "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                    "--bridge-socket", "/private/tmp/wink-handoff.sock",
                 ],
                 runtimeFactory: .init { _ in
                     runtimeConstructed = true
@@ -847,9 +847,9 @@ extension BrowserHandoffCLITests {
         await #expect(throws: StopBeforeRuntimeConstruction.self) {
             try await CommanderRuntimeExecutor.resolveAndRun(
                 arguments: [
-                    "peekaboo", "mcp", "serve",
+                    "wink", "mcp", "serve",
                     "--browser-handoff", store.fileURL.path,
-                    "--bridge-socket", "/private/tmp/peekaboo-handoff.sock",
+                    "--bridge-socket", "/private/tmp/wink-handoff.sock",
                 ],
                 runtimeFactory: .init { options in
                     receivedData = options.browserHandoffReceiptBundleData
@@ -875,7 +875,7 @@ extension BrowserHandoffCLITests {
                 inputStrategy: nil
             ),
             services: services,
-            selectedRemoteSocketPath: "/private/tmp/peekaboo-handoff.sock",
+            selectedRemoteSocketPath: "/private/tmp/wink-handoff.sock",
             browserHandoffReceiptBundleData: receiptData
         )
 
@@ -883,7 +883,7 @@ extension BrowserHandoffCLITests {
             services: services,
             snapshotMutationCoordinator: nil
         )
-        let server = try await PeekabooMCPServer(
+        let server = try await WinkMCPServer(
             toolContext: context,
             browserHandoff: BrowserMCPHandoffGrant(payload: receiptData)
         )
@@ -895,8 +895,8 @@ extension BrowserHandoffCLITests {
 
         let unavailableRuntime = CommandRuntime(
             configuration: runtime.configuration,
-            services: PeekabooServices(),
-            selectedRemoteSocketPath: "/private/tmp/peekaboo-handoff.sock",
+            services: WinkServices(),
+            selectedRemoteSocketPath: "/private/tmp/wink-handoff.sock",
             browserHandoffReceiptBundleData: receiptData
         )
         let unavailableContext = MCPCommand.Serve.makeToolContext(
@@ -904,7 +904,7 @@ extension BrowserHandoffCLITests {
             snapshotMutationCoordinator: nil
         )
         await #expect(throws: BrowserMCPConnectionError.receiptBindingUnsupported) {
-            _ = try await PeekabooMCPServer(
+            _ = try await WinkMCPServer(
                 toolContext: unavailableContext,
                 browserHandoff: BrowserMCPHandoffGrant(payload: receiptData)
             )
@@ -1018,7 +1018,7 @@ extension BrowserHandoffCLITests {
     private static func privateDirectory(verifyMetadata: Bool = true) throws -> URL {
         let baseDirectory = try Self.canonicalExistingDirectory(FileManager.default.temporaryDirectory)
         let directory = baseDirectory.appendingPathComponent(
-            "peekaboo-browser-handoff-\(UUID().uuidString)",
+            "wink-browser-handoff-\(UUID().uuidString)",
             isDirectory: true
         )
         do {
@@ -1068,7 +1068,7 @@ extension BrowserHandoffCLITests {
         let value = Data(privateValue.utf8)
         let result = value.withUnsafeBytes { bytes in
             url.path.withCString { path in
-                "dev.peekaboo.browser-handoff-test".withCString { name in
+                "dev.wink.browser-handoff-test".withCString { name in
                     setxattr(path, name, bytes.baseAddress, bytes.count, 0, 0)
                 }
             }
@@ -1093,9 +1093,9 @@ extension BrowserHandoffCLITests {
     }
 
     @MainActor
-    private static func services(browser: any BrowserMCPClientProviding) -> PeekabooServices {
-        let defaults = PeekabooServices()
-        return PeekabooServices(
+    private static func services(browser: any BrowserMCPClientProviding) -> WinkServices {
+        let defaults = WinkServices()
+        return WinkServices(
             logging: defaults.logging,
             screenCapture: defaults.screenCapture,
             applications: defaults.applications,
@@ -1226,7 +1226,7 @@ private struct StopBeforeRuntimeConstruction: Error {}
 
 private enum BrowserHandoffReceiptFixture {
     private static let requestedBrowserURL = "http://127.0.0.1:9222"
-    private static let connectionReceipt = PeekabooBridgeBrowserConnectionReceipt(
+    private static let connectionReceipt = WinkBridgeBrowserConnectionReceipt(
         channel: "stable",
         browserURL: "http://127.0.0.1:9222/",
         webSocketDebuggerURL: "ws://127.0.0.1:9222/devtools/browser/browser-handoff-fixture",
@@ -1236,8 +1236,8 @@ private enum BrowserHandoffReceiptFixture {
     )
 
     static func canonicalData() async throws -> Data {
-        let authority = try PeekabooBridgeOperationReceiptAuthority(
-            socketPath: "/tmp/peekaboo-browser-handoff-fixture-\(UUID().uuidString).sock"
+        let authority = try WinkBridgeOperationReceiptAuthority(
+            socketPath: "/tmp/wink-browser-handoff-fixture-\(UUID().uuidString).sock"
         )
         let archiveDirectory = URL(
             fileURLWithPath: authority.attestation.receiptArchiveDirectory,
@@ -1258,12 +1258,12 @@ private enum BrowserHandoffReceiptFixture {
             evidence: .deliveryAccepted,
             unitCount: .one
         )
-        let request = PeekabooBridgeRequest.projectedAction(.init(request: .browserConnect(.init(
+        let request = WinkBridgeRequest.projectedAction(.init(request: .browserConnect(.init(
             channel: "stable",
             browserURL: self.requestedBrowserURL,
             requestsHandoff: true
         ))))
-        let response = PeekabooBridgeResponse.projectedAction(.init(
+        let response = WinkBridgeResponse.projectedAction(.init(
             response: .browserStatus(.init(
                 isConnected: true,
                 toolCount: 10,
@@ -1272,9 +1272,9 @@ private enum BrowserHandoffReceiptFixture {
             )),
             outcome: outcome.projection
         ))
-        let sequence = PeekabooBridgeOperationSessionSequence(0)
-        let attestedRequest = PeekabooBridgeAttestedOperationRequest(
-            requestID: PeekabooBridgeOperationReceiptCoding.deterministicRequestID(
+        let sequence = WinkBridgeOperationSessionSequence(0)
+        let attestedRequest = WinkBridgeAttestedOperationRequest(
+            requestID: WinkBridgeOperationReceiptCoding.deterministicRequestID(
                 sessionID: session.sessionID,
                 sequence: sequence
             ),
@@ -1290,22 +1290,22 @@ private enum BrowserHandoffReceiptFixture {
         }
         defer { authority.complete(claim) }
 
-        let now = PeekabooBridgeOperationReceiptCoding.unixMilliseconds()
-        let payload = try PeekabooBridgeOperationReceiptPayload(
+        let now = WinkBridgeOperationReceiptCoding.unixMilliseconds()
+        let payload = try WinkBridgeOperationReceiptPayload(
             requestID: claim.requestID,
             sessionID: claim.sessionID,
             sessionSequence: claim.sessionSequence,
-            sessionAttestationSHA256: PeekabooBridgeOperationReceiptCoding.sha256(session),
+            sessionAttestationSHA256: WinkBridgeOperationReceiptCoding.sha256(session),
             listenerInstanceID: authority.attestation.listenerInstanceID,
-            listenerPublicKeySHA256: PeekabooBridgeOperationReceiptCoding.sha256(
+            listenerPublicKeySHA256: WinkBridgeOperationReceiptCoding.sha256(
                 authority.attestation.publicKey
             ),
             host: authority.attestation.host,
             clientInstanceID: clientInstanceID,
             client: session.client,
             operation: .browserConnect,
-            requestSHA256: PeekabooBridgeOperationReceiptCoding.sha256(request),
-            responseSHA256: PeekabooBridgeOperationReceiptCoding.sha256(response),
+            requestSHA256: WinkBridgeOperationReceiptCoding.sha256(request),
+            responseSHA256: WinkBridgeOperationReceiptCoding.sha256(response),
             target: .browser(self.connectionReceipt),
             outcome: outcome.projection,
             remainingClaimCount: claim.remainingClaimCount,
@@ -1313,27 +1313,27 @@ private enum BrowserHandoffReceiptFixture {
             completedAtUnixMilliseconds: now
         )
         let receipt = try await authority.signAndArchive(payload, claim: claim)
-        let bundle = try PeekabooBridgeOperationReceiptBundle(
+        let bundle = try WinkBridgeOperationReceiptBundle(
             operationAttestation: authority.attestation,
             operationSessionAttestation: session,
             receipt: receipt,
-            canonicalListenerAttestationPayload: PeekabooBridgeOperationReceiptCoding.canonicalData(
+            canonicalListenerAttestationPayload: WinkBridgeOperationReceiptCoding.canonicalData(
                 authority.attestation.unsignedPayload
             ),
-            canonicalSessionAttestationPayload: PeekabooBridgeOperationReceiptCoding.canonicalData(
+            canonicalSessionAttestationPayload: WinkBridgeOperationReceiptCoding.canonicalData(
                 session.unsignedPayload
             ),
-            canonicalReceiptPayload: PeekabooBridgeOperationReceiptCoding.canonicalData(receipt.payload),
-            canonicalRequest: PeekabooBridgeOperationReceiptCoding.canonicalData(request),
-            canonicalResponse: PeekabooBridgeOperationReceiptCoding.canonicalData(response)
+            canonicalReceiptPayload: WinkBridgeOperationReceiptCoding.canonicalData(receipt.payload),
+            canonicalRequest: WinkBridgeOperationReceiptCoding.canonicalData(request),
+            canonicalResponse: WinkBridgeOperationReceiptCoding.canonicalData(response)
         )
         try bundle.validate()
-        return try PeekabooBridgeOperationReceiptCoding.canonicalData(bundle)
+        return try WinkBridgeOperationReceiptCoding.canonicalData(bundle)
     }
 
-    private static func currentPeer() throws -> PeekabooBridgePeer {
+    private static func currentPeer() throws -> WinkBridgePeer {
         guard let processStartIdentity = SystemIdentityResolver.processStartIdentity(getpid()),
-              let codeSignatureHash = PeekabooBridgeCodeSignatureIdentity.codeSignatureHash(
+              let codeSignatureHash = WinkBridgeCodeSignatureIdentity.codeSignatureHash(
                   processIdentifier: getpid()
               )
         else {
@@ -1347,15 +1347,15 @@ private enum BrowserHandoffReceiptFixture {
             close(descriptors[0])
             close(descriptors[1])
         }
-        let auditIdentity = try PeekabooBridgeSocketIO.peerAuditIdentity(fd: descriptors[0])
-        let liveIdentity = PeekabooBridgeLivePeerIdentity(
+        let auditIdentity = try WinkBridgeSocketIO.peerAuditIdentity(fd: descriptors[0])
+        let liveIdentity = WinkBridgeLivePeerIdentity(
             auditIdentity: auditIdentity,
             processStartIdentity: processStartIdentity,
             codeSignatureHash: codeSignatureHash
         )
-        return PeekabooBridgePeer(
+        return WinkBridgePeer(
             liveIdentity: liveIdentity,
-            bundleIdentifier: "dev.peekaboo.browser-handoff-tests",
+            bundleIdentifier: "dev.wink.browser-handoff-tests",
             teamIdentifier: nil
         )
     }

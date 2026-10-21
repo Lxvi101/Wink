@@ -1,9 +1,9 @@
 import Commander
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooCore
+import WinkAgentRuntime
+import WinkAutomation
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct DockCommandForegroundConsentTests {
@@ -140,8 +140,8 @@ private final class RecordingDockService: DockServiceProtocol {
 }
 
 @MainActor
-private final class ServicesWithDockStub: PeekabooServiceProviding {
-    private let base = PeekabooServices()
+private final class ServicesWithDockStub: WinkServiceProviding {
+    private let base = WinkServices()
     private let stubDock: any DockServiceProtocol
 
     init(dock: any DockServiceProtocol) {
@@ -196,7 +196,7 @@ private final class ServicesWithDockStub: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         self.base.configuration
     }
 

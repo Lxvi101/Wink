@@ -8,7 +8,7 @@
 import CoreGraphics
 import Foundation
 import Testing
-@testable import PeekabooAgentRuntime
+@testable import WinkAgentRuntime
 
 struct DesktopContextTests {
     @Test

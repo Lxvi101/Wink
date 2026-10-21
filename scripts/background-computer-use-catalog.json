@@ -14,7 +14,7 @@
     "producer_pointer_event",
     "global_input_event",
     "clipboard_change_count",
-    "peekaboo_overlay_window"
+    "wink_overlay_window"
   ],
   "physical_apps": [
     "playground",
@@ -27,7 +27,7 @@
     "finder"
   ],
   "physical_app_bundle_ids": {
-    "playground": "boo.peekaboo.playground.debug",
+    "playground": "boo.wink.playground.debug",
     "textedit": "com.apple.TextEdit",
     "safari": "com.apple.Safari",
     "calendar": "com.apple.iCal",

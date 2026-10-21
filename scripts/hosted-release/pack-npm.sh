@@ -11,11 +11,11 @@ PACKAGE_VERSION="$(node -p 'require("./package.json").version')"
 }
 SIGNED_CLI="$ROOT/dist/sparkle-cli"
 OUTPUT="$ROOT/dist/sparkle-npm"
-[[ -x "$SIGNED_CLI/peekaboo" ]] || { echo "Missing staged CLI: $SIGNED_CLI/peekaboo" >&2; exit 1; }
+[[ -x "$SIGNED_CLI/wink" ]] || { echo "Missing staged CLI: $SIGNED_CLI/wink" >&2; exit 1; }
 [[ ! -e "$OUTPUT" ]] || { echo "Output already exists: $OUTPUT" >&2; exit 1; }
 
 # package.json's files list expects the binary and companions at the repo root.
-cp "$SIGNED_CLI/peekaboo" "$ROOT/peekaboo"
+cp "$SIGNED_CLI/wink" "$ROOT/wink"
 for library in "$ROOT"/libswiftCompatibility*.dylib; do
   [[ -e "$library" ]] || continue
   rm -f "$library"
@@ -43,7 +43,7 @@ TARBALLS=("$OUTPUT"/*.tgz)
 VERIFY_DIR="$(mktemp -d "$OUTPUT/verify.XXXXXX")"
 trap 'rm -rf "$VERIFY_DIR"' EXIT
 tar -xzf "${TARBALLS[0]}" -C "$VERIFY_DIR"
-cmp "$SIGNED_CLI/peekaboo" "$VERIFY_DIR/package/peekaboo"
+cmp "$SIGNED_CLI/wink" "$VERIFY_DIR/package/wink"
 for library in "$SIGNED_CLI"/libswiftCompatibility*.dylib; do
   cmp "$library" "$VERIFY_DIR/package/$(basename "$library")"
 done

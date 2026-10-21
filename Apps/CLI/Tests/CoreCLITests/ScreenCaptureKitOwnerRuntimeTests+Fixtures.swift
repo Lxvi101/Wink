@@ -1,14 +1,14 @@
 import Darwin
 import Foundation
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
 import UniformTypeIdentifiers
-@testable import PeekabooAutomationKit
-@testable import PeekabooCLI
+@testable import WinkAutomationKit
+@testable import WinkCLI
 
 @MainActor
 extension ScreenCaptureKitOwnerRuntimeTests {
@@ -19,24 +19,24 @@ extension ScreenCaptureKitOwnerRuntimeTests {
     }
 
     static func makeInertRemoteServices(
-        client: PeekabooBridgeClient,
-        handshake: PeekabooBridgeHandshakeResponse,
+        client: WinkBridgeClient,
+        handshake: WinkBridgeHandshakeResponse,
         options: CommandRuntimeOptions
-    ) -> any PeekabooServiceProviding {
+    ) -> any WinkServiceProviding {
         OwnerPolicyFixtureServices(ownerAware: true, remoteClient: client, capturePolicy: options.remoteCapturePolicy)
     }
 
     static func inertHandshakeCache() -> RuntimeHostResolver.RemoteHandshakeCache {
         RuntimeHostResolver.RemoteHandshakeCache(
             identity: .init(
-                bundleIdentifier: "boo.peekaboo.test.client",
+                bundleIdentifier: "boo.wink.test.client",
                 teamIdentifier: nil,
                 processIdentifier: getpid()
             ),
             clientFactory: { path in
                 // Only task-owned listeners can be reached, including by legacy candidate scans.
                 let isolatedPath = self.fixtureSockets.contains(path) ? path : self.fixtureSocketPath()
-                return PeekabooBridgeClient(socketPath: isolatedPath)
+                return WinkBridgeClient(socketPath: isolatedPath)
             }
         )
     }
@@ -60,8 +60,8 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             inspectScreenCaptureKitSafety: inspectScreenCaptureKitSafety,
             recordScreenCaptureKitSafetyBlocker: recordScreenCaptureKitSafetyBlocker,
             remoteCandidatePlan: remoteCandidatePlan ?? { options, environment in
-                let socket = options.bridgeSocketPath ?? environment["PEEKABOO_BRIDGE_SOCKET"]
-                let daemon = environment["PEEKABOO_DAEMON_SOCKET"] ?? "/synthetic/daemon.sock"
+                let socket = options.bridgeSocketPath ?? environment["WINK_BRIDGE_SOCKET"]
+                let daemon = environment["WINK_DAEMON_SOCKET"] ?? "/synthetic/daemon.sock"
                 return .init(
                     explicitSocket: socket,
                     daemonSocketPath: daemon,
@@ -90,31 +90,31 @@ extension ScreenCaptureKitOwnerRuntimeTests {
         codeSignatureHash: String,
         ownerAware: Bool = true,
         screenRecording: Bool = true,
-        maximumProtocolVersion: PeekabooBridgeProtocolVersion =
-            PeekabooBridgeConstants.exactForcedDialogDismissExecutionVersion,
+        maximumProtocolVersion: WinkBridgeProtocolVersion =
+            WinkBridgeConstants.exactForcedDialogDismissExecutionVersion,
         usesCurrentHostIdentity: Bool = false,
-        serviceOverride: (any PeekabooBridgeServiceProviding)? = nil,
+        serviceOverride: (any WinkBridgeServiceProviding)? = nil,
         coordinationRootURL: URL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-owner-lane-\(UUID().uuidString)", isDirectory: true),
+            .appendingPathComponent("wink-owner-lane-\(UUID().uuidString)", isDirectory: true),
         windowIdentity: WindowMutationIdentity? = nil,
         screenCaptureKitProcessCapabilityRegistrar: @MainActor @Sendable () throws -> Void = {},
         screenCaptureKitOwnershipPreparer: @escaping @Sendable () async throws -> Void = {},
         permissionEvaluationObserver: @escaping @MainActor @Sendable () -> Void = {}
-    ) async throws -> PeekabooBridgeHost {
-        let services: any PeekabooBridgeServiceProviding = if let serviceOverride {
+    ) async throws -> WinkBridgeHost {
+        let services: any WinkBridgeServiceProviding = if let serviceOverride {
             serviceOverride
         } else if ownerAware {
             OwnerPolicyFixtureServices(ownerAware: true)
         } else {
             OwnerPolicyFixtureServices(ownerAware: false)
         }
-        let server = PeekabooBridgeServer(
+        let server = WinkBridgeServer(
             services: services,
             hostKind: .onDemand,
             allowlistedTeams: [],
             allowlistedBundles: [],
             supportedVersions: ClosedRange(uncheckedBounds: (
-                lower: PeekabooBridgeConstants.supportedProtocolRange.lowerBound,
+                lower: WinkBridgeConstants.supportedProtocolRange.lowerBound,
                 upper: maximumProtocolVersion
             )),
             allowedOperations: [
@@ -136,10 +136,10 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             ],
             hostIdentity: usesCurrentHostIdentity
                 ? .current()
-                : PeekabooBridgeHostIdentity(
+                : WinkBridgeHostIdentity(
                     processIdentifier: processIdentifier,
                     processStartIdentity: processStartIdentity,
-                    bundleIdentifier: "boo.peekaboo.test.host",
+                    bundleIdentifier: "boo.wink.test.host",
                     bundleShortVersion: nil,
                     bundleVersion: nil,
                     codeSignatureHash: codeSignatureHash
@@ -175,7 +175,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
             },
             processPresenceProvider: { pid in windowIdentity?.ownerProcessIdentifier == pid }
         )
-        let host = PeekabooBridgeHost(
+        let host = WinkBridgeHost(
             socketPath: socketPath,
             server: server,
             allowedTeamIDs: [],
@@ -188,7 +188,7 @@ extension ScreenCaptureKitOwnerRuntimeTests {
 }
 
 @MainActor
-final class OwnerPolicyFixtureServices: PeekabooBridgeServiceProviding, PeekabooServiceProviding {
+final class OwnerPolicyFixtureServices: WinkBridgeServiceProviding, WinkServiceProviding {
     let automation: any UIAutomationServiceProtocol = MockTargetedAutomationService()
     let applications: any ApplicationServiceProtocol
     let dialogs: any DialogServiceProtocol
@@ -197,14 +197,14 @@ final class OwnerPolicyFixtureServices: PeekabooBridgeServiceProviding, Peekaboo
     let supportsDesktopObservationCaptureEngine = true
     let supportsScreenCaptureKitProcessOwnership: Bool
     let supportsClassicCaptureWithoutScreenCaptureKit: Bool
-    private let remoteClient: PeekabooBridgeClient?
+    private let remoteClient: WinkBridgeClient?
 
     init(
         ownerAware: Bool,
         observation: (any DesktopObservationServiceProtocol)? = nil,
         snapshots: any SnapshotManagerProtocol = InMemorySnapshotManager(),
         windows: any WindowManagementServiceProtocol = MockWindowService(result: []),
-        remoteClient: PeekabooBridgeClient? = nil,
+        remoteClient: WinkBridgeClient? = nil,
         capturePolicy: RemoteCapturePolicy = .unrestricted
     ) {
         self.supportsScreenCaptureKitProcessOwnership = ownerAware
@@ -220,7 +220,7 @@ final class OwnerPolicyFixtureServices: PeekabooBridgeServiceProviding, Peekaboo
             self.desktopObservation = observation ?? ClassicDispatchSentinelObservationService()
         }
         // Capability reads are inert; an unexpected operation has no ambient endpoint.
-        let client = PeekabooBridgeClient(socketPath: FileManager.default.temporaryDirectory
+        let client = WinkBridgeClient(socketPath: FileManager.default.temporaryDirectory
             .appendingPathComponent("absent-\(UUID().uuidString).sock").path)
         self.screenCapture = RemoteScreenCaptureService(client: remoteClient ?? client, capturePolicy: capturePolicy)
         self.browser = RemoteBrowserMCPClient(client: client)
@@ -252,7 +252,7 @@ final class OwnerPolicyFixtureServices: PeekabooBridgeServiceProviding, Peekaboo
     let menu: any MenuServiceProtocol = MockMenuService(barItems: [])
     let dock: any DockServiceProtocol = MockDockService(items: [])
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         fatalError("No ambient configuration")
     }
 

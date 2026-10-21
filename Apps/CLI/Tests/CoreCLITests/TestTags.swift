@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooBridge
+import WinkBridge
 import Testing
 
-extension PeekabooBridgeHandshakeResponse {
-    func withProducerBoundSnapshotFixture() -> PeekabooBridgeHandshakeResponse {
+extension WinkBridgeHandshakeResponse {
+    func withProducerBoundSnapshotFixture() -> WinkBridgeHandshakeResponse {
         var supportedOperations = self.supportedOperations
         if !supportedOperations.contains(.ownsSnapshot) {
             supportedOperations.append(.ownsSnapshot)
@@ -14,12 +14,12 @@ extension PeekabooBridgeHandshakeResponse {
         }
         var hostCapabilities = self.hostCapabilities ?? []
         for capability in [
-            PeekabooBridgeHostCapability.attestedOperationReceipts,
-            PeekabooBridgeHostCapability.producerBoundSnapshotReferences,
+            WinkBridgeHostCapability.attestedOperationReceipts,
+            WinkBridgeHostCapability.producerBoundSnapshotReferences,
         ] where !hostCapabilities.contains(capability) {
             hostCapabilities.append(capability)
         }
-        return PeekabooBridgeHandshakeResponse(
+        return WinkBridgeHandshakeResponse(
             negotiatedVersion: self.negotiatedVersion,
             hostKind: self.hostKind,
             build: self.build,

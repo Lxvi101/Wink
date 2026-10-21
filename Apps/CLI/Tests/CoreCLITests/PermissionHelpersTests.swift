@@ -1,8 +1,8 @@
-import PeekabooBridge
-import PeekabooCore
-import PeekabooFoundation
+import WinkBridge
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct PermissionHelpersTests {
     @Test
@@ -37,7 +37,7 @@ struct PermissionHelpersTests {
                 captureEnginePreference: nil,
                 inputStrategy: nil
             ),
-            services: PeekabooServices(snapshotManager: snapshots),
+            services: WinkServices(snapshotManager: snapshots),
             interactionMutationTracker: tracker
         )
         var mutationWasMarkedBeforeRequest = false
@@ -80,7 +80,7 @@ struct PermissionHelpersTests {
 
         let hint = PermissionHelpers.bridgeDeniedPermissionsHint(for: response)
 
-        #expect(hint?.contains("selected Peekaboo Bridge host") == true)
+        #expect(hint?.contains("selected Wink Bridge host") == true)
         #expect(hint?.contains("--no-remote --capture-engine cg") == true)
     }
 

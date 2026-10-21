@@ -1,0 +1,1089 @@
+import Darwin
+import Foundation
+import WinkAutomation
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
+import WinkFoundation
+
+@MainActor
+enum RuntimeHostResolver {
+    static func resolveServices(options: CommandRuntimeOptions) async throws -> Resolution {
+        let environment = ProcessInfo.processInfo.environment
+        let configurationInput = WinkAutomation.ConfigurationManager.shared.getConfiguration()?.input
+        return try await self.resolveServices(
+            options: options,
+            environment: environment,
+            configurationInput: configurationInput,
+            dependencies: .live
+        )
+    }
+
+    static func resolveServices(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        configurationInput: WinkAutomation.Configuration.InputConfig?,
+        dependencies: Dependencies
+    ) async throws -> Resolution {
+        var captureSafety = CaptureSafetyResolution()
+        try self.inspectCallerLocalOwner(options: options, environment: environment, dependencies: dependencies)
+        var handshakeCache = try await self.explicitCaptureHandshakeCache(
+            options: options, environment: environment, dependencies: dependencies
+        )
+        let safetyPlan: RemoteCandidatePlan?
+        if self.requiresCallerLocalScreenCaptureKitSafetyCheck(options: options, environment: environment) {
+            let plan = try await dependencies.remoteCandidatePlan(options, environment)
+            safetyPlan = plan
+            let resolvedHandshakeCache = handshakeCache ?? dependencies.makeRemoteHandshakeCache()
+            handshakeCache = resolvedHandshakeCache
+            if let oldHost = try await dependencies.inspectScreenCaptureKitSafety(
+                options,
+                environment,
+                self.screenCaptureKitSafetyCandidates(from: plan, options: options),
+                resolvedHandshakeCache
+            ) {
+                // The live recorder installs an irreversible process-lifetime tombstone. One
+                // discovered old host therefore blocks every later SCK leaf even if another old
+                // host appears, disappears, or reuses the same socket before the runtime restarts.
+                dependencies.recordScreenCaptureKitSafetyBlocker(oldHost)
+                captureSafety = try self.resolveCaptureSafety(
+                    oldHost: oldHost,
+                    plan: plan,
+                    options: options,
+                    environment: environment
+                )
+            }
+        } else {
+            safetyPlan = nil
+        }
+        if self.requiresCallerLocalModernOwnerClaim(options: options, environment: environment) {
+            do {
+                _ = try dependencies.claimScreenCaptureKitOwner()
+            } catch {
+                throw self.ownerRefusal(error: error, callerLocal: true, selectedSocket: safetyPlan?.explicitSocket)
+            }
+        }
+
+        guard self.shouldResolveKnownRemoteEndpoints(
+            options: options,
+            environment: environment,
+            configurationInput: configurationInput
+        )
+        else {
+            return try await self.resolveLocalOnlyServices(
+                options: options,
+                dependencies: dependencies,
+                captureSafety: captureSafety
+            )
+        }
+
+        let candidatePlan = if let safetyPlan {
+            safetyPlan
+        } else {
+            try await dependencies.remoteCandidatePlan(options, environment)
+        }
+        let explicitSocket = candidatePlan.explicitSocket
+        let daemonSocketPath = candidatePlan.daemonSocketPath
+        let buildScopedDaemonSocketPath = candidatePlan.buildScopedDaemonSocketPath
+        let historicalBuildScopedDaemonSocketPaths = candidatePlan.historicalBuildScopedDaemonSocketPaths
+        let snapshotInvalidationRemoteSocketPaths = snapshotInvalidationRemoteSocketPaths(
+            explicitSocket: explicitSocket,
+            daemonSocketPath: daemonSocketPath,
+            buildScopedDaemonSocketPath: buildScopedDaemonSocketPath,
+            historicalBuildScopedDaemonSocketPaths: historicalBuildScopedDaemonSocketPaths
+        )
+
+        if let concreteSnapshotID = options.explicitSnapshotID {
+            let resolvedHandshakeCache = handshakeCache ?? dependencies.makeRemoteHandshakeCache()
+            let context = dependencies.resolutionContext(
+                options: options,
+                environment: environment,
+                candidatePlan: candidatePlan,
+                handshakeCache: resolvedHandshakeCache
+            )
+            var permissionRejections: [String] = []
+            var resolution = try await self.resolveSnapshotAffinityServices(
+                snapshotID: concreteSnapshotID,
+                localServices: explicitSocket == nil ? dependencies.makeLocalServices(options) : nil,
+                context: context,
+                permissionRejections: &permissionRejections,
+                probe: dependencies.snapshotAffinityProbe
+            )
+            resolution.captureEngineSafetyOverride = captureSafety.engineOverride
+            resolution.toolCapturePreflightRefusal = captureSafety.toolPreflightRefusal
+            return resolution
+        }
+
+        if captureSafety.defersLocalRuntime {
+            return self.localResolution(
+                services: dependencies.makeLocalServices(options),
+                hostDescription: "local (ScreenCaptureKit blocked by a pre-lease Bridge host)",
+                snapshotInvalidationRemoteSocketPaths: snapshotInvalidationRemoteSocketPaths,
+                captureSafety: captureSafety
+            )
+        }
+
+        let preferredScreenCaptureKitOwner = try self.preferredCaptureOwner(
+            options: options,
+            environment: environment,
+            dependencies: dependencies,
+            selectedSocket: candidatePlan.explicitSocket
+        )
+
+        if preferredScreenCaptureKitOwner == nil,
+           case let .local(localSnapshotInvalidationPaths) = initialRoutingDecision(
+               options: options,
+               environment: environment,
+               configurationInput: configurationInput,
+               knownSnapshotInvalidationRemoteSocketPaths: snapshotInvalidationRemoteSocketPaths
+           ) {
+            if let explicitSocket,
+               !options.permitsExplicitSocketDiagnosticFallback,
+               self.inputPolicyRequiresLocal(
+                   options: options,
+                   environment: environment,
+                   configurationInput: configurationInput
+               ) {
+                throw BridgeExplicitSocketUnavailableError(
+                    socketPath: NSString(string: explicitSocket).standardizingPath,
+                    failureMessage: "the requested input strategy policy requires the caller-local runtime",
+                    failureHint: "Remove --input-strategy and caller input-policy environment/config overrides " +
+                        "to use the selected host, or pass --no-remote to explicitly use the local runtime."
+                )
+            }
+            return self.localResolution(
+                services: dependencies.makeLocalServices(options),
+                hostDescription: "local (in-process)",
+                snapshotInvalidationRemoteSocketPaths: localSnapshotInvalidationPaths,
+                captureSafety: captureSafety
+            )
+        }
+
+        let resolvedHandshakeCache = handshakeCache ?? dependencies.makeRemoteHandshakeCache()
+        var resolution = try await self.resolveRemoteRouting(context: dependencies.resolutionContext(
+            options: options,
+            environment: environment,
+            candidatePlan: candidatePlan,
+            handshakeCache: resolvedHandshakeCache,
+            preferredScreenCaptureKitOwner: preferredScreenCaptureKitOwner
+        ))
+        resolution.captureEngineSafetyOverride = captureSafety.engineOverride ?? resolution.captureEngineSafetyOverride
+        resolution.toolCapturePreflightRefusal = captureSafety.toolPreflightRefusal
+        return resolution
+    }
+
+    private static func resolveLocalOnlyServices(
+        options: CommandRuntimeOptions,
+        dependencies: Dependencies,
+        captureSafety: CaptureSafetyResolution
+    ) async throws -> Resolution {
+        let localServices = dependencies.makeLocalServices(options)
+        if let snapshotID = options.explicitSnapshotID {
+            let handshakeCache = dependencies.makeRemoteHandshakeCache()
+            let owner = try await self.resolveSnapshotAffinityOwner(
+                snapshotID: snapshotID,
+                localServices: localServices,
+                candidates: [],
+                identity: handshakeCache.identity,
+                handshakeCache: handshakeCache
+            )
+            guard owner == .local else {
+                preconditionFailure("Local-only snapshot affinity selected a remote owner")
+            }
+        }
+        return self.localResolution(
+            services: localServices,
+            hostDescription: "local (in-process)",
+            snapshotInvalidationRemoteSocketPaths: [],
+            captureSafety: captureSafety
+        )
+    }
+
+    private static func localResolution(
+        services: any WinkServiceProviding,
+        hostDescription: String,
+        snapshotInvalidationRemoteSocketPaths: [String],
+        captureSafety: CaptureSafetyResolution
+    ) -> Resolution {
+        Resolution(
+            services: services,
+            hostDescription: hostDescription,
+            selectedRemoteSocketPath: nil,
+            selectedRemoteHostProcessIdentifier: nil,
+            snapshotInvalidationRemoteSocketPaths: snapshotInvalidationRemoteSocketPaths,
+            applicationRelaunchAllowed: true,
+            requiredHostFailure: nil,
+            captureEngineSafetyOverride: captureSafety.engineOverride,
+            toolCapturePreflightRefusal: captureSafety.toolPreflightRefusal
+        )
+    }
+
+    private struct CaptureSafetyResolution {
+        var defersLocalRuntime = false
+        var engineOverride: CaptureEnginePreference?
+        var toolPreflightRefusal: MCPToolCapturePreflightRefusal?
+    }
+
+    private static func inspectCallerLocalOwner(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        dependencies: Dependencies
+    ) throws {
+        if self.requiresCallerLocalModernOwnerClaim(options: options, environment: environment) {
+            do {
+                if let owner = try dependencies.inspectScreenCaptureKitOwner(),
+                   !self.screenCaptureKitOwnerIsCurrentProcess(owner) {
+                    throw self.ownerRefusal(owner: owner, callerLocal: true)
+                }
+            } catch let error as PreDispatchActionError {
+                throw error
+            } catch {
+                throw self.ownerRefusal(error: error, callerLocal: true, selectedSocket: options.bridgeSocketPath)
+            }
+        }
+    }
+
+    private static func resolveCaptureSafety(
+        oldHost: ScreenCaptureKitOwnerUnawareHost,
+        plan: RemoteCandidatePlan,
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) throws -> CaptureSafetyResolution {
+        var resolution = CaptureSafetyResolution()
+        switch self.screenCaptureKitSafetyDisposition(
+            for: oldHost, plan: plan, options: options, environment: environment
+        ) {
+        case .refuse: throw self.ownerCapabilityRefusal(host: oldHost, selectedSocket: plan.explicitSocket)
+        case .deferLocalRuntime:
+            resolution.toolPreflightRefusal = self.dynamicToolCapturePreflightRefusal(
+                host: oldHost,
+                selectedSocket: plan.explicitSocket
+            )
+            resolution.defersLocalRuntime = true
+        case .deferToolCapture:
+            resolution.toolPreflightRefusal = self.dynamicToolCapturePreflightRefusal(
+                host: oldHost,
+                selectedSocket: plan.explicitSocket
+            )
+        case .routeAutomaticCapture:
+            // The blocker tombstone belongs to this caller process. Clamp the transported
+            // request so a different Bridge process cannot fall back from classic to SCK.
+            resolution.engineOverride = .legacy
+        }
+        return resolution
+    }
+
+    private static func preferredCaptureOwner(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        dependencies: Dependencies,
+        selectedSocket: String?
+    ) throws -> ScreenCaptureKitOwnerLease.OwnerReceipt? {
+        if self.shouldPreferScreenCaptureKitOwnerHost(options: options, environment: environment) {
+            do {
+                return try dependencies.inspectScreenCaptureKitOwner()
+            } catch {
+                throw self.ownerRefusal(error: error, callerLocal: false, selectedSocket: selectedSocket)
+            }
+        } else {
+            return nil
+        }
+    }
+
+    private static func resolveExactBuildRemoteServices(
+        context: RemoteResolutionContext,
+        autoStartAllowed: Bool,
+        releaseSigned: Bool,
+        permissionRejections: inout [String],
+        recordRejection: (RemoteCandidateEvaluation) -> Void
+    ) async throws -> Resolution? {
+        guard let buildScopedDaemonSocketPath = context.candidatePlan.buildScopedDaemonSocketPath else { return nil }
+        let exactCandidate = ImplicitRemoteCandidate(
+            socketPath: buildScopedDaemonSocketPath,
+            requireReusableDaemon: true,
+            requiredHostKind: .onDemand,
+            requiresValidatedHistoricalDaemon: false
+        )
+        if let resolved = try await context.resolveRemoteServices(
+            candidates: [exactCandidate],
+            requiredProtocolVersion: WinkBridgeConstants.protocolVersion,
+            permissionRejections: &permissionRejections,
+            recordRejection: recordRejection
+        ) {
+            return resolved
+        }
+
+        return try await self.resolveNewImplicitDaemon(
+            context: context,
+            exactBuildSocketPath: buildScopedDaemonSocketPath,
+            autoStartAllowed: autoStartAllowed,
+            releaseSigned: releaseSigned,
+            rejections: &permissionRejections,
+            recordRejection: recordRejection
+        )
+    }
+
+    private static func resolveRemoteRouting(
+        context: RemoteResolutionContext
+    ) async throws -> Resolution {
+        let options = context.options
+        let candidatePlan = context.candidatePlan
+        let explicitSocket = candidatePlan.explicitSocket
+        let buildScopedDaemonSocketPath = candidatePlan.buildScopedDaemonSocketPath
+
+        // Stateful implicit commands share in-memory snapshots across invocations. Establish
+        // the exact daemon generation for this executable before considering compatible older
+        // hosts; protocol equality alone cannot distinguish builds with different state semantics.
+        // GUI fallback still catches up and invalidates snapshots through the normal mutation barrier.
+        let prefersExactBuildScopedHost = self.prefersExactBuildScopedHost(
+            options: options,
+            explicitSocket: explicitSocket,
+            buildScopedDaemonSocketPath: buildScopedDaemonSocketPath
+        )
+        var permissionRejections: [String] = []
+        var candidateRejections: [RemoteCandidateEvaluation] = []
+        let releaseSigned = context.currentProcessIsReleaseSigned()
+        let autoStartRequested = DaemonLaunchPolicy.shouldAutoStartDaemon(
+            options: options, environment: context.environment
+        )
+        let autoStartAllowed = autoStartRequested &&
+            (releaseSigned || context.environment["WINK_ALLOW_UNSIGNED_DAEMON"] == "1")
+        if autoStartRequested, !autoStartAllowed {
+            permissionRejections
+                .append("daemon auto-start skipped: unsigned CLI without WINK_ALLOW_UNSIGNED_DAEMON=1")
+        }
+        let recordRejection: (RemoteCandidateEvaluation) -> Void = { candidateRejections.append($0) }
+        let ownerAwareCandidates = explicitSocket == nil
+            ? self.screenCaptureKitOwnerCandidates(from: candidatePlan.candidates)
+            : candidatePlan.candidates
+
+        if explicitSocket != nil,
+           self.captureEnginePreferenceForOwnership(options: options, environment: context.environment) == .legacy,
+           options.requiresScreenCaptureKitOwnerCapability,
+           !candidatePlan.candidates.contains(where: {
+               guard let entry = context.handshakeCache.entry(for: $0, identity: context.identity) else { return false }
+               return BridgeCapabilityPolicy.supportsClassicCaptureWithoutScreenCaptureKit(for: entry.response)
+           }),
+           let oldHost = try await context.inspectScreenCaptureKitSafety(
+               options,
+               context.environment,
+               candidatePlan.candidates,
+               context.handshakeCache
+           ) {
+            context.recordScreenCaptureKitSafetyBlocker(oldHost)
+            throw self.ownerCapabilityRefusal(host: oldHost, selectedSocket: explicitSocket)
+        }
+
+        if let preferredScreenCaptureKitOwner = context.preferredScreenCaptureKitOwner {
+            // An explicit socket remains authoritative: validate only that host against the
+            // process-lifetime owner instead of silently rerouting to a different Bridge.
+            if let resolved = try await context.resolveRemoteServices(
+                candidates: ownerAwareCandidates,
+                requiredOwner: preferredScreenCaptureKitOwner,
+                permissionRejections: &permissionRejections
+            ) {
+                return resolved
+            }
+            if let resolved = try await self.resolveExplicitAutomaticClassicCapture(
+                context: context,
+                owner: preferredScreenCaptureKitOwner,
+                permissionRejections: &permissionRejections
+            ) {
+                return resolved
+            }
+            if prefersExactBuildScopedHost, let buildScopedDaemonSocketPath {
+                throw self.ownerExactBuildConflict(
+                    owner: preferredScreenCaptureKitOwner,
+                    requiredSocket: buildScopedDaemonSocketPath
+                )
+            }
+            if let explicitSocket {
+                throw self.ownerRefusal(
+                    owner: preferredScreenCaptureKitOwner,
+                    explicitSocket: explicitSocket
+                )
+            }
+            throw self.ownerRefusal(
+                owner: preferredScreenCaptureKitOwner,
+                callerLocal: false
+            )
+        }
+
+        if prefersExactBuildScopedHost,
+           let resolved = try await self.resolveExactBuildRemoteServices(
+               context: context,
+               autoStartAllowed: autoStartAllowed,
+               releaseSigned: releaseSigned,
+               permissionRejections: &permissionRejections,
+               recordRejection: recordRejection
+           ) {
+            return resolved
+        }
+
+        if let resolved = try await context.resolveRemoteServices(
+            candidates: candidatePlan.candidates,
+            permissionRejections: &permissionRejections,
+            recordRejection: recordRejection
+        ) {
+            return resolved
+        }
+
+        if let explicitSocket,
+           !options.permitsExplicitSocketDiagnosticFallback,
+           options.requiresStatelessClickVariants ||
+           options.requiresForegroundModifierClickSnapshotLease ||
+           options.requiresExactWindowPixelFocusTyping ||
+           self.requiredHostFailure(explicitSocket: explicitSocket, options: options) == nil {
+            throw BridgeExplicitSocketUnavailableError(
+                socketPath: NSString(string: explicitSocket).standardizingPath
+            )
+        }
+
+        if !prefersExactBuildScopedHost,
+           let resolved = try await self.resolveNewImplicitDaemon(
+               context: context,
+               autoStartAllowed: autoStartAllowed,
+               releaseSigned: releaseSigned,
+               rejections: &permissionRejections,
+               recordRejection: recordRejection
+           ) {
+            return resolved
+        }
+
+        try Task.checkCancellation()
+        return self.localFallbackResolution(
+            context: context,
+            permissionRejections: permissionRejections,
+            candidateRejections: candidateRejections
+        )
+    }
+
+    private static func localFallbackResolution(
+        context: RemoteResolutionContext,
+        permissionRejections: [String],
+        candidateRejections: [RemoteCandidateEvaluation]
+    ) -> Resolution {
+        let options = context.options
+        // Keep rejected hosts and skipped startup visible when selecting local services.
+        let rejectionSummary = permissionRejections.isEmpty
+            ? ""
+            : "; rejected " + permissionRejections.joined(separator: "; ")
+        return Resolution(
+            services: context.makeLocalServices(options),
+            hostDescription: "local (in-process fallback\(rejectionSummary))",
+            selectedRemoteSocketPath: nil,
+            selectedRemoteHostProcessIdentifier: nil,
+            snapshotInvalidationRemoteSocketPaths: context.snapshotInvalidationRemoteSocketPaths,
+            applicationRelaunchAllowed: !options.requiresApplicationRelaunch,
+            requiredHostFailure: self.requiredHostFailure(
+                explicitSocket: context.candidatePlan.explicitSocket,
+                options: options,
+                rejections: candidateRejections
+            )
+        )
+    }
+}
+
+// MARK: - Routing policy and remote service construction
+
+extension RuntimeHostResolver {
+    static func requiredHostFailure(
+        explicitSocket: String?,
+        options: CommandRuntimeOptions,
+        rejections: [RemoteCandidateEvaluation] = []
+    ) -> String? {
+        // This nil/non-nil boundary also selects the existing error envelope and local fallback policy.
+        guard let fallback = self.unresolvedRequiredHostFailure(explicitSocket: explicitSocket, options: options) else {
+            return nil
+        }
+        return self.observedRequiredHostFailure(explicitSocket: explicitSocket, rejections: rejections) ?? fallback
+    }
+
+    private static func unresolvedRequiredHostFailure(
+        explicitSocket: String?,
+        options: CommandRuntimeOptions
+    ) -> String? {
+        if options.requiresExactWindowPixelFocusTyping {
+            return "No compatible Bridge host advertises atomic exact-window pixel-focus typing. " +
+                "Update and relaunch Wink, then observe the exact target again before retrying."
+        }
+        if options.requiresForegroundModifierClickSnapshotLease {
+            return "No compatible Bridge host advertises host-leased foreground modifier-click. " +
+                "Update and relaunch Wink, then observe the exact target again before retrying."
+        }
+        if options.requiresStatelessClickVariants {
+            if !options.requiresBackgroundStatelessClickVariants {
+                return "No compatible Bridge host negotiates protocol 1.30 middle/triple-click payloads. " +
+                    "Update and relaunch Wink before retrying."
+            }
+            return "No compatible Bridge host advertises protocol 1.30 middle/triple-click support. " +
+                "Update and relaunch Wink on the selected host, or pass --no-remote to run locally."
+        }
+        if options.requiresDesktopObservationFreshAccessibilityTree {
+            return "No compatible Bridge host advertises desktopObservationFreshAccessibilityTree. " +
+                "Update and relaunch the selected host, or pass --no-remote to explicitly observe locally."
+        }
+        if options.requiresDesktopObservationOCR {
+            return "No compatible Bridge host advertises desktopObservationOCR. Update and relaunch Wink " +
+                "on the selected host, or pass --no-remote to explicitly run Vision OCR in the caller process."
+        }
+        if options.requiresDesktopObservationInlinePixels {
+            return "Capture engine '\(options.captureEnginePreference ?? "requested")' requires a Bridge host " +
+                "with desktopObservationInlinePixels support. Update and relaunch the selected host, " +
+                "or pass --no-remote to intentionally capture in the caller process."
+        }
+        if explicitSocket != nil, options.requiresExactWindowROIObservation {
+            return "The explicitly selected Bridge host does not support exact-window ROI observation; " +
+                "protocol 1.21 with enabled observation and atomic snapshot publication is required."
+        }
+        if let failure = explicitSnapshotPublicationFailure(explicitSocket: explicitSocket, options: options) {
+            return failure
+        }
+        if options.requiresCaptureEnginePreferenceHost {
+            let engine = options.captureEnginePreference ?? "requested"
+            return "Capture engine '\(engine)' could not be delivered to a compatible Bridge host. " +
+                "Wink will not switch capture or TCC ownership silently; start a current Bridge host, " +
+                "or pass --no-remote to explicitly run capture in the caller process."
+        }
+        return nil
+    }
+
+    static func remoteRoutingAllowed(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        configurationInput: WinkAutomation.Configuration.InputConfig?
+    ) -> Bool {
+        self.initialRoutingDecision(
+            options: options,
+            environment: environment,
+            configurationInput: configurationInput,
+            knownSnapshotInvalidationRemoteSocketPaths: []
+        ) == .remote
+    }
+
+    static func remoteCandidatePlan(
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) async throws -> RemoteCandidatePlan {
+        let explicitSocket = BridgeSocketResolver.explicitBridgeSocket(options: options, environment: environment)
+        let daemonSocketPath = DaemonLaunchPolicy.daemonSocketPath(environment: environment)
+        let runtimeBuildIdentity = DaemonLaunchPolicy.runtimeBuildIdentity()
+        let buildScopedDaemonSocketPath = DaemonLaunchPolicy.buildScopedDaemonSocketPath(
+            daemonSocketPath: daemonSocketPath,
+            runtimeBuildIdentity: runtimeBuildIdentity
+        )
+        // Read-only routing needs only same-owner socket candidates from the canonical daemon directory;
+        // candidate admission authenticates their status and identity if fallback reaches them. Mutation
+        // barriers keep the stricter prevalidated inventory because they must invalidate sibling snapshots.
+        let historicalBuildScopedDaemonSocketPaths: [String] = if self.shouldDiscoverHistoricalDaemons(
+            explicitSocket: explicitSocket,
+            daemonSocketPath: daemonSocketPath
+        ) {
+            if self.requiresValidatedHistoricalDaemonInventory(options: options) {
+                try await DaemonControlResolver.validatedHistoricalTargets(
+                    daemonSocketPath: daemonSocketPath,
+                    currentBuildScopedSocketPath: buildScopedDaemonSocketPath
+                )
+                .filter { DaemonControlPlanner.supportsCurrentDaemon($0.status) }
+                .map(\.client.socketPath)
+            } else {
+                DaemonControlResolver.discoveredHistoricalBuildScopedSocketPaths(
+                    daemonSocketPath: daemonSocketPath,
+                    currentBuildScopedSocketPath: buildScopedDaemonSocketPath
+                )
+            }
+        } else {
+            []
+        }
+
+        let candidates: [ImplicitRemoteCandidate] = if let explicitSocket, !explicitSocket.isEmpty {
+            [ImplicitRemoteCandidate(
+                socketPath: explicitSocket,
+                requireReusableDaemon: false,
+                requiredHostKind: nil,
+                requiresValidatedHistoricalDaemon: false
+            )]
+        } else {
+            self.implicitRemoteCandidates(
+                options: options,
+                daemonSocketPath: daemonSocketPath,
+                buildScopedDaemonSocketPath: buildScopedDaemonSocketPath,
+                historicalBuildScopedDaemonSocketPaths: historicalBuildScopedDaemonSocketPaths
+            )
+        }
+
+        return RemoteCandidatePlan(
+            explicitSocket: explicitSocket,
+            daemonSocketPath: daemonSocketPath,
+            runtimeBuildIdentity: runtimeBuildIdentity,
+            buildScopedDaemonSocketPath: buildScopedDaemonSocketPath,
+            historicalBuildScopedDaemonSocketPaths: historicalBuildScopedDaemonSocketPaths,
+            candidates: candidates
+        )
+    }
+
+    static func initialRoutingDecision(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        configurationInput: WinkAutomation.Configuration.InputConfig?,
+        knownSnapshotInvalidationRemoteSocketPaths: [String]
+    ) -> InitialRoutingDecision {
+        guard !self.remoteIsolationRequested(options: options, environment: environment) else {
+            return .local(snapshotInvalidationRemoteSocketPaths: [])
+        }
+
+        if self.inputPolicyRequiresLocal(
+            options: options,
+            environment: environment,
+            configurationInput: configurationInput
+        ) {
+            return .local(
+                snapshotInvalidationRemoteSocketPaths: knownSnapshotInvalidationRemoteSocketPaths
+            )
+        }
+
+        if !options.preferRemote,
+           options.requiresImplicitSnapshotInvalidation || options.usesPerToolSnapshotInvalidation {
+            return .local(
+                snapshotInvalidationRemoteSocketPaths: knownSnapshotInvalidationRemoteSocketPaths
+            )
+        }
+
+        guard options.preferRemote else {
+            return .local(snapshotInvalidationRemoteSocketPaths: [])
+        }
+
+        return .remote
+    }
+
+    static func shouldResolveKnownRemoteEndpoints(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        configurationInput: WinkAutomation.Configuration.InputConfig?
+    ) -> Bool {
+        guard !self.remoteIsolationRequested(options: options, environment: environment) else {
+            return false
+        }
+
+        return options.preferRemote ||
+            options.requiresImplicitSnapshotInvalidation ||
+            options.usesPerToolSnapshotInvalidation ||
+            self.inputPolicyRequiresLocal(
+                options: options,
+                environment: environment,
+                configurationInput: configurationInput
+            )
+    }
+
+    static func remoteIsolationRequested(
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) -> Bool {
+        options.remoteIsolationRequested || environment["WINK_NO_REMOTE"] != nil
+    }
+
+    static func snapshotInvalidationRemoteSocketPaths(
+        explicitSocket: String?,
+        daemonSocketPath: String,
+        buildScopedDaemonSocketPath: String? = nil,
+        historicalBuildScopedDaemonSocketPaths: [String] = []
+    ) -> [String] {
+        var seen = Set<String>()
+        var candidatePaths = [
+            explicitSocket,
+            WinkBridgeConstants.winkSocketPath,
+            daemonSocketPath,
+            buildScopedDaemonSocketPath,
+        ]
+            .compactMap(\.self)
+        candidatePaths.append(contentsOf: historicalBuildScopedDaemonSocketPaths)
+        return candidatePaths
+            .map { NSString(string: $0).standardizingPath }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    static func shouldDiscoverHistoricalDaemons(
+        explicitSocket: String?,
+        daemonSocketPath: String
+    ) -> Bool {
+        explicitSocket == nil && DaemonLaunchPolicy.shouldMigrateLegacyDaemon(targetSocketPath: daemonSocketPath)
+    }
+
+    static func requiresValidatedHistoricalDaemonInventory(options: CommandRuntimeOptions) -> Bool {
+        options.requiresImplicitSnapshotInvalidation || options.usesPerToolSnapshotInvalidation
+    }
+
+    static func prefersExactBuildScopedHost(
+        options: CommandRuntimeOptions,
+        explicitSocket: String?,
+        buildScopedDaemonSocketPath: String?
+    ) -> Bool {
+        guard explicitSocket == nil,
+              buildScopedDaemonSocketPath != nil,
+              !options.requiresApplicationLaunchOptions,
+              !options.requiresHostApplicationInventory
+        else {
+            return false
+        }
+        return options.requiresScreenCapturePermission ||
+            options.requiresInspectAccessibilityTree ||
+            options.requiresBrowserMCP ||
+            options.requiresImplicitSnapshotInvalidation ||
+            options.usesPerToolSnapshotInvalidation ||
+            options.requiresForegroundModifierClickSnapshotLease ||
+            options.requiresExactWindowPixelFocusTyping
+    }
+
+    static func inputPolicyRequiresLocal(
+        options: CommandRuntimeOptions,
+        environment: [String: String],
+        configurationInput: WinkAutomation.Configuration.InputConfig?
+    ) -> Bool {
+        guard !options.requiresApplicationLaunchOptions,
+              !options.requiresHostApplicationInventory
+        else {
+            return false
+        }
+
+        return options.inputStrategy != nil ||
+            RuntimeInputPolicyResolver.hasEnvironmentOverride(environment: environment) ||
+            RuntimeInputPolicyResolver.hasConfigOverride(input: configurationInput)
+    }
+
+    static func implicitRemoteCandidates(
+        options: CommandRuntimeOptions,
+        daemonSocketPath: String,
+        buildScopedDaemonSocketPath: String? = nil,
+        historicalBuildScopedDaemonSocketPaths: [String] = []
+    ) -> [ImplicitRemoteCandidate] {
+        var seenDaemonPaths = Set<String>()
+        var daemons: [ImplicitRemoteCandidate] = []
+        // Once a build-scoped daemon exists it is the exact binary generation for this CLI.
+        // Probe it before the canonical socket, which may still be occupied by a compatible
+        // older daemon during migration.
+        for socketPath in [buildScopedDaemonSocketPath, daemonSocketPath].compactMap(\.self) {
+            guard seenDaemonPaths.insert(NSString(string: socketPath).standardizingPath).inserted else { continue }
+            daemons.append(ImplicitRemoteCandidate(
+                socketPath: socketPath,
+                requireReusableDaemon: true,
+                requiredHostKind: nil,
+                requiresValidatedHistoricalDaemon: false
+            ))
+        }
+        for socketPath in historicalBuildScopedDaemonSocketPaths {
+            guard seenDaemonPaths.insert(NSString(string: socketPath).standardizingPath).inserted else { continue }
+            daemons.append(ImplicitRemoteCandidate(
+                socketPath: socketPath,
+                requireReusableDaemon: true,
+                requiredHostKind: .onDemand,
+                requiresValidatedHistoricalDaemon: true
+            ))
+        }
+        let gui = ImplicitRemoteCandidate(
+            socketPath: WinkBridgeConstants.winkSocketPath,
+            requireReusableDaemon: false,
+            requiredHostKind: .gui,
+            requiresValidatedHistoricalDaemon: false
+        )
+
+        if options.requiresApplicationRelaunch || options.requiresSurvivingApplicationHost || options
+            .requiresBrowserMCP {
+            return daemons
+        }
+        if options.requiresApplicationLaunchOptions || options.requiresHostApplicationInventory {
+            return [gui] + daemons
+        }
+        if DaemonLaunchPolicy.shouldMigrateLegacyDaemon(targetSocketPath: daemonSocketPath) {
+            return daemons + [gui]
+        }
+        return daemons
+    }
+
+    static func resolveRemoteServices(
+        candidates: [ImplicitRemoteCandidate],
+        identity: WinkBridgeClientIdentity,
+        options: CommandRuntimeOptions,
+        requiredProtocolVersion: WinkBridgeProtocolVersion? = nil,
+        requiredOwner: ScreenCaptureKitOwnerLease.OwnerReceipt? = nil,
+        snapshotInvalidationRemoteSocketPaths: [String],
+        permissionRejections: inout [String],
+        makeRemoteServices: RemoteServiceFactory = {
+            RuntimeHostResolver.remoteServices(client: $0, handshake: $1, options: $2)
+        },
+        handshake: ScreenCaptureKitHandshake? = nil,
+        handshakeCache: RemoteHandshakeCache? = nil,
+        guiPermissionCandidate: ImplicitRemoteCandidate? = nil,
+        reportUntrustedHosts: Bool = false,
+        preserveHostAuthenticationFailure: Bool = false,
+        recordRejection: (RemoteCandidateEvaluation) -> Void = { _ in }
+    )
+        async throws -> Resolution? {
+        let cache = handshakeCache ?? RemoteHandshakeCache(identity: identity, handshakeProvider: handshake)
+        var pendingCandidates = candidates
+        var deferredPaths = Set<String>()
+        var candidateIndex = 0
+        while candidateIndex < pendingCandidates.count {
+            let candidate = pendingCandidates[candidateIndex]
+            candidateIndex += 1
+            try Task.checkCancellation()
+            let socketPath = candidate.socketPath
+            do {
+                let client: WinkBridgeClient
+                let handshakeResponse: WinkBridgeHandshakeResponse
+                let cached = try await cache.handshake(candidate, identity: identity)
+                client = cached.client
+                handshakeResponse = cached.response
+                try Task.checkCancellation()
+                if let requiredOwner,
+                   !self.screenCaptureKitHostMatchesOwner(handshake: handshakeResponse, owner: requiredOwner) {
+                    continue
+                }
+                if let guiPermissionCandidate,
+                   !deferredPaths.contains(socketPath),
+                   !candidates.contains(guiPermissionCandidate) ||
+                   pendingCandidates[candidateIndex...].contains(guiPermissionCandidate),
+                   handshakeResponse.hostKind == .onDemand,
+                   let permissions = handshakeResponse.permissions,
+                   !permissions.screenRecording || !permissions.accessibility ||
+                   (permissions.reportsPostEvent && !permissions.postEvent),
+                   let gui = try? await cache.handshake(guiPermissionCandidate, identity: identity),
+                   self.daemonIsProvablyWeaker(handshakeResponse, than: gui.response) {
+                    // The exact-build-only pass defers to the full candidate pass. In that
+                    // pass keep weaker daemons as fallbacks after the GUI, never discard them.
+                    if candidates.contains(guiPermissionCandidate) {
+                        deferredPaths.insert(socketPath)
+                        pendingCandidates.append(candidate)
+                    }
+                    continue
+                }
+                try Task.checkCancellation()
+                if options.requiresScreenCaptureKitOwnerCapability,
+                   !options.usesPerToolSnapshotInvalidation,
+                   ObservationCommandSupport.captureEnginePreference(
+                       cliValue: options.captureEnginePreference, configuredValue: nil
+                   ) != .legacy,
+                   let diagnostic = BridgeCapabilityPolicy.screenCaptureKitReadinessRefusal(for: handshakeResponse) {
+                    throw self.readinessRefusal(diagnostic, handshake: handshakeResponse, socketPath: socketPath)
+                }
+                let evaluation = await self.evaluateRemoteCandidate(
+                    candidate,
+                    handshake: handshakeResponse,
+                    options: options,
+                    requiredProtocolVersion: requiredProtocolVersion
+                )
+                try Task.checkCancellation()
+                guard let validation = evaluation.validation else {
+                    recordRejection(evaluation)
+                    let missingPermissions = BridgeCapabilityPolicy.explicitlyMissingRemotePermissions(
+                        for: handshakeResponse,
+                        options: options
+                    )
+                    if !missingPermissions.isEmpty {
+                        let permissionNames = BridgeCapabilityPolicy
+                            .missingPermissionNames(missingPermissions)
+                            .joined(separator: ", ")
+                        permissionRejections.append(
+                            "\(handshakeResponse.hostKind.rawValue) host via \(socketPath) missing \(permissionNames)"
+                        )
+                    }
+                    continue
+                }
+                try Task.checkCancellation()
+                let authenticatedHostIdentity = await client.authenticatedHostIdentity()
+                let hostDescription = Self.remoteHostDescription(handshake: handshakeResponse, socketPath: socketPath)
+                return Resolution(
+                    services: makeRemoteServices(client, handshakeResponse, options),
+                    hostDescription: hostDescription,
+                    selectedRemoteSocketPath: NSString(string: socketPath).standardizingPath,
+                    selectedRemoteHostProcessIdentifier: validation.reusableDaemonStatus?.pid ??
+                        handshakeResponse.hostIdentity?.processIdentifier,
+                    selectedRemoteHostIdentity: handshakeResponse.hostIdentity,
+                    selectedRemoteAuthenticatedHostIdentity: authenticatedHostIdentity,
+                    selectedRemoteAuthenticatedHostIdentityProvider: {
+                        await client.authenticatedHostIdentity()
+                    },
+                    snapshotInvalidationRemoteSocketPaths: snapshotInvalidationRemoteSocketPaths,
+                    applicationRelaunchAllowed: BridgeCapabilityPolicy.supportsApplicationRelaunch(
+                        for: handshakeResponse
+                    ),
+                    requiredHostFailure: nil
+                )
+            } catch let error as PreDispatchActionError {
+                throw error
+            } catch let error as CancellationError {
+                throw error
+            } catch let error as WinkBridgeErrorEnvelope where error.isLocalHostAuthenticationFailure {
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
+                if preserveHostAuthenticationFailure {
+                    throw error
+                }
+                if reportUntrustedHosts {
+                    permissionRejections.append("untrusted host via \(socketPath)")
+                }
+            } catch {
+                if Task.isCancelled {
+                    throw CancellationError()
+                }
+                continue
+            }
+        }
+        try Task.checkCancellation()
+        return nil
+    }
+
+    static func validateRemoteCandidate(
+        _ candidate: ImplicitRemoteCandidate,
+        handshake: WinkBridgeHandshakeResponse,
+        options: CommandRuntimeOptions,
+        requiredProtocolVersion: WinkBridgeProtocolVersion? = nil,
+        fetchReusableDaemonStatus: (String) async -> WinkDaemonStatus? = { socketPath in
+            try? await DaemonControlClient(socketPath: socketPath).fetchReusableDaemonStatus()
+        }
+    ) async -> RemoteCandidateValidation? {
+        await self.evaluateRemoteCandidate(
+            candidate,
+            handshake: handshake,
+            options: options,
+            requiredProtocolVersion: requiredProtocolVersion,
+            fetchReusableDaemonStatus: fetchReusableDaemonStatus
+        ).validation
+    }
+
+    static func remoteServices(
+        client: WinkBridgeClient,
+        handshake: WinkBridgeHandshakeResponse,
+        options: CommandRuntimeOptions
+    ) -> RemoteWinkServices {
+        let targetedHotkey = BridgeCapabilityPolicy.targetedHotkeyAvailability(for: handshake)
+        let targetedType = BridgeCapabilityPolicy.targetedTypeAvailability(for: handshake)
+        let targetedClick = BridgeCapabilityPolicy.targetedClickAvailability(for: handshake)
+        let supportsExactKeyboard = BridgeCapabilityPolicy.supportsExactWindowTargetedKeyboard(for: handshake)
+        let supportsCompositeType = BridgeCapabilityPolicy.supportsCompositeTypeDelivery(for: handshake)
+        let supportsPixelFocusTyping = BridgeCapabilityPolicy.supportsExactWindowPixelFocusTyping(for: handshake)
+        let supportsForegroundModifierClick = BridgeCapabilityPolicy.supportsForegroundModifierClick(for: handshake)
+        let observationCapabilities = BridgeCapabilityPolicy.observationCapabilities(
+            for: handshake,
+            options: options
+        )
+        return RemoteWinkServices(
+            client: client,
+            capturePolicy: options.remoteCapturePolicy,
+            supportsTargetedHotkeys: targetedHotkey.isEnabled,
+            supportsProcessGenerationPinnedHotkeys:
+            BridgeCapabilityPolicy.supportsProcessGenerationPinnedHotkeys(for: handshake),
+            targetedHotkeyUnavailableReason: targetedHotkey.unavailableReason,
+            targetedHotkeyRequiresEventSynthesizingPermission: targetedHotkey.missingPermissions.contains(.postEvent),
+            supportsTargetedTypeActions: targetedType.isEnabled,
+            supportsProcessGenerationPinnedInteractions: handshake.negotiatedVersion >=
+                WinkBridgeConstants.processGenerationPinnedInteractionVersion,
+            targetedTypeUnavailableReason: targetedType.unavailableReason,
+            targetedTypeRequiresEventSynthesizingPermission: targetedType.missingPermissions.contains(.postEvent),
+            supportsTargetedClicks: targetedClick.isEnabled,
+            supportsStatelessClickVariants: BridgeCapabilityPolicy.supportsStatelessClickVariants(for: handshake),
+            supportsTargetedClickAccessibilityValueDelivery:
+            BridgeCapabilityPolicy.supportsTargetedClickAccessibilityValueDelivery(for: handshake),
+            targetedClickUnavailableReason: targetedClick.unavailableReason,
+            targetedClickRequiresEventSynthesizingPermission: targetedClick.missingPermissions.contains(.postEvent),
+            supportsExactWindowTargetedClicks: BridgeCapabilityPolicy.supportsExactWindowTargetedClicks(for: handshake),
+            supportsBackgroundWindowClose: BridgeCapabilityPolicy.supportsOperation(
+                .backgroundCloseWindow,
+                for: handshake
+            ),
+            supportsPinnedWindowMutations: BridgeCapabilityPolicy.supportsPinnedWindowMutations(for: handshake),
+            supportsWindowRestore: BridgeCapabilityPolicy.supportsOperation(.restoreWindow, for: handshake),
+            dialogCapabilities: Self.remoteDialogCapabilities(for: handshake),
+            supportsTargetedScroll: handshake.supportsTargetedScroll,
+            supportsRequestPinnedExactWindowScrollReceipt: handshake.supportsRequestPinnedExactWindowScrollReceipt,
+            supportsBackgroundCoordinateScroll: handshake.supportsBackgroundCoordinateScroll,
+            supportsInspectAccessibilityTree: BridgeCapabilityPolicy.supportsInspectAccessibilityTree(for: handshake),
+            supportsExactWindowTargetedKeyboard: supportsExactKeyboard,
+            supportsClipboardGuardedExactWindowHotkeys:
+            BridgeCapabilityPolicy.supportsClipboardGuardedExactWindowHotkeys(for: handshake),
+            supportsPreparedClipboardGuardedExactWindowHotkeys:
+            handshake.supportsPreparedClipboardGuardedExactWindowHotkeys,
+            exactWindowTargetedKeyboardUnavailableReason: supportsExactKeyboard
+                ? nil
+                : "Bridge host lacks atomic exact-window keyboard delivery",
+            supportsExactWindowCompositeTypeDelivery: supportsCompositeType,
+            exactWindowCompositeTypeDeliveryUnavailableReason: supportsCompositeType
+                ? nil
+                : "Bridge host lacks truthful composite background typing receipts",
+            supportsExactWindowPixelFocusTyping: supportsPixelFocusTyping,
+            exactWindowPixelFocusTypingUnavailableReason: supportsPixelFocusTyping
+                ? nil
+                : "Bridge host lacks atomic exact-window pixel-focus typing",
+            supportsForegroundModifierClick: supportsForegroundModifierClick,
+            foregroundModifierClickUnavailableReason: supportsForegroundModifierClick
+                ? nil
+                : "Bridge host lacks foreground modifier-click",
+            supportsExactWindowHeldPointerLifecycle:
+            BridgeCapabilityPolicy.supportsExactWindowHeldPointerLifecycle(for: handshake),
+            supportsExactWindowDrag: handshake.supportsExactWindowDrag,
+            supportsPostEventPermissionRequest: BridgeCapabilityPolicy.supportsPostEventPermissionRequest(
+                for: handshake
+            ),
+            supportsElementActions: BridgeCapabilityPolicy.supportsElementActions(for: handshake),
+            supportsSetValueResultTargetBinding:
+            BridgeCapabilityPolicy.supportsElementAction(.setValue, for: handshake),
+            supportsTextSelection: BridgeCapabilityPolicy.supportsElementAction(.selectText, for: handshake),
+            supportsDesktopObservation: observationCapabilities.desktopObservation,
+            supportsDesktopObservationOCR: observationCapabilities.desktopObservationOCR,
+            supportsDesktopObservationCaptureEngine: observationCapabilities.desktopObservationCaptureEngine,
+            supportsDesktopObservationInlinePixels: observationCapabilities.desktopObservationInlinePixels,
+            supportsExactWindowROIObservation: observationCapabilities.exactWindowROIObservation,
+            supportsImplicitLatestSnapshotInvalidation: BridgeCapabilityPolicy.supportsImplicitSnapshotInvalidation(
+                for: handshake
+            ),
+            supportsSnapshotMutationLeases: BridgeCapabilityPolicy.supportsSnapshotMutationLeases(for: handshake),
+            supportsExplicitSnapshotPublication: BridgeCapabilityPolicy.supportsExplicitSnapshotPublication(
+                for: handshake
+            ),
+            supportsProducerBoundSnapshotReferences:
+            BridgeCapabilityPolicy.supportsProducerBoundSnapshotReferences(for: handshake),
+            supportsApplicationLaunchOptions: BridgeCapabilityPolicy.supportsApplicationLaunchOptions(for: handshake),
+            supportsSafeBackgroundApplicationLaunchNoOp:
+            BridgeCapabilityPolicy.supportsSafeBackgroundApplicationLaunchNoOp(for: handshake),
+            supportsNewApplicationInstanceLaunch: BridgeCapabilityPolicy.supportsNewApplicationInstanceLaunch(
+                for: handshake
+            ),
+            supportsApplicationWindowReadiness: BridgeCapabilityPolicy.supportsApplicationWindowReadiness(
+                for: handshake
+            ),
+            supportsApplicationRelaunch: BridgeCapabilityPolicy.supportsApplicationRelaunch(for: handshake),
+            supportsProcessGenerationPinnedApplicationQuit:
+            BridgeCapabilityPolicy.supportsProcessGenerationPinnedApplicationQuit(for: handshake),
+            supportsProcessGenerationPinnedApplicationActivation:
+            BridgeCapabilityPolicy.supportsProcessGenerationPinnedApplicationActivation(for: handshake),
+            supportsProcessGenerationPinnedApplicationHide:
+            BridgeCapabilityPolicy.supportsProcessGenerationPinnedApplicationHide(for: handshake),
+            allowLocalApplicationFallback: handshake.hostKind == .onDemand,
+            browserSessionTransport: BridgeCapabilityPolicy.supportsBrowserConnectionHandoff(for: handshake)
+                ? WinkBridgeRemoteBrowserSessionTransport(client: client)
+                : nil,
+            desktopMutationWatermarkStore: DesktopMutationWatermarkStore()
+        )
+    }
+
+    private static func remoteHostDescription(
+        handshake: WinkBridgeHandshakeResponse,
+        socketPath: String
+    ) -> String {
+        "remote \(handshake.hostKind.rawValue) via \(socketPath)" +
+            (handshake.build.map { " (build \($0))" } ?? "")
+    }
+}
+
+private func explicitSnapshotPublicationFailure(
+    explicitSocket: String?,
+    options: CommandRuntimeOptions
+) -> String? {
+    guard explicitSocket != nil, options.requiresExplicitSnapshotPublication else { return nil }
+    if options.requiresProducerBoundSnapshotReferences {
+        return producerBoundSnapshotFailure(explicitSocket: explicitSocket)
+    }
+    return "The explicitly selected Bridge host cannot publish an explicit-reference-only coordinate " +
+        "receipt; protocol 1.26 is required. Update and relaunch Wink on that host, or remove " +
+        "--bridge-socket so Wink can select a current host."
+}

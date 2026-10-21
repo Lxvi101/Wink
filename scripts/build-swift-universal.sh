@@ -8,7 +8,7 @@ SWIFT_PROJECT_PATH="$PROJECT_ROOT/Apps/CLI"
 source "$PROJECT_ROOT/scripts/source-provenance.sh"
 # shellcheck source=scripts/resolve-swift-binary-path.sh
 source "$PROJECT_ROOT/scripts/resolve-swift-binary-path.sh"
-FINAL_BINARY_NAME="peekaboo"
+FINAL_BINARY_NAME="wink"
 FINAL_BINARY_PATH="$PROJECT_ROOT/$FINAL_BINARY_NAME"
 SIGN_IDENTITY="${MAC_RELEASE_CODESIGN_IDENTITY:-${SIGN_IDENTITY:-}}"
 CODESIGN_BIN="${MAC_RELEASE_CODESIGN_BIN:-codesign}"
@@ -24,13 +24,13 @@ X86_64_BINARY_TEMP="$PROJECT_ROOT/${FINAL_BINARY_NAME}-x86_64"
 # Override SWIFT_OPTIMIZATION_FLAGS when explicitly testing a different compiler.
 SWIFT_OPTIMIZATION_FLAGS="${SWIFT_OPTIMIZATION_FLAGS:--Xswiftc -Osize -Xlinker -dead_strip}"
 SWIFT_RESOLUTION_ARGS=()
-case "${PEEKABOO_USE_RESOLVED_VERSIONS:-0}" in
+case "${WINK_USE_RESOLVED_VERSIONS:-0}" in
     1|true|yes|on)
         SWIFT_RESOLUTION_ARGS=(--only-use-versions-from-resolved-file)
         ;;
     0|false|no|off|'') ;;
     *)
-        echo "ERROR: Invalid PEEKABOO_USE_RESOLVED_VERSIONS value: ${PEEKABOO_USE_RESOLVED_VERSIONS}" >&2
+        echo "ERROR: Invalid WINK_USE_RESOLVED_VERSIONS value: ${WINK_USE_RESOLVED_VERSIONS}" >&2
         exit 1
         ;;
 esac
@@ -116,29 +116,29 @@ set_plist_value() {
 
 generate_info_plist() {
     local template="$SWIFT_PROJECT_PATH/Sources/Resources/Info.plist"
-    local output="$SWIFT_PROJECT_PATH/.generated/PeekabooCLI-Info.plist"
+    local output="$SWIFT_PROJECT_PATH/.generated/WinkCLI-Info.plist"
     mkdir -p "$SWIFT_PROJECT_PATH/.generated"
     cp "$template" "$output"
 
-    local display="Peekaboo $VERSION"
+    local display="Wink $VERSION"
     set_plist_value "$output" "CFBundleShortVersionString" "$VERSION"
     set_plist_value "$output" "CFBundleVersion" "$VERSION"
-    set_plist_value "$output" "PeekabooVersionDisplayString" "$display"
-    set_plist_value "$output" "PeekabooGitCommit" "$GIT_COMMIT_SHORT$GIT_DIRTY"
-    set_plist_value "$output" "PeekabooSourceCommit" "$SOURCE_COMMIT"
-    set_plist_value "$output" "PeekabooGitCommitDate" "$GIT_COMMIT_DATE"
-    set_plist_value "$output" "PeekabooGitBranch" "$GIT_BRANCH"
-    set_plist_value "$output" "PeekabooBuildDate" "$BUILD_DATE"
-    if [[ -n "${PEEKABOO_CERTIFICATION_SOURCE_MANIFEST_SHA256:-}" ]]; then
-        set_plist_value "$output" "PeekabooCertificationSourceManifestSHA256" \
-            "$PEEKABOO_CERTIFICATION_SOURCE_MANIFEST_SHA256"
+    set_plist_value "$output" "WinkVersionDisplayString" "$display"
+    set_plist_value "$output" "WinkGitCommit" "$GIT_COMMIT_SHORT$GIT_DIRTY"
+    set_plist_value "$output" "WinkSourceCommit" "$SOURCE_COMMIT"
+    set_plist_value "$output" "WinkGitCommitDate" "$GIT_COMMIT_DATE"
+    set_plist_value "$output" "WinkGitBranch" "$GIT_BRANCH"
+    set_plist_value "$output" "WinkBuildDate" "$BUILD_DATE"
+    if [[ -n "${WINK_CERTIFICATION_SOURCE_MANIFEST_SHA256:-}" ]]; then
+        set_plist_value "$output" "WinkCertificationSourceManifestSHA256" \
+            "$WINK_CERTIFICATION_SOURCE_MANIFEST_SHA256"
     fi
-    if [[ -n "${PEEKABOO_CERTIFICATION_CATALOG_SHA256:-}" ]]; then
-        set_plist_value "$output" "PeekabooCertificationCatalogSHA256" \
-            "$PEEKABOO_CERTIFICATION_CATALOG_SHA256"
+    if [[ -n "${WINK_CERTIFICATION_CATALOG_SHA256:-}" ]]; then
+        set_plist_value "$output" "WinkCertificationCatalogSHA256" \
+            "$WINK_CERTIFICATION_CATALOG_SHA256"
     fi
 
-    export PEEKABOO_CLI_INFO_PLIST_PATH="$output"
+    export WINK_CLI_INFO_PLIST_PATH="$output"
 }
 
 echo "🧹 Cleaning previous build artifacts..."
@@ -157,8 +157,8 @@ echo "Version: $VERSION"
 
 # Get git information. Keep the historical short value for human display while
 # certification consumes the separate immutable full source commit.
-SOURCE_COMMIT=$(peekaboo_require_source_commit "$PROJECT_ROOT")
-GIT_COMMIT_SHORT=$(peekaboo_short_source_commit "$SOURCE_COMMIT")
+SOURCE_COMMIT=$(wink_require_source_commit "$PROJECT_ROOT")
+GIT_COMMIT_SHORT=$(wink_short_source_commit "$SOURCE_COMMIT")
 GIT_COMMIT_DATE=$(git show -s --format=%ci HEAD 2>/dev/null || echo "unknown")
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 GIT_DIRTY=$(git diff --quiet && git diff --cached --quiet || echo "-dirty")
@@ -187,7 +187,7 @@ echo "🏗️ Building for x86_64 (Intel)..."
 X86_64_BUILD_BINARY=$(bash "$PROJECT_ROOT/scripts/resolve-swift-binary-path.sh" \
     "$SWIFT_PROJECT_PATH" x86_64 release "$FINAL_BINARY_NAME")
 cp "$X86_64_BUILD_BINARY" "$X86_64_BINARY_TEMP"
-peekaboo_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"
+wink_verify_source_commit "$PROJECT_ROOT" "$SOURCE_COMMIT"
 echo "✅ x86_64 build complete: $X86_64_BINARY_TEMP"
 
 echo "🔗 Creating universal binary..."
@@ -211,7 +211,7 @@ MAC_RELEASE_CODESIGN_BIN="$CODESIGN_BIN" "$PROJECT_ROOT/scripts/codesign-with-re
     "${CODESIGN_KEYCHAIN_ARGS[@]}" \
     --options runtime \
     $TIMESTAMP_ARG \
-    --identifier "boo.peekaboo.peekaboo" \
+    --identifier "boo.wink.wink" \
     "$FINAL_BINARY_PATH.tmp"
 echo "✅ Signed with identity: $SIGN_IDENTITY"
 

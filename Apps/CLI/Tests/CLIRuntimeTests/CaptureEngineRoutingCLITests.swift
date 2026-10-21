@@ -19,19 +19,19 @@ struct CaptureEngineRoutingCLITests {
     }
 
     private func assertRefusalBeforeSetup(command: String, sources: String, inputPolicy: Bool) async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-engine-missing-host-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-engine-missing-host-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let output = root.appendingPathComponent("must-not-create", isDirectory: true)
         let childMarker = root.appendingPathComponent("child-must-not-run")
         let socket = root.appendingPathComponent("missing.sock").path
-        var environment = ["PEEKABOO_CAPTURE_ENGINE": "", "PEEKABOO_BRIDGE_SOCKET": ""]
+        var environment = ["WINK_CAPTURE_ENGINE": "", "WINK_BRIDGE_SOCKET": ""]
         var arguments = [
             "capture", command, "--mode", "window", "--pid", "2147483647",
             "--capture-focus", "foreground", "--path", output.path, "--json",
@@ -39,12 +39,12 @@ struct CaptureEngineRoutingCLITests {
         if sources.hasPrefix("cli-") {
             arguments += ["--capture-engine", "cg"]
         } else {
-            environment["PEEKABOO_CAPTURE_ENGINE"] = "cg"
+            environment["WINK_CAPTURE_ENGINE"] = "cg"
         }
         if sources.hasSuffix("-cli") {
             arguments += ["--bridge-socket", socket]
         } else {
-            environment["PEEKABOO_BRIDGE_SOCKET"] = socket
+            environment["WINK_BRIDGE_SOCKET"] = socket
         }
         if inputPolicy {
             arguments += ["--input-strategy", "synthOnly"]
@@ -53,7 +53,7 @@ struct CaptureEngineRoutingCLITests {
             arguments += ["--", "/usr/bin/touch", childMarker.path]
         }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             arguments,
             environment: environment,
             isolateFromRemoteHosts: false
@@ -84,16 +84,16 @@ struct CaptureEngineRoutingCLITests {
 
     @Test
     func `Unknown capture engine is structured and never dispatches`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let output = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-invalid-engine-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-invalid-engine-\(UUID().uuidString).png")
         defer { try? FileManager.default.removeItem(at: output) }
 
-        let result = try await TestChildProcess.runPeekaboo([
+        let result = try await TestChildProcess.runWink([
             "see",
             "--mode", "screen",
             "--no-elements",
@@ -117,16 +117,16 @@ struct CaptureEngineRoutingCLITests {
 
     @Test
     func `Unknown ambient capture engine is structured and never dispatches`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let output = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-invalid-ambient-engine-\(UUID().uuidString).png")
+            .appendingPathComponent("wink-invalid-ambient-engine-\(UUID().uuidString).png")
         defer { try? FileManager.default.removeItem(at: output) }
 
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "see",
                 "--mode", "screen",
@@ -134,7 +134,7 @@ struct CaptureEngineRoutingCLITests {
                 "--path", output.path,
                 "--json",
             ],
-            environment: ["PEEKABOO_CAPTURE_ENGINE": "warp-drive"]
+            environment: ["WINK_CAPTURE_ENGINE": "warp-drive"]
         )
 
         #expect(result.status == .exited(1))
@@ -151,19 +151,19 @@ struct CaptureEngineRoutingCLITests {
 
     @Test
     func `Explicit capture engine refuses missing Bridge without local dispatch`() async throws {
-        guard TestChildProcess.canLocatePeekabooBinary() else {
-            Issue.record("Build peekaboo before running CLI runtime tests.")
+        guard TestChildProcess.canLocateWinkBinary() else {
+            Issue.record("Build wink before running CLI runtime tests.")
             return
         }
 
         let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-engine-routing-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-engine-routing-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
 
         let output = directory.appendingPathComponent("must-not-exist.png")
         let missingSocket = directory.appendingPathComponent("missing.sock")
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             [
                 "see",
                 "--mode", "screen",

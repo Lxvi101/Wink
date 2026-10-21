@@ -192,7 +192,7 @@ assert.equal(validateArchiveEntries([
   { path: 'Fixture.app/dangling', type: 'symlink', target: 'Versions/Current/missing' }
 ], 'Fixture.app').length, 7);
 
-const testDirectory = await mkdtemp(path.join(os.tmpdir(), 'peekaboo-terminal-archive-policy.'));
+const testDirectory = await mkdtemp(path.join(os.tmpdir(), 'wink-terminal-archive-policy.'));
 try {
   const parentFileEntries = [
     { path: 'Fixture.app/', type: 'directory' },
@@ -498,20 +498,20 @@ try {
   await rm(testDirectory, { recursive: true, force: true });
 }
 
-assert.doesNotThrow(() => validateArchiveEntries(['Peekaboo.app/', 'Peekaboo.app/Contents/', 'Peekaboo.app/Contents/Info.plist'],
-  'Peekaboo.app'));
+assert.doesNotThrow(() => validateArchiveEntries(['Wink.app/', 'Wink.app/Contents/', 'Wink.app/Contents/Info.plist'],
+  'Wink.app'));
 for (const members of [
-  ['Peekaboo.app/', 'README.txt'],
-  ['Peekaboo.app/Contents/../../outside'],
-  ['/Peekaboo.app/Contents/Info.plist'],
-  ['Peekaboo.app/Contents/Info.plist', 'Peekaboo.app/Contents/Info.plist'],
-  ['Peekaboo.app\\Contents\\Info.plist'],
+  ['Wink.app/', 'README.txt'],
+  ['Wink.app/Contents/../../outside'],
+  ['/Wink.app/Contents/Info.plist'],
+  ['Wink.app/Contents/Info.plist', 'Wink.app/Contents/Info.plist'],
+  ['Wink.app\\Contents\\Info.plist'],
 ]) {
-  assert.throws(() => validateArchiveEntries(members, 'Peekaboo.app'));
+  assert.throws(() => validateArchiveEntries(members, 'Wink.app'));
 }
 
 // Exercise the shared app ZIP producer with native filesystem metadata.
-const zipTestDirectory = mkdtempSync(path.join(os.tmpdir(), 'peekaboo-app-zip-producer.'));
+const zipTestDirectory = mkdtempSync(path.join(os.tmpdir(), 'wink-app-zip-producer.'));
 try {
   const appRoot = 'Archive Fixture.app';
   const app = path.join(zipTestDirectory, appRoot);
@@ -540,9 +540,9 @@ try {
   }
   symlinkSync('Resources/value', path.join(app, 'Contents/current'));
   const metadata = [
-    ['com.openclaw.peekaboo.fixture', 'harmless extended attribute', 'Contents/Resources/value'],
+    ['com.openclaw.wink.fixture', 'harmless extended attribute', 'Contents/Resources/value'],
     ['com.apple.ResourceFork', 'harmless resource fork', 'Contents/Resources/value'],
-    ['com.apple.quarantine', '0081;00000000;PeekabooZipFixture;', ''],
+    ['com.apple.quarantine', '0081;00000000;WinkZipFixture;', ''],
   ];
   const readAttribute = (name, target) => run('/usr/bin/xattr', ['-px', name, target]).replace(/\s/g, '').toLowerCase();
   for (const [name, value, relative] of metadata) {

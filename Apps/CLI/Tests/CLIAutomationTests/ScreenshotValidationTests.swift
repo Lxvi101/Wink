@@ -1,9 +1,9 @@
 import AppKit
 import CoreGraphics
-import PeekabooCore
+import WinkCore
 import ScreenCaptureKit
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(
     .serialized,
@@ -17,7 +17,7 @@ struct ScreenshotValidationTests {
     @MainActor
     func `Validate screenshot contains expected content`() async throws {
         // Create a temporary test window with known content
-        let testWindow = self.createTestWindow(withContent: .text("PEEKABOO_TEST_12345"))
+        let testWindow = self.createTestWindow(withContent: .text("WINK_TEST_12345"))
         defer { testWindow.close() }
 
         // Give window time to render
@@ -26,7 +26,7 @@ struct ScreenshotValidationTests {
         // Capture the window
         let windowID = CGWindowID(testWindow.windowNumber)
 
-        let outputPath = "/tmp/peekaboo-content-test.png"
+        let outputPath = "/tmp/wink-content-test.png"
         defer { try? FileManager.default.removeItem(atPath: outputPath) }
 
         _ = try await self.captureWindowToFile(windowID: windowID, path: outputPath, format: .png)
@@ -57,8 +57,8 @@ struct ScreenshotValidationTests {
         let windowID = CGWindowID(testWindow.windowNumber)
 
         // Capture baseline
-        let baselinePath = "/tmp/peekaboo-baseline.png"
-        let currentPath = "/tmp/peekaboo-current.png"
+        let baselinePath = "/tmp/wink-baseline.png"
+        let currentPath = "/tmp/wink-current.png"
         defer {
             try? FileManager.default.removeItem(atPath: baselinePath)
             try? FileManager.default.removeItem(atPath: currentPath)
@@ -96,7 +96,7 @@ struct ScreenshotValidationTests {
         let formats: [ImageFormat] = [.png, .jpg]
 
         for format in formats {
-            let path = "/tmp/peekaboo-format-test.\(format.rawValue)"
+            let path = "/tmp/wink-format-test.\(format.rawValue)"
             defer { try? FileManager.default.removeItem(atPath: path) }
 
             _ = try await self.captureWindowToFile(windowID: windowID, path: path, format: format)
@@ -126,7 +126,7 @@ struct ScreenshotValidationTests {
 
         for (index, screen) in screens.indexed() {
             let displayID = self.getDisplayID(for: screen)
-            let outputPath = "/tmp/peekaboo-display-\(index).png"
+            let outputPath = "/tmp/wink-display-\(index).png"
             defer { try? FileManager.default.removeItem(atPath: outputPath) }
 
             do {
@@ -182,7 +182,7 @@ struct ScreenshotValidationTests {
         var captureTimes: [TimeInterval] = []
 
         for iteration in 0..<iterations {
-            let path = "/tmp/peekaboo-perf-\(iteration).png"
+            let path = "/tmp/wink-perf-\(iteration).png"
             defer { try? FileManager.default.removeItem(atPath: path) }
 
             let start = CFAbsoluteTimeGetCurrent()
@@ -224,7 +224,7 @@ struct ScreenshotValidationTests {
             defer: false
         )
 
-        window.title = "Peekaboo Test Window"
+        window.title = "Wink Test Window"
         window.isReleasedWhenClosed = false
 
         let contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))

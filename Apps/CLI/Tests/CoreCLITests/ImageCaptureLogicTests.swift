@@ -1,9 +1,9 @@
 import AppKit
 import Commander
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.imageCapture, .unit))
 struct ImageCaptureLogicTests {
@@ -67,7 +67,7 @@ struct ImageCaptureLogicTests {
     @MainActor
     func `Implicit output path uses configured save directory`() throws {
         let command = try SeeCommand.parse(["--mode", "screen", "--screen-index", "0"])
-        let directory = "/tmp/peekaboo configured captures"
+        let directory = "/tmp/wink configured captures"
 
         let output = command.makeOutputURL(
             preferredName: "screen0",

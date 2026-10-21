@@ -1,12 +1,12 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomationKit
-import PeekabooAutomationKitTestSupport
-import PeekabooCore
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkAutomationKit
+import WinkAutomationKitTestSupport
+import WinkCore
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 @Suite(.serialized)
@@ -19,7 +19,7 @@ struct ActionOutcomeCommandTests {
         var error: any Error {
             switch self {
             case .bridgeTimeout:
-                PeekabooError.timeout("Bridge mutation finalization timed out")
+                WinkError.timeout("Bridge mutation finalization timed out")
             case .unreadableReceipt:
                 SnapshotError.corruptedData
             case .consumeWriteFailure:
@@ -166,7 +166,7 @@ struct ActionOutcomeCommandTests {
         )
         let windows = OutcomeStubWindowService(windowsByApp: ["Fixture": [window]])
         windows.actionOutcome = outcome
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applications,
             windows: windows
         )
@@ -206,7 +206,7 @@ struct ActionOutcomeCommandTests {
         )
         let applications = OutcomeStubApplicationService(applications: [application])
         applications.actionOutcome = .confirmedNoChange()
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "launch", "Fixture", "--no-remote"],
@@ -229,7 +229,7 @@ struct ActionOutcomeCommandTests {
         )
         let applications = OutcomeStubApplicationService(applications: [application])
         applications.actionOutcome = nil
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let humanResult = try await InProcessCommandRunner.run(
             ["app", "launch", "Fixture", "--no-remote"],
@@ -265,7 +265,7 @@ struct ActionOutcomeCommandTests {
             unitCount: .one
         )
         applications.actionOutcome = outcome
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             [
@@ -298,7 +298,7 @@ struct ActionOutcomeCommandTests {
         let applications = OutcomeStubApplicationService(applications: [application])
         applications.quitShouldSucceed = false
         applications.actionOutcome = .refused(route: .bridge, reason: .targetUnavailable)
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
         let arguments = [
             "app", "quit", "--pid", "42", "--expected-process-start-identity", "7",
             "--no-remote",
@@ -359,7 +359,7 @@ struct ActionOutcomeCommandTests {
             applications: applications,
             errors: [refusal, refusal]
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "quit", "--all", "--json", "--no-remote"],
@@ -398,7 +398,7 @@ struct ActionOutcomeCommandTests {
             message: "Quit response was lost",
             hint: "Observe the process before retrying."
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
 
         let result = try await InProcessCommandRunner.run(
             [
@@ -459,7 +459,7 @@ struct ActionOutcomeCommandTests {
             delivery: .init(mechanism: .nativeFramework, mode: .background),
             unitCount: .one
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
         let arguments = [
             "app", "quit", "--pid", "42", "--expected-process-start-identity", "7",
             "--no-remote",
@@ -503,7 +503,7 @@ struct ActionOutcomeCommandTests {
         }
         let result = try await InProcessCommandRunner.runWithOwnedRuntime(
             ["app", "quit", "--all", "--json", "--no-remote"],
-            services: TestServicesFactory.makePeekabooServices(applications: service)
+            services: TestServicesFactory.makeWinkServices(applications: service)
         )
         let object = try Self.jsonObject(result.stdout)
         let outcome = try #require(object["outcome"] as? [String: Any])
@@ -551,10 +551,10 @@ struct ActionOutcomeCommandTests {
                     unitCount: .one,
                     message: "Quit response was lost"
                 ),
-                PeekabooError.commandFailed("Legacy quit failed without a canonical receipt"),
+                WinkError.commandFailed("Legacy quit failed without a canonical receipt"),
             ]
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "quit", "--all", "--json", "--no-remote"],
@@ -608,11 +608,11 @@ struct ActionOutcomeCommandTests {
         let service = ReceiptlessBatchQuitApplicationService(
             applications: applications,
             errors: [
-                PeekabooError.commandFailed("First legacy quit failed"),
-                PeekabooError.commandFailed("Second legacy quit failed"),
+                WinkError.commandFailed("First legacy quit failed"),
+                WinkError.commandFailed("Second legacy quit failed"),
             ]
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "quit", "--all", "--json", "--no-remote"],
@@ -657,9 +657,9 @@ struct ActionOutcomeCommandTests {
         ]
         let service = ReceiptlessBatchQuitApplicationService(
             applications: applications,
-            errors: [CancellationError(), PeekabooError.commandFailed("must not run")]
+            errors: [CancellationError(), WinkError.commandFailed("must not run")]
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "quit", "--all", "--json", "--no-remote"],
@@ -709,7 +709,7 @@ struct ActionOutcomeCommandTests {
             errors: [CancellationError()],
             successfulCallsBeforeErrors: 1
         )
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await InProcessCommandRunner.run(
             ["app", "quit", "--all", "--json", "--no-remote"],
@@ -781,7 +781,7 @@ struct ActionOutcomeCommandTests {
             prefix,
             .failureAndCancel(CancellationError()),
         ]
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let execution = Task { @MainActor in
             try await InProcessCommandRunner.runWithOwnedRuntime(
@@ -852,7 +852,7 @@ struct ActionOutcomeCommandTests {
         )
         let service = OutcomeStubApplicationService(applications: applications)
         service.quitActionSteps = [.failureAndCancel(refusal)]
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await Task {
             try await InProcessCommandRunner.run(
@@ -909,7 +909,7 @@ struct ActionOutcomeCommandTests {
                 )
             ),
         ]
-        let services = TestServicesFactory.makePeekabooServices(applications: service)
+        let services = TestServicesFactory.makeWinkServices(applications: service)
 
         let result = try await Task {
             try await InProcessCommandRunner.run(
@@ -957,7 +957,7 @@ extension ActionOutcomeCommandTests {
             name: "Fixture",
             activationPolicy: .regular
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: StubApplicationService(applications: [application]),
             snapshots: snapshots,
             automation: automation
@@ -1415,7 +1415,7 @@ extension ActionOutcomeCommandTests {
     private static func makeContext() -> OutcomeContext {
         let automation = OutcomeStubAutomationService()
         let snapshots = StubSnapshotManager()
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             automation: automation
         )
@@ -1423,7 +1423,7 @@ extension ActionOutcomeCommandTests {
     }
 
     private struct OutcomeContext {
-        let services: PeekabooServices
+        let services: WinkServices
         let automation: OutcomeStubAutomationService
         let snapshots: StubSnapshotManager
     }

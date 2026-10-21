@@ -7,7 +7,7 @@ read_when:
 
 # Window Focus and Space Management
 
-Peekaboo provides intelligent window focusing that works seamlessly across macOS Spaces (virtual desktops), ensuring your automation commands always target the correct window.
+Wink provides intelligent window focusing that works seamlessly across macOS Spaces (virtual desktops), ensuring your automation commands always target the correct window.
 
 ## Table of Contents
 
@@ -23,7 +23,7 @@ Peekaboo provides intelligent window focusing that works seamlessly across macOS
 
 ## Overview
 
-Starting with v3, Peekaboo includes comprehensive window focus management that:
+Starting with v3, Wink includes comprehensive window focus management that:
 
 - **Tracks window identity** across interactions using stable window IDs
 - **Detects window location** across different Spaces
@@ -37,18 +37,18 @@ This eliminates the need for manual window management in your automation scripts
 
 ### Window Identity Tracking
 
-Peekaboo uses multiple methods to track windows:
+Wink uses multiple methods to track windows:
 
 1. **CGWindowID** - A stable identifier that persists for the window's lifetime
 2. **AXIdentifier** - Optional developer-provided stable ID (rarely available)
 3. **Window Title** - Human-readable but can change
 4. **Window Index** - Position-based, least stable
 
-When you use the `see` command, Peekaboo stores the window's CGWindowID in the snapshot, allowing subsequent commands to reliably target the same window even if its title changes or it moves between Spaces.
+When you use the `see` command, Wink stores the window's CGWindowID in the snapshot, allowing subsequent commands to reliably target the same window even if its title changes or it moves between Spaces.
 
 ### Focus Flow
 
-When you execute a foreground interaction command (`type`, `click --foreground`, etc.), Peekaboo:
+When you execute a foreground interaction command (`type`, `click --foreground`, etc.), Wink:
 
 1. **Retrieves window info** from the current snapshot
 2. **Checks if window still exists** (handles closed windows gracefully)
@@ -64,7 +64,7 @@ generation, exact window ID, and captured bounds around that readback. Bridge va
 ordinary exact-ID window listings remain inexpensive geometry-only reads and do not imply focus. Existing/custom
 4.x providers without the additive focus-proof capability still undergo the existing fail-closed readback validation.
 
-For app-only foreground targets through a daemon or other Bridge host, Peekaboo chooses the best renderable window
+For app-only foreground targets through a daemon or other Bridge host, Wink chooses the best renderable window
 from the app's inventory before pinning its exact receipt, rather than taking the first helper window in inventory
 order. If no window is renderable, the first inventory row remains the fallback. Explicit IDs and titles are not
 reranked; an ambiguous title or inconsistent selected receipt still refuses instead of switching to another window.
@@ -85,17 +85,17 @@ Foreground interaction commands automatically handle focus:
 
 ```bash
 # These commands all include automatic focus management:
-peekaboo click "Submit" --app Safari --foreground
-peekaboo type "Hello world" --app TextEdit --foreground
-peekaboo scroll --direction down --foreground
-peekaboo menu click --app Safari --item "New Tab" --foreground
-peekaboo press cmd+s --app TextEdit --foreground
-peekaboo drag --from "$SOURCE_ID" --to "$TARGET_ID" --foreground
+wink click "Submit" --app Safari --foreground
+wink type "Hello world" --app TextEdit --foreground
+wink scroll --direction down --foreground
+wink menu click --app Safari --item "New Tab" --foreground
+wink press cmd+s --app TextEdit --foreground
+wink drag --from "$SOURCE_ID" --to "$TARGET_ID" --foreground
 ```
 
 ### Default Behavior
 
-By default, Peekaboo will:
+By default, Wink will:
 - ✅ Keep targeted interaction in the background when the command supports it
 - ✅ Focus the target window only after explicit foreground consent
 - ✅ Refuse an unintended Space switch unless `--space-switch` or `--bring-to-current-space` is explicit
@@ -106,7 +106,7 @@ By default, Peekaboo will:
 ## Focus Options
 
 Interaction commands that use foreground delivery support these focus-related options. `click`, `type`, and `paste`
-default to background delivery when Peekaboo can resolve a target process. Raw `press` stays background only with a
+default to background delivery when Wink can resolve a target process. Raw `press` stays background only with a
 fresh exact-window/snapshot receipt; app/PID-only and targetless forms require `--foreground`. Targeted scroll stays
 background through Accessibility or a capability-gated exact-window WebKit route. Bounded linear `drag --snapshot <id>`
 stays inside that exact window without activation on protocol 1.39 hosts; it reports unverified, retry-unsafe dispatch.
@@ -117,7 +117,7 @@ and human profiles.
 Disables automatic focus management (not recommended).
 
 ```bash
-peekaboo click "Submit" --foreground --no-auto-focus
+wink click "Submit" --foreground --no-auto-focus
 ```
 
 Use cases:
@@ -132,11 +132,11 @@ for compatibility, but the alias does not replace the fresh exact-window/snapsho
 chords.
 
 ```bash
-peekaboo press cmd+l --app Safari --foreground
-peekaboo window list --app Safari --json
-peekaboo see --window-id "$WINDOW_ID" --no-elements --json
-peekaboo click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180
-peekaboo type "hello" --app TextEdit
+wink press cmd+l --app Safari --foreground
+wink window list --app Safari --json
+wink see --window-id "$WINDOW_ID" --no-elements --json
+wink click --window-id "$WINDOW_ID" --snapshot "$SNAPSHOT_ID" --at 420,180
+wink type "hello" --app TextEdit
 ```
 
 Use cases:
@@ -149,13 +149,13 @@ identifies a live process. Raw key chords require either a fresh exact-window/sn
 explicit `--foreground`; app/PID-only and targetless raw chords refuse. Background click can preserve an exact
 window/element target.
 
-Background delivery is a delivery mode, not a focus mode. It cannot be combined with foreground focus timeout, retry, or Space-switching flags. Background element/query/coordinate clicks and targeted scroll prefer Accessibility; an opaque WebKit scroll target may use exact PID/window wheel delivery without focus. Keyboard delivery, that WebKit wheel route, and foreground synthetic pointer operations require Event Synthesizing; `peekaboo permissions request event-synthesizing` requests it for the selected bridge host by default, or for the local CLI with `--no-remote`.
+Background delivery is a delivery mode, not a focus mode. It cannot be combined with foreground focus timeout, retry, or Space-switching flags. Background element/query/coordinate clicks and targeted scroll prefer Accessibility; an opaque WebKit scroll target may use exact PID/window wheel delivery without focus. Keyboard delivery, that WebKit wheel route, and foreground synthetic pointer operations require Event Synthesizing; `wink permissions request event-synthesizing` requests it for the selected bridge host by default, or for the local CLI with `--no-remote`.
 
 ### `--focus-timeout <duration>`
 Sets how long to wait for focus operations (default: `5s`; bare values are milliseconds).
 
 ```bash
-peekaboo type "Long text..." --app TextEdit --foreground --focus-timeout 10s
+wink type "Long text..." --app TextEdit --foreground --focus-timeout 10s
 ```
 
 Use cases:
@@ -168,7 +168,7 @@ Sets the retry limit for focus paths that support safe retries (default: 3). Rec
 one mutation attempt and never retries after dispatch becomes indeterminate.
 
 ```bash
-peekaboo click "Save" --foreground --focus-retry-count 5
+wink click "Save" --foreground --focus-retry-count 5
 ```
 
 Use cases:
@@ -180,7 +180,7 @@ Use cases:
 Forces Space switching even if window appears to be on current Space.
 
 ```bash
-peekaboo click "Login" --foreground --space-switch
+wink click "Login" --foreground --space-switch
 ```
 
 Use cases:
@@ -192,7 +192,7 @@ Use cases:
 Moves the window to your current Space instead of switching to it.
 
 ```bash
-peekaboo type "Hello" --foreground --bring-to-current-space
+wink type "Hello" --foreground --bring-to-current-space
 ```
 
 Use cases:
@@ -206,19 +206,19 @@ For explicit window management, use the `window focus` command:
 
 ```bash
 # Basic usage on the current Space
-peekaboo window focus --app Safari
+wink window focus --app Safari
 
 # Focus specific window by title
-peekaboo window focus --app Chrome --window-title "Gmail"
+wink window focus --app Chrome --window-title "Gmail"
 
 # Switch to the target window's Space
-peekaboo window focus --app Terminal --space-switch
+wink window focus --app Terminal --space-switch
 
 # Move window to current Space
-peekaboo window focus --app TextEdit --bring-to-current-space
+wink window focus --app TextEdit --bring-to-current-space
 
 # Request an explicit post-focus verification
-peekaboo window focus --app Finder --verify
+wink window focus --app Finder --verify
 ```
 
 ### Options
@@ -232,19 +232,19 @@ peekaboo window focus --app Finder --verify
 
 ## Space Management
 
-Peekaboo provides comprehensive Space (virtual desktop) management:
+Wink provides comprehensive Space (virtual desktop) management:
 
 ### List Spaces
 
 ```bash
 # List all user Spaces
-peekaboo space list
+wink space list
 
 # Include detailed window assignments
-peekaboo space list --detailed
+wink space list --detailed
 
 # JSON output
-peekaboo space list --json
+wink space list --json
 ```
 
 The list marks the active Space for each display; add `--json` when a script needs the active ID.
@@ -253,7 +253,7 @@ The list marks the active Space for each display; add `--json` when a script nee
 
 ```bash
 # Switch to Space 2 (1-based numbering)
-peekaboo space switch --to 2 --foreground
+wink space switch --to 2 --foreground
 
 ```
 
@@ -261,17 +261,17 @@ peekaboo space switch --to 2 --foreground
 
 ```bash
 # Move Safari to Space 3
-peekaboo space move-window --app Safari --to 3
+wink space move-window --app Safari --to 3
 
 # Move specific window
-peekaboo space move-window --app Chrome --window-title "Gmail" --to 2
+wink space move-window --app Chrome --window-title "Gmail" --to 2
 ```
 
 ### Find Windows
 
 ```bash
 # Include each Space's windows, then match the app or title in the result
-peekaboo space list --detailed --json
+wink space list --detailed --json
 ```
 
 ## Best Practices
@@ -282,23 +282,23 @@ Always start with `see` to establish a snapshot:
 
 ```bash
 # Good: Establish an exact-window snapshot before acting
-peekaboo window list --app Safari --json
-peekaboo see --window-id "$WINDOW_ID" --json
-peekaboo click "Login" --foreground
-peekaboo type "username" --app Safari
+wink window list --app Safari --json
+wink see --window-id "$WINDOW_ID" --json
+wink click "Login" --foreground
+wink type "username" --app Safari
 ```
 
-### 2. Let Peekaboo Handle Focus
+### 2. Let Wink Handle Focus
 
 Don't manually manage windows:
 
 ```bash
 # Don't do this:
-peekaboo window focus --app Safari
-peekaboo click "Submit"
+wink window focus --app Safari
+wink click "Submit"
 
 # Do this instead (automatic focus):
-peekaboo click "Submit" --foreground
+wink click "Submit" --foreground
 ```
 
 ### 3. Handle Space Switches Gracefully
@@ -307,10 +307,10 @@ Be aware that Space switching takes time:
 
 ```bash
 # For critical operations, increase timeout
-peekaboo click "Save" --foreground --focus-timeout 10s
+wink click "Save" --foreground --focus-timeout 10s
 
 # Or move windows to avoid switching
-peekaboo type "Important data" --app TextEdit --foreground --bring-to-current-space
+wink type "Important data" --app TextEdit --foreground --bring-to-current-space
 ```
 
 ### 4. Test Cross-Space Workflows
@@ -319,9 +319,9 @@ Test your automation across different Space configurations:
 
 ```bash
 # Test with window on different Space
-peekaboo space move-window --app YourApp --to 2
-peekaboo see --app YourApp  # Read-only observation does not switch Spaces
-peekaboo click "Test Button" --app YourApp --foreground --space-switch
+wink space move-window --app YourApp --to 2
+wink see --app YourApp  # Read-only observation does not switch Spaces
+wink click "Test Button" --app YourApp --foreground --space-switch
 ```
 
 ## Troubleshooting
@@ -332,14 +332,14 @@ This occurs when Space switching is disabled:
 
 ```bash
 # Solution 1: Explicitly allow Space switching
-peekaboo click "Button" --app YourApp --foreground --space-switch
+wink click "Button" --app YourApp --foreground --space-switch
 
 # Solution 2: Move window to current Space
-peekaboo click "Button" --app YourApp --foreground --bring-to-current-space
+wink click "Button" --app YourApp --foreground --bring-to-current-space
 
 # Solution 3: Manually switch first
-peekaboo space switch --to 2 --foreground
-peekaboo click "Button" --app YourApp --foreground
+wink space switch --to 2 --foreground
+wink click "Button" --app YourApp --foreground
 ```
 
 ### "Window not found" Error
@@ -348,11 +348,11 @@ The window may have been closed or minimized:
 
 ```bash
 # Check if window still exists
-peekaboo window list --app YourApp
+wink window list --app YourApp
 
 # For minimized windows, restore first
-peekaboo window restore --app YourApp
-peekaboo click "Button" --app YourApp --foreground
+wink window restore --app YourApp
+wink click "Button" --app YourApp --foreground
 ```
 
 ### "Focus timeout" Error
@@ -361,10 +361,10 @@ The window is taking too long to focus:
 
 ```bash
 # Increase timeout
-peekaboo click "Button" --app YourApp --foreground --focus-timeout 10s
+wink click "Button" --app YourApp --foreground --focus-timeout 10s
 
 # Or increase retry count
-peekaboo click "Button" --app YourApp --foreground --focus-retry-count 5
+wink click "Button" --app YourApp --foreground --focus-retry-count 5
 ```
 
 ### Focus Not Working
@@ -373,13 +373,13 @@ If automatic focus isn't working:
 
 ```bash
 # Debug with explicit focus
-peekaboo window focus --app YourApp --verbose
+wink window focus --app YourApp --verbose
 
 # Check permissions
-peekaboo permissions status
+wink permissions status
 
 # Try without focus (for testing)
-peekaboo click "Button" --app YourApp --foreground --no-auto-focus
+wink click "Button" --app YourApp --foreground --no-auto-focus
 ```
 
 ## Implementation notes (internal)

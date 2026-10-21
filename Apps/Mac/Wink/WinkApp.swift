@@ -1,0 +1,679 @@
+import AppKit
+import Darwin
+import KeyboardShortcuts
+import Observation
+import os.log
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
+import SwiftUI
+import Tachikoma
+
+@main
+struct WinkApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.openWindow) private var openWindow
+    private let launchPolicy = WinkAppLaunchPolicy.current
+
+    @State private var services = WinkServices(
+        snapshotManager: InMemorySnapshotManager(
+            options: .init(copyArtifactsOnStore: true),
+            desktopMutationWatermarkStore: DesktopMutationWatermarkStore()))
+    // Core state - initialized together for proper dependencies
+    @State private var settings = WinkSettings()
+    @State private var sessionStore = SessionStore()
+    @State private var permissions = Permissions()
+
+    @State private var agent: WinkAgent?
+
+    /// Control Inspector window creation
+    @AppStorage("inspectorWindowRequested") private var inspectorRequested = false
+
+    /// Logger
+    private let logger = Logger(subsystem: "boo.wink.app", category: "WinkApp")
+
+    /// Use the confirmed file snapshot and established environment/config precedence, never an unsaved draft.
+    private func configureTachikomaWithSettings() {
+        self.settings.credentialCoordinator.reload()
+        if self.settings.ollamaBaseURL != "http://localhost:11434" {
+            TachikomaConfiguration.current.setBaseURL(
+                self.settings.ollamaBaseURL,
+                for: .ollama)
+        }
+    }
+
+    var body: some Scene {
+        // Hidden window to make Settings work in MenuBarExtra apps
+        // This is a workaround for FB10184971
+        WindowGroup("HiddenWindow") {
+            HiddenWindowView()
+                .task {
+                    self.services.installAgentRuntimeDefaults()
+                    self.settings.connectServices(self.services)
+
+                    if self.agent == nil {
+                        self.agent = WinkAgent(
+                            settings: self.settings,
+                            sessionStore: self.sessionStore,
+                            services: self.services)
+                    }
+
+                    // Configure Tachikoma with API keys from settings
+                    self.configureTachikomaWithSettings()
+
+                    // Set up window opening handler
+                    self.appDelegate.windowOpener = { windowId in
+                        Task { @MainActor in
+                            guard windowId != AgentSessionUI.mainWindowIdentifier ||
+                                AgentSessionUI.isAvailable(agentModeEnabled: self.settings.agentModeEnabled)
+                            else { return }
+                            self.openWindow(id: windowId)
+                        }
+                    }
+
+                    // Connect app delegate to state
+                    let context = AppStateConnectionContext(
+                        services: self.services,
+                        settings: self.settings,
+                        sessionStore: self.sessionStore,
+                        permissions: self.permissions,
+                        agent: self.agent!)
+                    self.appDelegate.connectToState(context)
+
+                    // Check permissions
+                    await self.permissions.check()
+                    self.appDelegate.maybeShowPermissionsOnboardingIfNeeded()
+                }
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 64, height: 64)
+        .windowStyle(.hiddenTitleBar)
+        .commandsRemoved() // Remove from File menu
+
+        // Main window - Powerful debugging and development interface
+        WindowGroup("Wink Sessions", id: "main") {
+            if AgentSessionUI.isAvailable(agentModeEnabled: self.settings.agentModeEnabled) {
+                SessionMainWindow()
+                    .environment(self.settings)
+                    .environment(self.sessionStore)
+                    .environment(self.permissions)
+                    .environment(
+                        self.agent ?? WinkAgent(
+                            settings: self.settings,
+                            sessionStore: self.sessionStore,
+                            services: self.services))
+                    .onReceive(NotificationCenter.default.publisher(for: .openMainWindow)) { _ in
+                        guard AgentSessionUI.isAvailable(agentModeEnabled: self.settings.agentModeEnabled) else {
+                            return
+                        }
+                        DispatchQueue.main.async {
+                            guard AgentSessionUI.isAvailable(agentModeEnabled: self.settings.agentModeEnabled) else {
+                                return
+                            }
+                            self.openWindow(id: AgentSessionUI.mainWindowIdentifier)
+                        }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .startNewSession)) { _ in
+                        _ = self.sessionStore.createSession(title: "New Session")
+                    }
+                    .onAppear {
+                        if let window = NSApp.keyWindow {
+                            window.identifier = NSUserInterfaceItemIdentifier(AgentSessionUI.mainWindowIdentifier)
+                        }
+                    }
+            } else {
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .onAppear {
+                        self.appDelegate.dismissAgentSessionUI()
+                    }
+            }
+        }
+        .windowResizability(.automatic)
+        .defaultSize(width: 900, height: 700)
+        // Sessions are explicit-user-only in every launch mode. Restoring the scene on an ordinary
+        // app/login launch used to reopen it without consent and could steal focus.
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
+
+        // Inspector window
+        WindowGroup("Inspector", id: "inspector") {
+            if self.inspectorRequested {
+                InspectorWindow()
+                    .environment(self.settings)
+                    .environment(self.permissions)
+            } else {
+                // Placeholder view until Inspector is actually requested
+                Color.clear
+                    .frame(width: 1, height: 1)
+                    .onAppear {
+                        self.logger.info("Inspector window created but not yet requested")
+                    }
+            }
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 450, height: 700)
+        .windowStyle(.automatic)
+        .windowToolbarStyle(.unified(showsTitle: true))
+        .defaultLaunchBehavior(self.launchPolicy.suppressesAutomaticScenePresentation ? .suppressed : .automatic)
+        .restorationBehavior(self.launchPolicy.disablesSceneRestoration ? .disabled : .automatic)
+
+        // Settings scene
+        Settings {
+            SettingsWindow(updater: self.appDelegate.updaterController)
+                .environment(self.settings)
+                .environment(self.permissions)
+                .environment(self.appDelegate.visualizerCoordinator ?? VisualizerCoordinator())
+                .onAppear {
+                    // Ensure visualizer coordinator is available
+                    if self.appDelegate.visualizerCoordinator == nil {
+                        self.logger.error("VisualizerCoordinator not initialized in AppDelegate")
+                    }
+                }
+        }
+    }
+}
+
+// MARK: - App Delegate
+
+private struct AppStateConnectionContext {
+    let services: WinkServices
+    let settings: WinkSettings
+    let sessionStore: SessionStore
+    let permissions: Permissions
+    let agent: WinkAgent
+}
+
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let logger = Logger(subsystem: "boo.wink.app", category: "App")
+    private let launchPolicy: WinkAppLaunchPolicy
+    private var statusBarController: StatusBarController?
+    private let automationTargetTracker = AutomationTargetTracker()
+    let updaterController: any UpdaterProviding
+    var windowOpener: ((String) -> Void)?
+    private var bridgeHost: WinkBridgeHost?
+    private var bridgeStartTask: Task<Void, Never>?
+    private let terminationGate = ProcessTerminationGate()
+    private var terminationSignalSource: ProcessTerminationSignalSource?
+    private var didReceiveTerminationSignal = false
+    private var didSchedulePermissionsOnboarding = false
+
+    // State connections
+    private var settings: WinkSettings?
+    private var sessionStore: SessionStore?
+    private var permissions: Permissions?
+    private var agent: WinkAgent?
+
+    // Visualizer components
+    var visualizerCoordinator: VisualizerCoordinator?
+    private var visualizerEventReceiver: VisualizerEventReceiver?
+    private var didConnectDockIconManager = false
+    private var didConnectVisualizerSettings = false
+    private var didSetupKeyboardShortcuts = false
+    private var didSetupNotificationObservers = false
+    private var didObserveAgentMode = false
+
+    override init() {
+        if case let .refusedCommandLineInvocation(argument) = WinkAppLaunchPolicy(
+            arguments: CommandLine.arguments).mode
+        {
+            let message =
+                "Wink.app is the GUI/Bridge host and cannot handle CLI argument \(argument.debugDescription). " +
+                "Use the separate wink CLI binary from Homebrew or the release tarball " +
+                "wink-macos-universal.tar.gz; the app bundle executable must not be used as the CLI.\n"
+            FileHandle.standardError.write(Data(message.utf8))
+            exit(EX_USAGE)
+        }
+        try? ScreenCaptureKitOwnerLease.registerCurrentProcessCapability()
+        ScreenCaptureKitOwnerLease.beginCurrentProcessCapabilityPreparation()
+        let launchPolicy = WinkAppLaunchPolicy.current
+        self.launchPolicy = launchPolicy
+        self.updaterController = makeUpdaterController(launchPolicy: launchPolicy)
+        super.init()
+    }
+
+    func applicationWillFinishLaunching(_: Notification) {
+        do {
+            try self.launchPolicy.persistManagedBackgroundHostReceipt()
+        } catch {
+            self.handlePermanentBridgeStartFailure(
+                "Could not persist managed background-host identity: \(error.localizedDescription)")
+            return
+        }
+        if let activationPolicy = self.launchPolicy.initialActivationPolicy {
+            NSApp.setActivationPolicy(activationPolicy)
+        }
+    }
+
+    func applicationDidFinishLaunching(_: Notification) {
+        self.installTerminationSignalSource()
+        self.logger.info("Wink launching...")
+        NSLog("WinkApp: applicationDidFinishLaunching")
+
+        if self.launchPolicy.isBackgroundBridgeHost {
+            DockIconManager.shared.setBackgroundBridgeHostMode(true)
+        }
+
+        // Initialize visualizer components
+        self.visualizerCoordinator = VisualizerCoordinator()
+        if let coordinator = self.visualizerCoordinator {
+            self.visualizerEventReceiver = VisualizerEventReceiver(visualizerCoordinator: coordinator)
+        }
+
+        // Status bar will be created after state is connected
+    }
+
+    fileprivate func connectToState(_ context: AppStateConnectionContext) {
+        self.settings = context.settings
+        self.sessionStore = context.sessionStore
+        self.permissions = context.permissions
+        self.agent = context.agent
+
+        if self.statusBarController == nil {
+            self.statusBarController = StatusBarController(
+                agent: context.agent,
+                sessionStore: context.sessionStore,
+                permissions: context.permissions,
+                settings: context.settings,
+                automationTargetTracker: self.automationTargetTracker,
+                updater: self.updaterController)
+        }
+
+        // Connect dock icon manager to settings
+        if !self.didConnectDockIconManager {
+            DockIconManager.shared.setBackgroundBridgeHostMode(self.launchPolicy.isBackgroundBridgeHost)
+            DockIconManager.shared.connectToSettings(context.settings)
+            self.didConnectDockIconManager = true
+        }
+
+        // Connect visualizer coordinator to settings
+        if !self.didConnectVisualizerSettings, let coordinator = self.visualizerCoordinator {
+            coordinator.connectSettings(context.settings)
+            self.didConnectVisualizerSettings = true
+        }
+
+        // Setup keyboard shortcuts
+        if !self.didSetupKeyboardShortcuts {
+            self.setupKeyboardShortcuts()
+            self.didSetupKeyboardShortcuts = true
+        }
+
+        // Setup notification observers
+        if !self.didSetupNotificationObservers {
+            self.setupNotificationObservers()
+            self.didSetupNotificationObservers = true
+        }
+
+        if !self.didObserveAgentMode {
+            self.didObserveAgentMode = true
+            self.observeAgentMode()
+        }
+
+        self.updateAgentSessionUIVisibility()
+
+        if self.bridgeHost == nil, self.bridgeStartTask == nil {
+            self.startBridgeHost(services: context.services)
+        }
+
+        // Nudge towards API-key setup once, not on every launch — repeated
+        // launches (dev rebuild loops, login item) must not pop the window.
+        let apiKeyNudgeKey = "wink.agentAPIKeyNudgeShown"
+        if self.launchPolicy.allowsAPIKeyNudge,
+           self.settings?.agentModeEnabled == true,
+           self.settings?.hasValidAPIKey != true,
+           !UserDefaults.standard.bool(forKey: apiKeyNudgeKey)
+        {
+            UserDefaults.standard.set(true, forKey: apiKeyNudgeKey)
+            self.showMainWindow(intent: .automatic)
+        }
+    }
+
+    func maybeShowPermissionsOnboardingIfNeeded() {
+        guard self.launchPolicy.allowsPermissionsOnboarding else { return }
+        guard !self.didSchedulePermissionsOnboarding else { return }
+        self.didSchedulePermissionsOnboarding = true
+
+        guard let permissions = self.permissions else { return }
+
+        let seenVersion = UserDefaults.standard.integer(forKey: permissionsOnboardingVersionKey)
+        let hasSeen = UserDefaults.standard.bool(forKey: permissionsOnboardingSeenKey)
+        switch WinkPermissionOnboardingPolicy.decision(
+            seenVersion: seenVersion,
+            hasSeen: hasSeen,
+            hasRequiredPermissions: permissions.hasAllPermissions)
+        {
+        case .skip:
+            return
+        case .markComplete:
+            UserDefaults.standard.set(true, forKey: permissionsOnboardingSeenKey)
+            UserDefaults.standard.set(
+                WinkPermissionOnboardingPolicy.currentVersion,
+                forKey: permissionsOnboardingVersionKey)
+            return
+        case .show:
+            break
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            PermissionsOnboardingController.shared.show(permissions: permissions)
+        }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+        false // Menu bar app stays running
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        self.logger.info("Deferring application termination until Bridge ownership is released")
+        switch self.terminationGate.begin(
+            shutdown: { [weak self] in
+                await self?.stopBridgeHostForTermination()
+            },
+            reply: { shouldTerminate in
+                sender.reply(toApplicationShouldTerminate: shouldTerminate)
+            })
+        {
+        case .terminateNow:
+            return .terminateNow
+        case .terminateLater:
+            return .terminateLater
+        }
+    }
+
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard !self.launchPolicy.isBackgroundBridgeHost || flag else { return false }
+        // Reopen fires for dock clicks and for `open`/relaunch attempts while
+        // the app is already running. A dock click is real user intent, but a
+        // dock icon only exists while the activation policy is .regular — in
+        // .accessory mode the reopen is programmatic, and auto-opening the
+        // sessions window for those made it appear far too often.
+        if flag {
+            NSApp.activate(ignoringOtherApps: true)
+        } else if NSApp.activationPolicy() == .regular {
+            self.showMainWindow()
+        }
+        return false
+    }
+
+    func applicationWillTerminate(_: Notification) {
+        self.terminationSignalSource?.cancel()
+        self.terminationSignalSource = nil
+        self.statusBarController?.removeStatusItem()
+        self.statusBarController = nil
+    }
+
+    private func installTerminationSignalSource() {
+        guard self.terminationSignalSource == nil else { return }
+        self.terminationSignalSource = ProcessTerminationSignalSource(signals: [SIGTERM]) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, !self.didReceiveTerminationSignal else { return }
+                self.didReceiveTerminationSignal = true
+                self.logger.info("Received SIGTERM; releasing Bridge ownership before process exit")
+                await self.stopBridgeHostForTermination()
+                Darwin.exit(EXIT_SUCCESS)
+            }
+        }
+    }
+
+    private func stopBridgeHostForTermination() async {
+        let bridgeStartTask = self.bridgeStartTask
+        bridgeStartTask?.cancel()
+        await bridgeStartTask?.value
+        self.bridgeStartTask = nil
+
+        guard let bridgeHost = self.bridgeHost else { return }
+        _ = await bridgeHost.stop()
+        await bridgeHost.waitUntilFullyStopped()
+        self.bridgeHost = nil
+        self.logger.info("Bridge ownership released; application termination may continue")
+    }
+
+    // MARK: - Window Management
+
+    func showMainWindow(intent: WinkAppLaunchPolicy.PresentationIntent = .explicitUser) {
+        guard self.launchPolicy.allowsPresentation(intent) else {
+            self.logger.info("Ignoring main window request in background Bridge host mode")
+            return
+        }
+        guard let settings = self.settings,
+              AgentSessionUI.isAvailable(agentModeEnabled: settings.agentModeEnabled)
+        else {
+            self.logger.info("Ignoring main window request because agent mode is disabled")
+            self.dismissAgentSessionUI()
+            return
+        }
+
+        self.logger.info("showMainWindow called")
+
+        DockIconManager.shared.prepareForPresentation()
+
+        // Activate the app first
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Find or create the main window
+        DispatchQueue.main.async {
+            guard AgentSessionUI.isAvailable(agentModeEnabled: settings.agentModeEnabled) else {
+                self.dismissAgentSessionUI()
+                return
+            }
+
+            self.logger.info("Looking for existing main window...")
+
+            // First try to find an existing main window by identifier
+            if let existingWindow = NSApp.windows.first(where: {
+                $0.identifier?.rawValue == AgentSessionUI.mainWindowIdentifier
+            }) {
+                self.logger.info("Found existing main window by identifier, bringing to front")
+                existingWindow.makeKeyAndOrderFront(nil)
+                return
+            }
+
+            // Also check by title as fallback
+            if let existingWindow = NSApp.windows.first(where: { $0.title == AgentSessionUI.mainWindowTitle }) {
+                self.logger.info("Found existing main window by title, bringing to front")
+                existingWindow.makeKeyAndOrderFront(nil)
+                return
+            }
+
+            self.logger.info("No existing main window found, creating new one")
+
+            // Use the window opener if available
+            if let opener = self.windowOpener {
+                self.logger.info("Using windowOpener to create main window")
+                opener(AgentSessionUI.mainWindowIdentifier)
+            } else {
+                self.logger.info("No windowOpener available, posting notification")
+                // Post notification to open window
+                NotificationCenter.default.post(name: .openMainWindow, object: nil)
+            }
+        }
+    }
+
+    func showSettings() {
+        guard self.launchPolicy.allowsPresentation(.explicitUser) else { return }
+        SettingsOpener.openSettings()
+    }
+
+    func showInspector() {
+        guard self.launchPolicy.allowsPresentation(.explicitUser) else {
+            self.logger.info("Ignoring Inspector request in background Bridge host mode")
+            return
+        }
+        self.logger.info("showInspector called")
+
+        // Mark that Inspector has been requested
+        UserDefaults.standard.set(true, forKey: "inspectorWindowRequested")
+
+        // Open the inspector window
+        self.openWindow(id: "inspector")
+    }
+
+    private func openWindow(id: String) {
+        guard id != AgentSessionUI.mainWindowIdentifier ||
+            AgentSessionUI.isAvailable(agentModeEnabled: self.settings?.agentModeEnabled == true)
+        else {
+            self.dismissAgentSessionUI()
+            return
+        }
+
+        self.logger.info("openWindow called with id: \(id)")
+
+        DockIconManager.shared.prepareForPresentation()
+
+        // Use the window opener if available
+        if let opener = self.windowOpener {
+            self.logger.info("Using windowOpener to open window: \(id)")
+            opener(id)
+        } else {
+            self.logger.info("WindowOpener not available, posting notification")
+            // Post notification as fallback
+            NotificationCenter.default.post(name: .openWindow(id: id), object: nil)
+        }
+
+        // Activate the app
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - Notifications
+
+    private func setupNotificationObservers() {
+        // Listen for Inspector window request
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.handleShowInspector),
+            name: .showInspector,
+            object: nil)
+
+        // Listen for keyboard shortcut changes
+        // Keyboard shortcuts are now handled automatically by the KeyboardShortcuts library
+    }
+
+    private func observeAgentMode() {
+        guard let settings = self.settings else { return }
+
+        withObservationTracking {
+            _ = settings.agentModeEnabled
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.updateAgentSessionUIVisibility()
+                self.observeAgentMode()
+            }
+        }
+    }
+
+    private func updateAgentSessionUIVisibility() {
+        guard !AgentSessionUI.isAvailable(agentModeEnabled: self.settings?.agentModeEnabled == true) else { return }
+        self.dismissAgentSessionUI()
+    }
+
+    func dismissAgentSessionUI() {
+        self.statusBarController?.dismissAgentUI()
+
+        for window in NSApp.windows where AgentSessionUI.identifiesSessionWindow(
+            identifier: window.identifier?.rawValue,
+            title: window.title)
+        {
+            window.close()
+        }
+    }
+
+    @objc private func handleShowInspector() {
+        self.logger.info("Received ShowInspector notification")
+        // Mark that Inspector has been requested
+        UserDefaults.standard.set(true, forKey: "inspectorWindowRequested")
+        self.showInspector()
+    }
+
+    // MARK: - Keyboard Shortcuts
+
+    private func setupKeyboardShortcuts() {
+        // Set up global keyboard shortcuts using KeyboardShortcuts library
+        KeyboardShortcuts.onKeyDown(for: .togglePopover) { [weak self] in
+            self?.logger.info("Global shortcut triggered: togglePopover")
+            self?.statusBarController?.togglePopover()
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .showMainWindow) { [weak self] in
+            self?.logger.info("Global shortcut triggered: showMainWindow")
+            self?.showMainWindow()
+        }
+
+        KeyboardShortcuts.onKeyDown(for: .showInspector) { [weak self] in
+            self?.logger.info("Global shortcut triggered: showInspector")
+            self?.showInspector()
+        }
+    }
+
+    private func startBridgeHost(services: WinkServices) {
+        let allowlistedTeams = WinkBridgeConstants.trustedReleaseTeamIDs
+        let automationActivityObserver = self.makeAutomationActivityObserver()
+
+        self.logger.info("Starting Wink Bridge at \(WinkBridgeConstants.winkSocketPath, privacy: .public)")
+        self.bridgeStartTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.bridgeStartTask = nil }
+            var retryDelayNanoseconds: UInt64 = 250_000_000
+            var ownershipRetryCount = 0
+            while !Task.isCancelled {
+                do {
+                    self.bridgeHost = try await WinkBridgeBootstrap.startHostChecked(
+                        services: services,
+                        hostKind: .gui,
+                        socketPath: WinkBridgeConstants.winkSocketPath,
+                        allowlistedTeams: allowlistedTeams,
+                        allowlistedBundles: WinkBridgeConstants.guiClientBundleIdentifiers,
+                        automationActivityObserver: automationActivityObserver,
+                        allowedOperations: WinkBridgeOperation.remoteDefaultAllowlist,
+                        hostCapabilities: self.launchPolicy.isBackgroundBridgeHost
+                            ? [WinkBridgeHostCapability.backgroundBridgeHost]
+                            : [])
+                    return
+                } catch WinkBridgeHostError.socketAlreadyOwned {
+                    ownershipRetryCount += 1
+                    if let retryLimit = self.launchPolicy.maximumBridgeOwnershipRetries,
+                       ownershipRetryCount >= retryLimit
+                    {
+                        self.handlePermanentBridgeStartFailure(
+                            "Bridge socket remained owned after \(ownershipRetryCount) attempts")
+                        return
+                    }
+                    self.logger.info(
+                        "Wink Bridge socket is busy; retrying after legacy host migration")
+                    do {
+                        try await Task.sleep(nanoseconds: retryDelayNanoseconds)
+                    } catch {
+                        return
+                    }
+                    retryDelayNanoseconds = min(retryDelayNanoseconds * 2, 5_000_000_000)
+                } catch {
+                    self.logger
+                        .error("Failed to start Wink Bridge: \(error.localizedDescription, privacy: .public)")
+                    self.handlePermanentBridgeStartFailure(error.localizedDescription)
+                    return
+                }
+            }
+        }
+    }
+
+    private func handlePermanentBridgeStartFailure(_ description: String) {
+        guard self.launchPolicy.terminatesOnPermanentBridgeFailure else { return }
+        self.logger.fault(
+            "Background Bridge host cannot become ready; terminating: \(description, privacy: .public)")
+        Darwin.exit(EXIT_FAILURE)
+    }
+
+    private func makeAutomationActivityObserver() -> @Sendable (pid_t) -> Void {
+        let tracker = self.automationTargetTracker
+        return { [weak tracker] processIdentifier in
+            Task { @MainActor in
+                tracker?.recordActivity(pid: processIdentifier)
+            }
+        }
+    }
+
+    // MARK: - Public Access
+
+    // Returns the visualizer coordinator for preview functionality
+}

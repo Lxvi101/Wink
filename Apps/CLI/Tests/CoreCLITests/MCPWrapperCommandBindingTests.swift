@@ -1,9 +1,9 @@
 import Commander
-import PeekabooAgentRuntimeTestSupport
+import WinkAgentRuntimeTestSupport
 import Testing
-@testable import PeekabooAgentRuntime
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkAgentRuntime
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(AuthorityTestIsolation())
 @MainActor

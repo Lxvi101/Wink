@@ -1,10 +1,10 @@
 import Commander
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.serialized, .tags(.safe))
 struct SeeCommandAnnotationTests {
@@ -136,7 +136,7 @@ struct SeeCommandAnnotationTests {
         // The see command should log a warning and continue without annotation
 
         // Expected behavior:
-        // 1. User requests: peekaboo see --mode screen --annotate
+        // 1. User requests: wink see --mode screen --annotate
         // 2. System logs: "Annotation is disabled for full screen captures due to performance constraints"
         // 3. Capture proceeds without annotation
         // 4. No annotated file is created
@@ -218,7 +218,7 @@ struct SeeCommandAnnotationTests {
             "--mode", "screen",
             "--screen-index", "0",
             "--annotate",
-            "--path", "/tmp/peekaboo-see-screen.png",
+            "--path", "/tmp/wink-see-screen.png",
         ])
         let request = try command.makeObservationRequest(target: .screen(index: 0))
 
@@ -233,7 +233,7 @@ struct SeeCommandAnnotationTests {
         let command = try SeeCommand.parse([
             "--app", "menubar",
             "--annotate",
-            "--path", "/tmp/peekaboo-see-menubar.png",
+            "--path", "/tmp/wink-see-menubar.png",
         ])
         let request = try command.makeObservationRequest(target: .menubar)
 
@@ -249,7 +249,7 @@ struct SeeCommandAnnotationTests {
         let output = command.screenshotOutputPath()
         let url = URL(fileURLWithPath: output)
 
-        #expect(url.lastPathComponent.hasPrefix("peekaboo_see_"))
+        #expect(url.lastPathComponent.hasPrefix("wink_see_"))
         #expect(url.pathExtension == "png")
         #expect(
             url.deletingLastPathComponent().standardizedFileURL.path ==

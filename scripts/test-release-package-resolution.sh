@@ -3,11 +3,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORKSPACE_LOCK="$ROOT_DIR/Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+WORKSPACE_LOCK="$ROOT_DIR/Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 MAC_LOCK="$ROOT_DIR/Apps/Mac/Package.resolved"
 EXPECTED_SPARKLE_VERSION=2.10.0
 EXPECTED_SPARKLE_REVISION=eef1a539a373c1f1a320624b1130fc5de7b2e100
-TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/peekaboo-release-resolution-test.XXXXXX")"
+TEST_DIR="$(mktemp -d "${TMPDIR:-/tmp}/wink-release-resolution-test.XXXXXX")"
 trap 'rm -rf "$TEST_DIR"' EXIT
 
 fail() {
@@ -16,7 +16,7 @@ fail() {
 }
 
 git -C "$ROOT_DIR" ls-files --error-unmatch \
-  Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved >/dev/null || \
+  Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved >/dev/null || \
   fail 'canonical Xcode workspace Package.resolved is not tracked'
 if git -C "$ROOT_DIR" ls-files --error-unmatch Apps/CLI/Package.resolved >/dev/null 2>&1; then
   fail 'the mutable Swift CLI Package.resolved must not own the Xcode workspace graph'
@@ -60,7 +60,7 @@ for flag in \
     fail "mac-app CI build is missing $flag"
 done
 
-grep -Fq 'Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved' "$ROOT_DIR/.gitignore" || \
+grep -Fq 'Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved' "$ROOT_DIR/.gitignore" || \
   fail 'canonical workspace lock is not explicitly unignored'
 grep -Fq 'test ! -e CLI/Package.resolved' "$ROOT_DIR/.github/workflows/macos-ci.yml" || \
   fail 'mac-app CI does not reject an ignored CLI-owned workspace lock'
@@ -69,8 +69,8 @@ grep -Fq 'SourcePackages/checkouts/Sparkle rev-parse HEAD' "$ROOT_DIR/.github/wo
 
 fixture_root="$TEST_DIR/source"
 fixture_derived="$TEST_DIR/Derived Data"
-fixture_app="$fixture_derived/Build/Products/Release/Peekaboo.app"
-fixture_workspace_lock="$fixture_root/Apps/Peekaboo.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+fixture_app="$fixture_derived/Build/Products/Release/Wink.app"
+fixture_workspace_lock="$fixture_root/Apps/Wink.xcworkspace/xcshareddata/swiftpm/Package.resolved"
 fixture_cli_lock="$fixture_root/Apps/CLI/Package.resolved"
 fixture_sparkle_info="$fixture_app/Contents/Frameworks/Sparkle.framework/Versions/B/Resources/Info.plist"
 fixture_checkout="$fixture_derived/SourcePackages/checkouts/Sparkle"

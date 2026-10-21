@@ -1,7 +1,7 @@
 import Commander
-import PeekabooFoundationTestSupport
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderCommandBindingTests {
     @Test
@@ -27,7 +27,7 @@ struct CommanderBinderCommandBindingTests {
             positional: [],
             options: [
                 "filePath": ["/tmp/demo.txt"],
-                "alsoText": ["Peekaboo clipboard file smoke"]
+                "alsoText": ["Wink clipboard file smoke"]
             ],
             flags: ["allowLarge", "verify"]
         )
@@ -38,7 +38,7 @@ struct CommanderBinderCommandBindingTests {
         )
         #expect(command.filePath == "/tmp/demo.txt")
         #expect(command.text == nil)
-        #expect(command.alsoText == "Peekaboo clipboard file smoke")
+        #expect(command.alsoText == "Wink clipboard file smoke")
         #expect(command.allowLarge == true)
         #expect(command.verify == true)
     }

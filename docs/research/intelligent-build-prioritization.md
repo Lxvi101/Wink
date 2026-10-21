@@ -169,7 +169,7 @@ When files change that affect multiple targets:
 
 **Shared Changes**  
 - Files that affect multiple targets
-- Examples: `Core/PeekabooCore/*.swift`, shared libraries
+- Examples: `Core/WinkCore/*.swift`, shared libraries
 - **Weight**: Distributed across affected targets
 
 **Generated Changes**
@@ -356,7 +356,7 @@ npm run poltergeist:restart
 For testing or special cases:
 ```bash
 # Force CLI to build first (development feature)
-echo '{"peekaboo-cli": 1000}' > /tmp/poltergeist/priority-override.json
+echo '{"wink-cli": 1000}' > /tmp/poltergeist/priority-override.json
 ```
 
 ## Implementation Status

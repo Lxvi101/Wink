@@ -1,0 +1,220 @@
+import AppKit
+import WinkBridge
+import Testing
+@testable import Wink
+
+@Suite(.tags(.unit, .fast))
+struct WinkAppLaunchPolicyTests {
+    @Test
+    func `ordinary launch remains interactive`() {
+        let policy = WinkAppLaunchPolicy(arguments: ["Wink"])
+
+        #expect(policy.mode == .interactive)
+        #expect(policy.allowsPresentation(.automatic))
+        #expect(policy.allowsPresentation(.reopen))
+        #expect(policy.allowsPresentation(.explicitUser))
+        #expect(policy.allowsAPIKeyNudge)
+        #expect(policy.allowsPermissionsOnboarding)
+        #expect(!policy.suppressesAutomaticScenePresentation)
+        #expect(!policy.disablesSceneRestoration)
+        #expect(policy.initialActivationPolicy == nil)
+        #expect(policy.allowsUpdaterStartup)
+        #expect(policy.maximumBridgeOwnershipRetries == nil)
+        #expect(!policy.terminatesOnPermanentBridgeFailure)
+    }
+
+    @Test
+    func `background Bridge host launch is unattended and fail closed`() {
+        let policy = WinkAppLaunchPolicy(arguments: [
+            "/Applications/Wink.app/Contents/MacOS/Wink",
+            WinkAppLaunchPolicy.backgroundBridgeHostArgument,
+        ])
+
+        #expect(policy.mode == .backgroundBridgeHost)
+        #expect(!policy.allowsPresentation(.automatic))
+        #expect(!policy.allowsPresentation(.reopen))
+        #expect(policy.allowsPresentation(.explicitUser))
+        #expect(!policy.allowsAPIKeyNudge)
+        #expect(!policy.allowsPermissionsOnboarding)
+        #expect(policy.suppressesAutomaticScenePresentation)
+        #expect(policy.disablesSceneRestoration)
+        #expect(policy.initialActivationPolicy == .accessory)
+        #expect(!policy.allowsUpdaterStartup)
+        #expect(policy.maximumBridgeOwnershipRetries == 6)
+        #expect(policy.terminatesOnPermanentBridgeFailure)
+    }
+
+    @Test
+    func `background Bridge host argument must be exact`() {
+        let policy = WinkAppLaunchPolicy(arguments: [
+            "Wink",
+            "--background-bridge-host=true",
+        ])
+
+        #expect(policy.mode == .refusedCommandLineInvocation(argument: "--background-bridge-host=true"))
+    }
+
+    @Test(arguments: [
+        ["--interactive"],
+        ["-psn_0_123"],
+        ["-NSDocumentRevisionsDebugMode", "YES"],
+        ["--interactive", "-NSDocumentRevisionsDebugMode", "YES"],
+        ["-NSDocumentRevisionsDebugMode", "YES", "--interactive"],
+        ["-psn_0_123", "-NSDocumentRevisionsDebugMode", "YES"],
+    ])
+    func `app and Cocoa launch arguments remain accepted`(arguments: [String]) {
+        let policy = WinkAppLaunchPolicy(arguments: ["Wink"] + arguments)
+
+        #expect(policy.mode == .interactive)
+    }
+
+    @Test(arguments: [
+        ["--version"],
+        ["--help"],
+        ["-V"],
+        ["-v"],
+        ["-h"],
+        ["-j"],
+        ["-j", "see"],
+        ["see", "--no-elements"],
+        ["permissions", "status"],
+        ["version"],
+    ])
+    func `CLI invocation is refused with the first offending argument`(arguments: [String]) {
+        let policy = WinkAppLaunchPolicy(arguments: ["Wink"] + arguments)
+
+        #expect(policy.mode == .refusedCommandLineInvocation(argument: arguments[0]))
+    }
+
+    @Test(
+        arguments: ["--background-bridge-host", "--interactive", "-psn_0_123"],
+        ["--no-elements", "-V", "-j", "version", "permissions", "see"])
+    func `CLI arguments are refused even after accepted flags`(argument: String, cliArgument: String) throws {
+        let receipt = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink", argument, cliArgument],
+            managedReceipt: receipt,
+            currentBuildReceipt: receipt)
+
+        #expect(policy.mode == .refusedCommandLineInvocation(argument: cliArgument))
+    }
+
+    @Test
+    func `Cocoa option value does not hide a subsequent CLI command`() {
+        let policy = WinkAppLaunchPolicy(arguments: [
+            "Wink", "-NSDocumentRevisionsDebugMode", "YES", "permissions", "status",
+        ])
+
+        #expect(policy.mode == .refusedCommandLineInvocation(argument: "permissions"))
+    }
+
+    @Test
+    func `short version option overrides matching managed receipt`() throws {
+        let receipt = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink", "-V"],
+            managedReceipt: receipt,
+            currentBuildReceipt: receipt)
+
+        #expect(policy.mode == .refusedCommandLineInvocation(argument: "-V"))
+    }
+
+    @Test
+    func `matching managed build receipt restores background mode after login`() throws {
+        let receipt = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink"],
+            managedReceipt: receipt,
+            currentBuildReceipt: receipt)
+
+        #expect(policy.mode == .backgroundBridgeHost)
+    }
+
+    @Test
+    func `rolled back build ignores another generation receipt`() throws {
+        let managed = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+        let restored = try #require(self.receipt(bundleVersion: "41", codeSignatureHash: "def456"))
+
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink"],
+            managedReceipt: managed,
+            currentBuildReceipt: restored)
+
+        #expect(policy.mode == .interactive)
+    }
+
+    @Test
+    func `explicit interactive launch overrides a managed receipt`() throws {
+        let receipt = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink", WinkAppLaunchPolicy.interactiveArgument],
+            managedReceipt: receipt,
+            currentBuildReceipt: receipt)
+
+        #expect(policy.mode == .interactive)
+    }
+
+    @Test
+    func `explicit background launch persists the exact build receipt`() throws {
+        let suiteName = "WinkAppLaunchPolicyTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let receipt = try #require(self.receipt(bundleVersion: "42", codeSignatureHash: "abc123"))
+        let policy = WinkAppLaunchPolicy(
+            arguments: ["Wink", WinkAppLaunchPolicy.backgroundBridgeHostArgument],
+            currentBuildReceipt: receipt)
+
+        try policy.persistManagedBackgroundHostReceipt(userDefaults: defaults)
+
+        let data = try #require(defaults.data(forKey: WinkAppLaunchPolicy.managedReceiptDefaultsKey))
+        let stored = try JSONDecoder().decode(ManagedBackgroundHostReceipt.self, from: data)
+        #expect(stored == receipt)
+    }
+
+    @Test
+    @MainActor
+    func `hidden settings helper is suppressed synchronously when attached`() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 64, height: 64),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false)
+        let contentView = HiddenWindowContentView(frame: window.contentView?.bounds ?? .zero)
+
+        window.contentView = contentView
+
+        #expect(window.identifier?.rawValue == "hidden-settings-helper")
+        #expect(window.title.isEmpty)
+        #expect(window.isExcludedFromWindowsMenu)
+        #expect(window.alphaValue == 0)
+        #expect(window.ignoresMouseEvents)
+        #expect(window.collectionBehavior.contains(.transient))
+        #expect(!window.isVisible)
+    }
+
+    @Test
+    @MainActor
+    func `background Bridge host does not start an unavailable updater`() {
+        let policy = WinkAppLaunchPolicy(arguments: [
+            "Wink",
+            WinkAppLaunchPolicy.backgroundBridgeHostArgument,
+        ])
+
+        let updater = makeUpdaterController(launchPolicy: policy)
+
+        #expect(!updater.isAvailable)
+        #expect(!updater.automaticallyChecksForUpdates)
+    }
+
+    private func receipt(bundleVersion: String, codeSignatureHash: String) -> ManagedBackgroundHostReceipt? {
+        ManagedBackgroundHostReceipt(hostIdentity: WinkBridgeHostIdentity(
+            processIdentifier: 123,
+            processStartIdentity: 456,
+            bundleIdentifier: "boo.wink.mac",
+            bundleShortVersion: "4.0.1",
+            bundleVersion: bundleVersion,
+            codeSignatureHash: codeSignatureHash))
+    }
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Release preparation script for @steipete/peekaboo
+ * Release preparation script for wink
  * 
  * This script performs comprehensive checks before release:
  * 1. Git status checks (branch, uncommitted files, sync with origin)
@@ -64,7 +64,7 @@ for (let index = 0; index < cliArguments.length; index += 1) {
 
 Options:
   --dry-run   Run deterministic preparation checks; changelogs may remain Unreleased
-  --bin PATH  CLI binary for --dry-run or --no-build (default: repo debug binary, then ./peekaboo)
+  --bin PATH  CLI binary for --dry-run or --no-build (default: repo debug binary, then ./wink)
   --no-build  Run full publication preflight without replacing the supplied CLI binary
   --force     Allow a non-main branch during the publication-stage preflight
   -h, --help  Show this help`);
@@ -279,7 +279,7 @@ source "$1"
 shift
 builtin unset MAC_RELEASE_CODESIGN_KEYCHAIN CODESIGN_KEYCHAIN CODESIGN_IDENTITY
 terminal_artifact_run_build "$@"`,
-    'peekaboo-release-tests',
+    'wink-release-tests',
     join(__dirname, 'terminal-artifact-env.sh'),
     'pnpm', 'test'
   ], { cwd: projectRoot, stdio: 'inherit' });
@@ -309,7 +309,7 @@ function checkSwift() {
   try {
     // Capture build output to check for warnings. Start from a clean SwiftPM
     // state so an interrupted release build cannot poison the next preflight.
-    swiftBuildOutput = execSync('python3 scripts/setup-swift-workspace.py setup && cd Apps/CLI && swift package reset && python3 ../../scripts/setup-swift-workspace.py run --release -- swift build ${PEEKABOO_BUILD_JOBS:+--jobs "$PEEKABOO_BUILD_JOBS"} --arch arm64 -c release 2>&1', {
+    swiftBuildOutput = execSync('python3 scripts/setup-swift-workspace.py setup && cd Apps/CLI && swift package reset && python3 ../../scripts/setup-swift-workspace.py run --release -- swift build ${WINK_BUILD_JOBS:+--jobs "$WINK_BUILD_JOBS"} --arch arm64 -c release 2>&1', {
       cwd: projectRoot,
       encoding: 'utf8',
       timeout: 5_400_000
@@ -444,7 +444,7 @@ function checkSwiftCLIIntegration(binaryPath) {
   logStep('Swift CLI Contract Tests');
 
   if (!existsSync(binaryPath)) {
-    logError(`Peekaboo binary not found: ${binaryPath}`);
+    logError(`Wink binary not found: ${binaryPath}`);
     return false;
   }
 
@@ -487,18 +487,18 @@ function checkSwiftCLIIntegration(binaryPath) {
   for (const command of REMOVED_ROOT_COMMANDS) {
     const replacement = removedReplacements.get(command);
     if (!replacement) {
-      logError(`No advisor replacement declared for removed command: peekaboo ${command}`);
+      logError(`No advisor replacement declared for removed command: wink ${command}`);
       return false;
     }
     const result = run([command, '--help']);
     if (probeFailed(result, [command, '--help'])) return false;
     if (result.status === 0) {
-      logError(`Removed command unexpectedly resolved: peekaboo ${command}`);
+      logError(`Removed command unexpectedly resolved: wink ${command}`);
       return false;
     }
-    const expected = `Command 'peekaboo ${command}' was removed in v4. Use '${replacement}'.`;
+    const expected = `Command 'wink ${command}' was removed in v4. Use '${replacement}'.`;
     if (!combinedOutput(result).includes(expected)) {
-      logError(`Removed command lacks its exact v4 migration hint: peekaboo ${command}`);
+      logError(`Removed command lacks its exact v4 migration hint: wink ${command}`);
       return false;
     }
   }
@@ -510,18 +510,18 @@ function checkSwiftCLIIntegration(binaryPath) {
     { args: ['action', '--help'], required: ['AXPress', '--on'] },
     { args: ['drag', '--help'], required: ['--from', '--to', '--button', '--duration'] },
     { args: ['move', '--help'], required: ['--at', '--on', '--foreground'] },
-    { args: ['app', 'list', '--help'], required: ['peekaboo app list', '--include-hidden'] },
-    { args: ['window', 'list', '--help'], required: ['peekaboo window list', '--group-by-space'] },
-    { args: ['screen', 'list', '--help'], required: ['peekaboo screen list'] }
+    { args: ['app', 'list', '--help'], required: ['wink app list', '--include-hidden'] },
+    { args: ['window', 'list', '--help'], required: ['wink window list', '--group-by-space'] },
+    { args: ['screen', 'list', '--help'], required: ['wink screen list'] }
   ];
   const staleHelp = [
-    'peekaboo image',
-    'peekaboo list apps',
-    'peekaboo list windows',
-    'peekaboo hotkey',
-    'peekaboo inspect-ui',
-    'peekaboo perform-action',
-    'peekaboo swipe',
+    'wink image',
+    'wink list apps',
+    'wink list windows',
+    'wink hotkey',
+    'wink inspect-ui',
+    'wink perform-action',
+    'wink swipe',
     '--coords',
     '--from-coords',
     '--to-coords'
@@ -532,12 +532,12 @@ function checkSwiftCLIIntegration(binaryPath) {
     if (probeFailed(result, contract.args)) return false;
     const output = combinedOutput(result);
     if (result.status !== 0 || !contract.required.every((token) => output.includes(token))) {
-      logError(`CLI help contract failed: peekaboo ${contract.args.join(' ')}`);
+      logError(`CLI help contract failed: wink ${contract.args.join(' ')}`);
       return false;
     }
     const stale = staleHelp.find((token) => output.includes(token));
     if (stale) {
-      logError(`CLI help contains removed form '${stale}': peekaboo ${contract.args.join(' ')}`);
+      logError(`CLI help contains removed form '${stale}': wink ${contract.args.join(' ')}`);
       return false;
     }
   }
@@ -639,14 +639,14 @@ function checkRequiredFields() {
 function buildAndVerifyPackage() {
   logStep('Build and Package Verification');
 
-  const requireUniversal = process.env.PEEKABOO_REQUIRE_UNIVERSAL === '1';
+  const requireUniversal = process.env.WINK_REQUIRE_UNIVERSAL === '1';
   const buildScript = requireUniversal ? './scripts/build-swift-universal.sh' : './scripts/build-swift-arm.sh';
   const buildLabel = requireUniversal ? 'Swift universal build' : 'Swift arm64 build';
 
   if (noBuild) {
     log(`Reusing source-identical CLI without rebuilding: ${binaryOverride}`, colors.cyan);
   } else {
-    // Build Swift binary (stamps Info.plist and writes ./peekaboo)
+    // Build Swift binary (stamps Info.plist and writes ./wink)
     if (!execWithOutput(buildScript, buildLabel)) {
       logError('Swift build failed');
       return false;
@@ -671,8 +671,8 @@ function buildAndVerifyPackage() {
 
   // Verify critical files are included
   const requiredFiles = [
-    'peekaboo',
-    'peekaboo-mcp.js',
+    'wink',
+    'wink-mcp.js',
     'README.md',
     'LICENSE'
   ];
@@ -690,13 +690,13 @@ function buildAndVerifyPackage() {
   }
   logSuccess('All required files included in package');
 
-  // Verify peekaboo binary
-  log('Verifying peekaboo binary...', colors.cyan);
-  const binaryPath = binaryOverride ?? join(projectRoot, 'peekaboo');
+  // Verify wink binary
+  log('Verifying wink binary...', colors.cyan);
+  const binaryPath = binaryOverride ?? join(projectRoot, 'wink');
   
   // Check if binary exists
   if (!existsSync(binaryPath)) {
-    logError('peekaboo binary not found');
+    logError('wink binary not found');
     return false;
   }
   
@@ -704,7 +704,7 @@ function buildAndVerifyPackage() {
   try {
     const perms = statSync(binaryPath).mode;
     if ((perms & 0o111) === 0) {
-      logError('peekaboo binary is not executable');
+      logError('wink binary is not executable');
       return false;
     }
   } catch (error) {
@@ -724,19 +724,19 @@ function buildAndVerifyPackage() {
     const hasArm64 = lipoOutput.includes('arm64');
     const hasX86 = lipoOutput.includes('x86_64');
     if (!hasArm64) {
-      logError('peekaboo binary is missing arm64');
+      logError('wink binary is missing arm64');
       logError(`Found: ${lipoOutput}`);
       return false;
     }
-    if (process.env.PEEKABOO_REQUIRE_UNIVERSAL === '1' && !hasX86) {
-      logError('peekaboo binary does not contain x86_64 (PEEKABOO_REQUIRE_UNIVERSAL=1)');
+    if (process.env.WINK_REQUIRE_UNIVERSAL === '1' && !hasX86) {
+      logError('wink binary does not contain x86_64 (WINK_REQUIRE_UNIVERSAL=1)');
       logError(`Found: ${lipoOutput}`);
       return false;
     }
     if (hasX86) {
       logSuccess('Binary contains both arm64 and x86_64 architectures');
     } else {
-      logWarning('Binary is arm64-only (set PEEKABOO_REQUIRE_UNIVERSAL=1 to enforce universal)');
+      logWarning('Binary is arm64-only (set WINK_REQUIRE_UNIVERSAL=1 to enforce universal)');
     }
   } catch (error) {
     logError('Failed to check binary architectures (lipo command failed)');
@@ -753,17 +753,17 @@ function buildAndVerifyPackage() {
       killSignal: 'SIGKILL'
     }).trim();
     if (!helpOutput || helpOutput.length === 0) {
-      logError('peekaboo binary does not respond to --help command');
+      logError('wink binary does not respond to --help command');
       return false;
     }
     logSuccess('Binary responds correctly to --help command');
   } catch (error) {
-    logError('peekaboo binary failed to execute with --help');
+    logError('wink binary failed to execute with --help');
     logError(`Error: ${error.message}`);
     return false;
   }
   
-  logSuccess('peekaboo binary verification passed');
+  logSuccess('wink binary verification passed');
 
   // Check package.json version
   const packageJson = JSON.parse(readFileSync(join(projectRoot, 'package.json'), 'utf8'));
@@ -780,11 +780,11 @@ function buildAndVerifyPackage() {
 
 // Main execution
 async function main() {
-  console.log(`\n${colors.bright}🚀 Peekaboo Release Preparation${colors.reset}\n`);
+  console.log(`\n${colors.bright}🚀 Wink Release Preparation${colors.reset}\n`);
 
   if (dryRun) {
-    const debugBinary = join(projectRoot, 'Apps', 'CLI', '.build', 'debug', 'peekaboo');
-    const packagedBinary = join(projectRoot, 'peekaboo');
+    const debugBinary = join(projectRoot, 'Apps', 'CLI', '.build', 'debug', 'wink');
+    const packagedBinary = join(projectRoot, 'wink');
     const binaryPath = binaryOverride ?? (existsSync(debugBinary) ? debugBinary : packagedBinary);
     const checks = [
       checkRequiredFields,
@@ -816,7 +816,7 @@ async function main() {
     checkDocs,
     checkSwift,
     buildAndVerifyPackage,
-    () => checkSwiftCLIIntegration(binaryOverride ?? join(projectRoot, 'peekaboo')),
+    () => checkSwiftCLIIntegration(binaryOverride ?? join(projectRoot, 'wink')),
     checkPackageSize
   ];
 

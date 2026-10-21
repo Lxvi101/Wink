@@ -1,8 +1,8 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 private enum MenuHarnessConfig {
     @preconcurrency
     nonisolated static func runLocalHarnessEnabled() -> Bool {
@@ -120,7 +120,7 @@ struct MenuExtractionTests {
         guard ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] != nil else { return }
 
         // Test with Calculator app
-        let output = try await runPeekabooCommand(["menu", "list", "--app", "Calculator", "--json"])
+        let output = try await runWinkCommand(["menu", "list", "--app", "Calculator", "--json"])
         let data = try #require(output.data(using: .utf8))
         let json = try JSONDecoder().decode(MenuTestResponse.self, from: data)
 
@@ -166,7 +166,7 @@ struct MenuExtractionTests {
         guard ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] != nil else { return }
 
         // Test with TextEdit which has well-known shortcuts
-        let output = try await runPeekabooCommand(["menu", "list", "--app", "TextEdit", "--json"])
+        let output = try await runWinkCommand(["menu", "list", "--app", "TextEdit", "--json"])
         let data = try #require(output.data(using: .utf8))
         let json = try JSONDecoder().decode(MenuTestResponse.self, from: data)
 
@@ -195,7 +195,7 @@ struct MenuExtractionTests {
         guard ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] != nil else { return }
 
         // Finder has nested menus like View > Sort By > Name
-        let output = try await runPeekabooCommand(["menu", "list", "--app", "Finder", "--json"])
+        let output = try await runWinkCommand(["menu", "list", "--app", "Finder", "--json"])
         let data = try #require(output.data(using: .utf8))
         let json = try JSONDecoder().decode(MenuTestResponse.self, from: data)
 
@@ -227,7 +227,7 @@ struct MenuExtractionTests {
         #if !os(Linux)
         guard ProcessInfo.processInfo.environment["RUN_LOCAL_TESTS"] != nil else { return }
 
-        let output = try await runPeekabooCommand(["menu", "list", "--app", "Finder", "--json"])
+        let output = try await runWinkCommand(["menu", "list", "--app", "Finder", "--json"])
         let data = try #require(output.data(using: .utf8))
         let json = try JSONDecoder().decode(MenuTestResponse.self, from: data)
 
@@ -514,18 +514,18 @@ struct MenuDialogLocalHarnessTests {
     @discardableResult
     private func runCLI(_ arguments: [String]) throws -> CommandRunResult {
         let finalArguments = arguments.contains("--no-remote") ? arguments : arguments + ["--no-remote"]
-        return try ExternalCommandRunner.runPeekabooCLI(finalArguments)
+        return try ExternalCommandRunner.runWinkCLI(finalArguments)
     }
 
     private func assertCLIBinaryFresh(maxAge: TimeInterval = 600) throws {
-        let binaryURL = Self.repositoryRoot.appendingPathComponent("peekaboo")
+        let binaryURL = Self.repositoryRoot.appendingPathComponent("wink")
         let attributes = try FileManager.default.attributesOfItem(atPath: binaryURL.path)
         guard let modifiedDate = attributes[.modificationDate] as? Date else {
             return
         }
         let age = Date().timeIntervalSince(modifiedDate)
         let freshnessMessage =
-            "Peekaboo binary at \(binaryURL.path) is older than \(Int(maxAge)) seconds. " +
+            "Wink binary at \(binaryURL.path) is older than \(Int(maxAge)) seconds. " +
             "Rebuild the debug CLI to refresh it."
         #expect(age < maxAge, Comment(rawValue: freshnessMessage))
     }
@@ -547,7 +547,7 @@ struct MenuDialogLocalHarnessTests {
 
 // MARK: - Test Helpers
 
-private func runPeekabooCommand(_ args: [String]) async throws -> String {
+private func runWinkCommand(_ args: [String]) async throws -> String {
     let result = try await InProcessCommandRunner.runShared(args)
     return result.combinedOutput
 }

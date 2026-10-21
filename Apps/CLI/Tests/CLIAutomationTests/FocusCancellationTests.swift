@@ -1,8 +1,8 @@
 import CoreGraphics
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -20,7 +20,7 @@ struct FocusCancellationTests {
         applications.activateApplicationHandler = { _ in
             withUnsafeCurrentTask { $0?.cancel() }
         }
-        let services = TestServicesFactory.makePeekabooServices(applications: applications)
+        let services = TestServicesFactory.makeWinkServices(applications: applications)
         let options = FocusOptions(
             autoFocus: true,
             focusTimeout: nil,
@@ -57,7 +57,7 @@ struct FocusCancellationTests {
             bounds: bounds,
             mutationIdentity: identity
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: StubWindowService(windowsByApp: ["Fixture": [window]])
         )
         let expectedOutcome = DesktopActionOutcome.dispatchedUnverified(
@@ -107,7 +107,7 @@ struct FocusCancellationTests {
             mutationIdentity: identity
         )
         let windows = PinnedFallbackWindowService(windowsByApp: ["Fixture": [window]])
-        let services = TestServicesFactory.makePeekabooServices(windows: windows)
+        let services = TestServicesFactory.makeWinkServices(windows: windows)
         let options = FocusOptions(
             autoFocus: true,
             focusTimeout: nil,
@@ -160,7 +160,7 @@ struct FocusCancellationTests {
                 capturedBounds: otherBounds
             )
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             windows: StubWindowService(windowsByApp: ["Fixture": [otherWindow, matchingWindow]])
         )
         let expectedOutcome = DesktopActionOutcome.dispatchedUnverified(
@@ -202,7 +202,7 @@ WindowManagementPinnedFocusActionResultProviding {
     @MainActor
     func focusWindowActionResult(target _: WindowTarget) async throws -> UIAutomationActionResult<Void> {
         self.unpinnedFocusCallCount += 1
-        throw PeekabooError.commandFailed("Fallback must retain the preflight focus receipt")
+        throw WinkError.commandFailed("Fallback must retain the preflight focus receipt")
     }
 
     @MainActor
@@ -215,7 +215,7 @@ WindowManagementPinnedFocusActionResultProviding {
               windowID == expectedIdentity.windowID,
               let bounds = expectedIdentity.capturedBounds
         else {
-            throw PeekabooError.windowNotFound(criteria: target.description)
+            throw WinkError.windowNotFound(criteria: target.description)
         }
         return try UIAutomationActionResult(
             payload: (),

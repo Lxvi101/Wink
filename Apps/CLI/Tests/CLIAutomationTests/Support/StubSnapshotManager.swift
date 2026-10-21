@@ -1,7 +1,7 @@
 import CoreGraphics
 import Foundation
-import PeekabooFoundation
-@testable import PeekabooCore
+import WinkFoundation
+@testable import WinkCore
 
 final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
     let supportsImplicitLatestSnapshotInvalidation = true
@@ -11,10 +11,10 @@ final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
     var effectiveImplicitLatestInvalidationWatermark: Date?
     private(set) var detectionResults: [String: ElementDetectionResult] = [:]
     private(set) var snapshotInfos: [String: SnapshotInfo] = [:]
-    private(set) var storedElements: [String: [String: PeekabooCore.UIElement]] = [:]
+    private(set) var storedElements: [String: [String: WinkCore.UIElement]] = [:]
     private(set) var storedAnnotatedScreenshots: [String: [String]] = [:]
     var mostRecentSnapshotId: String?
-    var uiAutomationSnapshotError: PeekabooError?
+    var uiAutomationSnapshotError: WinkError?
     var uiAutomationSnapshotCancellation = false
     private(set) var postInvalidationSnapshotReadCount = 0
     var invalidationError: (any Error)?
@@ -95,8 +95,8 @@ final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
         )
 
         self.storedElements[snapshotId] = result.elements.all
-            .reduce(into: [String: PeekabooCore.UIElement]()) { partial, element in
-                partial[element.id] = PeekabooCore.UIElement(
+            .reduce(into: [String: WinkCore.UIElement]()) { partial, element in
+                partial[element.id] = WinkCore.UIElement(
                     id: element.id,
                     elementId: element.id,
                     role: element.attributes["role"] ?? element.type.rawValue,
@@ -145,9 +145,9 @@ final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
         guard self.mutationLeases[snapshotId] == nil,
               !self.snapshotsRequiringFreshObservation.contains(snapshotId)
         else {
-            throw PeekabooError.snapshotStale(
+            throw WinkError.snapshotStale(
                 "Snapshot '\(snapshotId)' already drove a mutation whose result requires a fresh observation. " +
-                    "Run 'peekaboo see' again before another mutation. " +
+                    "Run 'wink see' again before another mutation. " +
                     "Read-only snapshot inspection is still available."
             )
         }
@@ -256,7 +256,7 @@ final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
     }
 
     func getSnapshotStoragePath() -> String {
-        "/tmp/peekaboo-snapshots"
+        "/tmp/wink-snapshots"
     }
 
     func storeScreenshot(_ request: SnapshotScreenshotRequest) async throws {
@@ -306,11 +306,11 @@ final class StubSnapshotManager: SnapshotManagerProtocol, @unchecked Sendable {
         }
     }
 
-    func getElement(snapshotId: String, elementId: String) async throws -> PeekabooCore.UIElement? {
+    func getElement(snapshotId: String, elementId: String) async throws -> WinkCore.UIElement? {
         self.storedElements[snapshotId]?[elementId]
     }
 
-    func findElements(snapshotId: String, matching query: String) async throws -> [PeekabooCore.UIElement] {
+    func findElements(snapshotId: String, matching query: String) async throws -> [WinkCore.UIElement] {
         self.storedElements[snapshotId]?.values.filter {
             $0.label?.localizedCaseInsensitiveContains(query) == true ||
                 $0.title?.localizedCaseInsensitiveContains(query) == true

@@ -1,0 +1,283 @@
+import Commander
+import Foundation
+import WinkCore
+import WinkFoundation
+
+struct WindowActionResult: Codable {
+    let action: String
+    let app_name: String
+    let window_title: String?
+    /// The frame the window actually has after the operation (read back from the OS).
+    let new_bounds: WindowBounds?
+    /// The frame the command asked for; differs from `new_bounds` when the app constrained it.
+    let requested_bounds: WindowBounds?
+    /// Set when the achieved geometry differs from the requested one or could not be verified.
+    let warning: String?
+}
+
+@MainActor
+private protocol WindowMutationPreRuntimeValidatingCommand: PreRuntimeValidatingCommand {
+    var windowOptions: WindowIdentificationOptions { get }
+}
+
+extension WindowMutationPreRuntimeValidatingCommand {
+    func validateBeforeRuntime() throws {
+        try self.windowOptions.validateMutation()
+    }
+}
+
+// MARK: - Subcommand Conformances
+
+@MainActor
+extension WindowCommand.MoveSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(commandName: "move", abstract: "Move a window to a new position")
+        }
+    }
+}
+
+extension WindowCommand.MoveSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.MoveSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.ResizeSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(commandName: "resize", abstract: "Resize a window")
+        }
+    }
+}
+
+extension WindowCommand.ResizeSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.ResizeSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.SetBoundsSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(commandName: "set-bounds", abstract: "Set window position and size in one operation")
+        }
+    }
+}
+
+extension WindowCommand.SetBoundsSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.SetBoundsSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.WindowListSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(
+                commandName: "list",
+                abstract: "List renderable windows for an application",
+                discussion: """
+                Lists renderable windows suitable for interaction targeting. This is the canonical
+                v4 window inventory command and returns the IDs/indexes used by `--window-id` and
+                `--window-index`. Non-zero layer, tiny, transparent, and Windows-menu-excluded
+                entries are omitted.
+                """
+            )
+        }
+    }
+}
+
+extension WindowCommand.WindowListSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.WindowListSubcommand: PreRuntimeValidatingCommand {
+    func validateBeforeRuntime() throws {
+        if self.app != nil, self.pid != nil {
+            let exactPID: Int32?
+            do {
+                exactPID = try self.resolveExplicitPIDObservationTarget()
+            } catch {
+                throw ValidationError(error.localizedDescription)
+            }
+            if let exactPID {
+                // Listing is read-only and identical PID aliases name one owner. Mutation commands
+                // continue to reject the two owner channels through their stricter shared gate.
+                let selector = InteractionTargetSelector(processIdentifier: Int(exactPID))
+                _ = try validatedMutationSelector(selector, allowMissingTarget: true)
+                return
+            }
+        }
+        let selector = InteractionTargetSelector(
+            applicationIdentifier: self.app,
+            processIdentifier: self.pid.map(Int.init)
+        )
+        _ = try validatedMutationSelector(selector, allowMissingTarget: true)
+    }
+}
+
+@MainActor
+extension WindowCommand.CloseSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(commandName: "close", abstract: "Close a window")
+        }
+    }
+}
+
+extension WindowCommand.CloseSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.CloseSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.MinimizeSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(commandName: "minimize", abstract: "Minimize a window to the Dock")
+        }
+    }
+}
+
+extension WindowCommand.MinimizeSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.MinimizeSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.RestoreSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(
+                commandName: "restore",
+                abstract: "Restore a minimized window without activation or focus"
+            )
+        }
+    }
+}
+
+extension WindowCommand.RestoreSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.RestoreSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.MaximizeSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(
+                commandName: "maximize",
+                abstract: "Fill a window's screen without entering full screen"
+            )
+        }
+    }
+}
+
+extension WindowCommand.MaximizeSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.MaximizeSubcommand: WindowMutationPreRuntimeValidatingCommand {}
+
+@MainActor
+extension WindowCommand.FocusSubcommand: ParsableCommand {
+    nonisolated(unsafe) static var commandDescription: CommandDescription {
+        MainActorCommandDescription.describe {
+            CommandDescription(
+                commandName: "focus",
+                abstract: "Bring a window to the foreground",
+                discussion: """
+                Focus brings a window to the foreground and activates its application.
+
+                Space Support:
+                Pass --space-switch to switch to a window on a different Space,
+                or --bring-to-current-space to move it to the current Space.
+
+                Examples:
+                wink window focus --app Safari
+                wink window focus --app "Visual Studio Code" --window-title "main.swift"
+                wink window focus --app Terminal --space-switch
+                wink window focus --app Finder --bring-to-current-space
+                """
+            )
+        }
+    }
+}
+
+extension WindowCommand.FocusSubcommand: AsyncRuntimeCommand {}
+
+extension WindowCommand.FocusSubcommand: PreRuntimeValidatingCommand {
+    func validateBeforeRuntime() throws {
+        try self.windowOptions.validateMutation(allowMissingTarget: self.snapshot?.isEmpty == false)
+    }
+}
+
+// MARK: - Commander Binding
+
+@MainActor
+extension WindowCommand.CloseSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+        self.foreground = values.flag("foreground")
+    }
+}
+
+@MainActor
+extension WindowCommand.MinimizeSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+    }
+}
+
+@MainActor
+extension WindowCommand.RestoreSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+    }
+}
+
+@MainActor
+extension WindowCommand.MaximizeSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+    }
+}
+
+@MainActor
+extension WindowCommand.FocusSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+        self.focusOptions = try values.makeFocusOptions()
+        self.snapshot = values.singleOption("snapshot")
+        self.verify = values.flag("verify")
+    }
+}
+
+@MainActor
+extension WindowCommand.MoveSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+        self.x = try values.requireOption("x", as: Int.self)
+        self.y = try values.requireOption("y", as: Int.self)
+    }
+}
+
+@MainActor
+extension WindowCommand.ResizeSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+        self.width = try values.requireOption("width", as: Int.self)
+        self.height = try values.requireOption("height", as: Int.self)
+    }
+}
+
+@MainActor
+extension WindowCommand.SetBoundsSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.windowOptions = try values.makeWindowOptions()
+        self.x = try values.requireOption("x", as: Int.self)
+        self.y = try values.requireOption("y", as: Int.self)
+        self.width = try values.requireOption("width", as: Int.self)
+        self.height = try values.requireOption("height", as: Int.self)
+    }
+}
+
+@MainActor
+extension WindowCommand.WindowListSubcommand: CommanderBindableCommand {
+    mutating func applyCommanderValues(_ values: CommanderBindableValues) throws {
+        self.app = values.singleOption("app")
+        self.pid = try values.decodeOption("pid", as: Int32.self)
+        self.groupBySpace = values.flag("groupBySpace")
+    }
+}

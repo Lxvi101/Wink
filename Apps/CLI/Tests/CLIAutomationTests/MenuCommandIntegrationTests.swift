@@ -1,11 +1,11 @@
 import Foundation
-import PeekabooFoundation
+import WinkFoundation
 import Swiftdansi
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(.serialized, .tags(.automation))
 struct MenuCommandIntegrationTests {
     @Test
@@ -100,15 +100,15 @@ struct MenuCommandIntegrationTests {
         // Point configuration loading at a clean temp dir so stray user configs don't
         // pollute stdout with validation warnings that break JSON decoding.
         let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-menu-\(UUID().uuidString)")
+            .appendingPathComponent("wink-menu-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
         let tempConfig = tempDir.appendingPathComponent("config.json")
         try "{}".write(to: tempConfig, atomically: true, encoding: .utf8)
 
         let previousConfigDir = getenv("PEEKABOO_CONFIG_DIR").map { String(cString: $0) }
-        let previousDisableMigration = getenv("PEEKABOO_CONFIG_DISABLE_MIGRATION").map { String(cString: $0) }
+        let previousDisableMigration = getenv("WINK_CONFIG_DISABLE_MIGRATION").map { String(cString: $0) }
         setenv("PEEKABOO_CONFIG_DIR", tempDir.path, 1)
-        setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1", 1)
+        setenv("WINK_CONFIG_DISABLE_MIGRATION", "1", 1)
         defer {
             if let previousConfigDir {
                 setenv("PEEKABOO_CONFIG_DIR", previousConfigDir, 1)
@@ -116,9 +116,9 @@ struct MenuCommandIntegrationTests {
                 unsetenv("PEEKABOO_CONFIG_DIR")
             }
             if let previousDisableMigration {
-                setenv("PEEKABOO_CONFIG_DISABLE_MIGRATION", previousDisableMigration, 1)
+                setenv("WINK_CONFIG_DISABLE_MIGRATION", previousDisableMigration, 1)
             } else {
-                unsetenv("PEEKABOO_CONFIG_DISABLE_MIGRATION")
+                unsetenv("WINK_CONFIG_DISABLE_MIGRATION")
             }
         }
 
@@ -148,7 +148,7 @@ struct MenuCommandIntegrationTests {
         let windowService = StubWindowService(windowsByApp: windows)
         let applicationService = StubApplicationService(applications: [appInfo], windowsByApp: windows)
 
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             applications: applicationService,
             windows: windowService,
             menu: menuService
@@ -202,7 +202,7 @@ struct MenuCommandIntegrationTests {
     }
 
     private struct MenuTestContext {
-        let services: PeekabooServices
+        let services: WinkServices
         let appInfo: ServiceApplicationInfo
         let menuService: StubMenuService
         let windowService: StubWindowService
@@ -242,11 +242,11 @@ private final class GenerationPinnedMenuStub: StubMenuService, MenuServiceGenera
     }
 
     func clickMenuBarItemActionResult(named _: String) async throws
-    -> UIAutomationActionResult<PeekabooCore.ClickResult> {
+    -> UIAutomationActionResult<WinkCore.ClickResult> {
         throw TestStubError.unimplemented(#function)
     }
 
-    func clickMenuBarItemActionResult(at _: Int) async throws -> UIAutomationActionResult<PeekabooCore.ClickResult> {
+    func clickMenuBarItemActionResult(at _: Int) async throws -> UIAutomationActionResult<WinkCore.ClickResult> {
         throw TestStubError.unimplemented(#function)
     }
 
@@ -254,7 +254,7 @@ private final class GenerationPinnedMenuStub: StubMenuService, MenuServiceGenera
         guard let app = self.menusByApp.values.first(where: { $0.application.processIdentity == identity })?
             .application.name
         else {
-            throw PeekabooError.appNotFound("PID:\(identity.processIdentifier)")
+            throw WinkError.appNotFound("PID:\(identity.processIdentifier)")
         }
         return app
     }
@@ -264,7 +264,7 @@ private final class GenerationPinnedMenuStub: StubMenuService, MenuServiceGenera
         mode: DesktopActionOutcome.Delivery.Mode
     ) throws -> UIAutomationActionResult<Void> {
         guard let identity = self.menusByApp[app]?.application.processIdentity else {
-            throw PeekabooError.appNotFound(app)
+            throw WinkError.appNotFound(app)
         }
         return try UIAutomationActionResult(
             payload: (),
@@ -280,7 +280,7 @@ private final class GenerationPinnedMenuStub: StubMenuService, MenuServiceGenera
 
 // MARK: - JSON Helpers
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 extension MenuCommandIntegrationTests {
     private enum JSONDecodeError: Error {
         case emptyOutput

@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooFoundation
-import PeekabooFoundationTestSupport
+import WinkFoundation
+import WinkFoundationTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.serialized)
 struct PreDispatchActionEnvelopeTests {

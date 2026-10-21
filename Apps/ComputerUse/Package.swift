@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "PeekabooComputerUse",
+    name: "WinkComputerUse",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "peekaboo-cua", targets: ["PeekabooCUA"]),
+        .executable(name: "wink-cua", targets: ["WinkCUA"]),
     ],
     targets: [
         .executableTarget(
-            name: "PeekabooCUA",
-            path: "Sources/PeekabooCUA",
+            name: "WinkCUA",
+            path: "Sources/WinkCUA",
             swiftSettings: [.unsafeFlags(["-Osize"], .when(configuration: .release))],
             linkerSettings: [
                 .linkedFramework("AppKit"),

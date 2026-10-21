@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -31,7 +31,7 @@ struct ConcurrentMutationAcquisitionTests {
         }
         for await _ in started {}
         #expect(tracker.hasPendingDurableMutation)
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await tracker.beginConcurrentDurableMutation(id: id)
         }
         if cancel {
@@ -49,7 +49,7 @@ struct ConcurrentMutationAcquisitionTests {
             try await first.value
         }
         #expect(try Self.pendingCount(in: desktop.root) == 1)
-        await #expect(throws: PeekabooError.self) {
+        await #expect(throws: WinkError.self) {
             try await tracker.beginConcurrentDurableMutation(id: id)
         }
         let peer = UUID()

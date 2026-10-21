@@ -1,9 +1,9 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkFoundation
 import Testing
 import UniformTypeIdentifiers
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 struct ClipboardCommandTests {
@@ -14,7 +14,7 @@ struct ClipboardCommandTests {
         clipboard.readAccess = ClipboardReadAccessStatus(policy: .ask)
         let snapshots = StubSnapshotManager()
         let snapshot = try await snapshots.createSnapshot()
-        let services = TestServicesFactory.makePeekabooServices(snapshots: snapshots, clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(snapshots: snapshots, clipboard: clipboard)
 
         let result = try await InProcessCommandRunner.run(["clipboard", "status", "--json"], services: services)
         let payload = try #require(JSONSerialization.jsonObject(with: Data(result.stdout.utf8)) as? [String: Any])
@@ -39,7 +39,7 @@ struct ClipboardCommandTests {
         for action in ["get", "save", "set"] {
             let clipboard = StubClipboardService()
             clipboard.current = Self.result("synthetic")
-            let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+            let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
             var arguments = ["clipboard", action, "--json"]
             if action == "set" {
                 arguments += ["--data-base64", "dXBkYXRlZA==", "--uti", "public.data", "--verify"]
@@ -66,7 +66,7 @@ struct ClipboardCommandTests {
     @MainActor
     func `Clipboard prompt opt in without requested verification refuses before writing`() async throws {
         let clipboard = StubClipboardService()
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
 
         let result = try await InProcessCommandRunner.run(
             ["clipboard", "set", "--text", "synthetic", "--allow-prompt", "--json"], services: services
@@ -85,7 +85,7 @@ struct ClipboardCommandTests {
         clipboard.getError = DesktopActionFailure.preDispatchRefusal(
             reason: .permissionDenied, message: "Synthetic silent read refusal"
         )
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
         let result = try await InProcessCommandRunner.run(
             ["clipboard", "set", "--text", "synthetic", "--verify", "--json"], services: services
         )
@@ -126,7 +126,7 @@ struct ClipboardCommandTests {
         clipboard.beforeMutation = {
             mutationWasMarkedBeforeWrite = tracker.mutationStartedAt != nil
         }
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             clipboard: clipboard
         )
@@ -167,7 +167,7 @@ struct ClipboardCommandTests {
             data: Data("current".utf8),
             textPreview: "current"
         )
-        let services = TestServicesFactory.makePeekabooServices(
+        let services = TestServicesFactory.makeWinkServices(
             snapshots: snapshots,
             clipboard: clipboard
         )
@@ -198,7 +198,7 @@ struct ClipboardCommandTests {
         )
         clipboard.outcome = expected
         clipboard.slots["fixture"] = Self.result("restored")
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
         let cases = [
             ["clipboard", "set", "--text", "updated", "--json"],
             ["clipboard", "clear", "--json"],
@@ -222,7 +222,7 @@ struct ClipboardCommandTests {
     @MainActor
     func `Clipboard set validation refusal is zero dispatch in JSON`() async throws {
         let clipboard = ClipboardOutcomeService()
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
         let arguments = ["clipboard", "set", "--json"]
 
         let result = try await InProcessCommandRunner.run(arguments, services: services)
@@ -240,7 +240,7 @@ struct ClipboardCommandTests {
     func `Clipboard post-write processing failure is indeterminate in JSON`() async throws {
         let clipboard = ClipboardOutcomeService()
         clipboard.postWriteError = ClipboardCommandOutcomeTestError.processing
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
         let arguments = ["clipboard", "set", "--text", "updated", "--json"]
 
         let result = try await InProcessCommandRunner.run(arguments, services: services)
@@ -264,7 +264,7 @@ struct ClipboardCommandTests {
     func `Clipboard get and save JSON stay read-only`() async throws {
         let clipboard = ClipboardOutcomeService()
         clipboard.current = Self.result("current")
-        let services = TestServicesFactory.makePeekabooServices(clipboard: clipboard)
+        let services = TestServicesFactory.makeWinkServices(clipboard: clipboard)
         let cases = [
             ["clipboard", "get", "--json"],
             ["clipboard", "save", "--slot", "fixture", "--json"],

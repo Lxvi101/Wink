@@ -1,0 +1,75 @@
+import CoreGraphics
+import Foundation
+
+// MARK: - JSON Coding
+
+/// Shared JSON encoder/decoder configuration for consistent serialization
+public enum JSONCoding {
+    /// Shared JSON encoder with pretty printing and sorted keys
+    public static let encoder: JSONEncoder = makeEncoder()
+
+    /// Shared JSON decoder with consistent configuration
+    public static let decoder: JSONDecoder = makeDecoder()
+
+    /// Create a configured encoder instance
+    public nonisolated static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return encoder
+    }
+
+    /// Create a configured decoder instance
+    public nonisolated static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }
+}
+
+// MARK: - Error Extensions
+
+extension Error {
+    /// Convert any error to a WinkError with context
+    public func asWinkError(
+        context: String) -> WinkError
+    {
+        // Try to preserve specific WinkError types
+        if let winkError = self as? WinkError {
+            return winkError
+        }
+
+        // Convert common errors to specific types
+        if (self as NSError).domain == NSURLErrorDomain {
+            return .networkError(self.localizedDescription)
+        }
+
+        // Default to operation error
+        return .operationError(message: "\(context): \(self.localizedDescription)")
+    }
+}
+
+// MARK: - Path Utilities
+
+extension String {
+    /// Expand tilde and return absolute path
+    public var expandedPath: String {
+        (self as NSString).expandingTildeInPath
+    }
+
+    /// Convert to file URL
+    public var fileURL: URL {
+        URL(fileURLWithPath: self.expandedPath)
+    }
+}
+
+// WindowInfo and ApplicationInfo extensions removed - these are higher-level types in WinkCore
+
+// MARK: - Time Utilities
+
+extension TimeInterval {
+    /// Common sleep durations
+    public static let shortDelay: TimeInterval = 0.1
+    public static let mediumDelay: TimeInterval = 0.5
+    public static let longDelay: TimeInterval = 1.0
+}

@@ -1,14 +1,14 @@
 import Commander
 import Darwin
 import Foundation
-import PeekabooAutomation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 @MainActor
@@ -53,7 +53,7 @@ struct ExplicitSocketInputPolicyRuntimeTests {
         var options = try self.clickOptions(environmentSocket: environmentSocket, environment: &environment)
         options.inputStrategy = .synthOnly
         if environmentIsolation {
-            environment["PEEKABOO_NO_REMOTE"] = "1"
+            environment["WINK_NO_REMOTE"] = "1"
         } else {
             options.remoteIsolationRequested = true
             options.preferRemote = false
@@ -200,7 +200,7 @@ struct ExplicitSocketInputPolicyRuntimeTests {
             let fixture = Fixture(allowsCapturePreflight: true)
             var environment: [String: String] = [:]
             if environmentIsolation {
-                environment["PEEKABOO_NO_REMOTE"] = "1"
+                environment["WINK_NO_REMOTE"] = "1"
             }
             var options = try self.observationOptions(
                 command,
@@ -372,7 +372,7 @@ struct ExplicitSocketInputPolicyRuntimeTests {
     ) throws -> CommandRuntimeOptions {
         var values = ["at": ["100,200"]]
         if environmentSocket {
-            environment["PEEKABOO_BRIDGE_SOCKET"] = Self.socket
+            environment["WINK_BRIDGE_SOCKET"] = Self.socket
         } else {
             values["bridge-socket"] = [Self.socket]
         }
@@ -404,7 +404,7 @@ struct ExplicitSocketInputPolicyRuntimeTests {
             values["captureEngine"] = [engine]
         }
         if environmentSocket {
-            environment["PEEKABOO_BRIDGE_SOCKET"] = Self.socket
+            environment["WINK_BRIDGE_SOCKET"] = Self.socket
         } else {
             values["bridge-socket"] = [Self.socket]
         }
@@ -435,15 +435,15 @@ struct ExplicitSocketInputPolicyRuntimeTests {
             case .cli:
                 options.inputStrategy = .synthOnly
             case .environmentDefault:
-                environment["PEEKABOO_INPUT_STRATEGY"] = "synthOnly"
+                environment["WINK_INPUT_STRATEGY"] = "synthOnly"
             case .environmentVerb:
-                environment["PEEKABOO_CLICK_INPUT_STRATEGY"] = "synthOnly"
+                environment["WINK_CLICK_INPUT_STRATEGY"] = "synthOnly"
             case .configDefault:
                 return .init(defaultStrategy: .synthOnly)
             case .configVerb:
                 return .init(click: .synthOnly)
             case .configApp:
-                return .init(perApp: ["boo.peekaboo.fixture": .init(click: .synthOnly)])
+                return .init(perApp: ["boo.wink.fixture": .init(click: .synthOnly)])
             }
             return nil
         }
@@ -504,16 +504,16 @@ struct ExplicitSocketInputPolicyRuntimeTests {
                     self.handshakeFactoryCalls += 1
                     return RuntimeHostResolver.RemoteHandshakeCache(
                         identity: .init(
-                            bundleIdentifier: "boo.peekaboo.test.client",
+                            bundleIdentifier: "boo.wink.test.client",
                             teamIdentifier: nil,
                             processIdentifier: getpid()
                         ),
                         handshakeProvider: { _, _ in
                             self.handshakeCalls += 1
                             return BridgeTestFixtures.handshake(
-                                negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+                                negotiatedVersion: WinkBridgeConstants.protocolVersion,
                                 supportedOperations: [.foregroundModifierClick, .exactWindowPixelFocusType],
-                                hostCapabilities: [PeekabooBridgeHostCapability.foregroundModifierClickSnapshotLease]
+                                hostCapabilities: [WinkBridgeHostCapability.foregroundModifierClickSnapshotLease]
                             )
                         }
                     )

@@ -1,8 +1,8 @@
 import Foundation
-import PeekabooCore
+import WinkCore
 import Testing
-@testable import PeekabooAutomationKit
-@testable import PeekabooBridge
+@testable import WinkAutomationKit
+@testable import WinkBridge
 
 @Suite(.tags(.safe))
 struct CLIDesktopFixtureTests {
@@ -59,12 +59,12 @@ struct CLIDesktopFixtureTests {
     @MainActor
     func `Bridge fixture stops hosts on success and failure`(bodyThrows: Bool) async throws {
         var root: URL?
-        var retainedHost: PeekabooBridgeHost?
+        var retainedHost: WinkBridgeHost?
 
         do {
             let result = try await CLIBridgeHostFixture.withHosts { fixture in
                 root = fixture.desktop.root
-                let server = PeekabooBridgeServer(
+                let server = WinkBridgeServer(
                     services: CLISnapshotBridgeServices(
                         snapshots: InMemorySnapshotManager(),
                         directory: fixture.desktop.root
@@ -78,7 +78,7 @@ struct CLIDesktopFixtureTests {
                     screenCaptureKitOwnerClaimProvider: CLISnapshotBridgeServices.unexpectedScreenCaptureKitClaim,
                     permissionStatusEvaluator: { _ in CLISnapshotBridgeServices.grantedPermissions() }
                 )
-                let host = PeekabooBridgeHost(
+                let host = WinkBridgeHost(
                     socketPath: fixture.desktop.root.appendingPathComponent("cleanup.sock").path,
                     server: server,
                     allowedTeamIDs: [],

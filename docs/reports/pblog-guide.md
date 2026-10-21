@@ -1,13 +1,13 @@
 ---
-summary: 'Review pblog - Peekaboo Log Viewer guidance'
+summary: 'Review pblog - Wink Log Viewer guidance'
 read_when:
-  - 'planning work related to pblog - peekaboo log viewer'
+  - 'planning work related to pblog - wink log viewer'
   - 'debugging or extending features described here'
 ---
 
-# pblog - Peekaboo Log Viewer
+# pblog - Wink Log Viewer
 
-pblog is a powerful log viewer for monitoring all Peekaboo applications and services through macOS's unified logging system.
+pblog is a powerful log viewer for monitoring all Wink applications and services through macOS's unified logging system.
 
 ## Quick Start
 
@@ -30,7 +30,7 @@ pblog is a powerful log viewer for monitoring all Peekaboo applications and serv
 By default, macOS redacts dynamic values in logs, showing `<private>` instead:
 
 ```
-Peekaboo: Clicked element <private> at coordinates <private>
+Wink: Clicked element <private> at coordinates <private>
 ```
 
 This makes debugging difficult. See [logging-profiles/README.md](logging-profiles/README.md) for the solution.
@@ -49,17 +49,17 @@ This makes debugging difficult. See [logging-profiles/README.md](logging-profile
 | `-e` | `--errors` | Show only errors | all levels |
 | `--all` | | Show all logs without tail limit | last 50 |
 | `--json` | | Output in JSON format | text |
-| `--subsystem` | | Filter by specific subsystem | all Peekaboo |
+| `--subsystem` | | Filter by specific subsystem | all Wink |
 
-## Peekaboo Subsystems
+## Wink Subsystems
 
 pblog monitors these subsystems by default:
-- `boo.peekaboo.core` - Core services and automation
-- `boo.peekaboo.app` - Mac app
-- `boo.peekaboo.inspector` - Inspector app
-- `boo.peekaboo.playground` - Playground test app
-- `boo.peekaboo.axorcist` - AXorcist accessibility library
-- `boo.peekaboo` - General components
+- `boo.wink.core` - Core services and automation
+- `boo.wink.app` - Mac app
+- `boo.wink.inspector` - Inspector app
+- `boo.wink.playground` - Playground test app
+- `boo.wink.axorcist` - AXorcist accessibility library
+- `boo.wink` - General components
 
 ## Common Usage Patterns
 
@@ -90,7 +90,7 @@ pblog monitors these subsystems by default:
 
 ### Monitor Specific App
 ```bash
-./scripts/pblog.sh --subsystem boo.peekaboo.playground -f
+./scripts/pblog.sh --subsystem boo.wink.playground -f
 ```
 
 ## Advanced Usage
@@ -113,10 +113,10 @@ If you need more control, you can use the macOS `log` command directly:
 
 ```bash
 # Show logs with custom predicate
-log show --predicate 'subsystem BEGINSWITH "boo.peekaboo" AND eventMessage CONTAINS "click"' --last 5m
+log show --predicate 'subsystem BEGINSWITH "boo.wink" AND eventMessage CONTAINS "click"' --last 5m
 
 # Stream logs with debug level
-log stream --predicate 'subsystem == "boo.peekaboo.core"' --level debug
+log stream --predicate 'subsystem == "boo.wink.core"' --level debug
 ```
 
 ## Troubleshooting
@@ -127,7 +127,7 @@ This is macOS's privacy protection. To see the actual values:
 
 1. **Quick Fix**: Use sudo (requires password each time)
    ```bash
-   sudo log show --predicate 'subsystem == "boo.peekaboo.core"' --info --last 5m
+   sudo log show --predicate 'subsystem == "boo.wink.core"' --info --last 5m
    ```
 
 2. **Better Solution**: Configure passwordless sudo for the log command.
@@ -150,7 +150,7 @@ For large log volumes:
 ## Implementation Details
 
 pblog is a bash script that wraps the macOS `log` command with:
-- Predefined predicates for Peekaboo subsystems
+- Predefined predicates for Wink subsystems
 - Convenient shortcuts for common operations
 - Automatic formatting and tail limiting
 - Support for both streaming and historical logs

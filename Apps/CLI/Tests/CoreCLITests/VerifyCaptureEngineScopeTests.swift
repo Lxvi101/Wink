@@ -2,13 +2,13 @@ import Commander
 import CoreGraphics
 import Darwin
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooBridgeTestSupport
-import PeekabooFoundation
+import WinkAutomationKit
+import WinkBridge
+import WinkBridgeTestSupport
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
-@testable import PeekabooCore
+@testable import WinkCLI
+@testable import WinkCore
 
 @Suite(.tags(.safe))
 @MainActor
@@ -77,7 +77,7 @@ struct VerifyCaptureEngineScopeTests {
 
     @Test
     func `unsupported engine scope refuses without evaluating the operation`() async throws {
-        let client = PeekabooBridgeClient(socketPath: "/synthetic/unused-verify.sock")
+        let client = WinkBridgeClient(socketPath: "/synthetic/unused-verify.sock")
         let capture = RemoteScreenCaptureService(client: client).unscopedCapture
         let runtime = Self.runtime(capture: capture, engine: "classic")
         let command = try VerifyCommand.parse(["--pid", "123", "--window-exists", "--screenshot", "/unused.png"])
@@ -102,20 +102,20 @@ struct VerifyCaptureEngineScopeTests {
 
     private static func fixture(scoped: Bool) async throws
     -> (peer: ScriptedBridgePeer, capture: RemoteScreenCaptureService) {
-        let version = PeekabooBridgeProtocolVersion(major: 1, minor: 28)
+        let version = WinkBridgeProtocolVersion(major: 1, minor: 28)
         let peer = try ScriptedBridgePeer(responses: [
             .handshake(BridgeTestFixtures.handshake(
                 negotiatedVersion: version,
                 supportedOperations: [.desktopObservation, .captureWindow],
                 hostCapabilities: [
-                    PeekabooBridgeHostCapability.desktopObservationCaptureEngine,
-                    PeekabooBridgeHostCapability.desktopObservationInlinePixels,
+                    WinkBridgeHostCapability.desktopObservationCaptureEngine,
+                    WinkBridgeHostCapability.desktopObservationInlinePixels,
                 ]
             )),
             scoped ? .desktopObservation(Self.result) : .capture(Self.result.capture),
             .capture(Self.result.capture),
         ])
-        let client = PeekabooBridgeClient(socketPath: peer.socketPath, requestTimeoutSec: 2)
+        let client = WinkBridgeClient(socketPath: peer.socketPath, requestTimeoutSec: 2)
         _ = try await client.handshake(
             client: .init(bundleIdentifier: "synthetic.verify", teamIdentifier: nil, processIdentifier: getpid()),
             protocolVersion: version
@@ -141,9 +141,9 @@ struct VerifyCaptureEngineScopeTests {
         )
     }
 
-    private static func requests(from peer: ScriptedBridgePeer) async throws -> [PeekabooBridgeRequest] {
+    private static func requests(from peer: ScriptedBridgePeer) async throws -> [WinkBridgeRequest] {
         try await peer.requests.dropFirst().map {
-            try JSONDecoder.peekabooBridgeDecoder().decode(PeekabooBridgeRequest.self, from: $0)
+            try JSONDecoder.winkBridgeDecoder().decode(WinkBridgeRequest.self, from: $0)
         }
     }
 }

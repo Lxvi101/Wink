@@ -1,8 +1,8 @@
 import CoreGraphics
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct WindowTargetCreationTests {
     @Test

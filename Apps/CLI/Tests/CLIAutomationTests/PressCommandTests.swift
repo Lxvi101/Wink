@@ -1,10 +1,10 @@
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
-#if !PEEKABOO_SKIP_AUTOMATION
+#if !WINK_SKIP_AUTOMATION
 @Suite(
     .serialized,
     .tags(.safe),
@@ -249,7 +249,7 @@ struct PressCommandTests {
         automation.actionOutcome = InputFocusFixtures.typeOutcome
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -284,7 +284,7 @@ struct PressCommandTests {
         automation.actionOutcome = InputFocusFixtures.typeOutcome
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -314,7 +314,7 @@ struct PressCommandTests {
         automation.actionOutcomeTargetIdentity = try InputFocusFixtures.targetIdentity()
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -349,7 +349,7 @@ struct PressCommandTests {
         automation.actionOutcomeTargetIdentity = try InputFocusFixtures.targetIdentity(windowID: 902)
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(

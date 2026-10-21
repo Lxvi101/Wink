@@ -49,7 +49,7 @@ No remaining item blocks completion.
 
 | Requirement | Evidence | Status |
 |---|---|---|
-| Product-neutral strategy names: `actionFirst`, `synthFirst`, `actionOnly`, `synthOnly` | `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Strategy/UIInputStrategy.swift` | Done |
+| Product-neutral strategy names: `actionFirst`, `synthFirst`, `actionOnly`, `synthOnly` | `Core/WinkAutomationKit/Sources/WinkAutomationKit/Strategy/UIInputStrategy.swift` | Done |
 | Policy model with default, per-verb, and per-app strategy | `UIInputPolicy.swift`; `ConfigurationManager+Accessors.swift`; `InputConfigTests` | Done |
 | CLI/env/config strategy resolution with CLI precedence | `CommandRuntime.swift`; `ConfigurationManager+Accessors.swift`; `InputConfigTests` | Done |
 | Phase 3 built-in click/scroll defaults | `UIInputPolicy.currentBehavior`; `ConfigurationManager+Accessors.swift`; `InputConfigTests` | Done |
@@ -84,14 +84,14 @@ No remaining item blocks completion.
 | MCP `ClickTool` preserves element ID intent | `ClickTool.swift`; `MCPToolExecutionTests` | Done |
 | MCP `TypeTool` preserves element target for focus click | `TypeTool.swift`; `MCPToolExecutionTests` | Done |
 | MCP `ScrollTool` preserves element target | `ScrollTool.swift` | Done |
-| MCP hides action-only tools when action invocation disabled | `ToolFiltering.swift`; `ToolFilteringTests`; `PeekabooMCPServer.swift` | Done |
+| MCP hides action-only tools when action invocation disabled | `ToolFiltering.swift`; `ToolFilteringTests`; `WinkMCPServer.swift` | Done |
 | MCP/agent prompt guardrails prefer fresh `see` and element targets | `AgentSystemPrompt.swift`; `docs/MCP.md` | Done |
 | Mutating MCP actions invalidate active snapshot | `ClickTool`, `TypeTool`, `ScrollTool`, `SetValueTool`, `PerformActionTool` | Done |
 | Explicit missing action snapshot fails as stale before fallback | `ClickService`, `ScrollService`, `TypeService`; target-resolution tests | Done |
 | Turn-scoped forced refresh after every perceive→act cycle | Mutating MCP tools invalidate active snapshots; agent turn-boundary tests | Done |
-| Bridge operations for setValue/performAction | `PeekabooBridge*` files; `PeekabooBridgeTests` | Done |
-| Bridge protocol minor bump | `PeekabooBridgeConstants.protocolVersion == 1.3` | Done |
-| Version mismatch asks user/model to relaunch host app | `PeekabooBridgeServer+Handshake.swift`; `PeekabooBridgeTests` | Done |
+| Bridge operations for setValue/performAction | `WinkBridge*` files; `WinkBridgeTests` | Done |
+| Bridge protocol minor bump | `WinkBridgeConstants.protocolVersion == 1.3` | Done |
+| Version mismatch asks user/model to relaunch host app | `WinkBridgeServer+Handshake.swift`; `WinkBridgeTests` | Done |
 | Docs for config and tools | `docs/configuration.md`; `docs/MCP.md`; `docs/commands/set-value.md`; `docs/commands/perform-action.md` | Done |
 | Unit tests listed in the plan | `InputConfigTests`, `UIInputDispatcherTests`, `ActionInputDriverTests`, MCP/bridge tests | Done |
 | Input automation cannot type into arbitrary active apps by accident | `InputAutomationSafety` frontmost bundle allow-list; `InputAutomationSafetyTests` | Done |
@@ -108,8 +108,8 @@ No remaining item blocks completion.
 Last known passing local gates before removing telemetry:
 
 ```text
-swift test --package-path Core/PeekabooAutomationKit --no-parallel
-swift test --package-path Core/PeekabooCore --filter "AgentTurnBoundaryTests|MCPToolExecutionTests|ToolFilteringTests|MCPToolRegistryTests|MCPSpecificToolTests|PeekabooBridgeTests|InputConfigTests" --no-parallel
+swift test --package-path Core/WinkAutomationKit --no-parallel
+swift test --package-path Core/WinkCore --filter "AgentTurnBoundaryTests|MCPToolExecutionTests|ToolFilteringTests|MCPToolRegistryTests|MCPSpecificToolTests|WinkBridgeTests|InputConfigTests" --no-parallel
 pnpm run test:safe
 pnpm run lint
 pnpm run lint:docs
@@ -120,8 +120,8 @@ git diff --check
 After removing telemetry, rerun at minimum:
 
 ```text
-swift test --package-path Core/PeekabooAutomationKit --filter "UIInputDispatcherTests|ActionInputDriverTests|ClickServiceTargetResolutionTests|ScrollServiceTargetResolutionTests|UIAutomationServiceVisualizerTests" --no-parallel
-swift test --package-path Apps/CLI -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --filter "CommanderBinderCommandBindingTests|CommanderBinderTests" --no-parallel
+swift test --package-path Core/WinkAutomationKit --filter "UIInputDispatcherTests|ActionInputDriverTests|ClickServiceTargetResolutionTests|ScrollServiceTargetResolutionTests|UIAutomationServiceVisualizerTests" --no-parallel
+swift test --package-path Apps/CLI -Xswiftc -DWINK_SKIP_AUTOMATION --filter "CommanderBinderCommandBindingTests|CommanderBinderTests" --no-parallel
 pnpm run lint:docs
 git diff --check
 ```

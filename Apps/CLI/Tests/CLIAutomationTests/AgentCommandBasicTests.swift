@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe))
 struct AgentCommandBasicTests {
@@ -9,7 +9,7 @@ struct AgentCommandBasicTests {
         // Verify the command configuration
         let config = AgentCommand.commandDescription
         #expect(config.commandName == "agent")
-        #expect(config.abstract == "Execute complex automation tasks using the Peekaboo agent")
+        #expect(config.abstract == "Execute complex automation tasks using the Wink agent")
     }
 
     @Test

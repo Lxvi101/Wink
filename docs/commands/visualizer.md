@@ -1,24 +1,24 @@
 ---
-summary: 'Exercise Peekaboo visual feedback animations via peekaboo visualizer'
+summary: 'Exercise Wink visual feedback animations via wink visualizer'
 read_when:
-  - 'verifying Peekaboo.app overlay rendering'
+  - 'verifying Wink.app overlay rendering'
   - 'debugging visualizer transport/animations'
 ---
 
-# `peekaboo visualizer`
+# `wink visualizer`
 
 Runs a lightweight smoke sequence for the three v4 visualizer surfaces: the agent cursor, app-anchored input HUD, and capture indicators.
 
-These are three feedback categories, not the complete settings surface: Peekaboo.app also has a visualizer master switch, a menu-bar app-icons switch, and playback controls.
+These are three feedback categories, not the complete settings surface: Wink.app also has a visualizer master switch, a menu-bar app-icons switch, and playback controls.
 
 ## What it does
-- Connects to the visualizer host (typically `Peekaboo.app`)
+- Connects to the visualizer host (typically `Wink.app`)
 - Emits representative cursor, input HUD, and capture-indicator events
 
 ## Usage
 ```bash
-peekaboo visualizer
-peekaboo visualizer --json > .artifacts/playground-tools/visualizer.json
+wink visualizer
+wink visualizer --json > .artifacts/playground-tools/visualizer.json
 ```
 
 ## Notes
@@ -26,6 +26,6 @@ peekaboo visualizer --json > .artifacts/playground-tools/visualizer.json
 - The smoke command deliberately previews overlays. Production targeted background input never emits cursor or input-HUD overlays, even when the target window is visible or frontmost; only untargeted or explicitly foreground input may show them.
 - If the visualizer host is not available, the command fails fast instead of pacing through the full animation sequence.
 - If nothing appears, verify:
-  - `Peekaboo.app` is running and reachable
-  - permissions are granted (`peekaboo permissions status`)
+  - `Wink.app` is running and reachable
+  - permissions are granted (`wink permissions status`)
   - your screen isn’t being captured by another app that blocks overlays

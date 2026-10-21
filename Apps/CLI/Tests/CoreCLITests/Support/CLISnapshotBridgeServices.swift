@@ -1,13 +1,13 @@
 import Foundation
-import PeekabooAutomationKit
-import PeekabooBridge
-import PeekabooCore
+import WinkAutomationKit
+import WinkBridge
+import WinkCore
 import Testing
 
 /// Snapshot/authentication fixtures must not initialize native capture, configuration, or AI services.
 @MainActor
-final class CLISnapshotBridgeServices: PeekabooBridgeServiceProviding {
-    static let snapshotOperations: Set<PeekabooBridgeOperation> = [
+final class CLISnapshotBridgeServices: WinkBridgeServiceProviding {
+    static let snapshotOperations: Set<WinkBridgeOperation> = [
         .ownsSnapshot, .invalidateImplicitLatestSnapshot, .permissionsStatus,
     ]
 
@@ -21,7 +21,7 @@ final class CLISnapshotBridgeServices: PeekabooBridgeServiceProviding {
     init(snapshots: any SnapshotManagerProtocol, directory: URL) {
         self.snapshots = snapshots
         // Handshake inspects these adapters' false capability flags, without connecting or a local fallback.
-        let client = PeekabooBridgeClient(socketPath: directory.appendingPathComponent("absent.sock").path)
+        let client = WinkBridgeClient(socketPath: directory.appendingPathComponent("absent.sock").path)
         self.applications = RemoteApplicationService(client: client)
         self.dialogs = RemoteDialogService(client: client)
     }

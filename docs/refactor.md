@@ -1,7 +1,7 @@
 ---
-summary: 'Current refactor index for Peekaboo architecture work'
+summary: 'Current refactor index for Wink architecture work'
 read_when:
-  - 'planning or reviewing active Peekaboo refactors'
+  - 'planning or reviewing active Wink refactors'
   - 'looking for the current desktop observation plan'
   - 'checking where older refactor logs moved'
 ---

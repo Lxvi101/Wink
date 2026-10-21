@@ -19,7 +19,7 @@ DISPLAY_NAMES = (
 # Test.ID can append a source location; do not match another declaration sharing a prefix.
 SELECTION = "^(?:" + "|".join(re.escape(name) for name in EXPECTED_IDS) + ")(?:/|$)"
 TEST_BUILD_ARGUMENTS = (
-    "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DPEEKABOO_SKIP_AUTOMATION",
+    "--disable-xctest", "--enable-swift-testing", "-Xswiftc", "-DWINK_SKIP_AUTOMATION",
 )
 
 
@@ -71,9 +71,9 @@ def main():
             and os.environ.get("RUNNER_ENVIRONMENT") == "github-hosted",
             "See environment proof is restricted to the secretless GitHub-hosted CI runner")
     for name, expected in (
-        ("PEEKABOO_INCLUDE_AUTOMATION_TESTS", "true"),
-        ("PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS", "false"),
-        ("PEEKABOO_CONFIG_DISABLE_MIGRATION", "1"),
+        ("WINK_INCLUDE_AUTOMATION_TESTS", "true"),
+        ("WINK_INCLUDE_AMBIENT_STATE_TESTS", "false"),
+        ("WINK_CONFIG_DISABLE_MIGRATION", "1"),
     ):
         require(os.environ.get(name) == expected, f"Set {name}={expected} for this hosted proof")
     # The deprecated --list-tests alias reparses execution flags as list options and fails.

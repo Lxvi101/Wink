@@ -1,9 +1,9 @@
 import CoreGraphics
 import Foundation
-import PeekabooCore
-import PeekabooFoundation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @MainActor
 struct SeeCommandRemoteDetectionTimeoutTests {
@@ -57,7 +57,7 @@ private final class MockTimeoutAwareAutomationService: DetectElementsRequestTime
         windowContext _: WindowContext?
     ) async throws -> ElementDetectionResult {
         self.baseDetectElementsCalls += 1
-        throw PeekabooError.operationError(message: "Base detectElements path should not be used")
+        throw WinkError.operationError(message: "Base detectElements path should not be used")
     }
 
     func detectElements(
@@ -71,7 +71,7 @@ private final class MockTimeoutAwareAutomationService: DetectElementsRequestTime
         try await Task.sleep(nanoseconds: 20_000_000)
 
         if requestTimeoutSec < self.minimumRequestTimeoutSec {
-            throw PeekabooError.timeout("remote detectElements request timed out")
+            throw WinkError.timeout("remote detectElements request timed out")
         }
 
         return makeDetectionResult(snapshotId: "remote")
@@ -110,7 +110,7 @@ private final class MockTimeoutAwareAutomationService: DetectElementsRequestTime
     }
 
     func findElement(matching _: UIElementSearchCriteria, in _: String?) async throws -> DetectedElement {
-        throw PeekabooError.elementNotFound("not implemented")
+        throw WinkError.elementNotFound("not implemented")
     }
 }
 
@@ -160,7 +160,7 @@ private final class MockPlainAutomationService: UIAutomationServiceProtocol {
     }
 
     func findElement(matching _: UIElementSearchCriteria, in _: String?) async throws -> DetectedElement {
-        throw PeekabooError.elementNotFound("not implemented")
+        throw WinkError.elementNotFound("not implemented")
     }
 }
 

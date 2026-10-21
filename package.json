@@ -1,18 +1,18 @@
 {
-  "name": "@steipete/peekaboo",
+  "name": "wink",
   "version": "4.9.6",
   "description": "macOS automation MCP server with screen capture, UI interaction, and AI analysis",
   "private": false,
   "type": "module",
-  "main": "peekaboo-mcp.js",
+  "main": "wink-mcp.js",
   "bin": {
-    "peekaboo": "peekaboo",
-    "peekaboo-mcp": "peekaboo-mcp.js"
+    "wink": "wink",
+    "wink-mcp": "wink-mcp.js"
   },
   "files": [
-    "peekaboo",
+    "wink",
     "libswiftCompatibility*.dylib",
-    "peekaboo-mcp.js",
+    "wink-mcp.js",
     "README.md",
     "LICENSE"
   ],
@@ -24,11 +24,11 @@
     "build:cli:release": "python3 scripts/setup-swift-workspace.py run -- swift build --configuration release --package-path Apps/CLI",
     "build:swift": "./scripts/build-swift-arm.sh",
     "build:swift:all": "./scripts/build-swift-universal.sh",
-    "app:restart": "./scripts/restart-peekaboo.sh",
-    "app:install-companion": "./scripts/restart-peekaboo.sh --deployment",
+    "app:restart": "./scripts/restart-wink.sh",
+    "app:install-companion": "./scripts/restart-wink.sh --deployment",
     "build": "pnpm run build:cli",
-    "test:safe": "pnpm run setup:swift && pnpm run test:swift-workspace && pnpm run test:log-scripts && pnpm run test:ambient-state-policy && pnpm run test:mcp-wrapper && pnpm run test:guidance && pnpm run test:codeql-build-graph && pnpm run test:release-validation && pnpm run test:docs && pnpm run test:docs-site && node --test tests/homebrew-release-assets.test.mjs && scripts/test-source-provenance.sh && scripts/test-terminal-artifact-env.sh && scripts/test-release-version.sh && python3 scripts/test-release-archive-publication.py && scripts/test-read-macho-info-plist.sh && scripts/test-artifact-tree-manifest.sh && scripts/test-controller-source-manifest.sh && scripts/test-atomic-rename-exclusive.sh && scripts/test-terminal-artifact-policy.sh && node scripts/test-terminal-archive-policy.mjs && node scripts/test-terminal-dmg-payload.mjs && scripts/test-terminal-manifest-portability.sh && scripts/test-build-node-runtime-macos.sh && scripts/test-build-playground-artifact.sh && scripts/test-build-terminal-dmg.sh && scripts/test-notarize-terminal-artifact.sh && python3 scripts/test-notary-api-submit.py && scripts/test-release-signing-policy.sh && scripts/test-release-package-resolution.sh && scripts/test-codesign-with-retry.sh && scripts/test-sign-release-app.sh && scripts/test-swift-runtime-libraries.sh && python3 scripts/test-standalone-cli-install.py && scripts/test-restart-peekaboo.sh && scripts/test-swiftpm-consumer.sh && node --no-warnings scripts/test-chrome-devtools-mcp-contract.mjs && node --no-warnings scripts/test-browser-provider-connection.mjs && pnpm run test:release-preflight && pnpm run test:background-certification && swift test ${PEEKABOO_BUILD_JOBS:+--jobs \"$PEEKABOO_BUILD_JOBS\"} --package-path Core/PeekabooFoundation && PEEKABOO_INCLUDE_AUTOMATION_TESTS=true PEEKABOO_INCLUDE_AMBIENT_STATE_TESTS=false swift test ${PEEKABOO_BUILD_JOBS:+--jobs \"$PEEKABOO_BUILD_JOBS\"} --package-path Apps/CLI -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --no-parallel",
-    "test:mcp-wrapper": "node --test tests/peekaboo-mcp-*.test.mjs",
+    "test:safe": "pnpm run setup:swift && pnpm run test:swift-workspace && pnpm run test:log-scripts && pnpm run test:ambient-state-policy && pnpm run test:mcp-wrapper && pnpm run test:guidance && pnpm run test:codeql-build-graph && pnpm run test:release-validation && pnpm run test:docs && pnpm run test:docs-site && node --test tests/homebrew-release-assets.test.mjs && scripts/test-source-provenance.sh && scripts/test-terminal-artifact-env.sh && scripts/test-release-version.sh && python3 scripts/test-release-archive-publication.py && scripts/test-read-macho-info-plist.sh && scripts/test-artifact-tree-manifest.sh && scripts/test-controller-source-manifest.sh && scripts/test-atomic-rename-exclusive.sh && scripts/test-terminal-artifact-policy.sh && node scripts/test-terminal-archive-policy.mjs && node scripts/test-terminal-dmg-payload.mjs && scripts/test-terminal-manifest-portability.sh && scripts/test-build-node-runtime-macos.sh && scripts/test-build-playground-artifact.sh && scripts/test-build-terminal-dmg.sh && scripts/test-notarize-terminal-artifact.sh && python3 scripts/test-notary-api-submit.py && scripts/test-release-signing-policy.sh && scripts/test-release-package-resolution.sh && scripts/test-codesign-with-retry.sh && scripts/test-sign-release-app.sh && scripts/test-swift-runtime-libraries.sh && python3 scripts/test-standalone-cli-install.py && scripts/test-restart-wink.sh && scripts/test-swiftpm-consumer.sh && node --no-warnings scripts/test-chrome-devtools-mcp-contract.mjs && node --no-warnings scripts/test-browser-provider-connection.mjs && pnpm run test:release-preflight && pnpm run test:background-certification && swift test ${WINK_BUILD_JOBS:+--jobs \"$WINK_BUILD_JOBS\"} --package-path Core/WinkFoundation && WINK_INCLUDE_AUTOMATION_TESTS=true WINK_INCLUDE_AMBIENT_STATE_TESTS=false swift test ${WINK_BUILD_JOBS:+--jobs \"$WINK_BUILD_JOBS\"} --package-path Apps/CLI -Xswiftc -DWINK_SKIP_AUTOMATION --no-parallel",
+    "test:mcp-wrapper": "node --test tests/wink-mcp-*.test.mjs",
     "test:ambient-state-policy": "node --test tests/ambient-state-test-policy.test.mjs",
     "test:guidance": "node --test tests/background-capability-guidance.test.mjs tests/subprocess-integration-guidance.test.mjs",
     "test:codeql-build-graph": "node --test tests/codeql-build-graph.test.mjs",
@@ -36,11 +36,11 @@
     "test:docs-site": "node --test tests/docs-site-*.test.mjs",
     "test:release-preflight": "node --test tests/release-preflight-contract.test.mjs",
     "test:background-certification": "scripts/test-background-certification.sh",
-    "test:automation": "pnpm run setup:swift && PEEKABOO_INCLUDE_AUTOMATION_TESTS=true swift test --package-path Apps/CLI --no-parallel",
-    "test:automation:read": "pnpm run setup:swift && RUN_AUTOMATION_READ=true PEEKABOO_INCLUDE_AUTOMATION_TESTS=true swift test --package-path Apps/CLI --no-parallel",
-    "test:automation:input": "pnpm run setup:swift && PEEKABOO_INCLUDE_AUTOMATION_TESTS=true PEEKABOO_RUN_INPUT_AUTOMATION_TESTS=true swift test --package-path Core/PeekabooCore --no-parallel",
-    "test:automation:local": "pnpm run setup:swift && bash -lc 'BIN_PATH=$(swift build --package-path Apps/CLI --show-bin-path) && RUN_LOCAL_TESTS=true PEEKABOO_INCLUDE_AUTOMATION_TESTS=true PEEKABOO_RUN_INPUT_AUTOMATION_TESTS=true PEEKABOO_CLI_PATH=\"$BIN_PATH/peekaboo\" swift test --package-path Apps/CLI --no-parallel'",
-    "test:all": "pnpm run setup:swift && bash -lc 'set -euo pipefail; cd Apps/CLI && swift test -Xswiftc -DPEEKABOO_SKIP_AUTOMATION --no-parallel && PEEKABOO_INCLUDE_AUTOMATION_TESTS=true swift test --no-parallel'",
+    "test:automation": "pnpm run setup:swift && WINK_INCLUDE_AUTOMATION_TESTS=true swift test --package-path Apps/CLI --no-parallel",
+    "test:automation:read": "pnpm run setup:swift && RUN_AUTOMATION_READ=true WINK_INCLUDE_AUTOMATION_TESTS=true swift test --package-path Apps/CLI --no-parallel",
+    "test:automation:input": "pnpm run setup:swift && WINK_INCLUDE_AUTOMATION_TESTS=true WINK_RUN_INPUT_AUTOMATION_TESTS=true swift test --package-path Core/WinkCore --no-parallel",
+    "test:automation:local": "pnpm run setup:swift && bash -lc 'BIN_PATH=$(swift build --package-path Apps/CLI --show-bin-path) && RUN_LOCAL_TESTS=true WINK_INCLUDE_AUTOMATION_TESTS=true WINK_RUN_INPUT_AUTOMATION_TESTS=true WINK_CLI_PATH=\"$BIN_PATH/wink\" swift test --package-path Apps/CLI --no-parallel'",
+    "test:all": "pnpm run setup:swift && bash -lc 'set -euo pipefail; cd Apps/CLI && swift test -Xswiftc -DWINK_SKIP_AUTOMATION --no-parallel && WINK_INCLUDE_AUTOMATION_TESTS=true swift test --no-parallel'",
     "test": "pnpm run test:safe",
     "tachikoma:test:integration": "zsh -lc 'source ~/.profile >/dev/null 2>&1; cd Tachikoma; INTEGRATION_TESTS=1 swift test --no-parallel -Xswiftc -DLIVE_PROVIDER_TESTS'",
     "lint:swift": "swiftlint lint --config .swiftlint.yml",
@@ -53,10 +53,10 @@
     "test:docs": "node --test tests/docs-list-metadata.test.mjs",
     "docs:site": "node scripts/build-docs-site.mjs",
     "lint:docs": "node scripts/docs-lint.mjs",
-    "benchmark:tools": "Apps/Playground/scripts/peekaboo-perf.sh",
-    "test:benchmark-tools": "scripts/test-peekaboo-perf.sh",
+    "benchmark:tools": "Apps/Playground/scripts/wink-perf.sh",
+    "test:benchmark-tools": "scripts/test-wink-perf.sh",
     "oracle": "pnpm -C ../oracle oracle",
-    "postinstall": "chmod +x peekaboo peekaboo-mcp.js 2>/dev/null || true",
+    "postinstall": "chmod +x wink wink-mcp.js 2>/dev/null || true",
     "check:changed": "pnpm run test:safe",
     "test:changed": "pnpm run test:safe",
     "crabbox:hydrate": "crabbox actions hydrate",
@@ -66,14 +66,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openclaw/Peekaboo.git"
+    "url": "git+https://github.com/Lxvi101/Wink.git"
   },
   "author": "Peter Steinberger <steipete@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/openclaw/Peekaboo/issues"
+    "url": "https://github.com/Lxvi101/Wink/issues"
   },
-  "homepage": "https://github.com/openclaw/Peekaboo#readme",
+  "homepage": "https://github.com/Lxvi101/Wink#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",

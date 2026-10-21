@@ -1,0 +1,717 @@
+import Darwin
+import Foundation
+import MachO
+import WinkBridge
+
+enum DaemonLaunchPolicy {
+    static let defaultLaunchTimeoutSeconds =
+        WinkBridgeServer.defaultScreenCaptureKitOwnershipPreparationTimeoutSeconds + 1
+
+    enum ImplicitRuntimeCandidateRole: Equatable {
+        case reusableDaemon
+        case defaultAppFallback
+    }
+
+    struct LaunchResult {
+        let status: WinkDaemonStatus
+        let processID: pid_t
+
+        var ownsObservedDaemon: Bool {
+            self.status.pid == self.processID
+        }
+    }
+
+    typealias OnDemandDaemonLauncher = @MainActor @Sendable (
+        _ socketPath: String,
+        _ arguments: [String],
+        _ environment: [String: String]
+    ) async throws -> LaunchResult
+
+    enum SocketAvailability: Equatable {
+        case available
+        case reusableDaemon
+        case timedOut
+    }
+
+    enum LegacyStopRaceResolution: Equatable {
+        case keepReplacement
+        case useLegacy(socketPath: String)
+    }
+
+    static func shouldAutoStartDaemon(
+        options: CommandRuntimeOptions,
+        environment: [String: String]
+    ) -> Bool {
+        options.autoStartDaemon &&
+            BridgeSocketResolver.explicitBridgeSocket(options: options, environment: environment) == nil
+    }
+
+    static func daemonSocketPath(environment: [String: String]) -> String {
+        self.explicitDaemonSocketPath(bridgeSocket: nil, environment: environment)
+            ?? WinkBridgeConstants.daemonSocketPath
+    }
+
+    static func explicitDaemonSocketPath(bridgeSocket: String?, environment: [String: String]) -> String? {
+        if let bridgeSocket {
+            return bridgeSocket
+        }
+        if let socket = environment["WINK_DAEMON_SOCKET"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !socket.isEmpty {
+            return socket
+        }
+        return nil
+    }
+
+    static func onDemandDaemonEnvironment(_ environment: [String: String]) -> [String: String] {
+        var sanitized = environment
+        sanitized.removeValue(forKey: "WINK_CAPTURE_ENGINE")
+        return sanitized
+    }
+
+    static func runtimeBuildIdentity(
+        executableURL: URL? = Bundle.main.executableURL,
+        executableUUIDProvider: (URL) -> [String] = executableUUIDs
+    ) -> String {
+        let protocolVersion = WinkBridgeConstants.protocolVersion
+        let identityPrefix = "\(protocolVersion.major).\(protocolVersion.minor)|" +
+            WinkBridgeConstants.buildIdentifier
+        let resolvedURL = executableURL?.resolvingSymlinksInPath()
+        if let resolvedURL {
+            let executableUUIDs = executableUUIDProvider(resolvedURL).sorted()
+            if !executableUUIDs.isEmpty {
+                return "\(identityPrefix)|\(executableUUIDs.joined(separator: ","))"
+            }
+        }
+
+        let executablePath = resolvedURL?.path ?? CommandLine.arguments.first ?? "unknown"
+        let attributes = try? FileManager.default.attributesOfItem(atPath: executablePath)
+        let fileSize = (attributes?[.size] as? NSNumber)?.uint64Value ?? 0
+        let modificationBits = (attributes?[.modificationDate] as? Date)?
+            .timeIntervalSinceReferenceDate.bitPattern ?? 0
+        return [
+            identityPrefix,
+            executablePath,
+            "\(fileSize)",
+            "\(modificationBits)",
+        ].joined(separator: "|")
+    }
+
+    static func daemonExecutableURL(
+        bundleExecutableURL: URL? = Bundle.main.executableURL,
+        arguments: [String] = CommandLine.arguments,
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        currentDirectoryURL: URL = URL(
+            fileURLWithPath: FileManager.default.currentDirectoryPath,
+            isDirectory: true
+        ),
+        isExecutableFile: (String) -> Bool = { FileManager.default.isExecutableFile(atPath: $0) }
+    ) -> URL? {
+        // Foundation's Process launches an exact filesystem path; it never searches PATH for a bare argv[0].
+        if let bundleExecutableURL, bundleExecutableURL.isFileURL {
+            return bundleExecutableURL.standardizedFileURL
+        }
+
+        guard let argument = arguments.first?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !argument.isEmpty
+        else { return nil }
+
+        if argument.contains("/") {
+            return URL(fileURLWithPath: argument, relativeTo: currentDirectoryURL).standardizedFileURL
+        }
+
+        guard let path = environment["PATH"] else { return nil }
+        for pathComponent in path.split(separator: ":", omittingEmptySubsequences: false) {
+            let directoryURL = pathComponent.isEmpty
+                ? currentDirectoryURL
+                : URL(fileURLWithPath: String(pathComponent), relativeTo: currentDirectoryURL)
+            let candidate = directoryURL.appendingPathComponent(argument).standardizedFileURL
+            if isExecutableFile(candidate.path) {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    private enum ByteOrder {
+        case little
+        case big
+    }
+
+    private nonisolated static func executableUUIDs(_ executableURL: URL) -> [String] {
+        guard let data = try? Data(contentsOf: executableURL, options: .mappedIfSafe) else {
+            return []
+        }
+        return self.machoUUIDs(in: data)
+    }
+
+    nonisolated static func machoUUIDs(in data: Data) -> [String] {
+        guard let magic = readUInt32(data, at: 0, order: .little) else { return [] }
+        switch magic {
+        case UInt32(FAT_CIGAM), UInt32(FAT_CIGAM_64):
+            return self.fatMachOUUIDs(
+                in: data,
+                order: .big,
+                uses64BitArchitectureRecords: magic == UInt32(FAT_CIGAM_64)
+            )
+        case UInt32(FAT_MAGIC), UInt32(FAT_MAGIC_64):
+            return self.fatMachOUUIDs(
+                in: data,
+                order: .little,
+                uses64BitArchitectureRecords: magic == UInt32(FAT_MAGIC_64)
+            )
+        default:
+            return self.machOUUID(in: data, sliceOffset: 0).map { [$0] } ?? []
+        }
+    }
+
+    private nonisolated static func fatMachOUUIDs(
+        in data: Data,
+        order: ByteOrder,
+        uses64BitArchitectureRecords: Bool
+    ) -> [String] {
+        guard let architectureCount = readUInt32(data, at: 4, order: order) else { return [] }
+        let recordSize = uses64BitArchitectureRecords ? 32 : 20
+        guard architectureCount <= 64 else { return [] }
+
+        var uuids: [String] = []
+        for index in 0..<Int(architectureCount) {
+            let recordOffset = 8 + index * recordSize
+            let rawSliceOffset: UInt64? = if uses64BitArchitectureRecords {
+                self.readUInt64(data, at: recordOffset + 8, order: order)
+            } else {
+                self.readUInt32(data, at: recordOffset + 8, order: order).map(UInt64.init)
+            }
+            guard let rawSliceOffset, rawSliceOffset <= UInt64(Int.max) else { return [] }
+            if let uuid = machOUUID(in: data, sliceOffset: Int(rawSliceOffset)) {
+                uuids.append(uuid)
+            }
+        }
+        return uuids
+    }
+
+    private nonisolated static func machOUUID(in data: Data, sliceOffset: Int) -> String? {
+        guard let magic = readUInt32(data, at: sliceOffset, order: .little) else { return nil }
+        let order: ByteOrder
+        let headerSize: Int
+        switch magic {
+        case UInt32(MH_MAGIC):
+            order = .little
+            headerSize = 28
+        case UInt32(MH_MAGIC_64):
+            order = .little
+            headerSize = 32
+        case UInt32(MH_CIGAM):
+            order = .big
+            headerSize = 28
+        case UInt32(MH_CIGAM_64):
+            order = .big
+            headerSize = 32
+        default:
+            return nil
+        }
+
+        guard let commandCount = readUInt32(data, at: sliceOffset + 16, order: order),
+              let commandBytes = readUInt32(data, at: sliceOffset + 20, order: order),
+              commandCount <= 16384
+        else { return nil }
+        var commandOffset = sliceOffset + headerSize
+        let commandsEnd = commandOffset + Int(commandBytes)
+        guard commandsEnd >= commandOffset, commandsEnd <= data.count else { return nil }
+
+        for _ in 0..<Int(commandCount) {
+            guard let command = readUInt32(data, at: commandOffset, order: order),
+                  let rawCommandSize = readUInt32(data, at: commandOffset + 4, order: order)
+            else { return nil }
+            let commandSize = Int(rawCommandSize)
+            guard commandSize >= 8, commandOffset + commandSize <= commandsEnd else { return nil }
+
+            if command == UInt32(LC_UUID), commandSize >= 24 {
+                let uuidRange = (commandOffset + 8)..<(commandOffset + 24)
+                return data[uuidRange].map { String(format: "%02x", $0) }.joined()
+            }
+
+            commandOffset += commandSize
+        }
+        return nil
+    }
+
+    private nonisolated static func readUInt32(_ data: Data, at offset: Int, order: ByteOrder) -> UInt32? {
+        guard offset >= 0, offset + 4 <= data.count else { return nil }
+        let bytes = data[offset..<(offset + 4)]
+        return bytes.enumerated().reduce(UInt32(0)) { partial, pair in
+            let shift = switch order {
+            case .little: pair.offset * 8
+            case .big: (3 - pair.offset) * 8
+            }
+            return partial | UInt32(pair.element) << UInt32(shift)
+        }
+    }
+
+    private nonisolated static func readUInt64(_ data: Data, at offset: Int, order: ByteOrder) -> UInt64? {
+        guard offset >= 0, offset + 8 <= data.count else { return nil }
+        let bytes = data[offset..<(offset + 8)]
+        return bytes.enumerated().reduce(UInt64(0)) { partial, pair in
+            let shift = switch order {
+            case .little: pair.offset * 8
+            case .big: (7 - pair.offset) * 8
+            }
+            return partial | UInt64(pair.element) << UInt64(shift)
+        }
+    }
+
+    static func autoStartSocketPath(
+        daemonSocketPath: String,
+        defaultSocketWasOccupiedAndRejected: Bool,
+        runtimeBuildIdentity: String
+    ) -> String {
+        guard defaultSocketWasOccupiedAndRejected,
+              let buildScopedSocketPath = buildScopedDaemonSocketPath(
+                  daemonSocketPath: daemonSocketPath,
+                  runtimeBuildIdentity: runtimeBuildIdentity
+              )
+        else {
+            return daemonSocketPath
+        }
+
+        return buildScopedSocketPath
+    }
+
+    static func buildScopedDaemonSocketPath(
+        daemonSocketPath: String,
+        runtimeBuildIdentity: String
+    ) -> String? {
+        guard self.standardizedSocketPath(daemonSocketPath) ==
+            self.standardizedSocketPath(WinkBridgeConstants.daemonSocketPath)
+        else { return nil }
+        return URL(fileURLWithPath: daemonSocketPath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("daemon-\(self.stableHash(runtimeBuildIdentity)).sock")
+            .path
+    }
+
+    private static func stableHash(_ value: String) -> String {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash &*= 1_099_511_628_211
+        }
+        return String(format: "%016llx", hash)
+    }
+
+    static func daemonIdleTimeoutSeconds(environment: [String: String]) -> TimeInterval {
+        guard let raw = environment["WINK_DAEMON_IDLE_TIMEOUT_SECONDS"]?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+            let value = TimeInterval(raw),
+            value > 0 else {
+            return CommandRuntime.defaultDaemonIdleTimeoutSeconds
+        }
+        return value
+    }
+
+    static func shouldMigrateLegacyDaemon(targetSocketPath: String) -> Bool {
+        self.standardizedSocketPath(targetSocketPath) ==
+            self.standardizedSocketPath(WinkBridgeConstants.daemonSocketPath)
+    }
+
+    static func implicitRuntimeCandidateRole(
+        socketPath: String,
+        daemonSocketPath: String,
+        buildScopedDaemonSocketPath: String? = nil
+    ) -> ImplicitRuntimeCandidateRole? {
+        let candidate = self.standardizedSocketPath(socketPath)
+        if candidate == self.standardizedSocketPath(daemonSocketPath) ||
+            buildScopedDaemonSocketPath.map(self.standardizedSocketPath) == candidate {
+            return .reusableDaemon
+        }
+        if self.shouldMigrateLegacyDaemon(targetSocketPath: daemonSocketPath),
+           candidate == self.standardizedSocketPath(WinkBridgeConstants.winkSocketPath) {
+            return .defaultAppFallback
+        }
+        return nil
+    }
+
+    static func isSelectableImplicitRuntimeCandidate(
+        role: ImplicitRuntimeCandidateRole,
+        handshake: WinkBridgeHandshakeResponse,
+        daemonStatus: WinkDaemonStatus?
+    ) -> Bool {
+        switch role {
+        case .reusableDaemon:
+            daemonStatus.map(DaemonControlClient.isReusableDaemonStatus) == true
+        case .defaultAppFallback:
+            handshake.hostKind == .gui ||
+                daemonStatus.map(DaemonControlClient.isReusableDaemonStatus) == true
+        }
+    }
+
+    static func onDemandDaemonArguments(socketPath: String, idleTimeoutSeconds: TimeInterval) -> [String] {
+        self.daemonArguments(
+            socketPath: socketPath,
+            mode: .auto,
+            idleTimeoutSeconds: idleTimeoutSeconds
+        )
+    }
+
+    static func daemonArguments(
+        socketPath: String,
+        mode: WinkDaemonMode,
+        pollIntervalMs: Int? = nil,
+        idleTimeoutSeconds: TimeInterval
+    ) -> [String] {
+        var arguments = [
+            "daemon",
+            "run",
+            "--mode",
+            mode.rawValue,
+            "--bridge-socket",
+            socketPath,
+        ]
+        if let pollIntervalMs, pollIntervalMs > 0 {
+            arguments.append(contentsOf: [
+                "--poll-interval",
+                "\(pollIntervalMs)ms",
+            ])
+        }
+        if mode == .auto {
+            arguments.append(contentsOf: [
+                "--idle-timeout",
+                String(format: "%.3fs", idleTimeoutSeconds),
+            ])
+        }
+        return arguments
+    }
+
+    static func migratedDaemonArguments(
+        socketPath: String,
+        status: WinkDaemonStatus,
+        fallbackIdleTimeoutSeconds: TimeInterval
+    ) -> [String]? {
+        guard let mode = DaemonControlClient.migrationMode(for: status) else { return nil }
+        let idleTimeoutSeconds = status.activity?.idleTimeoutSeconds.flatMap { $0 > 0 ? $0 : nil }
+            ?? fallbackIdleTimeoutSeconds
+        return self.daemonArguments(
+            socketPath: socketPath,
+            mode: mode,
+            pollIntervalMs: status.windowTracker?.cgPollIntervalMs,
+            idleTimeoutSeconds: idleTimeoutSeconds
+        )
+    }
+
+    @MainActor
+    static func startOnDemandDaemon(
+        socketPath: String,
+        environment: [String: String],
+        launch: @escaping OnDemandDaemonLauncher = { socketPath, arguments, environment in
+            try await DaemonLaunchPolicy.launchDaemon(
+                socketPath: socketPath,
+                arguments: arguments,
+                environment: environment
+            )
+        }
+    ) async throws -> String? {
+        try await DaemonStartupGate.withExclusiveStartup(
+            lockURL: DaemonPaths.daemonStartupLockURL(socketPath: socketPath)
+        ) { _ in
+            try await self.startOnDemandDaemonWithStartupLockHeld(
+                socketPath: socketPath,
+                environment: environment,
+                launch: launch
+            )
+        }
+    }
+
+    @MainActor
+    private static func startOnDemandDaemonWithStartupLockHeld(
+        socketPath: String,
+        environment: [String: String],
+        launch: @escaping OnDemandDaemonLauncher
+    ) async throws -> String? {
+        try Task.checkCancellation()
+        let client = DaemonControlClient(socketPath: socketPath)
+
+        if try await client.fetchReusableDaemonStatus() != nil {
+            try Task.checkCancellation()
+            return socketPath
+        }
+        try Task.checkCancellation()
+
+        let socketAvailability = try await self.waitForDaemonSocketAvailability(
+            socketPath: socketPath,
+            client: client,
+            timeout: TimeInterval(DaemonControlClient.defaultShutdownWaitSeconds)
+        )
+        try Task.checkCancellation()
+        switch socketAvailability {
+        case .available:
+            break
+        case .reusableDaemon:
+            return socketPath
+        case .timedOut:
+            return nil
+        }
+
+        let fallbackIdleTimeoutSeconds = self.daemonIdleTimeoutSeconds(environment: environment)
+        let launchEnvironment = self.onDemandDaemonEnvironment(environment)
+        var launchArguments = self.daemonArguments(
+            socketPath: socketPath,
+            mode: .auto,
+            idleTimeoutSeconds: fallbackIdleTimeoutSeconds
+        )
+        let legacyClient = DaemonControlClient(socketPath: WinkBridgeConstants.winkSocketPath)
+        if self.shouldMigrateLegacyDaemon(targetSocketPath: socketPath),
+           let legacyStatus = try await legacyClient.fetchReusableDaemonStatus(),
+           let migrationArguments = migratedDaemonArguments(
+               socketPath: socketPath,
+               status: legacyStatus,
+               fallbackIdleTimeoutSeconds: fallbackIdleTimeoutSeconds
+           ) {
+            try Task.checkCancellation()
+            if DaemonControlClient.supportsSafeMigration(legacyStatus),
+               DaemonControlClient.isIdleForMigration(legacyStatus) {
+                launchArguments = migrationArguments
+
+                let replacement: LaunchResult
+                do {
+                    replacement = try await self.performMigrationLaunch(
+                        launch: {
+                            try await launch(socketPath, launchArguments, launchEnvironment)
+                        },
+                        rollback: { replacement in
+                            _ = await self.stopReplacementAfterCancellation(
+                                client: client,
+                                replacement: replacement
+                            )
+                        }
+                    )
+                } catch let error as CancellationError {
+                    throw error
+                } catch {
+                    if Task.isCancelled {
+                        throw CancellationError()
+                    }
+                    let fallback = await self.compatibleLegacyFallbackSocketPath {
+                        try? await legacyClient.fetchReusableDaemonStatus()
+                    }
+                    try Task.checkCancellation()
+                    return fallback
+                }
+
+                do {
+                    let stopped = try await legacyClient.stopAndWait(
+                        waitSeconds: DaemonControlClient.defaultShutdownWaitSeconds,
+                        expectedPID: legacyStatus.pid,
+                        requireIdentityMatch: true
+                    )
+                    if !stopped {
+                        if let currentLegacyStatus = try await legacyClient.fetchReusableDaemonStatus() {
+                            try Task.checkCancellation()
+                            let resolution = await self.resolveLegacyStopRace(
+                                legacyStatus: currentLegacyStatus,
+                                client: client,
+                                replacement: replacement,
+                                replacementSocketPath: socketPath
+                            )
+                            try Task.checkCancellation()
+                            return resolution
+                        }
+                    }
+                } catch is CancellationError {
+                    _ = await self.stopReplacementAfterCancellation(
+                        client: client,
+                        replacement: replacement
+                    )
+                    throw CancellationError()
+                } catch {
+                    if Task.isCancelled {
+                        throw CancellationError()
+                    }
+                    let currentLegacyStatus: WinkDaemonStatus?
+                    do {
+                        currentLegacyStatus = try await legacyClient.fetchReusableDaemonStatus()
+                    } catch {
+                        _ = await self.stopReplacement(client: client, replacement: replacement)
+                        throw error
+                    }
+                    if let currentLegacyStatus {
+                        try Task.checkCancellation()
+                        let resolution = await self.resolveLegacyStopRace(
+                            legacyStatus: currentLegacyStatus,
+                            client: client,
+                            replacement: replacement,
+                            replacementSocketPath: socketPath
+                        )
+                        try Task.checkCancellation()
+                        return resolution
+                    }
+                }
+                let replacementIsReusable = try await client.fetchReusableDaemonStatus() != nil
+                try Task.checkCancellation()
+                return replacementIsReusable ? socketPath : nil
+            }
+
+            if let fallback = self.compatibleLegacyFallbackSocketPath(for: legacyStatus) {
+                try Task.checkCancellation()
+                return fallback
+            }
+            // An incompatible legacy host cannot satisfy this caller. Leave it running and
+            // start the current daemon on the free canonical socket instead.
+            launchArguments = self.daemonArguments(
+                socketPath: socketPath,
+                mode: .auto,
+                idleTimeoutSeconds: fallbackIdleTimeoutSeconds
+            )
+        }
+
+        do {
+            _ = try await launch(socketPath, launchArguments, launchEnvironment)
+            return socketPath
+        } catch let error as CancellationError {
+            throw error
+        } catch {
+            if Task.isCancelled {
+                throw CancellationError()
+            }
+            return nil
+        }
+    }
+
+    static func compatibleLegacyFallbackSocketPath(for status: WinkDaemonStatus) -> String? {
+        guard DaemonControlPlanner.supportsCurrentDaemon(status) else {
+            return nil
+        }
+        return WinkBridgeConstants.winkSocketPath
+    }
+
+    static func compatibleLegacyFallbackSocketPath(
+        refreshingWith fetchStatus: () async -> WinkDaemonStatus?
+    ) async -> String? {
+        guard let currentStatus = await fetchStatus() else { return nil }
+        return self.compatibleLegacyFallbackSocketPath(for: currentStatus)
+    }
+
+    static func legacyStopRaceResolution(for status: WinkDaemonStatus) -> LegacyStopRaceResolution {
+        if let fallback = self.compatibleLegacyFallbackSocketPath(for: status) {
+            return .useLegacy(socketPath: fallback)
+        }
+        return .keepReplacement
+    }
+
+    static func legacyStopRaceSocketPath(
+        replacementCleanupSucceeded: Bool,
+        replacementIsReusable: Bool,
+        legacySocketPath: String,
+        replacementSocketPath: String
+    ) -> String? {
+        if replacementCleanupSucceeded {
+            return legacySocketPath
+        }
+        return replacementIsReusable ? replacementSocketPath : nil
+    }
+
+    private static func resolveLegacyStopRace(
+        legacyStatus: WinkDaemonStatus,
+        client: DaemonControlClient,
+        replacement: LaunchResult,
+        replacementSocketPath: String
+    ) async -> String? {
+        switch self.legacyStopRaceResolution(for: legacyStatus) {
+        case .keepReplacement:
+            return await (try? client.fetchReusableDaemonStatus()) != nil ? replacementSocketPath : nil
+        case let .useLegacy(socketPath):
+            let cleanedUp = await self.stopReplacement(client: client, replacement: replacement)
+            var replacementIsReusable = false
+            if !cleanedUp {
+                replacementIsReusable = await (try? client.fetchReusableDaemonStatus()) != nil
+            }
+            return self.legacyStopRaceSocketPath(
+                replacementCleanupSucceeded: cleanedUp,
+                replacementIsReusable: replacementIsReusable,
+                legacySocketPath: socketPath,
+                replacementSocketPath: replacementSocketPath
+            )
+        }
+    }
+
+    static func waitForDaemonSocketAvailability(
+        socketPath: String,
+        client: DaemonControlClient,
+        timeout: TimeInterval
+    ) async throws -> SocketAvailability {
+        try Task.checkCancellation()
+        guard self.bridgeLeaseIsHeld(socketPath: socketPath) else {
+            return .available
+        }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if try await client.fetchReusableDaemonStatus() != nil {
+                try Task.checkCancellation()
+                return .reusableDaemon
+            }
+            try Task.checkCancellation()
+            if !self.bridgeLeaseIsHeld(socketPath: socketPath) {
+                return .available
+            }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        try Task.checkCancellation()
+        return self.bridgeLeaseIsHeld(socketPath: socketPath) ? .timedOut : .available
+    }
+
+    private static func bridgeLeaseIsHeld(socketPath: String) -> Bool {
+        let fd = open(
+            "\(socketPath).lock",
+            O_RDWR | O_CLOEXEC | O_NOFOLLOW
+        )
+        guard fd >= 0 else { return false }
+        defer { close(fd) }
+
+        if flock(fd, LOCK_EX | LOCK_NB) == 0 {
+            flock(fd, LOCK_UN)
+            return false
+        }
+        return errno == EWOULDBLOCK || errno == EAGAIN
+    }
+
+    static func stopReplacement(
+        client: DaemonControlClient,
+        replacement: LaunchResult
+    ) async -> Bool {
+        guard replacement.ownsObservedDaemon else { return true }
+        let expectedPID = replacement.processID
+        let deadline = Date().addingTimeInterval(
+            TimeInterval(DaemonControlClient.defaultShutdownWaitSeconds)
+        )
+
+        do {
+            while Date() < deadline {
+                guard let status = try await client.fetchControllableDaemonStatus(), status.pid == expectedPID else {
+                    return true
+                }
+                _ = try? await client.stopDaemon(expectedPID: expectedPID)
+                do {
+                    try await Task.sleep(nanoseconds: 200_000_000)
+                } catch {
+                    break
+                }
+            }
+            return try await client.fetchControllableDaemonStatus()?.pid != expectedPID
+        } catch {
+            return false
+        }
+    }
+
+    static func stopReplacementAfterCancellation(
+        client: DaemonControlClient,
+        replacement: LaunchResult
+    ) async -> Bool {
+        await Task.detached {
+            await self.stopReplacement(client: client, replacement: replacement)
+        }.value
+    }
+
+    private static func standardizedSocketPath(_ path: String) -> String {
+        let expanded = (path as NSString).expandingTildeInPath
+        return (expanded as NSString).standardizingPath
+    }
+}

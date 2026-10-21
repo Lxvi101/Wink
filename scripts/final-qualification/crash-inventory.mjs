@@ -59,9 +59,9 @@ function validateInventory(value, label) {
 function validateCycleBinding(value) {
   exactKeys(value, [
     'version', 'cycle', 'success', 'catalog_version', 'expected_cases', 'observed_cases',
-    'failures', 'execution_nonce', 'host_uuid', 'peekaboo_source_commit',
+    'failures', 'execution_nonce', 'host_uuid', 'wink_source_commit',
     'bridge_source_commit', 'deployment_envelope_sha256',
-    'installed_inventory_aggregate_sha256', 'peekaboo_artifact_manifest_sha256',
+    'installed_inventory_aggregate_sha256', 'wink_artifact_manifest_sha256',
     'started_at_milliseconds', 'completed_at_milliseconds',
   ], 'matrix cycle binding');
   requireCondition(value.version === 2
@@ -70,11 +70,11 @@ function validateCycleBinding(value) {
     && value.expected_cases === 42 && value.observed_cases === 42
     && Array.isArray(value.failures) && value.failures.length === 0
     && SHA256.test(value.execution_nonce ?? '') && HOST_UUID.test(value.host_uuid ?? '')
-    && SOURCE_COMMIT.test(value.peekaboo_source_commit ?? '')
-    && value.bridge_source_commit === value.peekaboo_source_commit
+    && SOURCE_COMMIT.test(value.wink_source_commit ?? '')
+    && value.bridge_source_commit === value.wink_source_commit
     && SHA256.test(value.deployment_envelope_sha256 ?? '')
     && SHA256.test(value.installed_inventory_aggregate_sha256 ?? '')
-    && SHA256.test(value.peekaboo_artifact_manifest_sha256 ?? '')
+    && SHA256.test(value.wink_artifact_manifest_sha256 ?? '')
     && Number.isSafeInteger(value.started_at_milliseconds)
     && Number.isSafeInteger(value.completed_at_milliseconds)
     && value.completed_at_milliseconds > value.started_at_milliseconds,
@@ -134,10 +134,10 @@ export function compareCrashInventories(baselineValue, finalValue, cycleBinding 
     cycle: binding.cycle,
     execution_nonce: binding.execution_nonce,
     host_uuid: binding.host_uuid,
-    peekaboo_source_commit: binding.peekaboo_source_commit,
+    wink_source_commit: binding.wink_source_commit,
     deployment_envelope_sha256: binding.deployment_envelope_sha256,
     installed_inventory_aggregate_sha256: binding.installed_inventory_aggregate_sha256,
-    peekaboo_artifact_manifest_sha256: binding.peekaboo_artifact_manifest_sha256,
+    wink_artifact_manifest_sha256: binding.wink_artifact_manifest_sha256,
     started_at_milliseconds: baseline.captured_at_milliseconds,
     completed_at_milliseconds: final.captured_at_milliseconds,
     passed,

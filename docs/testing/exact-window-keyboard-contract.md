@@ -9,12 +9,12 @@ read_when:
 
 ## User-visible goal
 
-Peekaboo must deliver type, press, and paste to one exact background window without activating it, and must refuse before dispatch whenever that destination or its focused element is ambiguous, stale, or changed.
+Wink must deliver type, press, and paste to one exact background window without activating it, and must refuse before dispatch whenever that destination or its focused element is ambiguous, stale, or changed.
 
 ## Target
 
 - Type: CLI and MCP tools
-- Access: a freshly built `peekaboo` plus mocked CLI/MCP fixtures
+- Access: a freshly built `wink` plus mocked CLI/MCP fixtures
 - Allowed fixtures: two same-process windows, exact-window snapshots, focused-element receipts, and mock clipboard services only
 
 ## User tasks

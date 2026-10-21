@@ -1,11 +1,11 @@
 ---
-summary: 'Paste text or rich content via peekaboo paste'
+summary: 'Paste text or rich content via wink paste'
 read_when:
   - 'you want fewer steps than clipboard set + press-based paste + clipboard restore'
   - 'pasting rich text (RTF) into a targeted app/window without drift'
 ---
 
-# `peekaboo paste`
+# `wink paste`
 
 `paste` sends Cmd+V. With no payload, it pastes the current clipboard contents. With text, a file, an image, or base64 data, it temporarily replaces the system clipboard, pastes into the target, then restores the previous clipboard items (or clears it if it was empty) only while it still owns that clipboard generation. A newer copy from the user or another app is preserved instead.
 
@@ -26,9 +26,9 @@ Human output reports the receiver outcome separately from clipboard cleanup. “
 | Focus flags | Foreground focus controls (`--space-switch`, `--no-auto-focus`, etc.). |
 
 ## Delivery modes
-- Bridge requirements apply to the negotiated connection, not just the host's installed version. A current host on a custom socket can be limited to protocol 1.28 by the client's host-trust policy and refuse before clipboard access or input. Inspect the same socket with `peekaboo bridge status --bridge-socket <path>`; see [Bridge host trust](bridge.md#notes).
-- **Background** is the default when Peekaboo can resolve a target. Exact-window routes pin the process generation, window ID/bounds, and focused element. App/PID routes upgrade when one eligible window exists and refuse when several are eligible. Plain text is delivered directly without touching the clipboard. Binary/rich and current-clipboard requests remain receiver-unverifiable and return “may have pasted; do not retry” after cleanup.
-- **Foreground** (`--foreground`) requires a supplied target to return a confirmed exact-window focus receipt before Cmd+V. A genuinely targetless foreground call remains intentionally global. `--no-auto-focus` cannot be combined with a target because Peekaboo will not guess that the requested window already owns keyboard focus.
+- Bridge requirements apply to the negotiated connection, not just the host's installed version. A current host on a custom socket can be limited to protocol 1.28 by the client's host-trust policy and refuse before clipboard access or input. Inspect the same socket with `wink bridge status --bridge-socket <path>`; see [Bridge host trust](bridge.md#notes).
+- **Background** is the default when Wink can resolve a target. Exact-window routes pin the process generation, window ID/bounds, and focused element. App/PID routes upgrade when one eligible window exists and refuse when several are eligible. Plain text is delivered directly without touching the clipboard. Binary/rich and current-clipboard requests remain receiver-unverifiable and return “may have pasted; do not retry” after cleanup.
+- **Foreground** (`--foreground`) requires a supplied target to return a confirmed exact-window focus receipt before Cmd+V. A genuinely targetless foreground call remains intentionally global. `--no-auto-focus` cannot be combined with a target because Wink will not guess that the requested window already owns keyboard focus.
 - Without an app/PID target, `paste` fails before mutating the clipboard. Add `--foreground` only when global delivery is intentional.
 - Exact window selectors stay exact through text or Cmd+V dispatch; focus, owner, generation, or bounds drift fails before clipboard access whenever no event has begun. Exact-window remote delivery requires Bridge protocol 1.24.
 - Temporary rich/binary paste to an exact background window requires Bridge protocol 1.41 and prepared clipboard-guarded hotkey support before writing. The host prepares the exact standard window using a target-only activation record and one ordinary window-routed click on observed blank chrome, without moving the physical cursor or requesting foreground activation. Complete bounded AX reads must exclude title, proxy, controls, and content; an exact native window hit and unchanged editor, UTF-16 text, and selection are required. Unverifiable, nonstandard, modal, minimized, or fullscreen windows refuse instead of guessing or restoring stale focus.
@@ -36,30 +36,30 @@ Human output reports the receiver outcome separately from clipboard cleanup. “
 - A failed preparation observation (including lost editor focus) retains its underlying diagnostic without claiming that the read itself sent input or requested focus. This host-side observation happens after a temporary clipboard claim may already exist; earlier clipboard effects and any accepted preparation prefix remain observable and retry-unsafe.
 - Preparation distinguishes an initially unavailable blank-chrome point from a previously admitted point becoming invalid. A long title or crowded title bar can leave no gap with sufficient clearance even when the window has not moved; observing the same geometry again does not make it eligible.
 - Process-targeted text and Cmd+V delivery retain the resolved app's process-generation receipt. Plain text revalidates before every emitted character, while clipboard-backed paste uses generation-pinned hotkey delivery. A target exit or relaunch never silently retargets the reusable PID. Remote background paste requires Bridge protocol 1.22 or newer.
-- Clipboard-backed transactions are serialized across CLI, daemon, and GUI processes with a private per-user lock under `~/Library/Application Support/Peekaboo`, independent of each process's temporary directory.
-- Admission shares one 15-second monotonic deadline across the in-process queue and file-lock acquisition. If either wait ends at or after that deadline, even with successful acquisition, Peekaboo refuses before running the transaction body. The canonical `TIMEOUT` is a retry-safe pre-dispatch refusal: this transaction has not changed the clipboard or dispatched paste input, and the timeout alone does not require a fresh observation.
-- Target and temporary-clipboard ownership capabilities, cancellation checks, and a complete prior-clipboard snapshot must succeed before Peekaboo writes a temporary payload. Providers without ownership-aware temporary writes refuse rather than falling back to unconditional restoration. Every advertised representation must be readable: an unresolved promised type refuses temporary replacement without dropping it or treating unavailable data as empty. Lazy providers that supply data and zero-length data representations are supported.
+- Clipboard-backed transactions are serialized across CLI, daemon, and GUI processes with a private per-user lock under `~/Library/Application Support/Wink`, independent of each process's temporary directory.
+- Admission shares one 15-second monotonic deadline across the in-process queue and file-lock acquisition. If either wait ends at or after that deadline, even with successful acquisition, Wink refuses before running the transaction body. The canonical `TIMEOUT` is a retry-safe pre-dispatch refusal: this transaction has not changed the clipboard or dispatched paste input, and the timeout alone does not require a fresh observation.
+- Target and temporary-clipboard ownership capabilities, cancellation checks, and a complete prior-clipboard snapshot must succeed before Wink writes a temporary payload. Providers without ownership-aware temporary writes refuse rather than falling back to unconditional restoration. Every advertised representation must be readable: an unresolved promised type refuses temporary replacement without dropping it or treating unavailable data as empty. Lazy providers that supply data and zero-length data representations are supported.
 - On macOS 15.4+, automatic General-clipboard replacement and current-clipboard reads require the reader's native access policy to be `alwaysAllow` before any contents are inspected. `default`, `ask`, and `alwaysDeny` refuse with `permission_denied`, including an empty clipboard and explicit foreground paste. This avoids deliberately triggering a permission alert; it is not an atomic guarantee against a concurrent permission-setting change. Use `clipboard status` for a content-free caller-local diagnostic; paste never opts into a permission alert. Named pasteboards remain exempt, and macOS 14–15.3 has no equivalent native access-policy preflight.
 - Partial-write failures retain the actual native clipboard claim. Cleanup restores only that owned generation; a failure before any claim does not restore or clear anything. If another app has replaced the payload, cleanup leaves the newer contents untouched and reports `preserved_newer_contents`, even when the replacement has identical bytes.
 - Background binary/rich paste still mutates the system clipboard briefly; `paste` completes the noncancellable `--restore-delay` settle and ownership-aware cleanup before releasing the transaction lock, even when delivery throws or the caller cancels. The admission deadline does not time out this already-admitted settle/cleanup phase or bound the whole command.
-- Clipboard generation checks detect intervening ownership changes, but macOS exposes no atomic compare-and-swap for restoring a pasteboard. The adjacent check/write calls cannot exclude every concurrent cross-process race; the transaction lock only serializes cooperating Peekaboo paste clients. Explicit manual `clipboard restore` remains an intentional overwrite operation.
+- Clipboard generation checks detect intervening ownership changes, but macOS exposes no atomic compare-and-swap for restoring a pasteboard. The adjacent check/write calls cannot exclude every concurrent cross-process race; the transaction lock only serializes cooperating Wink paste clients. Explicit manual `clipboard restore` remains an intentional overwrite operation.
 
 ## Examples
 ```bash
 # Paste the current clipboard into the focused app
-peekaboo paste --foreground
+wink paste --foreground
 
 # Paste plain text into TextEdit
-peekaboo paste "Hello, world" --app TextEdit
+wink paste "Hello, world" --app TextEdit
 
 # Paste rich text (RTF) into a specific window title
-peekaboo paste --data-base64 "$RTF_B64" --uti public.rtf --also-text "fallback" --app TextEdit --window-title "Untitled"
+wink paste --data-base64 "$RTF_B64" --uti public.rtf --also-text "fallback" --app TextEdit --window-title "Untitled"
 
 # Paste a PNG into Notes using foreground delivery; verify the result afterward
-peekaboo paste --file-path /tmp/snippet.png --app Notes --foreground
+wink paste --file-path /tmp/snippet.png --app Notes --foreground
 
 # Force foreground paste for apps that ignore background Cmd+V
-peekaboo paste "Hello" --app TextEdit --foreground
+wink paste "Hello" --app TextEdit --foreground
 ```
 
 ### HTML with formatting and a hyperlink
@@ -80,13 +80,13 @@ html = '''<html><head><meta charset="utf-8"></head><body>
 print(base64.b64encode(html.encode("ascii")).decode("ascii"))
 PY
 )
-peekaboo paste --data-base64 "$HTML_B64" --uti public.html \
+wink paste --data-base64 "$HTML_B64" --uti public.html \
   --app Notes --window-id "$NOTE_WINDOW_ID" --foreground --json
 ```
 
 Declare the HTML charset; numeric character references also keep the payload ASCII-safe. For a local-file link, use a properly URL-encoded `file:///absolute/path/to/file` in `href`. The link does not upload or share the file with collaborators.
 
-In a manual Notes test with Peekaboo 4.5.0 on macOS 26.7, an inserted HTML fragment preserved bold, italic, a local-file hyperlink, and existing checked/unchecked items. This tests insertion into an existing note, not reconstruction of native checklists from HTML. The command still returned `INTERACTION_FAILED` even though independent UI inspection confirmed the inserted fragment.
+In a manual Notes test with Wink 4.5.0 on macOS 26.7, an inserted HTML fragment preserved bold, italic, a local-file hyperlink, and existing checked/unchecked items. This tests insertion into an existing note, not reconstruction of native checklists from HTML. The command still returned `INTERACTION_FAILED` even though independent UI inspection confirmed the inserted fragment.
 
 ## Notes
 - Built-in Agent and public MCP remain direct-text-only by default. Their trusted `--allow-temporary-clipboard` flag
@@ -127,8 +127,8 @@ before its write; the capability does not grant clipboard-reading permission or 
 
 ## Troubleshooting
 - `Paste hotkey did not return a confirmed outcome.` does not prove that nothing was pasted, including with `--foreground`. Inspect `mutation_dispatched`, `retry_safe`, and `requires_fresh_observation`, then inspect the exact target's current contents before deciding what to do next. Do not automatically replay a retry-unsafe paste: the fragment may already be present. Foreground focus confirmation and receiver consumption are separate facts.
-- If silent clipboard access is unavailable, arrange the reader's permission deliberately outside automation. An application still at `default` may not yet appear in System Settings because it has never shown a clipboard access alert. Peekaboo does not open settings, manufacture an alert, or change that policy automatically. Allowing the GUI host does not necessarily allow a separate caller-local clipboard reader.
+- If silent clipboard access is unavailable, arrange the reader's permission deliberately outside automation. An application still at `default` may not yet appear in System Settings because it has never shown a clipboard access alert. Wink does not open settings, manufacture an alert, or change that policy automatically. Allowing the GUI host does not necessarily allow a separate caller-local clipboard reader.
 - If a complete prior snapshot is unavailable, keep the original clipboard intact and resolve the supplying application's unreadable/promised data before trying temporary replacement. Changing foreground mode does not make an incomplete snapshot safe to discard.
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`). Background paste also requires Event Synthesizing access for the sending process; request it with `peekaboo permissions request event-synthesizing`.
-- Confirm your target with `peekaboo app list`, `peekaboo window list`, or `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`). Background paste also requires Event Synthesizing access for the sending process; request it with `wink permissions request event-synthesizing`.
+- Confirm your target with `wink app list`, `wink window list`, or `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct TerminalTitleSanitizationTests {
     @Test(arguments: Array(0...0x1F) + Array(0x7F...0x9F))

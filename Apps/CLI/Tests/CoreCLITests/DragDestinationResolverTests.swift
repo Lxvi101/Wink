@@ -1,10 +1,10 @@
 import CoreGraphics
-import PeekabooAgentRuntime
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAgentRuntime
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.unit))
 struct DragDestinationResolverTests {
@@ -56,8 +56,8 @@ struct DragDestinationResolverTests {
 }
 
 @MainActor
-private final class ServicesWithDestinationStubs: PeekabooServiceProviding {
-    private let base = PeekabooServices()
+private final class ServicesWithDestinationStubs: WinkServiceProviding {
+    private let base = WinkServices()
     private let stubApplications: any ApplicationServiceProtocol
     private let stubWindows: any WindowManagementServiceProtocol
     private let stubDock: any DockServiceProtocol
@@ -120,7 +120,7 @@ private final class ServicesWithDestinationStubs: PeekabooServiceProviding {
         self.base.clipboard
     }
 
-    var configuration: PeekabooCore.ConfigurationManager {
+    var configuration: WinkCore.ConfigurationManager {
         self.base.configuration
     }
 
@@ -167,7 +167,7 @@ private final class DestinationApplicationService: ApplicationServiceProtocol {
         if let match = self.applications.first(where: { $0.name == identifier || $0.bundleIdentifier == identifier }) {
             return match
         }
-        throw PeekabooError.appNotFound(identifier)
+        throw WinkError.appNotFound(identifier)
     }
 
     func listWindows(
@@ -185,7 +185,7 @@ private final class DestinationApplicationService: ApplicationServiceProtocol {
 
     func getFrontmostApplication() async throws -> ServiceApplicationInfo {
         guard let app = self.applications.first else {
-            throw PeekabooError.appNotFound("frontmost")
+            throw WinkError.appNotFound("frontmost")
         }
         return app
     }
@@ -246,7 +246,7 @@ private final class DestinationDockService: DockServiceProtocol {
 
     func findDockItem(name: String) async throws -> DockItem {
         guard let item = self.items.first(where: { $0.title == name }) else {
-            throw PeekabooError.elementNotFound(name)
+            throw WinkError.elementNotFound(name)
         }
         return item
     }

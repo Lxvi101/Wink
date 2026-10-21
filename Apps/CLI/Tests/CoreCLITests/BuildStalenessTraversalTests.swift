@@ -1,7 +1,7 @@
 import Darwin
 import Foundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 extension UtilityTests.BuildStalenessCheckerTests {
     @Test(arguments: ["/", "//", "/./", "/../", "/missing/../"])
@@ -15,7 +15,7 @@ extension UtilityTests.BuildStalenessCheckerTests {
         #expect(fileManager.checkedPaths == ["/.git"])
     }
 
-    @Test(arguments: ["/", "/peekaboo-missing/./child/.."])
+    @Test(arguments: ["/", "/wink-missing/./child/.."])
     func `Bridged URLs cannot traverse above root`(path: String) {
         let directory = NSURL(fileURLWithPath: path, isDirectory: true) as URL
         let fileManager = MissingGitFileManager(maximumChecks: directory.standardizedFileURL.pathComponents.count)
@@ -30,13 +30,13 @@ extension UtilityTests.BuildStalenessCheckerTests {
         let fileManager = MissingGitFileManager(maximumChecks: 4)
 
         #expect(findGitConfigPath(
-            startingAt: URL(fileURLWithPath: "/peekaboo-missing/one/./unused/../two/", isDirectory: true),
+            startingAt: URL(fileURLWithPath: "/wink-missing/one/./unused/../two/", isDirectory: true),
             fileManager: fileManager
         ) == nil)
         #expect(fileManager.checkedPaths == [
-            "/peekaboo-missing/one/two/.git",
-            "/peekaboo-missing/one/.git",
-            "/peekaboo-missing/.git",
+            "/wink-missing/one/two/.git",
+            "/wink-missing/one/.git",
+            "/wink-missing/.git",
             "/.git"
         ])
     }
@@ -81,7 +81,7 @@ extension UtilityTests.BuildStalenessCheckerTests {
         try FileManager.default.createDirectory(at: metadata, withIntermediateDirectories: true)
         let gitdir = absolute ? metadata.path : "../metadata"
         try "gitdir: \(gitdir)\n".write(to: checkout.appendingPathComponent(".git"), atomically: true, encoding: .utf8)
-        try "[peekaboo]\ncheck-build-staleness = true\n".write(
+        try "[wink]\ncheck-build-staleness = true\n".write(
             to: metadata.appendingPathComponent("config"),
             atomically: true,
             encoding: .utf8
@@ -154,10 +154,10 @@ extension UtilityTests.BuildStalenessCheckerTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let enabled = ["1", " TRUE ", "yes"].contains(override)
         let config = directory.appendingPathComponent("config")
-        try "[peekaboo]\ncheck-build-staleness = \(!enabled)\n".write(to: config, atomically: true, encoding: .utf8)
+        try "[wink]\ncheck-build-staleness = \(!enabled)\n".write(to: config, atomically: true, encoding: .utf8)
 
         #expect(isBuildStalenessCheckEnabled(
-            environment: ["PEEKABOO_CHECK_BUILD_STALENESS": override],
+            environment: ["WINK_CHECK_BUILD_STALENESS": override],
             currentDirectory: "/",
             gitConfigPaths: [config.path]
         ) == enabled)
@@ -168,14 +168,14 @@ extension UtilityTests.BuildStalenessCheckerTests {
         let directory = try self.makeStalenessDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let config = directory.appendingPathComponent("config")
-        try "[peekaboo]\ncheck-build-staleness = true\n".write(to: config, atomically: true, encoding: .utf8)
+        try "[wink]\ncheck-build-staleness = true\n".write(to: config, atomically: true, encoding: .utf8)
 
         #expect(isBuildStalenessCheckEnabled(
-            environment: ["PEEKABOO_CHECK_BUILD_STALENESS": override],
+            environment: ["WINK_CHECK_BUILD_STALENESS": override],
             gitConfigPaths: [config.path]
         ))
         #expect(!isBuildStalenessCheckEnabled(
-            environment: ["PEEKABOO_CHECK_BUILD_STALENESS": override],
+            environment: ["WINK_CHECK_BUILD_STALENESS": override],
             gitConfigPaths: []
         ))
         #expect(!isBuildStalenessCheckEnabled(environment: [:], gitConfigPaths: []))
@@ -191,10 +191,10 @@ extension UtilityTests.BuildStalenessCheckerTests {
         for path in [home, xdg.appendingPathComponent("git"), checkout] {
             try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true)
         }
-        try "[peekaboo]\ncheck-build-staleness = false\n".write(
+        try "[wink]\ncheck-build-staleness = false\n".write(
             to: xdg.appendingPathComponent("git/config"), atomically: true, encoding: .utf8
         )
-        try "[peekaboo]\ncheck-build-staleness = true\n".write(
+        try "[wink]\ncheck-build-staleness = true\n".write(
             to: home.appendingPathComponent(".gitconfig"), atomically: true, encoding: .utf8
         )
         let environment = ["HOME": home.path, "XDG_CONFIG_HOME": xdg.path]
@@ -203,7 +203,7 @@ extension UtilityTests.BuildStalenessCheckerTests {
         try FileManager.default.createDirectory(
             at: checkout.appendingPathComponent(".git"), withIntermediateDirectories: true
         )
-        try "[peekaboo]\ncheck-build-staleness = false\n".write(
+        try "[wink]\ncheck-build-staleness = false\n".write(
             to: checkout.appendingPathComponent(".git/config"), atomically: true, encoding: .utf8
         )
         #expect(!isBuildStalenessCheckEnabled(environment: environment, currentDirectory: checkout.path))

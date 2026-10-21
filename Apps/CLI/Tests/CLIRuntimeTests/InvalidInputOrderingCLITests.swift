@@ -9,8 +9,8 @@ struct InvalidInputOrderingCLITests {
         let command: String
 
         var errorMessage: String {
-            "Command 'peekaboo \(self.command)' requires command input; " +
-                "run 'peekaboo \(self.command) --help' for usage."
+            "Command 'wink \(self.command)' requires command input; " +
+                "run 'wink \(self.command) --help' for usage."
         }
     }
 
@@ -54,46 +54,46 @@ struct InvalidInputOrderingCLITests {
     func `missing semantic input is invalid usage before runtime discovery`(
         _ testCase: MissingSemanticInputCase
     ) async throws {
-        let human = try await TestChildProcess.runPeekaboo([testCase.command])
+        let human = try await TestChildProcess.runWink([testCase.command])
 
         #expect(human.status == .exited(1))
-        #expect(human.standardOutput.contains("Usage\n  peekaboo \(testCase.command)"))
+        #expect(human.standardOutput.contains("Usage\n  wink \(testCase.command)"))
         #expect(human.standardError == "Error: \(testCase.errorMessage)\n")
 
-        let json = try await TestChildProcess.runPeekaboo([testCase.command, "--json"])
+        let json = try await TestChildProcess.runWink([testCase.command, "--json"])
 
         #expect(json.status == .exited(1))
         #expect(json.standardError.isEmpty)
         let envelope = try Self.errorEnvelope(from: json.standardOutput)
         #expect(envelope.code == "INVALID_ARGUMENT")
-        #expect(envelope.message == "Command 'peekaboo \(testCase.command)' requires command input.")
-        #expect(envelope.hint == "Run 'peekaboo \(testCase.command) --help' for usage.")
+        #expect(envelope.message == "Command 'wink \(testCase.command)' requires command input.")
+        #expect(envelope.hint == "Run 'wink \(testCase.command) --help' for usage.")
         #expect(envelope.debugLogs.isEmpty)
 
-        let unavailableRuntime = try await TestChildProcess.runPeekaboo(
-            [testCase.command, "--bridge-socket", "/tmp/peekaboo-missing-semantic-input.sock"],
+        let unavailableRuntime = try await TestChildProcess.runWink(
+            [testCase.command, "--bridge-socket", "/tmp/wink-missing-semantic-input.sock"],
             isolateFromRemoteHosts: false
         )
         #expect(unavailableRuntime.status == .exited(1))
-        #expect(unavailableRuntime.standardOutput.contains("Usage\n  peekaboo \(testCase.command)"))
+        #expect(unavailableRuntime.standardOutput.contains("Usage\n  wink \(testCase.command)"))
         #expect(unavailableRuntime.standardError == "Error: \(testCase.errorMessage)\n")
     }
 
     @Test(arguments: ["type", "press", "action", "set-value", "click"])
     func `explicit help remains successful for semantic input commands`(command: String) async throws {
-        let result = try await TestChildProcess.runPeekaboo(
-            [command, "--bridge-socket", "/tmp/peekaboo-help-missing.sock", "--help"],
+        let result = try await TestChildProcess.runWink(
+            [command, "--bridge-socket", "/tmp/wink-help-missing.sock", "--help"],
             isolateFromRemoteHosts: false
         )
 
         #expect(result.status == .exited(0))
         #expect(result.standardError.isEmpty)
-        #expect(result.standardOutput.contains("Usage\n  peekaboo \(command)"))
+        #expect(result.standardOutput.contains("Usage\n  wink \(command)"))
     }
 
     @Test(arguments: ["type", "press", "action", "set-value", "click"])
     func `unknown options are not hidden by empty invocation help`(command: String) async throws {
-        let result = try await TestChildProcess.runPeekaboo([command, "--bogus"])
+        let result = try await TestChildProcess.runWink([command, "--bogus"])
 
         #expect(result.status == .exited(1))
         #expect(result.standardOutput.isEmpty)
@@ -139,14 +139,14 @@ struct InvalidInputOrderingCLITests {
             code: "VALIDATION_ERROR",
             message: "Invalid --browser-url. Expected http://127.0.0.1:<port>, " +
                 "http://[::1]:<port>, or http://localhost:<port>.",
-            hint: "Run `peekaboo browser connect --browser-url http://127.0.0.1:9222 --foreground`."
+            hint: "Run `wink browser connect --browser-url http://127.0.0.1:9222 --foreground`."
         ),
     ])
     func `semantic-invalid JSON requests refuse before runtime discovery`(_ testCase: JSONCase) async throws {
         // An unavailable explicit host proves ordering without timing process startup.
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-invalid-input-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-invalid-input-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             testCase.arguments + ["--bridge-socket", socketPath],
             isolateFromRemoteHosts: false
         )
@@ -171,9 +171,9 @@ struct InvalidInputOrderingCLITests {
     func `invalid system selectors refuse before runtime-host discovery`(
         _ testCase: SystemSelectorCase
     ) async throws {
-        let result = try await TestChildProcess.runPeekaboo(
+        let result = try await TestChildProcess.runWink(
             testCase.arguments + [
-                "--bridge-socket", "/tmp/peekaboo-system-selector-preflight-missing.sock", "--json",
+                "--bridge-socket", "/tmp/wink-system-selector-preflight-missing.sock", "--json",
             ],
             isolateFromRemoteHosts: false
         )
@@ -199,8 +199,8 @@ struct InvalidInputOrderingCLITests {
         _ testCase: SystemSelectorCase
     ) async throws {
         let socketPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-snapshot-conflict-\(UUID().uuidString).sock").path
-        let result = try await TestChildProcess.runPeekaboo(
+            .appendingPathComponent("wink-snapshot-conflict-\(UUID().uuidString).sock").path
+        let result = try await TestChildProcess.runWink(
             testCase.arguments + [
                 "--snapshot", "ps1_00000000000000000000000000000001",
                 "--bridge-socket", socketPath, "--json",
@@ -229,12 +229,12 @@ struct InvalidInputOrderingCLITests {
     @Test
     func `video input failures retain exact paths and skip runtime discovery`() async throws {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-video-input-cli-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("wink-video-input-cli-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
 
         let missing = root.appendingPathComponent("missing.mp4")
-        let missingResult = try await TestChildProcess.runPeekaboo([
+        let missingResult = try await TestChildProcess.runWink([
             "capture", "video", missing.path, "--json",
         ])
         let missingEnvelope = try Self.errorEnvelope(from: missingResult.standardOutput)
@@ -247,7 +247,7 @@ struct InvalidInputOrderingCLITests {
 
         let empty = root.appendingPathComponent("empty.mp4")
         try Data().write(to: empty)
-        let cadenceResult = try await TestChildProcess.runPeekaboo([
+        let cadenceResult = try await TestChildProcess.runWink([
             "capture", "video", empty.path, "--sample-fps", "-1", "--json",
         ])
         let cadenceEnvelope = try Self.errorEnvelope(from: cadenceResult.standardOutput)
@@ -260,7 +260,7 @@ struct InvalidInputOrderingCLITests {
 
         let fifo = root.appendingPathComponent("stream.mp4")
         #expect(mkfifo(fifo.path, mode_t(S_IRUSR | S_IWUSR)) == 0)
-        let fifoResult = try await TestChildProcess.runPeekaboo([
+        let fifoResult = try await TestChildProcess.runWink([
             "capture", "video", fifo.path, "--json",
         ])
         let fifoEnvelope = try Self.errorEnvelope(from: fifoResult.standardOutput)
@@ -315,7 +315,7 @@ struct InvalidInputOrderingCLITests {
             ),
         ]
         for (options, expectedCode, expectedMessage, expectedHint) in optionCases {
-            let result = try await TestChildProcess.runPeekaboo(
+            let result = try await TestChildProcess.runWink(
                 ["capture", "video", empty.path] + options + ["--json"]
             )
             let envelope = try Self.errorEnvelope(from: result.standardOutput)
@@ -331,7 +331,7 @@ struct InvalidInputOrderingCLITests {
     @Test
     func `human failures remain concise and CLI native`() async throws {
         let missing = FileManager.default.temporaryDirectory
-            .appendingPathComponent("peekaboo-human-missing-\(UUID().uuidString).mp4")
+            .appendingPathComponent("wink-human-missing-\(UUID().uuidString).mp4")
         let cases: [([String], String)] = [
             (
                 ["type", "alpha"],
@@ -345,7 +345,7 @@ struct InvalidInputOrderingCLITests {
             (
                 ["browser", "connect", "--browser-url", "ftp://127.0.0.1:1"],
                 "Error: Invalid --browser-url. Expected http://127.0.0.1:<port>, http://[::1]:<port>, or " +
-                    "http://localhost:<port>. Hint: Run `peekaboo browser connect --browser-url " +
+                    "http://localhost:<port>. Hint: Run `wink browser connect --browser-url " +
                     "http://127.0.0.1:9222 --foreground`.\n"
             ),
             (
@@ -356,7 +356,7 @@ struct InvalidInputOrderingCLITests {
         ]
 
         for (arguments, expectedError) in cases {
-            let result = try await TestChildProcess.runPeekaboo(arguments)
+            let result = try await TestChildProcess.runWink(arguments)
             #expect(result.status == .exited(1))
             #expect(result.standardOutput.isEmpty)
             #expect(result.standardError == expectedError)

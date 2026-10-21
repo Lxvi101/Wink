@@ -1,4 +1,4 @@
-// Run a sequence of tool calls against one peekaboo-cua process.
+// Run a sequence of tool calls against one wink-cua process.
 // usage: node scripts/mcp-steps.mjs <bin> '<json array of [tool, args, delayAfterMs?]>'
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';

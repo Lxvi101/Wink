@@ -1,5 +1,5 @@
 ---
-summary: 'Full refactor plan for making Peekaboo UI input action-first with synthetic-event fallback, so CGEvent paths become optional instead of mandatory.'
+summary: 'Full refactor plan for making Wink UI input action-first with synthetic-event fallback, so CGEvent paths become optional instead of mandatory.'
 read_when:
   - 'changing ClickService, ScrollService, TypeService, HotkeyService, or InputDriver'
   - 'adding AX action invocation, direct value setting, or generic element actions'
@@ -12,7 +12,7 @@ read_when:
 
 ## Thesis
 
-Peekaboo should treat low-level synthetic input as a fallback, not the only way to drive the UI.
+Wink should treat low-level synthetic input as a fallback, not the only way to drive the UI.
 
 Today most interaction flows eventually collapse to a screen point and call the synthetic input stack. That keeps behavior universal, but it also means routine element-targeted actions inherit the worst properties of coordinate input: cursor warping, frontmost-app requirements, stale-coordinate bugs, secure-input dropouts, and harder permission optics.
 
@@ -56,10 +56,10 @@ Avoid naming the policy around `AX` versus `CGEvent`. AXorcist is already the pe
 
 Relevant files:
 
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/UIAutomationService.swift`
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/UIAutomationService+Operations.swift`
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/UIAutomationService+PointerKeyboardOperations.swift`
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/UIAutomationService+TypingOperations.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/UIAutomationService.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/UIAutomationService+Operations.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/UIAutomationService+PointerKeyboardOperations.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/UIAutomationService+TypingOperations.swift`
 
 Public service methods mostly return simple success values or existing DTOs. They do not return the input path chosen, fallback reason, action name, or visualizer anchor. That metadata needs to exist internally before defaults can flip safely.
 
@@ -106,11 +106,11 @@ The MCP layer currently hides element intent in some paths:
 
 Files:
 
-- `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/ClickTool.swift`
-- `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/TypeTool.swift`
-- `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/ScrollTool.swift`
-- `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/HotkeyTool.swift`
-- `Core/PeekabooCore/Sources/PeekabooAgentRuntime/MCP/Tools/UISnapshotStore.swift`
+- `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/ClickTool.swift`
+- `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/TypeTool.swift`
+- `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/ScrollTool.swift`
+- `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/HotkeyTool.swift`
+- `Core/WinkCore/Sources/WinkAgentRuntime/MCP/Tools/UISnapshotStore.swift`
 
 Action-first cannot work reliably until MCP tools preserve element-targeted intent instead of lowering early to coordinates.
 
@@ -118,9 +118,9 @@ Action-first cannot work reliably until MCP tools preserve element-targeted inte
 
 Snapshots store serializable `UIElement` values, not raw AX handles:
 
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Core/Models/Snapshot.swift`
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/Support/SnapshotManager.swift`
-- `Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/Support/SnapshotManager+Helpers.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Core/Models/Snapshot.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/Support/SnapshotManager.swift`
+- `Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/Support/SnapshotManager+Helpers.swift`
 
 That is good. Do not persist raw AX handles across turns. Instead, resolve a fresh action-capable element from the latest snapshot context when acting.
 
@@ -142,8 +142,8 @@ AXorcist already has the raw operations needed:
 
 Important caveat: existing AXorcist action handlers validate advertised action support before invoking. The new action driver should not rely only on advertised actions. Some elements perform actions they do not advertise; some advertise actions that no-op. Try the action, classify the error, and fall back when appropriate.
 
-Boundary rule: AXorcist types stay inside `PeekabooAutomationKit` implementation code. CLI, MCP, bridge, and
-`PeekabooCore` surfaces should traffic in Peekaboo DTOs such as `ClickTarget`, `WindowContext`,
+Boundary rule: AXorcist types stay inside `WinkAutomationKit` implementation code. CLI, MCP, bridge, and
+`WinkCore` surfaces should traffic in Wink DTOs such as `ClickTarget`, `WindowContext`,
 `DetectedElement`, `UIInputExecutionResult`, and `WindowIdentityInfo`. If a helper takes or returns AXorcist
 `Element`, `AXWindowHandle`, `MouseButton`, `SpecialKey`, or `InputDriver`-shaped values, keep it internal or wrap
 it before it crosses the AutomationKit public API.
@@ -152,11 +152,11 @@ it before it crosses the AutomationKit public API.
 
 The bridge already centralizes permissioned automation behind a host:
 
-- `Core/PeekabooCore/Sources/PeekabooBridge/PeekabooBridgeRequestResponse.swift`
-- `Core/PeekabooCore/Sources/PeekabooBridge/PeekabooBridgeModels.swift`
-- `Core/PeekabooCore/Sources/PeekabooBridge/PeekabooBridgeServer+Handlers.swift`
-- `Core/PeekabooCore/Sources/PeekabooBridge/PeekabooBridgeServer+Handshake.swift`
-- `Core/PeekabooCore/Sources/PeekabooBridge/PeekabooBridgeClient.swift`
+- `Core/WinkCore/Sources/WinkBridge/WinkBridgeRequestResponse.swift`
+- `Core/WinkCore/Sources/WinkBridge/WinkBridgeModels.swift`
+- `Core/WinkCore/Sources/WinkBridge/WinkBridgeServer+Handlers.swift`
+- `Core/WinkCore/Sources/WinkBridge/WinkBridgeServer+Handshake.swift`
+- `Core/WinkCore/Sources/WinkBridge/WinkBridgeClient.swift`
 
 New agent-visible operations such as `setValue` and `performAction` need bridge request/response models, operation gating, handshake support, and a minor protocol version bump.
 
@@ -180,8 +180,8 @@ Interaction command/tool
 Add:
 
 ```text
-Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Strategy/UIInputStrategy.swift
-Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Strategy/UIInputPolicy.swift
+Core/WinkAutomationKit/Sources/WinkAutomationKit/Strategy/UIInputStrategy.swift
+Core/WinkAutomationKit/Sources/WinkAutomationKit/Strategy/UIInputPolicy.swift
 ```
 
 Suggested core types:
@@ -215,13 +215,13 @@ public struct UIInputPolicy: Sendable, Codable {
 }
 ```
 
-Keep config precedence consistent with the rest of Peekaboo:
+Keep config precedence consistent with the rest of Wink:
 
 ```text
 CLI flag -> environment -> config file -> built-in default
 ```
 
-The earlier env-first sketch is useful for emergency override semantics, but it conflicts with current configuration behavior. If a true emergency override is needed, add a separate explicit variable such as `PEEKABOO_INPUT_STRATEGY_FORCE`.
+The earlier env-first sketch is useful for emergency override semantics, but it conflicts with current configuration behavior. If a true emergency override is needed, add a separate explicit variable such as `WINK_INPUT_STRATEGY_FORCE`.
 
 Initial Phase 1 default:
 
@@ -273,7 +273,7 @@ debug logging and visualizer behavior.
 Add a concrete action driver:
 
 ```text
-Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/ActionInputDriver.swift
+Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/ActionInputDriver.swift
 ```
 
 Do not make it a static singleton only. Services need injectable seams for tests.
@@ -305,8 +305,8 @@ exported as part of the AutomationKit API.
 Add:
 
 ```text
-Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/AutomationElement.swift
-Core/PeekabooAutomationKit/Sources/PeekabooAutomationKit/Services/UI/AutomationElementResolver.swift
+Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/AutomationElement.swift
+Core/WinkAutomationKit/Sources/WinkAutomationKit/Services/UI/AutomationElementResolver.swift
 ```
 
 `AutomationElement` wraps AXorcist `Element` and exposes computed properties:
@@ -542,7 +542,7 @@ Long-term implementation:
 
 ## Observability
 
-Do not add a telemetry subsystem for this refactor. Peekaboo is OSS and UI automation data is sensitive; persistent
+Do not add a telemetry subsystem for this refactor. Wink is OSS and UI automation data is sensitive; persistent
 local metrics would add privacy optics, docs, schema, and command surface without giving maintainers useful aggregate
 rollout data unless users manually share files.
 
@@ -595,11 +595,11 @@ Add config:
 Add environment:
 
 ```text
-PEEKABOO_INPUT_STRATEGY=actionFirst
-PEEKABOO_CLICK_INPUT_STRATEGY=actionFirst
-PEEKABOO_SCROLL_INPUT_STRATEGY=actionFirst
-PEEKABOO_TYPE_INPUT_STRATEGY=synthFirst
-PEEKABOO_HOTKEY_INPUT_STRATEGY=synthFirst
+WINK_INPUT_STRATEGY=actionFirst
+WINK_CLICK_INPUT_STRATEGY=actionFirst
+WINK_SCROLL_INPUT_STRATEGY=actionFirst
+WINK_TYPE_INPUT_STRATEGY=synthFirst
+WINK_HOTKEY_INPUT_STRATEGY=synthFirst
 ```
 
 Add CLI override:

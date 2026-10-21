@@ -5,7 +5,7 @@ read_when:
   - 'needing predictable background typing cadence during UI automation'
 ---
 
-# `peekaboo type`
+# `wink type`
 
 `type` sends text through the automation service. Direct CLI background delivery is the default and accepts an
 explicit app, PID, exact window, or snapshot whose metadata identifies a process. Default background-only Agent/MCP
@@ -14,7 +14,7 @@ that snapshot. Use `press` for standalone keys or chords.
 
 Background Accessibility typing waits for each value write and supported cursor update to settle on the same
 native field before computing the next edit. A write that was accepted but cannot be verified stops typing
-with an indeterminate outcome; Peekaboo does not replay it as another write or keyboard events.
+with an indeterminate outcome; Wink does not replay it as another write or keyboard events.
 After every asynchronous preflight, the final write rechecks the application's current focused native receiver
 and exact keyboard window. Losing focus before the first write refuses safely; losing it after an accepted
 text edit stops before selection or further input, retaining the retry-unsafe accepted prefix.
@@ -41,6 +41,7 @@ key-up cleanup, and any accepted prefix remains unsafe to replay.
 | Flag | Description |
 | --- | --- |
 | `[text]` | Optional positional string; supports escape sequences like `\n` (Return) and `\t` (Tab). |
+| `--humanized` | Alias for `--profile human`: varied per-character timing, punctuation pauses, and occasional pauses between words. Combine with `--wpm` to choose speed; conflicts with `--profile linear`. |
 | `--snapshot <id>` | Target a specific snapshot. Background-only Agent/MCP requires an explicit fresh exact non-dialog ID and does not infer `latest`. |
 | `--at x,y` | Atomically focus one pixel in the exact captured window and type without activating it. Requires an explicit non-`latest` screenshot snapshot and cannot be combined with target selectors or `--foreground`. |
 | `--coordinate-space <space>` | Interpret `--at` as `global_display_points` (default), `image_pixels`, or `normalized` coordinates from that snapshot. |
@@ -55,7 +56,7 @@ key-up cleanup, and any accepted prefix remains unsafe to replay.
 | Focus flags | Foreground focus controls (`--no-auto-focus`, `--space-switch`, etc.). |
 
 ## Delivery modes
-- **Background** is the default when Peekaboo can resolve a target from flags or snapshot metadata. Exact window/snapshot routes pin the process generation, window ID/bounds, and focused element without activating the app. App/PID routes upgrade when one eligible window exists and refuse when several are eligible.
+- **Background** is the default when Wink can resolve a target from flags or snapshot metadata. Exact window/snapshot routes pin the process generation, window ID/bounds, and focused element without activating the app. App/PID routes upgrade when one eligible window exists and refuse when several are eligible.
 - **Background-only Agent/MCP** requires an explicit fresh exact non-dialog `snapshot`. It refuses implicit-latest,
   targetless, app/PID/window-only, and snapshot-plus-selector requests before dispatch.
 - **Pixel-focus background typing** (`--at`) derives one exact process/window/bounds target from the named screenshot snapshot. Its focus-only Accessibility write and all keyboard units share one process lane and one receipt; target drift before any unit is retry-safe, while a completed focus write or typed prefix is retry-unsafe and requires a fresh observation. The focus prelude never presses a button or selects a row.
@@ -95,7 +96,7 @@ key-up cleanup, and any accepted prefix remains unsafe to replay.
 - The legacy SDK `type(text:target:clearExisting:typingDelay:snapshotId:)` retains its shipped `synthFirst` default and synthetic focus/clear/type behavior; default calls do not probe AX replacement eligibility. Explicit global, type, or per-app strategies still apply. When an action strategy is explicitly selected, one AX replacement is eligible only with `clearExisting: true`, zero `typingDelay`, and a fresh check proving the named target is the current keyboard receiver; cached focus or a frontmost app/window alone is insufficient. Positive delay or a successfully read focus mismatch lets `actionFirst` use the existing synthetic path; `actionOnly` refuses before dispatch. Unreadable or uncertain focus stops without input or fallback under either action strategy. The SDK's nil-target keyboard fallback and CLI foreground action-array delivery are unchanged.
 - Legacy SDK AX replacement also requires bounded, same-process ancestry proving a non-web receiver. A proven `AXWebArea` descendant uses the existing keyboard route under `actionFirst` and refuses under `actionOnly`, before any value write. Unreadable, ambiguous, or incomplete ancestry stops without input or fallback. AX value readback alone does not establish page input-event behavior; this typing-only eligibility rule does not change explicit `set-value` semantics.
 - Printable event fallback carries Unicode instead of physical US key positions and clears inherited modifier flags, so the requested literal text remains independent of active keyboard layouts and held user modifiers. This does not change foreground keyboard hold/release behavior.
-- Background app/PID delivery is pinned to the process generation resolved before dispatch. Peekaboo revalidates the receipt before every character or special action, stops on target exit/relaunch, and reports partial delivery as retry-unsafe. Requests containing non-empty text, clear, or an editable focused-text key require Bridge protocol 1.36 plus `compositeTypeDelivery`, because those actions may use AXValue delivery; event-only special keys retain their earlier compatibility floor.
+- Background app/PID delivery is pinned to the process generation resolved before dispatch. Wink revalidates the receipt before every character or special action, stops on target exit/relaunch, and reports partial delivery as retry-unsafe. Requests containing non-empty text, clear, or an editable focused-text key require Bridge protocol 1.36 plus `compositeTypeDelivery`, because those actions may use AXValue delivery; event-only special keys retain their earlier compatibility floor.
 - Event injection is not evidence that the receiver changed. By default, a native `dispatched_unverified` result is
   non-success and requires a fresh observation. Standalone CLI callers can opt into `--accept-dispatched` to return
   exit 0 and `success: true` for this state, like `press` and `click`, without claiming the text arrived. The outcome
@@ -120,25 +121,31 @@ key-up cleanup, and any accepted prefix remains unsafe to replay.
 ## Examples
 ```bash
 # Capture one exact text window, replace its field, and require a confirmed change
-SNAPSHOT_ID=$(peekaboo see --pid 123 --window-id 456 --json | jq -r '.data.snapshot_id')
-peekaboo type "status report ready" --snapshot "$SNAPSHOT_ID" --clear
+SNAPSHOT_ID=$(wink see --pid 123 --window-id 456 --json | jq -r '.data.snapshot_id')
+wink type "status report ready" --snapshot "$SNAPSHOT_ID" --clear
 
 # Intentionally dispatch foreground typing, then observe; this remains non-success without readback
-peekaboo type "status report ready" --app TextEdit --foreground
+wink type "status report ready" --app TextEdit --foreground
 
 # Accept dispatch for a script that performs its own follow-up observation
-peekaboo type "status report ready" --app TextEdit --foreground --accept-dispatched --json
+wink type "status report ready" --app TextEdit --foreground --accept-dispatched --json
 
 # Cadence options also require follow-up observation unless the exact replacement shape above applies
-peekaboo type "status report ready" --app TextEdit --wpm 140
-peekaboo type "fast" --app TextEdit --profile linear --delay 10ms
+wink type "status report ready" --app TextEdit --wpm 140
+wink type "fast" --app TextEdit --profile linear --delay 10ms
 
 # Pixel-focus dispatch stays retry-unsafe and requires fresh observation
-peekaboo type "hello" --at 320,180 --coordinate-space image_pixels --snapshot "$SNAPSHOT_ID"
+wink type "hello" --at 320,180 --coordinate-space image_pixels --snapshot "$SNAPSHOT_ID"
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`). Keyboard-event delivery and Bridge-hosted targeted typing also require Event Synthesizing access for the sending process; local native Accessibility edits do not. Request it when needed with `peekaboo permissions request event-synthesizing`.
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
-- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `peekaboo see`.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`). Keyboard-event delivery and Bridge-hosted targeted typing also require Event Synthesizing access for the sending process; local native Accessibility edits do not. Request it when needed with `wink permissions request event-synthesizing`.
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
+- If you see `SNAPSHOT_NOT_FOUND`, regenerate the snapshot with `wink see`.
 - Re-run with `--json` or `--verbose` to surface detailed errors.
+
+For example, `wink type "Hello there." --app TextEdit --humanized --wpm 140`
+uses the existing human cadence without altering the requested text or introducing typos.
+MCP callers can also use `humanized: true`. This changes timing, not the delivery route;
+use `--foreground` explicitly for global keyboard events. Timing alone does not make synthetic input
+indistinguishable from a physical keyboard.

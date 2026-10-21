@@ -2,9 +2,9 @@
 set -euo pipefail
 unset MAC_RELEASE_CODESIGN_IDENTITY MAC_RELEASE_CODESIGN_TEAM_ID
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERIFIER="${PEEKABOO_RUNTIME_VERIFIER:-$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh}"
+VERIFIER="${WINK_RUNTIME_VERIFIER:-$ROOT_DIR/scripts/verify-swift-runtime-libraries.sh}"
 STRIPPER="$ROOT_DIR/scripts/strip-toolchain-rpaths.sh"
-TEST_DIR="$(mktemp -d /tmp/peekaboo-runtime-slice-rpaths.XXXXXX)"
+TEST_DIR="$(mktemp -d /tmp/wink-runtime-slice-rpaths.XXXXXX)"
 trap 'rm -rf "$TEST_DIR"' EXIT
 SDK="$TEST_DIR/SDK/MacOSX15.0.sdk"
 mkdir -p "$SDK/usr/lib/swift"

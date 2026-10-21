@@ -1,10 +1,10 @@
 import CoreGraphics
 import Foundation
-import PeekabooAutomation
-import PeekabooCore
-import PeekabooFoundation
+import WinkAutomation
+import WinkCore
+import WinkFoundation
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 @Suite(.tags(.safe), .serialized)
 @MainActor
@@ -112,7 +112,7 @@ struct TypeCommandTruthTests {
             automation.actionOutcome = outcome
             let result = try await InProcessCommandRunner.run(
                 ["type", "Hello", "--foreground", "--accept-dispatched", "--json"],
-                services: TestServicesFactory.makePeekabooServices(automation: automation)
+                services: TestServicesFactory.makeWinkServices(automation: automation)
             )
             #expect(result.exitStatus != 0)
             #expect(!result.combinedOutput.contains("typedText"))
@@ -135,7 +135,7 @@ struct TypeCommandTruthTests {
         for outcome in outcomes {
             let automation = OutcomeStubAutomationService()
             automation.actionOutcome = outcome
-            let services = TestServicesFactory.makePeekabooServices(automation: automation)
+            let services = TestServicesFactory.makeWinkServices(automation: automation)
             let result = try await InProcessCommandRunner.run(
                 ["type", "Hello", "--foreground", "--json"],
                 services: services
@@ -154,7 +154,7 @@ struct TypeCommandTruthTests {
             mechanism: .globalEvents,
             mode: .foreground
         ))
-        let services = TestServicesFactory.makePeekabooServices(automation: automation)
+        let services = TestServicesFactory.makeWinkServices(automation: automation)
 
         let result = try await InProcessCommandRunner.run(
             ["type", "\\\\", "--foreground", "--json"],
@@ -180,7 +180,7 @@ struct TypeCommandTruthTests {
         ))
         let result = try await InProcessCommandRunner.run(
             ["type", text, "--foreground", "--json"],
-            services: TestServicesFactory.makePeekabooServices(automation: automation)
+            services: TestServicesFactory.makeWinkServices(automation: automation)
         )
         let payload = try ExternalCommandRunner.decodeJSONResponse(
             from: result,
@@ -213,7 +213,7 @@ struct TypeCommandTruthTests {
                 mode: .foreground
             ))
             automation.typeActionsResultProvider = { _, _, _ in testCase.result }
-            let services = TestServicesFactory.makePeekabooServices(automation: automation)
+            let services = TestServicesFactory.makeWinkServices(automation: automation)
 
             let command = try await InProcessCommandRunner.run(testCase.arguments, services: services)
             #expect(command.exitStatus == 0, "Unexpected type failure: \(command.combinedOutput)")
@@ -281,7 +281,7 @@ struct TypeCommandTruthTests {
         automation.actionOutcome = .confirmedNoChange(route: .bridge)
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(
@@ -369,7 +369,7 @@ struct TypeCommandTruthTests {
         automation.actionOutcome = .refused(route: .bridge, reason: .permissionDenied)
         let services = InputExecutionHostServices(
             host: .remote,
-            base: TestServicesFactory.makePeekabooServices(windows: windows, automation: automation)
+            base: TestServicesFactory.makeWinkServices(windows: windows, automation: automation)
         )
 
         let result = try await InProcessCommandRunner.run(

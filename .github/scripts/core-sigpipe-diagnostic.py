@@ -19,7 +19,7 @@ import time
 
 
 def eligible(group, outcome, results):
-    suite = results / "Core-PeekabooCore"
+    suite = results / "Core-WinkCore"
     return (
         group == "core"
         and outcome == "failure"
@@ -44,10 +44,10 @@ def prepare(root, results):
     helper = compiler.parent.parent / "libexec/swift/pm/swiftpm-testing-helper"
     debugger = Path(probe("xcrun", "--find", "lldb")).resolve(strict=True)
     # --show-bin-path only locates build output; no build/test discovery is requested.
-    build = Path(probe("xcrun", "swift", "build", "--package-path", "Core/PeekabooCore",
+    build = Path(probe("xcrun", "swift", "build", "--package-path", "Core/WinkCore",
                        "--configuration", "debug", "--show-bin-path")).resolve(strict=True)
-    bundle = build / "PeekabooCorePackageTests.xctest/Contents/MacOS/PeekabooCorePackageTests"
-    if not build.is_relative_to((root / "Core/PeekabooCore/.build").resolve(strict=True)):
+    bundle = build / "WinkCorePackageTests.xctest/Contents/MacOS/WinkCorePackageTests"
+    if not build.is_relative_to((root / "Core/WinkCore/.build").resolve(strict=True)):
         raise RuntimeError("Build output is outside the Core package")
     for executable in (helper, debugger, bundle):
         if not executable.is_file() or not os.access(executable, os.X_OK):
@@ -76,7 +76,7 @@ def capture(debugger, lldb, request):
             raise RuntimeError("Cannot create helper target")
         launch = target.GetLaunchInfo()
         launch.SetArguments([
-            "--test-bundle-path", request["bundle"], "--package-path", "Core/PeekabooCore",
+            "--test-bundle-path", request["bundle"], "--package-path", "Core/WinkCore",
             "--jobs", "4", "--no-parallel", request["bundle"], "--testing-library", "swift-testing",
         ], False)
         launch.SetWorkingDirectory(request["root"])

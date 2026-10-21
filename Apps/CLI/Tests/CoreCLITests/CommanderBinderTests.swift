@@ -1,10 +1,10 @@
 import Commander
 import Foundation
-import PeekabooAutomation
-import PeekabooBridge
-import PeekabooBridgeTestSupport
+import WinkAutomation
+import WinkBridge
+import WinkBridgeTestSupport
 import Testing
-@testable import PeekabooCLI
+@testable import WinkCLI
 
 struct CommanderBinderTests {
     @Test
@@ -77,7 +77,7 @@ struct CommanderBinderTests {
             commandType: SeeCommand.self
         )
         let options = base.applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": " modern ",
+            "WINK_CAPTURE_ENGINE": " modern ",
         ])
 
         #expect(options.captureEnginePreference == "modern")
@@ -135,7 +135,7 @@ struct CommanderBinderTests {
     @Test
     func `Capture engine environment override forces local mode`() {
         let options = CommandRuntimeOptions().applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": " modern ",
+            "WINK_CAPTURE_ENGINE": " modern ",
         ])
 
         #expect(options.captureEnginePreference == "modern")
@@ -145,7 +145,7 @@ struct CommanderBinderTests {
     @Test
     func `Blank capture engine environment override is ignored`() {
         let options = CommandRuntimeOptions().applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": " ",
+            "WINK_CAPTURE_ENGINE": " ",
         ])
 
         #expect(options.captureEnginePreference == nil)
@@ -159,7 +159,7 @@ struct CommanderBinderTests {
         base.preferRemote = false
 
         let options = base.applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": "modern",
+            "WINK_CAPTURE_ENGINE": "modern",
         ])
 
         #expect(options.captureEnginePreference == "cg")
@@ -169,17 +169,17 @@ struct CommanderBinderTests {
     @Test
     func `Input strategy environment overrides force local runtime`() {
         #expect(CommandRuntime.hasInputStrategyEnvironmentOverride(environment: [
-            "PEEKABOO_INPUT_STRATEGY": "synthOnly",
+            "WINK_INPUT_STRATEGY": "synthOnly",
         ]))
         #expect(CommandRuntime.hasInputStrategyEnvironmentOverride(environment: [
-            "PEEKABOO_CLICK_INPUT_STRATEGY": " actionFirst ",
+            "WINK_CLICK_INPUT_STRATEGY": " actionFirst ",
         ]))
         #expect(!CommandRuntime.hasInputStrategyEnvironmentOverride(environment: [
-            "PEEKABOO_INPUT_STRATEGY": " ",
+            "WINK_INPUT_STRATEGY": " ",
             "OTHER": "synthOnly",
         ]))
         #expect(!CommandRuntime.hasInputStrategyEnvironmentOverride(environment: [
-            "PEEKABOO_INPUT_STRATEGY": "action-first",
+            "WINK_INPUT_STRATEGY": "action-first",
         ]))
     }
 
@@ -203,14 +203,14 @@ struct CommanderBinderTests {
     @Test
     func `Element actions require bridge protocol and operation support`() {
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.setValue, .performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let oldProtocol = BridgeTestFixtures.handshake(
@@ -219,52 +219,52 @@ struct CommanderBinderTests {
             build: nil,
             supportedOperations: [.setValue, .performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let missingOperation = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.setValue],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let missingCapability = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.setValue, .performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
             ]
         )
         let disabledOperation = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.setValue, .performAction],
             enabledOperations: [.setValue],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let actionOnly = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
 
@@ -285,7 +285,7 @@ struct CommanderBinderTests {
     @Test
     func `Application launch options require bridge protocol and operation support`() {
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationPinnedInteractionVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationPinnedInteractionVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.launchApplicationWithOptions]
@@ -297,7 +297,7 @@ struct CommanderBinderTests {
             supportedOperations: [.launchApplicationWithOptions]
         )
         let missingOperation = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationPinnedInteractionVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationPinnedInteractionVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: []
@@ -310,7 +310,7 @@ struct CommanderBinderTests {
 
     @Test
     func `New application instance launch requires bridge protocol 1_13`() {
-        let supportedOperations: [PeekabooBridgeOperation] = [.captureScreen, .launchApplicationWithOptions]
+        let supportedOperations: [WinkBridgeOperation] = [.captureScreen, .launchApplicationWithOptions]
         let current = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 13),
             hostKind: .gui,
@@ -334,7 +334,7 @@ struct CommanderBinderTests {
 
     @Test
     func `window-instance-pinned mutations require bridge protocol 1_18`() {
-        let operations: [PeekabooBridgeOperation] = [.moveWindow, .closeWindow, .maximizeWindow]
+        let operations: [WinkBridgeOperation] = [.moveWindow, .closeWindow, .maximizeWindow]
         let legacy = BridgeTestFixtures.handshake(
             negotiatedVersion: .init(major: 1, minor: 17),
             hostKind: .onDemand,
@@ -547,11 +547,11 @@ struct CommanderBinderTests {
     @Test
     func `Capture commands require invalidation only when their focus policy may mutate the desktop`() throws {
         let ownerAwareBridge = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .desktopObservation],
-            hostCapabilities: [PeekabooBridgeHostCapability.screenCaptureKitProcessOwnership]
+            hostCapabilities: [WinkBridgeHostCapability.screenCaptureKitProcessOwnership]
         ).withProducerBoundSnapshotFixture()
 
         let readOnlyCaptures: [(any ParsableCommand.Type, ParsedValues)] = [
@@ -605,7 +605,7 @@ struct CommanderBinderTests {
 
     @Test
     func `Implicit snapshot invalidation requires protocol and enabled operation`() {
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .invalidateImplicitLatestSnapshot,
         ]
@@ -654,9 +654,9 @@ struct CommanderBinderTests {
 
     @Test
     func `Snapshot mutation leases require protocol and both enabled operations`() {
-        let operations: [PeekabooBridgeOperation] = [.beginSnapshotMutation, .finishSnapshotMutation]
+        let operations: [WinkBridgeOperation] = [.beginSnapshotMutation, .finishSnapshotMutation]
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.snapshotMutationLeaseVersion,
+            negotiatedVersion: WinkBridgeConstants.snapshotMutationLeaseVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations
@@ -668,13 +668,13 @@ struct CommanderBinderTests {
             supportedOperations: operations
         )
         let missing = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.snapshotMutationLeaseVersion,
+            negotiatedVersion: WinkBridgeConstants.snapshotMutationLeaseVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.beginSnapshotMutation]
         )
         let disabled = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.snapshotMutationLeaseVersion,
+            negotiatedVersion: WinkBridgeConstants.snapshotMutationLeaseVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: operations,
@@ -728,7 +728,7 @@ extension CommanderBinderTests {
             enabledOperations: [.captureScreen, .scroll, .invalidateImplicitLatestSnapshot]
         )
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .scroll, .targetedScroll, .invalidateImplicitLatestSnapshot],
@@ -738,10 +738,10 @@ extension CommanderBinderTests {
                 postEvent: true
             ),
             enabledOperations: [.captureScreen, .scroll, .targetedScroll, .invalidateImplicitLatestSnapshot],
-            hostCapabilities: [PeekabooBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
+            hostCapabilities: [WinkBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
         ).withProducerBoundSnapshotFixture()
         let receiptlessCurrent = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.protocolVersion,
+            negotiatedVersion: WinkBridgeConstants.protocolVersion,
             hostKind: .onDemand,
             build: nil,
             supportedOperations: [.captureScreen, .scroll, .targetedScroll, .invalidateImplicitLatestSnapshot],
@@ -751,7 +751,7 @@ extension CommanderBinderTests {
                 postEvent: true
             ),
             enabledOperations: [.captureScreen, .scroll, .targetedScroll, .invalidateImplicitLatestSnapshot],
-            hostCapabilities: [PeekabooBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
+            hostCapabilities: [WinkBridgeHostCapability.requestPinnedExactWindowScrollReceipt]
         )
 
         #expect(!CommandRuntime.supportsRemoteRequirements(for: legacy, options: background))
@@ -809,7 +809,7 @@ extension CommanderBinderTests {
         #expect(!foregroundWindow.requiresExactWindowTargetedClicks)
         #expect(!longPressWindow.requiresExactWindowTargetedClicks)
 
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .exactWindowTargetedClick,
         ]
@@ -849,7 +849,7 @@ extension CommanderBinderTests {
 
     @Test
     func `Relaunch requires the atomic bridge capability`() {
-        let operations: [PeekabooBridgeOperation] = [
+        let operations: [WinkBridgeOperation] = [
             .captureScreen,
             .launchApplicationWithOptions,
             .relaunchApplicationWithOptions,
@@ -883,7 +883,7 @@ extension CommanderBinderTests {
         #expect(!CommandRuntime.supportsApplicationRelaunch(for: guiHost))
         #expect(!CommandRuntime.supportsRemoteRequirements(for: guiHost, options: options))
         for missingOperation in [
-            PeekabooBridgeOperation.launchApplicationWithOptions,
+            WinkBridgeOperation.launchApplicationWithOptions,
             .relaunchApplicationWithOptions,
         ] {
             let incomplete = BridgeTestFixtures.handshake(
@@ -925,7 +925,7 @@ extension CommanderBinderTests {
             commandType: AppCommand.LaunchSubcommand.self
         )
         let environmentOptions = ambientBase.applyingEnvironmentOverrides(environment: [
-            "PEEKABOO_CAPTURE_ENGINE": "legacy",
+            "WINK_CAPTURE_ENGINE": "legacy",
         ])
 
         #expect(options.requiresApplicationLaunchOptions)
@@ -938,41 +938,41 @@ extension CommanderBinderTests {
     func `Snapshot invalidation routes include explicit GUI and daemon sockets once`() {
         let paths = RuntimeHostResolver.snapshotInvalidationRemoteSocketPaths(
             explicitSocket: "/tmp/custom.sock",
-            daemonSocketPath: PeekabooBridgeConstants.peekabooSocketPath
+            daemonSocketPath: WinkBridgeConstants.winkSocketPath
         )
 
         #expect(paths == [
             "/tmp/custom.sock",
-            PeekabooBridgeConstants.peekabooSocketPath,
+            WinkBridgeConstants.winkSocketPath,
         ])
     }
 
     @Test
     func `Build-scoped daemon participates in routing and snapshot invalidation`() throws {
         let buildScopedPath = try #require(DaemonLaunchPolicy.buildScopedDaemonSocketPath(
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             runtimeBuildIdentity: "test-build"
         ))
-        let historicalPath = URL(fileURLWithPath: PeekabooBridgeConstants.daemonSocketPath)
+        let historicalPath = URL(fileURLWithPath: WinkBridgeConstants.daemonSocketPath)
             .deletingLastPathComponent()
             .appendingPathComponent("daemon-bbbbbbbbbbbbbbbb.sock")
             .path
         let candidates = RuntimeHostResolver.implicitRemoteCandidates(
             options: CommandRuntimeOptions(),
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             buildScopedDaemonSocketPath: buildScopedPath,
             historicalBuildScopedDaemonSocketPaths: [buildScopedPath, historicalPath, historicalPath]
         )
         let invalidationPaths = RuntimeHostResolver.snapshotInvalidationRemoteSocketPaths(
             explicitSocket: nil,
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath,
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath,
             buildScopedDaemonSocketPath: buildScopedPath,
             historicalBuildScopedDaemonSocketPaths: [historicalPath, historicalPath]
         )
 
         #expect(Array(candidates.map(\.socketPath).prefix(3)) == [
             buildScopedPath,
-            PeekabooBridgeConstants.daemonSocketPath,
+            WinkBridgeConstants.daemonSocketPath,
             historicalPath,
         ])
         #expect(candidates[0].requiresValidatedHistoricalDaemon == false)
@@ -987,11 +987,11 @@ extension CommanderBinderTests {
     func `Historical daemon discovery preserves explicit and custom socket isolation`() {
         #expect(RuntimeHostResolver.shouldDiscoverHistoricalDaemons(
             explicitSocket: nil,
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath
         ))
         #expect(!RuntimeHostResolver.shouldDiscoverHistoricalDaemons(
             explicitSocket: "/tmp/explicit.sock",
-            daemonSocketPath: PeekabooBridgeConstants.daemonSocketPath
+            daemonSocketPath: WinkBridgeConstants.daemonSocketPath
         ))
         #expect(!RuntimeHostResolver.shouldDiscoverHistoricalDaemons(
             explicitSocket: nil,
@@ -1022,14 +1022,14 @@ extension CommanderBinderTests {
     @Test
     func `Remote requirements skip bridges missing required element action support`() {
         let current = BridgeTestFixtures.handshake(
-            negotiatedVersion: PeekabooBridgeConstants.processGenerationBoundElementMutationsVersion,
+            negotiatedVersion: WinkBridgeConstants.processGenerationBoundElementMutationsVersion,
             hostKind: .gui,
             build: nil,
             supportedOperations: [.captureScreen, .setValue, .performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let oldProtocol = BridgeTestFixtures.handshake(
@@ -1038,9 +1038,9 @@ extension CommanderBinderTests {
             build: nil,
             supportedOperations: [.captureScreen, .setValue, .performAction],
             hostCapabilities: [
-                PeekabooBridgeHostCapability.attestedOperationReceipts,
-                PeekabooBridgeHostCapability.setValueResultTargetBinding,
-                PeekabooBridgeHostCapability.processGenerationBoundElementMutations,
+                WinkBridgeHostCapability.attestedOperationReceipts,
+                WinkBridgeHostCapability.setValueResultTargetBinding,
+                WinkBridgeHostCapability.processGenerationBoundElementMutations,
             ]
         )
         let ordinaryOptions = CommandRuntimeOptions()
@@ -1104,7 +1104,7 @@ extension CommanderBinderTests {
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: AgentRunSubcommand.self,
-            environment: ["PEEKABOO_BRIDGE_SOCKET": "/tmp/agent-host.sock"]
+            environment: ["WINK_BRIDGE_SOCKET": "/tmp/agent-host.sock"]
         )
 
         #expect(options.preferRemote)
@@ -1115,7 +1115,7 @@ extension CommanderBinderTests {
         let options = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: ["no-remote"]),
             commandType: AgentRunSubcommand.self,
-            environment: ["PEEKABOO_BRIDGE_SOCKET": "/tmp/agent-host.sock"]
+            environment: ["WINK_BRIDGE_SOCKET": "/tmp/agent-host.sock"]
         )
 
         #expect(!options.preferRemote)
@@ -1151,12 +1151,12 @@ extension CommanderBinderTests {
         let browserOnly = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: MCPCommand.Serve.self,
-            environment: ["PEEKABOO_ALLOW_TOOLS": "browser"]
+            environment: ["WINK_ALLOW_TOOLS": "browser"]
         )
         let withCapture = try CommanderCLIBinder.makeRuntimeOptions(
             from: ParsedValues(positional: [], options: [:], flags: []),
             commandType: MCPCommand.Serve.self,
-            environment: ["PEEKABOO_ALLOW_TOOLS": "browser,see"]
+            environment: ["WINK_ALLOW_TOOLS": "browser,see"]
         )
 
         #expect(browserOnly.usesPerToolSnapshotInvalidation)
@@ -1284,7 +1284,7 @@ extension CommanderBinderTests {
         for commandType in commandTypes {
             let options = try CommanderCLIBinder.makeRuntimeOptions(from: parsed, commandType: commandType)
             let environmentOptions = options.applyingEnvironmentOverrides(environment: [
-                "PEEKABOO_CAPTURE_ENGINE": "legacy",
+                "WINK_CAPTURE_ENGINE": "legacy",
             ])
 
             #expect(options.preferRemote)
@@ -1292,7 +1292,7 @@ extension CommanderBinderTests {
             #expect(environmentOptions.preferRemote)
             #expect(!RuntimeHostResolver.inputPolicyRequiresLocal(
                 options: options,
-                environment: ["PEEKABOO_INPUT_STRATEGY": "synthOnly"],
+                environment: ["WINK_INPUT_STRATEGY": "synthOnly"],
                 configurationInput: Configuration.InputConfig(click: .synthOnly)
             ))
         }
@@ -1344,24 +1344,24 @@ extension CommanderBinderTests {
     func `Image runtime honors explicit bridge socket`() throws {
         let parsed = ParsedValues(
             positional: [],
-            options: ["bridge-socket": ["/tmp/peekaboo.sock"]],
+            options: ["bridge-socket": ["/tmp/wink.sock"]],
             flags: []
         )
         let options = try CommanderCLIBinder.makeRuntimeOptions(from: parsed, commandType: SeeCommand.self)
         #expect(options.preferRemote == true)
-        #expect(options.bridgeSocketPath == "/tmp/peekaboo.sock")
+        #expect(options.bridgeSocketPath == "/tmp/wink.sock")
     }
 
     @Test
     func `See runtime honors explicit bridge socket`() throws {
         let parsed = ParsedValues(
             positional: [],
-            options: ["bridge-socket": ["/tmp/peekaboo.sock"]],
+            options: ["bridge-socket": ["/tmp/wink.sock"]],
             flags: []
         )
         let options = try CommanderCLIBinder.makeRuntimeOptions(from: parsed, commandType: SeeCommand.self)
         #expect(options.preferRemote == true)
-        #expect(options.bridgeSocketPath == "/tmp/peekaboo.sock")
+        #expect(options.bridgeSocketPath == "/tmp/wink.sock")
     }
 
     @Test

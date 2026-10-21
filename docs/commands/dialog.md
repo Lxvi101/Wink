@@ -1,11 +1,11 @@
 ---
-summary: 'Handle macOS dialogs via peekaboo dialog'
+summary: 'Handle macOS dialogs via wink dialog'
 read_when:
   - 'clicking buttons or entering text in save/open/system dialogs'
   - 'needing to inspect dialog structure for automation debugging'
 ---
 
-# `peekaboo dialog`
+# `wink dialog`
 
 `dialog` wraps `DialogService` so you can programmatically inspect, click, set text in, dismiss, or drive file
 dialogs without re-running `see`. Exact targeted click, non-forced dismiss, and input stay in the background by
@@ -31,14 +31,14 @@ automatic clicks require complete discovery, one dialog, and one enabled AXPress
 ## Implementation notes
 - Every `dialog list` form is read-only/background and creates no mutation or snapshot debt. A targeted list must resolve exactly one dialog; ambiguity reports candidate window IDs.
 - Static text includes nested `AXStaticText` descendants of the resolved dialog in depth-first child order, once per AX element. Extraction follows structural children and does not enter other application/window roots. It uses the first nonblank string from `AXValue`, `AXTitle`, `AXLabel`, then `AXDescription`, preserving the selected string's whitespace; button labels and editable field values remain in their separate lists. Alert message and informative text do not replace the dialog's own title.
-- When an exact titled parent AX window contains one structural child sheet or alert, Peekaboo treats that child as the active dialog while retaining the parent window receipt. The parent remains targetable when it has no structural child, and multiple child dialogs remain ambiguous. If a blank-title transient sheet CGWindow ID does not resolve, use the titled parent AX window ID reported by `window list`.
+- When an exact titled parent AX window contains one structural child sheet or alert, Wink treats that child as the active dialog while retaining the parent window receipt. The parent remains targetable when it has no structural child, and multiple child dialogs remain ambiguous. If a blank-title transient sheet CGWindow ID does not resolve, use the titled parent AX window ID reported by `window list`.
 - Targeted structural discovery reads Accessibility nodes on a bounded background worker lane. Local calls share the caller's monotonic timeout across windows and nested discovery/revalidation passes, without fixed node/depth cutoffs. CLI `list` keeps its 5-second default and `file` its 20-second default, and explicit longer timeouts are preserved locally. Services without a local caller budget, including Bridge-hosted discovery, use a 20-second fallback. Bridge wire deadlines are unchanged: remote calls retain the existing transport timeout and cancellation behavior, not cross-process propagation of the CLI timeout or support for a host discovery budget above 20 seconds. Older hosts retain their own existing behavior.
 - Targeted listing reads the selected dialog's metadata on the same bounded background worker and remaining caller deadline as structural discovery. Stalled reads cannot hold the main actor or publish late candidates or metadata, and unreadable classification refuses before any mutation. An abandoned native read retains its worker slot until it actually returns, so another read for that process generation can refuse meanwhile. These bounds do not extend to metadata extraction through the legacy `windowTitle`/`appName` service overload or to action verification.
 - Cancellation abandons the result, not the in-flight native AX call. The worker can continue read-only metadata work when that call returns, subject to checks of the original deadline; this is not a guarantee of native read cancellation.
 - Targeted metadata accepts native strings and attributed strings as text without stringifying numeric or opaque values. Missing optional metadata keeps its existing defaults; this output-only reading policy does not weaken the complete structural classification used to establish a unique dialog.
 - Dialog-list timeout failures use JSON code `TIMEOUT`; unreadable structural evidence uses `ACCESSIBILITY_INCOMPLETE`, not an empty successful inventory or `UNKNOWN_ERROR`.
 - Default background click and non-forced dismiss use Bridge protocol 1.25's two-phase contract: a read-only prepare operation uniquely upgrades app/PID/title selectors to one exact process-generation/window receipt and retains the raw AX window, dialog, and button identities under a short-lived one-shot token.
-- Immediately before AXPress, Peekaboo consumes the token, reacquires the exact-window write lane, re-enumerates and compares all three raw AX identities, and rechecks owner generation, window bounds, enabled state, and AXPress support. It never falls back to the physical pointer, clipboard, focus, or global input.
+- Immediately before AXPress, Wink consumes the token, reacquires the exact-window write lane, re-enumerates and compares all three raw AX identities, and rechecks owner generation, window bounds, enabled state, and AXPress support. It never falls back to the physical pointer, clipboard, focus, or global input.
 - Success is confirmed only after the retained dialog or sheet disappears. An accepted press without a verified postcondition is retry-unsafe and requires fresh observation; planning or identity ambiguity is a retry-safe pre-dispatch refusal.
 - Remote targeted list/prepare/click/dismiss require the exact advertised and enabled operation, not merely a 1.25 version number. Missing capabilities refuse before operation transport.
 - Exact targeted `dialog input` resolves and revalidates one process-generation/window target, then sets the selected
@@ -59,8 +59,8 @@ automatic clicks require complete discovery, one dialog, and one enabled AXPress
 - If Save closes or temporarily rebuilds that parent, unavailable post-action document metadata does not abort expected-path or requested-directory verification. Parent metadata can recover during polling; pre-action and overwrite-dispatch identity checks remain strict.
 - Native `open-panel` and `save-panel` identifiers remain recognizable with blank or localized titles. File selection reuses that pass's complete classification evidence; revalidation reads it afresh. Batched AX reads preserve individual errors and full descendant traversal rather than treating partial reads as an empty or unique dialog inventory.
 - `dialog file` defaults to clicking the dialog’s `OKButton` when `--select` is omitted (or set to `default`). Prefer this when you don’t want to guess whether the button is labeled “Save”, “Open”, “Choose”, etc.
-- `--ensure-expanded` expands the dialog (Show Details) before applying `--path`. If no `PathTextField` is present, Peekaboo falls back to the standard “Go to Folder…” shortcut to reliably land in the requested directory.
-- For save-like actions (resolved by the actual clicked button title), `dialog file` verifies that the saved file appears on disk (5s timeout). On success it returns `saved_path` and `saved_path_verified=true`. If you provided `--path` + `--name`, Peekaboo also enforces that the file landed in the requested directory (symlinks like `/tmp` → `/private/tmp` are normalized).
+- `--ensure-expanded` expands the dialog (Show Details) before applying `--path`. If no `PathTextField` is present, Wink falls back to the standard “Go to Folder…” shortcut to reliably land in the requested directory.
+- For save-like actions (resolved by the actual clicked button title), `dialog file` verifies that the saved file appears on disk (5s timeout). On success it returns `saved_path` and `saved_path_verified=true`. If you provided `--path` + `--name`, Wink also enforces that the file landed in the requested directory (symlinks like `/tmp` → `/private/tmp` are normalized).
 - `saved_path_matches_expected` compares normalized, symlink-resolved file URLs, so equivalent aliases match without rewriting the reported `saved_path`. A filename mismatch within the requested directory is diagnostic only; directory enforcement still rejects a different parent directory.
 - JSON output includes additional provenance for debugging without screenshots, including `dialog_identifier`, `found_via`, `button_identifier`, `saved_path_found_via`, and `path_navigation_method` (e.g. `path_textfield_typed+fallback_go_to_folder`).
 - `dialog list` is invaluable before scripting a dialog: it prints button titles, placeholders, and static text so you can pick stable labels instead of guessing.
@@ -68,22 +68,22 @@ automatic clicks require complete discovery, one dialog, and one enabled AXPress
 ## Examples
 ```bash
 # Click "Don't Save" on a TextEdit sheet
-peekaboo dialog click --button "Don't Save" --app TextEdit
+wink dialog click --button "Don't Save" --app TextEdit
 
 # Set a targeted password field through background AXValue
-peekaboo dialog input --text hunter2 --field "Password" --clear --app Safari
+wink dialog input --text hunter2 --field "Password" --clear --app Safari
 
 # Choose a file in an open panel and confirm
-peekaboo dialog file --path ~/Downloads --name report.pdf --select Open --foreground
+wink dialog file --path ~/Downloads --name report.pdf --select Open --foreground
 
 # Save a file and verify the resulting path exists
-peekaboo dialog file --path /tmp --name poem.rtf --select Save --app TextEdit --foreground --json
+wink dialog file --path /tmp --name poem.rtf --select Save --app TextEdit --foreground --json
 
 # Click the default action (OKButton) and include dialog provenance in JSON output
-peekaboo dialog file --path ~/Downloads --name report.pdf --ensure-expanded --app TextEdit --foreground --json
+wink dialog file --path ~/Downloads --name report.pdf --ensure-expanded --app TextEdit --foreground --json
 ```
 
 ## Troubleshooting
-- Verify Screen Recording + Accessibility permissions (`peekaboo permissions status`).
-- Confirm your process with `peekaboo app list`, its exact window with `peekaboo window list`, and current UI with `peekaboo see` before rerunning.
+- Verify Screen Recording + Accessibility permissions (`wink permissions status`).
+- Confirm your process with `wink app list`, its exact window with `wink window list`, and current UI with `wink see` before rerunning.
 - Re-run with `--json` or `--verbose` to surface detailed errors.
