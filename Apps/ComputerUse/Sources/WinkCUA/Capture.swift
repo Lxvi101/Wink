@@ -11,6 +11,14 @@ struct WindowShot {
     let scale: CGFloat
 }
 
+/// Holds an async result that may arrive after the waiter has given up.
+private final class ResultBox<T>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Result<T, Error>?
+    func set(_ result: Result<T, Error>) { lock.lock(); value = result; lock.unlock() }
+    func get() -> Result<T, Error>? { lock.lock(); defer { lock.unlock() }; return value }
+}
+
 /// Captures a single window (even when covered or in the background) with ScreenCaptureKit.
 /// Shareable content is cached because enumerating it costs far more than the capture itself.
 final class WindowCapturer: @unchecked Sendable {
@@ -18,25 +26,33 @@ final class WindowCapturer: @unchecked Sendable {
     private var cachedAt = Date.distantPast
     private let lock = NSLock()
 
+    /// ScreenCaptureKit sometimes never calls back (display asleep, screen locked, replayd stuck).
+    /// Requests are served one at a time, so an unbounded wait here froze the whole server.
+    private static let timeout: TimeInterval = 8
+
     private func blocking<T>(_ work: @escaping @Sendable () async throws -> T) throws -> T {
         let semaphore = DispatchSemaphore(value: 0)
-        nonisolated(unsafe) var result: Result<T, Error>!
+        let box = ResultBox<T>()
         Task.detached {
-            do { result = .success(try await work()) } catch { result = .failure(error) }
+            do { box.set(.success(try await work())) } catch { box.set(.failure(error)) }
             semaphore.signal()
         }
-        semaphore.wait()
+        guard semaphore.wait(timeout: .now() + Self.timeout) == .success, let result = box.get() else {
+            lock.lock(); cached = nil; lock.unlock()
+            throw ToolError("screen capture timed out after \(Int(Self.timeout))s (display asleep or capture service busy)")
+        }
         return try result.get()
     }
 
     private func window(id: CGWindowID) throws -> SCWindow? {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
         if Date().timeIntervalSince(cachedAt) < 3, let hit = cached?.windows.first(where: { $0.windowID == id }) {
+            lock.unlock()
             return hit
         }
+        lock.unlock()
         let content = try blocking { try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false) }
-        cached = content
-        cachedAt = Date()
+        lock.lock(); cached = content; cachedAt = Date(); lock.unlock()
         return content.windows.first(where: { $0.windowID == id })
     }
 
