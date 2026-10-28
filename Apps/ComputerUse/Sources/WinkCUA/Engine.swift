@@ -3,13 +3,25 @@ import ApplicationServices
 
 struct ToolError: Error, CustomStringConvertible {
     let description: String
-    init(_ description: String) { self.description = description }
+    /// True when the failure happened before any input reached the app (lookup errors, AX refusals).
+    var notDispatched = false
+    init(_ description: String, notDispatched: Bool = false) {
+        self.description = description
+        self.notDispatched = notDispatched
+    }
+}
+
+/// How far the last action got: workflows need to know whether a failed action may still have had an effect.
+enum DispatchState {
+    case none, started, sent
 }
 
 struct ToolOutput {
     var text: String
     var image: Data?
     var isError = false
+    /// MCP structuredContent (workflow and feedback tools).
+    var structured: [String: Any]?
 }
 
 /// Per-app observation state. Indices are keyed by structural identity so an element keeps its number
@@ -39,9 +51,13 @@ final class AppSession {
 }
 
 final class Engine {
-    private var sessions: [pid_t: AppSession] = [:]
+    private(set) var sessions: [pid_t: AppSession] = [:]
     let capturer = WindowCapturer()
     var treeOptions = TreeOptions()
+    /// Set while a workflow recording is active: actions keep their before/after nodes as evidence.
+    var captureEvidence = false
+    private(set) var lastEvidence: (before: [UINode], after: [UINode], window: CGRect?)?
+    var dispatchState = DispatchState.none
 
     // MARK: App resolution
 
@@ -57,6 +73,11 @@ final class Engine {
         if let hit = apps.first(where: { $0.bundleIdentifier?.lowercased() == lower })
             ?? apps.first(where: { $0.localizedName?.lowercased() == lower })
             ?? apps.first(where: { $0.activationPolicy == .regular && ($0.localizedName?.lowercased().hasPrefix(lower) ?? false) }) {
+            return hit
+        }
+        // Localized apps ("Rechner" for Calculator.app): match the bundle the name refers to.
+        if let url = applicationURL(for: q), let bundleID = Bundle(url: url)?.bundleIdentifier,
+           let hit = apps.first(where: { $0.bundleIdentifier == bundleID }) {
             return hit
         }
         guard launch, let url = applicationURL(for: q) else {
@@ -84,7 +105,7 @@ final class Engine {
         return app
     }
 
-    private func applicationURL(for query: String) -> URL? {
+    func applicationURL(for query: String) -> URL? {
         if query.contains("."), let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: query) { return url }
         let name = query.hasSuffix(".app") ? query : "\(query).app"
         let dirs = ["/Applications", "/System/Applications", "/System/Applications/Utilities",
@@ -103,7 +124,7 @@ final class Engine {
         return nil
     }
 
-    private func session(for query: String, launch: Bool = true) throws -> AppSession {
+    func session(for query: String, launch: Bool = true) throws -> AppSession {
         try Self.requireAccessibility()
         let running = try resolve(query, launch: launch)
         if let existing = sessions[running.processIdentifier] { return existing }
@@ -112,7 +133,7 @@ final class Engine {
         return created
     }
 
-    private func observedSession(_ query: String) throws -> AppSession {
+    func observedSession(_ query: String) throws -> AppSession {
         let s = try session(for: query, launch: false)
         guard s.snapshot != nil else {
             throw ToolError("call get_app_state for '\(s.name)' first; element indices come from it.")
@@ -181,13 +202,13 @@ final class Engine {
             .compactMap { $0 }.first(where: isWindow) ?? windows.first
     }
 
-    private func walk(_ s: AppSession) -> (TreeSnapshot, AXUIElement?) {
+    func walk(_ s: AppSession) -> (TreeSnapshot, AXUIElement?) {
         let window = chooseWindow(s, selector: s.windowSelector)
         return (TreeWalker.walk(app: s.app, window: window, options: treeOptions), window)
     }
 
     /// Walk repeatedly until two consecutive walks agree (or the budget runs out). Returns the final walk.
-    private func settledWalk(_ s: AppSession, budget: TimeInterval = 1.5) -> (TreeSnapshot, AXUIElement?) {
+    func settledWalk(_ s: AppSession, budget: TimeInterval = 1.5) -> (TreeSnapshot, AXUIElement?) {
         usleep(45_000)
         var previous = walk(s)
         let deadline = Date().addingTimeInterval(budget)
@@ -200,7 +221,8 @@ final class Engine {
         return previous
     }
 
-    private func render(_ s: AppSession, _ snap: TreeSnapshot, window: AXUIElement?, full: Bool) -> String {
+    @discardableResult
+    func render(_ s: AppSession, _ snap: TreeSnapshot, window: AXUIElement?, full: Bool) -> String {
         let windowChanged = snap.windowID != s.windowID || s.snapshot == nil
         if windowChanged { s.keyToIndex = [:]; s.nextIndex = 1 }
         var nodes = snap.nodes
@@ -322,19 +344,21 @@ final class Engine {
     private func node(_ s: AppSession, _ args: [String: Any], key: String = "element_index") throws -> UINode? {
         guard let index = args.int(key) else { return nil }
         guard let node = s.byIndex[index] else {
-            throw ToolError("element \(index) is not in the latest state of \(s.name); call get_app_state again.")
+            throw ToolError("element \(index) is not in the latest state of \(s.name); call get_app_state again.",
+                            notDispatched: true)
         }
         return node
     }
 
     private func center(_ node: UINode) throws -> CGPoint {
         guard let f = AX.frame(node.element) ?? node.frame, f.width > 0 || f.height > 0 else {
-            throw ToolError("element \(node.index) has no on-screen frame; it may be hidden or scrolled away.")
+            throw ToolError("element \(node.index) has no on-screen frame; it may be hidden or scrolled away.",
+                            notDispatched: true)
         }
         return CGPoint(x: f.midX, y: f.midY)
     }
 
-    private func screenPoint(_ s: AppSession, x: Double, y: Double) throws -> CGPoint {
+    func screenPoint(_ s: AppSession, x: Double, y: Double) throws -> CGPoint {
         guard let origin = s.shotOrigin else {
             throw ToolError("x/y need a screenshot from get_app_state first (they are screenshot pixel coordinates).")
         }
@@ -360,11 +384,22 @@ final class Engine {
     /// Run an action, then (by default) wait for the UI to settle and return the resulting diff.
     private func act(_ s: AppSession, _ args: [String: Any], _ body: () throws -> String) throws -> ToolOutput {
         let started = Date()
-        let summary = try body()
+        let before = captureEvidence ? s.snapshot?.nodes : nil
+        lastEvidence = nil
+        dispatchState = .started
+        let summary: String
+        do {
+            summary = try body()
+        } catch let error as ToolError where error.notDispatched {
+            dispatchState = .none
+            throw error
+        }
+        dispatchState = .sent
         let actMs = Int(Date().timeIntervalSince(started) * 1000)
         guard args.bool("observe") ?? true else { return ToolOutput(text: "\(summary) (\(actMs) ms)") }
         let (snap, window) = settledWalk(s)
         var text = "\(summary) (\(actMs) ms)\n\n" + render(s, snap, window: window, full: false)
+        if let before { lastEvidence = (before, s.snapshot?.nodes ?? [], snap.windowFrame) }
         var image: Data?
         if args.bool("screenshot") ?? false {
             let (data, note) = screenshot(s, window: window, maxDimension: CGFloat(args.int("max_image_size") ?? 1400))
@@ -400,7 +435,7 @@ final class Engine {
                 if ["AXTextField", "AXTextArea", "AXComboBox"].contains(n.role) {
                     AXUIElementSetAttributeValue(n.element, kAXFocusedAttribute as CFString, kCFBooleanTrue)
                 }
-                guard let point else { throw ToolError("element \(n.index) has no frame and no press action.") }
+                guard let point else { throw ToolError("element \(n.index) has no frame and no press action.", notDispatched: true) }
                 try Input.click(at: point, button: button, count: count, target: input)
                 return "Clicked [\(n.index)] \(n.content) at \(Int(point.x)),\(Int(point.y)) with \(button == .left ? "left" : button == .right ? "right" : "middle") button x\(count)."
             }
@@ -411,6 +446,18 @@ final class Engine {
             showCursor(point, s, effect)
             try Input.click(at: point, button: button, count: count, target: input)
             return "Clicked at screenshot (\(Int(x)),\(Int(y))) = screen \(Int(point.x)),\(Int(point.y))."
+        }
+    }
+
+    /// A click at a screen point that a workflow run explicitly authorized as a coordinate fallback.
+    func click(_ s: AppSession, screenPoint point: CGPoint, args: [String: Any]) throws -> ToolOutput {
+        let button: CGMouseButton = (args["mouse_button"] as? String) == "right" ? .right : .left
+        let count = max(1, min(args.int("click_count") ?? 1, 3))
+        let input = target(s, args)
+        return try act(s, args) {
+            showCursor(point, s, button == .right ? .rightClick : (count > 1 ? .doubleClick : .click))
+            try Input.click(at: point, button: button, count: count, target: input)
+            return "Clicked at screen \(Int(point.x)),\(Int(point.y)) (coordinate fallback)."
         }
     }
 
@@ -452,7 +499,9 @@ final class Engine {
             let current = AX.attribute(n.element, kAXValueAttribute)
             let value: CFTypeRef = (current is NSNumber) ? (Double(raw).map { $0 as NSNumber } ?? raw as NSString) : raw as NSString
             let err = AXUIElementSetAttributeValue(n.element, kAXValueAttribute as CFString, value)
-            guard err == .success else { throw ToolError("could not set value of [\(n.index)]: \(AX.errorDescription(err))") }
+            guard err == .success else {
+                throw ToolError("could not set value of [\(n.index)]: \(AX.errorDescription(err))", notDispatched: true)
+            }
             return "Set [\(n.index)] to \"\(raw.prefix(80))\"."
         }
     }
@@ -466,7 +515,8 @@ final class Engine {
             if let p = try? center(n) { showCursor(p, s, .click) }
             let err = AXUIElementPerformAction(n.element, action as CFString)
             guard err == .success else {
-                throw ToolError("\(action) failed on [\(n.index)]: \(AX.errorDescription(err)). Available: \(n.actions.joined(separator: ", "))")
+                throw ToolError("\(action) failed on [\(n.index)]: \(AX.errorDescription(err)). Available: \(n.actions.joined(separator: ", "))",
+                                notDispatched: true)
             }
             return "Performed \(action) on [\(n.index)] \(n.content)."
         }
