@@ -31,6 +31,12 @@ Automation behavior belongs in AutomationKit; agent and MCP adapters belong in A
 and visual feedback in Visualizer. The public root `Package.swift` exports Foundation, Protocols, AutomationKit, and
 Bridge without the agent runtime or Tachikoma. Internal apps can link the umbrella or focused products as needed.
 
+`Apps/ComputerUse` is a separate SwiftPM package for the lean `wink-cua` MCP server. Its `WinkWorkflowKit` library
+(Foundation only) owns the workflow DSL, semantic selector resolution over normalized observations, the deterministic
+runner, recording compilation, and local workflow/feedback storage. `wink-cua` adapts it to its own Engine; it does not
+link WinkCore or Tachikoma. Exposing the same tools from `wink mcp` needs an AgentRuntime driver plus catalog and
+execution-policy entries (see `Apps/ComputerUse/WORKFLOWS.md`).
+
 The repository uses submodules for AXorcist, Commander, Swiftdansi, Tachikoma, and TauTUI. Change these in their owning
 repositories before updating Wink's pointers. The [build guide](building.md#commander-dependency-resolution)
 describes checkout-local dependency setup and the distinction between internal and public package resolution.

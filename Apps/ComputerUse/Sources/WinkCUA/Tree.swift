@@ -1,5 +1,6 @@
 import ApplicationServices
 import Foundation
+import WinkWorkflowKit
 
 /// One rendered accessibility element. `key` is a structural identity used to keep indices stable
 /// across observations, so unchanged elements keep their number and diffs stay small.
@@ -12,6 +13,21 @@ struct UINode {
     let frame: CGRect?
     let actions: [String]
     var index: Int = 0
+    // Typed attributes from the same batched AX read, kept for semantic locators (workflows). Never
+    // reconstructed from `content`. `value` is nil for secure fields.
+    var subrole: String?
+    var identifier: String?
+    var title: String?
+    var desc: String?
+    var placeholder: String?
+    var value: String?
+    var enabled = true
+    var focused = false
+    var editable = false
+    var secure = false
+    var selected = false
+    /// Nearest-first named ancestors (windows excluded), at most three.
+    var ancestors: [AncestorLocator] = []
 }
 
 struct TreeOptions {
@@ -56,6 +72,7 @@ enum TreeWalker {
         var ancestors: [AXUIElement] = [app] // cycle guard: some apps report themselves as their own child
         var truncated = false
         var focusedSummary: String?
+        var context: [AncestorLocator] = [] // named, rendered ancestors of the element being visited
 
         func clip(_ s: String, _ limit: Int) -> String {
             let flat = s.replacingOccurrences(of: "\n", with: "⏎").replacingOccurrences(of: "\t", with: " ")
@@ -119,10 +136,30 @@ enum TreeWalker {
                     .map { $0.hasPrefix("AX") ? String($0.dropFirst(2)) : $0 }
                 if !secondary.isEmpty { parts.append("actions: \(secondary.joined(separator: ","))") }
                 let content = parts.joined(separator: " ")
-                nodes.append(UINode(element: element, key: key, depth: depth, content: content, role: role,
-                                    frame: frame, actions: actions))
+                let secure = subrole == "AXSecureTextField" || role == "AXSecureTextField"
+                var node = UINode(element: element, key: key, depth: depth, content: content, role: role,
+                                  frame: frame, actions: actions)
+                node.subrole = subrole
+                node.identifier = identifier
+                node.title = title
+                node.desc = desc
+                node.placeholder = placeholder
+                node.value = secure ? nil : value
+                node.enabled = enabled
+                node.focused = focused
+                node.editable = flags.contains("editable")
+                node.secure = secure
+                node.selected = selected
+                node.ancestors = context.suffix(3).reversed()
+                nodes.append(node)
                 if focused { focusedSummary = content }
             }
+            let named = !flatten && role != "AXWindow" && (identifier != nil || title != nil || desc != nil)
+            if named {
+                context.append(AncestorLocator(role: role, identifier: identifier, title: title.map { String($0.prefix(120)) },
+                                               description: desc.map { String($0.prefix(120)) }))
+            }
+            defer { if named { context.removeLast() } }
 
             // Closed menus are expensive and useless; only descend into menus that are open.
             if role == "AXMenuBarItem" || role == "AXMenuItem", !selected { return }

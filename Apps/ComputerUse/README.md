@@ -5,7 +5,7 @@ the user's mouse or keyboard, and an animated agent cursor shows what it is doin
 fast path inside the Wink fork. It doesn't replace `wink mcp`, and it shares none of that
 server's snapshot, bridge or receipt machinery.
 
-It is a single 400 KB binary with no dependencies beyond system frameworks. It needs no companion
+It is a single small binary with no dependencies beyond system frameworks. It needs no companion
 app and no Codex/ChatGPT install.
 
 ## Install
@@ -79,6 +79,23 @@ type_text / press_key / scroll / … → same: every action returns the settled 
 | `scroll` | Element, point or window; `direction`, `pages` |
 | `drag` | Between elements or screenshot points |
 
+## Workflows and feedback
+
+Agents can record a task they did once, compile it into a parameterized workflow, and run it later
+without a model in the loop. They can also report Wink's own limitations. See [WORKFLOWS.md](WORKFLOWS.md).
+
+| Tool | Purpose |
+| --- | --- |
+| `workflow_record_start` / `workflow_record_stop` | Record your own actions with semantic targets (off by default; secure and secret text is never kept) |
+| `workflow_compile` | Recording → draft workflow: literals become `${inputs}`, add `wait_for`/`assert` checks |
+| `workflow_save` | New draft revision from an edited definition, status changes (publish/disable), rollback |
+| `workflow_list` / `workflow_get` / `workflow_validate` / `workflow_delete` | Inspect and check saved workflows |
+| `workflow_run` | Deterministic replay: resolve targets semantically, fail closed on ambiguity, verify; `dry_run` sends nothing |
+| `feedback_submit` | Report a bug or missing capability once; stored locally, redacted, merged with duplicates |
+| `feedback_list` / `feedback_get` / `feedback_delete` / `feedback_export` | Inspect and export local feedback |
+
+`wink-cua workflow …` and `wink-cua feedback …` are CLI shorthands for the same tools.
+
 ## Agent cursor
 
 The agent pointer is drawn in a click-through overlay owned by the server process. It is our own
@@ -130,13 +147,18 @@ Sky is OpenAI's computer-use runtime (Codex Computer Use) 0.7.8, and Wink is sto
 | `7 + 8 =` (4 clicks) | 2.0 s | 5.9 s | **~0.95 s** |
 
 Reproduce with `node scripts/bench-calculator.mjs .build/release/wink-cua 5`. Small local
-samples are not a general benchmark.
+samples are not a general benchmark. With the workflow recorder added (and off), `7 + 8 =` measured
+0.75–0.80 s on a Mac mini M2 (Oct 28, 2026).
+
+Unit tests for the workflow core: `swift test -j 4` (needs a toolchain with the `Testing` module, e.g.
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`).
 
 ## Debugging
 
 ```bash
 wink-cua call list_apps
 wink-cua call get_app_state '{"app":"Calculator","screenshot":false}'
+wink-cua workflow run calc_add '{"a":"Three","b":"Four","expected":"7"}' --dry-run
 node scripts/mcp-steps.mjs .build/release/wink-cua '[["get_app_state",{"app":"Calculator"}],["click",{"app":"Calculator","element_index":"$id:Seven"}]]'
 ```
 

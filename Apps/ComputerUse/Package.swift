@@ -6,10 +6,19 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "wink-cua", targets: ["WinkCUA"]),
+        .library(name: "WinkWorkflowKit", targets: ["WinkWorkflowKit"]),
     ],
     targets: [
+        // Foundation-only workflow/feedback core: models, validation, selector resolution over normalized
+        // observations, the deterministic runner, compiler, private storage. No AppKit/AX, no WinkCore.
+        .target(
+            name: "WinkWorkflowKit",
+            path: "Sources/WinkWorkflowKit",
+            swiftSettings: [.unsafeFlags(["-Osize"], .when(configuration: .release))]
+        ),
         .executableTarget(
             name: "WinkCUA",
+            dependencies: ["WinkWorkflowKit"],
             path: "Sources/WinkCUA",
             swiftSettings: [.unsafeFlags(["-Osize"], .when(configuration: .release))],
             linkerSettings: [
@@ -18,6 +27,11 @@ let package = Package(
                 .linkedFramework("ScreenCaptureKit"),
                 .linkedFramework("QuartzCore"),
             ]
+        ),
+        .testTarget(
+            name: "WinkWorkflowKitTests",
+            dependencies: ["WinkWorkflowKit"],
+            path: "Tests/WinkWorkflowKitTests"
         ),
     ],
     swiftLanguageModes: [.v5]
