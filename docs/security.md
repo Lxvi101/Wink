@@ -92,6 +92,23 @@ If you disable the `clipboard` tool via allow/deny filters, the injected DESKTOP
   - `see`, `screenshot`, `list_apps`, `list_windows`, `list_screens`, `list_menus`: read-only discovery and capture.  
   - `image`, `analyze`, `sleep`, `done`, `need_info`: informational or control-plane only.
 
+### wink-cua workflows and agent feedback
+
+`wink-cua` (Apps/ComputerUse) can record an agent's own actions and replay them as saved workflows, and lets
+agents file local feedback reports. Details: `Apps/ComputerUse/WORKFLOWS.md`.
+
+- Recording is opt-in per session (`workflow_record_start`) and stores semantic targets, not screenshots.
+  Secure-field text and credential-like text is never written; the clipboard is never read.
+- Replay uses the same background input paths and permissions as the interactive tools. Foreground input needs
+  `requires_foreground` in the definition **and** `allow_foreground=true` on the run; coordinate fallbacks
+  need the same double opt-in. Saved permissions never grant authority.
+- Replay fails closed (ambiguous target, wrong bundle id/window, unverifiable write) and reports
+  `possible_commit` / `retry_safe` so callers don't repeat writes blindly.
+- Workflow and feedback files live under `~/.peekaboo` (`$WINK_WORKFLOW_HOME` / `$PEEKABOO_CONFIG_DIR`
+  override) with 0700/0600 permissions. Feedback is never uploaded; exporting it is a separate, manual step.
+- The DSL has no shell/script step. Widening a saved workflow's apps, effect, foreground use or action kinds
+  requires `allow_scope_change=true`.
+
 ### Recommendations
 
 - In production or shared machines: start with `WINK_ALLOW_TOOLS="see,click,type"` and add more only as required.  
